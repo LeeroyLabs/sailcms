@@ -2,24 +2,27 @@
 
 namespace SailCMS;
 
-use \Composer\Installer\PackageEvent;
-
 class Installer
 {
-    public static function runInstall(PackageEvent $event)
+    public static function run(string $path)
     {
-        $package = $event->getOperation()->getPackage();
-        $installationManager = $event->getComposer()->getInstallationManager();
+        $folders = [
+            'public', 'public/default', 'sites', 'sites/default', 'web', 'storage',
+            'storage/uploads', 'storage/uploads/default', 'config'
+        ];
 
-        $originDir = $installationManager->getInstallPath($package);
+        $files = [
+            'web/index.php', 'config/general.php'
+        ];
 
-        if (file_exists($originDir) && is_dir($originDir)) {
-            mkdir("{$originDir}/sites");
-            mkdir("{$originDir}/sites/default");
-            mkdir("{$originDir}/public");
-            mkdir("{$originDir}/public/default");
+        foreach ($folders as $folder) {
+            if (!mkdir($concurrentDirectory = $path . '/' . $folder) && !is_dir($concurrentDirectory)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            }
+        }
 
-            copy(dirname(__DIR__) . '/cli', "{$originDir}/cli");
+        foreach ($files as $file) {
+            touch($path . '/' . $file);
         }
     }
 }
