@@ -1,0 +1,23 @@
+{
+    "name": "leeroy/sailcms",
+    "description": "Powerful CMS focusing on performance, DX and extensibility",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Sailcms\\": "sail/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Marc Giroux",
+            "email": "marc@leeroy.ca"
+        },
+        {
+            "name": "Philippe Bédard De Launière"
+        }
+    ],
+    "require": {
+        "php": ">=8.0"
+    }
+}
