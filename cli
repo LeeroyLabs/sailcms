@@ -1,0 +1,3 @@
+<?php
+
+echo "SailCMS 3.0.0 - Command Line";
