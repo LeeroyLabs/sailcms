@@ -1,5 +1,8 @@
 <?php
 
 $environments = [
-    'default' => '.env.default'
+    'default' => [
+        'domains' => ['localhost'],
+        'file' => '.env.default'
+    ]
 ];

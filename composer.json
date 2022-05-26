@@ -20,6 +20,7 @@
     ],
     "require": {
         "php": ">=8.0",
-        "league/climate": "^3.8"
+        "league/climate": "^3.8",
+        "vlucas/phpdotenv": "^5.4"
     }
 }
