@@ -13,7 +13,7 @@ class Sail
 
         // Detect what site we are on
         $environments = [];
-        include_once static::$workingDirectory . '/config/env.php';
+        include_once static::$workingDirectory . '/config/apps.env.php';
 
         print_r($environments);
 
