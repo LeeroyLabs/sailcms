@@ -1,0 +1,271 @@
+<?php
+
+use SailCMS\Core\Collection;
+use SailCMS\Core\Types\Sorting;
+
+beforeEach(function ()
+{
+    $this->collection = new Collection(['hello', 'world']);
+});
+
+test('Traversal #1: index.object_property', function ()
+{
+    $class1 = (object)['prop' => 'hello world', 'prop2' => 'unused'];
+    $class2 = (object)['prop' => 'You Found Me!'];
+
+    $col = new Collection([$class1, $class2]);
+    $value = $col->get('1.prop');
+
+    expect($value)->toBe('You Found Me!');
+});
+
+test('Traversal #2: (collection of collections) index.index.property (0.2.test)', function ()
+{
+    $class1 = (object)['test' => 'Hello World!'];
+    $col1 = new Collection(['abc', 'def', $class1]);
+    $col2 = new Collection(['rst', 'uvw', 'xyz']);
+
+    $col = new Collection([$col1, $col2]);
+    $value = $col->get('0.2.test');
+
+    expect($value)->toBe('Hello World!');
+});
+
+test('Get length of collection', function ()
+{
+    expect($this->collection->length)->toBe(2);
+});
+
+test('Unwrap collection', function ()
+{
+    expect($this->collection->unwrap())->toBeArray();
+});
+
+test('Unwrap collection with embedded collections', function ()
+{
+    $subCollection = new Collection(['sub', 'collection', 'data']);
+
+    $this->collection->push($subCollection);
+
+    $unwrapped = $this->collection->unwrap();
+
+    foreach ($unwrapped as $key => $value) {
+        expect($value instanceof Collection)->not->toBe(Collection::class);
+    }
+});
+
+test('Push element into the collection', function ()
+{
+    $this->collection->push('one more');
+    expect($this->collection->last)->toBe('one more');
+});
+
+test('Push using Spread method', function ()
+{
+    $col = new Collection([1, 2, 3]);
+    $length = $this->collection->pushSpread(...$col)->length;
+    expect($length)->toBe(5);
+});
+
+test('Prepend element into the collection', function ()
+{
+    $this->collection->prepend('first!');
+    expect($this->collection->first)->toBe('first!');
+});
+
+test('Added and element with key', function ()
+{
+    $this->collection->add('akey', 'test');
+    expect($this->collection->akey)->not->toBeNull();
+});
+
+test('Reverse the collection', function ()
+{
+    $arr = $this->collection->reverse()->unwrap();
+    expect($arr[0] === 'world')->toBeTrue();
+    expect($arr[1] === 'hello')->toBeTrue();
+});
+
+test('Simple chaining (reverse, first)', function ()
+{
+    $value = $this->collection->reverse()->first;
+    expect($value === 'world')->toBeTrue();
+});
+
+test('A bit more complex chaining (reverse, slice, first)', function ()
+{
+    $value = $this->collection->reverse()->slice(0, 1)->first;
+    expect($value === 'world')->toBeTrue();
+});
+
+test('Get collection keys', function ()
+{
+    $keys = $this->collection->keys();
+
+    expect($keys->at(0))->toBe(0);
+    expect($keys->at(1))->toBe(1);
+});
+
+test('Map a collection', function ()
+{
+    $mapped = $this->collection->map(fn($el) => "->{$el}");
+    expect($mapped->first)->toBe('->hello');
+});
+
+test('Filter a collection', function ()
+{
+    $filtered = $this->collection->filter(fn($el) => ($el !== 'world'));
+    expect($filtered->first)->toBe('hello');
+});
+
+test('Create chunks of the collection by 2 (end up with 3 chunks)', function ()
+{
+    $arr = [1, 2, 3, 4];
+    $chunks = $this->collection->pushSpread(...$arr)->chunks(2);
+    expect($chunks->length)->toBe(3);
+});
+
+test('Collection shuffling', function ()
+{
+    $arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    $this->collection->pushSpread(...$arr);
+    $first = $this->collection->first;
+    $sfirst = $this->collection->shuffle()->first;
+
+    expect($first)->not->toBe($sfirst);
+});
+
+test('Check if collection contains a certain value', function ()
+{
+    expect($this->collection->contains('hello'))->toBe(true);
+});
+
+test('Remove duplicates from collection', function ()
+{
+    $arr = ['hello', 'bob', 'jones', 'hello'];
+    $this->collection->pushSpread(...$arr);
+
+    $before = $this->collection->length;
+    $after = $this->collection->dedup(SORT_STRING)->length;
+
+    expect($before)->toBeGreaterThan($after);
+});
+
+test('JSON serialization', function ()
+{
+    expect(json_encode($this->collection))->not->toBe("{}");
+});
+
+test('Run Each loop on collection', function ()
+{
+    $data = new Collection([]);
+    $length = 0;
+
+    $this->collection->each(function ($key, $value) use ($data)
+    {
+        $data->push($key);
+    });
+
+    $finalLength = $data->length;
+
+    expect($finalLength)->toBeGreaterThan($length);
+});
+
+test('Find value in collection', function ()
+{
+    $result = $this->collection->find(fn($key, $value) => str_contains($value, 'll'));
+    expect($result)->toBe("hello");
+});
+
+test('Find index of value in collection', function ()
+{
+    $result = $this->collection->findIndex(fn($key, $value) => str_contains($value, 'll'));
+    expect($result)->toBe(0);
+});
+
+test('Sort array numerically without keeping keys', function ()
+{
+    $col = new Collection([100, 25, 30, 21, 43, 55]);
+    $value = $col->sort(Sorting::ASC, SORT_NUMERIC)->unwrap();
+    expect($value[0])->toBe(21);
+});
+
+test('Sort array numerically with keeping keys', function ()
+{
+    $col = new Collection([100, 25, 30, 21, 43, 55]);
+    $value = $col->sort(Sorting::ASC, SORT_NUMERIC, true);
+
+    expect($value->keys()->first)->toBe(3);
+    expect($value->first)->toBe(21);
+});
+
+test('Sort array by object key', function ()
+{
+    $class1 = (object)['key' => 'Émilie'];
+    $class2 = (object)['key' => 'Jennifer'];
+    $class3 = (object)['key' => 'Bah Baka'];
+
+    $col = new Collection([$class1, $class2, $class3]);
+    $final = $col->sortBy('key');
+
+    expect($final->first->key)->toBe('Bah Baka');
+    expect($final->last->key)->toBe('Jennifer');
+});
+
+test('Empty collection', function ()
+{
+    $col = new Collection([]);
+    expect($col->empty)->toBe(true);
+});
+
+test('Pop element out of collection', function ()
+{
+    $col = new Collection([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    $col2 = $col->pop(2);
+
+    expect($col2->length)->toBe(2);
+    expect($col->length)->toBe(8);
+});
+
+test('Get differences between 2 collections', function ()
+{
+    $col1 = new Collection(['a', 'b', 'c', 'd', 'e']);
+    $col2 = new Collection(['a', 'b', 'f', 'g', 'h', 'i']);
+    $diff = $col1->diff($col2);
+
+    expect($diff->length)->toBe(3);
+});
+
+test('Get intersection of 2 collections', function ()
+{
+    $col1 = new Collection(['a', 'b', 'c', 'd', 'e']);
+    $col2 = new Collection(['a', 'b', 'f', 'g', 'h', 'i']);
+    $diff = $col1->intersect($col2);
+
+    expect($diff->length)->toBe(2);
+});
+
+test('Merge 2 collections non-recursively', function ()
+{
+    $col1 = new Collection(['a', 'b', 'c']);
+    $col2 = new Collection(['d', 'e', 'f']);
+    $arr = $col1->merge($col2);
+
+    expect($arr->length)->toBe(6);
+});
+
+test('Merge 2 collections recursively (only works on associative arrays/collections)', function ()
+{
+    $col1 = new Collection(['super' => ['test' => 1], 'subtest' => 1]);
+    $col2 = new Collection(['super' => ['test' => 2], 'subtest' => 2]);
+    $arr = $col1->merge($col2, true);
+    expect($arr->length)->toBe(2);
+});
+
+test('Pull element out of collection', function ()
+{
+    $col = new Collection([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    $pulled = $col->pull(4);
+
+    expect($pulled)->toBe(5);
+});

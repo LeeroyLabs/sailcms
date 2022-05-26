@@ -21,6 +21,20 @@
     "require": {
         "php": ">=8.0",
         "league/climate": "^3.8",
-        "vlucas/phpdotenv": "^5.4"
+        "vlucas/phpdotenv": "^5.4",
+        "myclabs/php-enum": "^1.8",
+        "symfony/string": "^6.0",
+        "symfony/translation-contracts": "^3.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^1.21"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "test": "./vendor/bin/pest"
     }
 }
