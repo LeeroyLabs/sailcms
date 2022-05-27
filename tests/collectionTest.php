@@ -1,7 +1,7 @@
 <?php
 
-use SailCMS\Core\Collection;
-use SailCMS\Core\Types\Sorting;
+use SailCMS\Collection;
+use SailCMS\Types\Sorting;
 
 beforeEach(function ()
 {

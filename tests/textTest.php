@@ -1,6 +1,6 @@
 <?php
 
-use SailCMS\Core\Text;
+use SailCMS\Text;
 
 test('Deburr', function ()
 {
