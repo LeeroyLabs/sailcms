@@ -17,7 +17,7 @@ test('slugify string "Hello world of PHP!$#"', function ()
     expect(Text::slugify('Hello world of PHP!$#'))->toBe('hello-world-of-php');
 });
 
-test('camelCase string "Hello world of PHP" to "HelloWorldOfPHP"', function ()
+test('camelCase string "Hello world of PHP" to "helloWorldOfPHP"', function ()
 {
     expect(Text::camelCase('Hello world of PHP'))->toBe('helloWorldOfPHP');
 });

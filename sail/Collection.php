@@ -523,7 +523,7 @@ class Collection implements \JsonSerializable, \Iterator
 
         foreach ($parts as $num => $part) {
             if ($value instanceof static) {
-                $slice = array_slice($parts, $num, count($parts) - ($num + 1), false);
+                $slice = array_slice($parts, $num, count($parts), false);
                 $value = $value->get(implode('.', $slice));
             } elseif (is_object($value)) {
                 $value = $value->{$part} ?? null;

@@ -3,11 +3,11 @@
 namespace SailCMS;
 
 use Dotenv\Dotenv;
-use SailCMS\Collection;
+use JsonException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
+use SailCMS\Http\Authentication;
 use SailCMS\Routing\Router;
-use SailCMS\Types\ContainerInformation;
 use Whoops\Run;
 use Whoops\Handler\PrettyPageHandler;
 
@@ -26,6 +26,12 @@ class Sail
      *
      * @param string $execPath
      * @return void
+     *
+     * @throws Errors\DatabaseException
+     * @throws Errors\RouteReturnException
+     * @throws FileException
+     * @throws JsonException
+     * @throws SiteException
      *
      */
     public static function init(string $execPath): void
@@ -50,7 +56,6 @@ class Sail
         }
 
         if (static::$currentApp === '') {
-            // TODO: Fail now!
             throw new SiteException('No site found for the current host, please make sure its not a mistake.', 0500);
         }
 
@@ -66,7 +71,12 @@ class Sail
         $settings = new Collection($config);
 
         $_ENV['settings'] = $settings->get($_ENV['ENVIRONMENT'] ?? 'dev');
-        
+
+        if ($_ENV['settings']->get('devMode')) {
+            ini_set('display_errors', true);
+            error_reporting(E_ALL);
+        }
+
         // Initialize the router
         Router::init();
 
@@ -76,7 +86,7 @@ class Sail
         // Ensure peak performance from the database
         static::ensurePerformance();
 
-        // load site modules
+        // TODO load site modules
 
         Router::dispatch();
     }
@@ -86,8 +96,8 @@ class Sail
     /**
      *
      * @throws FileException
-     * @throws \JsonException
-     * @throws Core\Errors\DatabaseException
+     * @throws JsonException
+     * @throws Errors\DatabaseException
      *
      */
     private static function loadContainers(): void

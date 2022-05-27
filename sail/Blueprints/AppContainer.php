@@ -1,6 +1,6 @@
 <?php
 
-namespace SailCMS\Interfaces;
+namespace SailCMS\Blueprints;
 
 use SailCMS\Routing\Router;
 use SailCMS\Types\ContainerInformation;

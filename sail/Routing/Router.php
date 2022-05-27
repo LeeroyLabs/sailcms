@@ -2,14 +2,16 @@
 
 namespace SailCMS\Routing;
 
+use JsonException;
+use SailCMS\Blueprints\AppController;
 use SailCMS\Collection;
 use SailCMS\Errors\RouteReturnException;
 use SailCMS\Http\Response;
-use SailCMS\Interfaces\AppController;
 
 class Router
 {
     private static Collection $routes;
+    private static Collection $redirects;
     private static string $root = '/';
 
     public static function init(): void
@@ -20,11 +22,27 @@ class Router
             'put' => new Collection([]),
             'delete' => new Collection([])
         ]);
+
+        static::$redirects = new Collection([]);
     }
 
     /**
      *
-     * Set up a route using GET
+     * Stop everything and redirect to given url
+     *
+     * @param string $url
+     * @return void
+     *
+     */
+    public function go(string $url): void
+    {
+        header('location ' . $url);
+        exit();
+    }
+
+    /**
+     *
+     * Add a GET route
      *
      * @param string $url
      * @param AppController|string $controller
@@ -34,17 +52,12 @@ class Router
      */
     public function get(string $url, AppController|string $controller, string $method): void
     {
-        if (is_string($controller)) {
-            $controller = new $controller();
-        }
-
-        $route = new Route($url, $controller, $method);
-        static::$routes->get('get')->push($route);
+        $this->addRoute('get', $url, $controller, $method);
     }
 
     /**
      *
-     * Set up a route using POST
+     * Add a POST route
      *
      * @param string $url
      * @param AppController|string $controller
@@ -54,21 +67,65 @@ class Router
      */
     public function post(string $url, AppController|string $controller, string $method): void
     {
-        if (is_string($controller)) {
+        $this->addRoute('post', $url, $controller, $method);
+    }
+
+    /**
+     *
+     * Add a DELETE route
+     *
+     * @param string $url
+     * @param AppController|string $controller
+     * @param string $method
+     * @return void
+     *
+     */
+    public function delete(string $url, AppController|string $controller, string $method): void
+    {
+        $this->addRoute('delete', $url, $controller, $method);
+    }
+
+    /**
+     *
+     * Add a PUT route
+     *
+     * @param string $url
+     * @param AppController|string $controller
+     * @param string $method
+     * @return void
+     *
+     */
+    public function put(string $url, AppController|string $controller, string $method): void
+    {
+        $this->addRoute('put', $url, $controller, $method);
+    }
+
+    /**
+     *
+     * Add a redirected route
+     *
+     * @param string $from
+     * @param string $to
+     * @param AppController|string $controller
+     * @param string $method
+     * @return void
+     *
+     */
+    public function redirect(string $from, string $to, AppController|string $controller = '', string $method = ''): void
+    {
+        if (is_string($controller) && $controller !== '') {
             $controller = new $controller();
         }
 
-        $route = new Route($url, $controller, $method);
-        static::$routes->get('get')->push($route);
+        $redirect = new Redirect($from, $to, $controller, $method);
+        static::$redirects->push($redirect);
     }
-
-    // TODO: PUT DELETE AND ANY
 
     /**
      *
      * Dispatch the route detection and execute and render matching route
      *
-     * @throws RouteReturnException
+     * @throws RouteReturnException|JsonException
      *
      */
     public static function dispatch(): void
@@ -106,8 +163,26 @@ class Router
                     throw new RouteReturnException('Route does not return a Response object. Cannot continue.', 0403);
                 }
             }
-
-            // TODO: 404
         }
+
+        // Try the redirect list to see if the url is one of them
+        static::$redirects->each(function ($key, $redirect) use ($uri)
+        {
+            $redirect->matchAndExecute($uri);
+        });
+
+        // TODO 404 error!!!
+    }
+
+    // ----------------------------------------------- Private //
+
+    private function addRoute(string $method, string $url, AppController|string $controller, string $callback): void
+    {
+        if (is_string($controller)) {
+            $controller = new $controller();
+        }
+
+        $route = new Route($url, $controller, $callback);
+        static::$routes->get($method)->push($route);
     }
 }

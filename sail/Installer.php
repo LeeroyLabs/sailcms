@@ -8,9 +8,11 @@ class Installer
 {
     public static function run(string $path)
     {
+        // TODO Check everything is present for the cms (php extensions, write access, etc.)
+
         // Folders to create
         $folders = [
-            'public', 'public/default', 'sites', 'sites/default', 'web', 'storage',
+            'public', 'public/default', 'templates', 'templates/default', 'web', 'storage',
             'storage/uploads', 'storage/uploads/default', 'config', 'config/default',
             'modules', 'containers'
         ];
@@ -19,7 +21,7 @@ class Installer
         $files = [
             'web/index.php' => 'index.php', 'web/.htaccess' => 'htaccess',
             'config/default/general.php' => 'config/general.php', 'config/apps.env.php' => 'env.php',
-            'modules/.gitkeep' => ''
+            'modules/.gitkeep' => '', 'templates/default/.gitkeep' => '', '.env.default' => 'env.default'
         ];
 
         $climate = new CLImate();
@@ -40,5 +42,7 @@ class Installer
                 file_put_contents($path . '/' . $key, file_get_contents($workPath . $file));
             }
         }
+
+        // TODO Create Admin user
     }
 }

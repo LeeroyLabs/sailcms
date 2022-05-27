@@ -3,7 +3,7 @@
 namespace SailCMS\Routing;
 
 use SailCMS\Http\Response;
-use SailCMS\Interfaces\AppController;
+use SailCMS\Blueprints\AppController;
 
 class Route
 {
@@ -42,9 +42,7 @@ class Route
     {
         $searches = array_keys(static::$patterns);
         $replaces = array_values(static::$patterns);
-
-        $foundRoute = false;
-
+        
         // Check if route is defined without regex
         if ($url === $this->url) {
             $instance = new $this->controller();
@@ -55,7 +53,6 @@ class Route
             $route = str_replace($searches, $replaces, $this->url);
 
             if (preg_match('#^' . $route . '$#', $url, $matched)) {
-                $foundRoute = true;
 
                 unset($matched[0]);
                 $matches = array_values($matched);

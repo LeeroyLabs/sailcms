@@ -4,16 +4,28 @@ $config = [
     'dev' => [
         'devMode' => true,
         'allowAdmin' => true,
-        'adminTrigger' => 'admin'
+        'adminTrigger' => 'admin',
+        'permissions' => [
+            'user' => 'marcgiroux',
+            'group' => 'marcgiroux'
+        ]
     ],
     'staging' => [
         'devMode' => true,
         'allowAdmin' => true,
-        'adminTrigger' => 'admin'
+        'adminTrigger' => 'admin',
+        'permissions' => [
+            'user' => 'ubuntu',
+            'group' => 'www-data'
+        ]
     ],
     'production' => [
         'devMode' => false,
         'allowAdmin' => false,
-        'adminTrigger' => 'admin'
+        'adminTrigger' => 'admin',
+        'permissions' => [
+            'user' => 'ubuntu',
+            'group' => 'www-data'
+        ]
     ]
 ];
