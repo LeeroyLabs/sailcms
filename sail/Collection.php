@@ -1,9 +1,9 @@
 <?php
 
-namespace SailCMS\Core;
+namespace SailCMS;
 
-use SailCMS\Core\Types\Sorting;
-use SailCMS\Core\Text;
+use SailCMS\Types\Sorting;
+use SailCMS\Text;
 
 class Collection implements \JsonSerializable, \Iterator
 {

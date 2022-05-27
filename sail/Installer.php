@@ -8,15 +8,18 @@ class Installer
 {
     public static function run(string $path)
     {
+        // Folders to create
         $folders = [
             'public', 'public/default', 'sites', 'sites/default', 'web', 'storage',
             'storage/uploads', 'storage/uploads/default', 'config', 'config/default',
-            'modules'
+            'modules', 'containers'
         ];
 
+        // Files to create (dest => src)
         $files = [
-            'web/index.php' => 'index.php', 'config/default/general.php' => 'config/general.php',
-            'config/apps.env.php' => 'env.php', 'modules/.gitkeep' => ''
+            'web/index.php' => 'index.php', 'web/.htaccess' => 'htaccess',
+            'config/default/general.php' => 'config/general.php', 'config/apps.env.php' => 'env.php',
+            'modules/.gitkeep' => ''
         ];
 
         $climate = new CLImate();

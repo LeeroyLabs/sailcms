@@ -1,6 +1,6 @@
 <?php
 
-namespace SailCMS\Core\Types;
+namespace SailCMS\Types;
 
 use MyCLabs\Enum\Enum;
 

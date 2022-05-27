@@ -1,9 +1,10 @@
 <?php
 
-namespace SailCMS\Core;
+namespace SailCMS;
 
 use Symfony\Component\String\UnicodeString;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Component\String\Inflector\EnglishInflector;
 
 class Text
 {
@@ -92,6 +93,18 @@ class Text
     public static function instance(string $string): UnicodeString
     {
         return new UnicodeString($string);
+    }
+
+    /**
+     *
+     * Get an instance of the EnglishInflector class
+     *
+     * @return EnglishInflector
+     *
+     */
+    public static function inflector(): EnglishInflector
+    {
+        return new EnglishInflector();
     }
 
     /**

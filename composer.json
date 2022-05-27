@@ -24,7 +24,11 @@
         "vlucas/phpdotenv": "^5.4",
         "myclabs/php-enum": "^1.8",
         "symfony/string": "^6.0",
-        "symfony/translation-contracts": "^3.0"
+        "symfony/translation-contracts": "^3.0",
+        "filp/whoops": "^2.14",
+        "nesbot/carbon": "^2.58",
+        "mongodb/mongodb": "^1.12",
+        "ext-mongodb": "*"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"
