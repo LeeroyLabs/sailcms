@@ -13,15 +13,16 @@ class Installer
         // Folders to create
         $folders = [
             'public', 'public/default', 'templates', 'templates/default', 'web', 'storage',
-            'storage/uploads', 'storage/uploads/default', 'config', 'config/default',
-            'modules', 'containers'
+            'storage/uploads', 'storage/uploads/default', 'storage/cache/', 'storage/cache/default',
+            'config', 'config/default', 'modules', 'containers'
         ];
 
         // Files to create (dest => src)
         $files = [
             'web/index.php' => 'index.php', 'web/.htaccess' => 'htaccess',
             'config/default/general.php' => 'config/general.php', 'config/apps.env.php' => 'env.php',
-            'modules/.gitkeep' => '', 'templates/default/.gitkeep' => '', '.env.default' => 'env.default'
+            'modules/.gitkeep' => '', 'templates/default/.gitkeep' => '', '.env.default' => 'env.default',
+            'storage/upload/.gitkeep' => '', 'storage/cache/default/.gitkeep' => ''
         ];
 
         $climate = new CLImate();

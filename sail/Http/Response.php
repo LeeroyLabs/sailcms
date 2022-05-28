@@ -4,6 +4,7 @@ namespace SailCMS\Http;
 
 use SailCMS\Collection;
 use SailCMS\Errors\ResponseTypeException;
+use SailCMS\Templating\Engine;
 
 class Response
 {
@@ -131,6 +132,9 @@ class Response
 
         switch ($this->type) {
             case 'text/html':
+                $engine = new Engine();
+                echo $engine->render($this->template, $this->data);
+
                 // TODO RENDER WITH TWIG
                 echo "HTML RENDER HERE !!!";
                 break;

@@ -6,7 +6,6 @@ use Dotenv\Dotenv;
 use JsonException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
-use SailCMS\Http\Authentication;
 use SailCMS\Routing\Router;
 use Whoops\Run;
 use Whoops\Handler\PrettyPageHandler;
@@ -16,6 +15,8 @@ class Sail
     // Directories
     private static string $workingDirectory = '';
     private static string $configDirectory = '';
+    private static string $templateDirectory = '';
+    private static string $cacheDirectory = '';
 
     // Current running app
     private static string $currentApp = '';
@@ -77,6 +78,10 @@ class Sail
             error_reporting(E_ALL);
         }
 
+        // Determine the Template directory for the site
+        static::$templateDirectory = static::$workingDirectory . '/templates/' . static::$currentApp;
+        static::$cacheDirectory = static::$workingDirectory . '/storage/cache/' . static::$currentApp;
+
         // Initialize the router
         Router::init();
 
@@ -89,6 +94,42 @@ class Sail
         // TODO load site modules
 
         Router::dispatch();
+    }
+
+    /**
+     *
+     * Get the root directory of the system
+     *
+     * @return string
+     *
+     */
+    public static function getWorkingDirectory(): string
+    {
+        return static::$workingDirectory;
+    }
+
+    /**
+     *
+     * Get the template directory for the current site
+     *
+     * @return string
+     *
+     */
+    public static function getTemplateDirectory(): string
+    {
+        return static::$templateDirectory;
+    }
+
+    /**
+     *
+     * Get the cache directory for the site
+     *
+     * @return string
+     *
+     */
+    public static function getCacheDirectory(): string
+    {
+        return static::$cacheDirectory;
     }
 
     // -------------------------------------------------- Private --------------------------------------------------- //

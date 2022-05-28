@@ -28,7 +28,8 @@
         "filp/whoops": "^2.14",
         "nesbot/carbon": "^2.58",
         "mongodb/mongodb": "^1.12",
-        "ext-mongodb": "*"
+        "ext-mongodb": "*",
+        "twig/twig": "^3.4"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"
