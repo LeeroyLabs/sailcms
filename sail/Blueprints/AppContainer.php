@@ -13,6 +13,8 @@ abstract class AppContainer
 
     abstract public function routes(): void;
 
+    abstract public function configureSearch(): void;
+
     public function __construct()
     {
         $this->router = new Router();

@@ -82,6 +82,10 @@ class Sail
         static::$templateDirectory = static::$workingDirectory . '/templates/' . static::$currentApp;
         static::$cacheDirectory = static::$workingDirectory . '/storage/cache/' . static::$currentApp;
 
+        // Register Search Adapters
+        Search::registerSystemAdapters();
+        Search::init();
+
         // Initialize the router
         Router::init();
 
@@ -161,6 +165,9 @@ class Sail
                     if ($info->sites->contains(static::$currentApp)) {
                         // Install the routes
                         $instance->routes();
+
+                        // Run the search setup
+                        $instance->configureSearch();
                     }
                 } else {
                     throw new FileException("Container {$className} does not exist or is not named properly. Please verify and try again.", 0404);

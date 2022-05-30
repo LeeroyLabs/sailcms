@@ -27,7 +27,7 @@ test('Traversal #2: (collection of collections) index.index.property (0.2.test)'
 
     $col = new Collection([$col1, $col2]);
     $value = $col->get('0.2.test');
-
+    
     expect($value)->toBe('Hello World!');
 });
 

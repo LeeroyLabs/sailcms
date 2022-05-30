@@ -14,7 +14,7 @@ class Route
     private static array $patterns = [
         ':any' => '([a-zA-Z0-9\-]+)',
         ':string' => '([a-zA-Z]+)',
-        ':id' => '([0-9]+)',
+        ':id' => '([0-9]{24})',
         ':num' => '([0-9]+)',
         ':all' => '(.*)'
     ];
@@ -42,7 +42,7 @@ class Route
     {
         $searches = array_keys(static::$patterns);
         $replaces = array_values(static::$patterns);
-        
+
         // Check if route is defined without regex
         if ($url === $this->url) {
             $instance = new $this->controller();

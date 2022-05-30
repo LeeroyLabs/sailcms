@@ -2,3 +2,4 @@
 /vendor/
 /old_ref/
 .DS_Store
+mock/

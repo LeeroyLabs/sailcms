@@ -29,7 +29,10 @@
         "nesbot/carbon": "^2.58",
         "mongodb/mongodb": "^1.12",
         "ext-mongodb": "*",
-        "twig/twig": "^3.4"
+        "twig/twig": "^3.4",
+        "meilisearch/meilisearch-php": "^0.23.2",
+        "guzzlehttp/guzzle": "^7.4",
+        "http-interop/http-factory-guzzle": "^1.0"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

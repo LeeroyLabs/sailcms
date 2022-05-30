@@ -527,7 +527,7 @@ class Collection implements \JsonSerializable, \Iterator
                 $value = $value->get(implode('.', $slice));
             } elseif (is_object($value)) {
                 $value = $value->{$part} ?? null;
-            } else {
+            } elseif (is_array($value)) {
                 $value = $value[$part] ?? null;
             }
         }
