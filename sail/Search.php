@@ -3,7 +3,7 @@
 namespace SailCMS;
 
 use SailCMS\Search\Adapter;
-use SailCMS\Search\Meili;
+use SailCMS\Search\Database;
 use SailCMS\Types\SearchResults;
 
 class Search
@@ -16,8 +16,13 @@ class Search
         $engine = $_ENV['SEARCH_ENGINE'] ?? 'database';
 
         if (empty(static::$adapter)) {
-            $adapterInfo = static::$registeredAdapters[$engine];
-            static::$adapter = new $adapterInfo();
+            if (!empty(static::$registeredAdapters[$engine])) {
+                $adapterInfo = static::$registeredAdapters[$engine];
+                static::$adapter = new $adapterInfo();
+                return;
+            }
+
+            static::$adapter = new Database();
         }
     }
 
