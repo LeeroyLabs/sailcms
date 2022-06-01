@@ -642,13 +642,12 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * JSON encoding support
      *
-     * @return string
+     * @return array
      *
-     * @throws \JsonException
      */
-    public function jsonSerialize(): string
+    public function jsonSerialize(): array
     {
-        return json_encode($this->unwrap(), JSON_THROW_ON_ERROR);
+        return $this->unwrap();
     }
 
     /**

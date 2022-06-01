@@ -91,10 +91,19 @@ class Search
      *
      * @return void
      *
+     * @throws \JsonException
+     *
      */
     public static function registerSystemAdapters(): void
     {
-        static::registerAdapter('meili', Meili::class);
+        $composerFile = Sail::getWorkingDirectory() . '/composer.json';
+        $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+
+        $engines = $composer->sailcms->search ?? [];
+
+        foreach ($engines as $name => $engine) {
+            static::registerAdapter($name, $engine);
+        }
     }
 
     /**
