@@ -3,7 +3,7 @@
 namespace SailCMS\Routing;
 
 use SailCMS\Http\Response;
-use SailCMS\Blueprints\AppController;
+use SailCMS\Contracts\AppController;
 
 class Route
 {

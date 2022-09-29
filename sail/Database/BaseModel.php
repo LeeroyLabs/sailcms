@@ -40,6 +40,25 @@ abstract class BaseModel
 
     /**
      *
+     * Make a value safe for querying. You should never query using a value
+     * that is not either a string or number, unless you are sure that it's safe.
+     *
+     * @param mixed $value
+     * @return string|int|bool|float
+     * @throws \JsonException
+     *
+     */
+    protected function safe(mixed $value): string|int|bool|float
+    {
+        if (!is_string($value) && !is_numeric($value)) {
+            return json_encode($value, JSON_THROW_ON_ERROR);
+        }
+
+        return $value;
+    }
+
+    /**
+     *
      * Execute a query call (cannot be run with a mutation type method)
      *
      * @return array|$this|null

@@ -2,9 +2,9 @@
 
 namespace SailCMS;
 
-use SailCMS\Collection;
 use SailCMS\Types\ContainerInformation;
 use SailCMS\Models\Containers;
+use SailCMS\Types\ModuleInformation;
 
 class Register
 {
@@ -34,7 +34,7 @@ class Register
      * @param string $className
      * @return void
      *
-     * @throws Core\Errors\DatabaseException
+     * @throws Errors\DatabaseException
      *
      */
     public function registerContainer(ContainerInformation $info, string $className): void
@@ -46,5 +46,22 @@ class Register
 
         $containerModel = new Containers();
         $containerModel->register(className: $className, info: $info);
+    }
+
+    /**
+     *
+     * Register a module for later use
+     *
+     * @param ModuleInformation $info
+     * @param string $className
+     * @return void
+     *
+     */
+    public function registerModule(ModuleInformation $info, string $className): void
+    {
+        static::$modules->push((object)[
+            'info' => $info,
+            'class' => $className
+        ]);
     }
 }

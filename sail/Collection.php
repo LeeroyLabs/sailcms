@@ -9,6 +9,11 @@ class Collection implements \JsonSerializable, \Iterator
 {
     private array $_internal;
 
+    public static function init(): Collection
+    {
+        return new Collection([]);
+    }
+
     /**
      *
      * Initialize a static with a root array

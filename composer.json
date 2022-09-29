@@ -20,6 +20,7 @@
     ],
     "require": {
         "php": ">=8.0",
+        "ext-sodium": "*",
         "league/climate": "^3.8",
         "vlucas/phpdotenv": "^5.4",
         "myclabs/php-enum": "^1.8",
@@ -31,17 +32,26 @@
         "ext-mongodb": "*",
         "twig/twig": "^3.4",
         "guzzlehttp/guzzle": "^7.4",
-        "http-interop/http-factory-guzzle": "^1.0"
+        "webonyx/graphql-php": "^14.11",
+        "league/flysystem": "^3.2",
+        "league/mime-type-detection": "^1.11",
+        "spatie/ray": "^1.36"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"
     },
     "config": {
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "composer/package-versions-deprecated": true
         }
     },
     "scripts": {
         "test": "./vendor/bin/pest"
+    },
+    "sailcms": {
+        "containers": [
+            "SailCMS\\Containers\\Users"
+        ]
     }
 }

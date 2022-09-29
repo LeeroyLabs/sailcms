@@ -140,7 +140,7 @@ class Response
                 break;
 
             case 'application/json':
-                if ($_ENV['settings']->get('devMode')) {
+                if ($_ENV['SETTINGS']->get('devMode')) {
                     echo json_encode($this->data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
                 } else {
                     echo json_encode($this->data, JSON_THROW_ON_ERROR);

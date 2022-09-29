@@ -44,6 +44,7 @@ class Database
      * Fetch the active instance (if any) or create one
      *
      * @return Client|null
+     * @throws DatabaseException
      *
      */
     public static function instance(): ?Client
