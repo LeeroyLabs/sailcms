@@ -4,7 +4,7 @@ namespace SailCMS;
 
 use SailCMS\Middleware\Data;
 use \SailCMS\Types\MiddlewareType;
-use \SailCMS\Contracts\Middleware as MW;
+use \SailCMS\Contracts\AppMiddleware as MW;
 
 class Middleware
 {
@@ -14,31 +14,31 @@ class Middleware
      *
      * Register a middleware
      *
-     * @param MW $middleware
+     * @param  MW  $middleware
      * @return void
      */
     public static function register(MW $middleware): void
     {
-        static::$middlewares[$middleware->type()->value] = $middleware;
+        static::$middlewares[$middleware->type()->value][] = $middleware;
     }
 
     /**
      *
      * Execute the middlewares for the given type with given data (event and data)
      *
-     * @param MiddlewareType $type
-     * @param Data $data
-     * @return mixed
+     * @param  MiddlewareType  $type
+     * @param  Data            $data
+     * @return Data
      *
      */
-    public static function execute(MiddlewareType $type, Data $data): mixed
+    public static function execute(MiddlewareType $type, Data $data): Data
     {
         $mws = static::$middlewares[$type->value] ?? [];
-
+        
         foreach ($mws as $mw) {
             $data = $mw->process($data);
         }
 
-        return $data->data;
+        return $data;
     }
 }

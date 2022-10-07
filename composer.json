@@ -21,7 +21,6 @@
     "require": {
         "php": ">=8.0",
         "ext-sodium": "*",
-        "league/climate": "^3.8",
         "vlucas/phpdotenv": "^5.4",
         "myclabs/php-enum": "^1.8",
         "symfony/string": "^6.0",
@@ -35,7 +34,9 @@
         "webonyx/graphql-php": "^14.11",
         "league/flysystem": "^3.2",
         "league/mime-type-detection": "^1.11",
-        "spatie/ray": "^1.36"
+        "spatie/ray": "^1.36",
+        "splitbrain/php-cli": "^1.2",
+        "symfony/yaml": "^6.1"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

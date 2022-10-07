@@ -16,8 +16,8 @@ class Filesystem
      *
      * Add a custom filesystem adapter
      *
-     * @param string $identifier
-     * @param FilesystemAdapter $adapter
+     * @param  string             $identifier
+     * @param  FilesystemAdapter  $adapter
      * @return void
      *
      */
@@ -33,6 +33,7 @@ class Filesystem
      *
      * Add the basic filesystem adapter (local)
      *
+     * @param  string  $forcedPath
      * @return void
      *
      */
@@ -44,7 +45,14 @@ class Filesystem
             $path = Sail::getFSDirectory();
         }
 
+        $wd = Sail::getWorkingDirectory();
+
         static::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'));
+        static::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/' . Sail::currentApp() . '/'));
+        static::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));
+        static::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/install/'));
+        static::$adapters['cms'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/cms/'));
+        static::$adapters['cms_root'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/'));
     }
 
     /**

@@ -2,22 +2,16 @@
 
 namespace SailCMS\Middleware;
 
-use SailCMS\Contracts\Middleware;
+use SailCMS\Contracts\AppMiddleware;
 use SailCMS\Types\MiddlewareType;
 
-abstract class Http implements Middleware
+abstract class Http implements AppMiddleware
 {
-    public const BeforeGraphQL = 'BeforeGraphQL';
-    public const AfterGraphQL = 'BeforeGraphQL';
     public const BeforeRoute = 'BeforeRoute';
-    public const BeforeShutdown = 'BeforeShutdown';
     public const BeforeRender = 'BeforeRender';
     public const AfterRender = 'AfterRender';
 
-    public function process(Data $data): Data
-    {
-        // TODO: Implement process() method.
-    }
+    abstract public function process(Data $data): Data;
 
     public function type(): MiddlewareType
     {

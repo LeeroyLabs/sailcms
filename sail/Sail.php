@@ -5,6 +5,7 @@ namespace SailCMS;
 use Dotenv\Dotenv;
 use JsonException;
 use League\Flysystem\FilesystemException;
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Middleware\Data;
@@ -35,7 +36,8 @@ class Sail
      *
      * Initialize the CMS
      *
-     * @param string $execPath
+     * @param  string  $execPath
+     *
      * @return void
      *
      * @throws Errors\DatabaseException
@@ -77,25 +79,13 @@ class Sail
         static::bootBasics($securitySettings);
 
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
-            Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeGraphQL, data: null));
-
             // Run GraphQL
             $data = Graphql::init();
-
-            $data = Middleware::execute(
-                MiddlewareType::HTTP,
-                new Data(
-                    Http::AfterGraphQL,
-                    data: json_decode($data, false, 512, JSON_THROW_ON_ERROR)
-                )
-            );
 
             header('Content-Type: application/json');
             echo json_encode($data, JSON_THROW_ON_ERROR);
             exit();
         }
-
-        // TODO load site modules
 
         // Run before dispatch
         Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeRoute, data: null));
@@ -105,14 +95,202 @@ class Sail
 
     /**
      *
-     * Launch Sail for Cron execution
-     *
-     * @param string $execPath
-     * @return void
+     * @params array $securitySettings
+     * @params bool $skipContainers
+     * @throws DatabaseException
+     * @throws JsonException
+     * @throws FileException
      * @throws SiteException
      *
      */
-    public static function initForCron(string $execPath)
+    private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
+    {
+        // Detect what site we are on
+        $environments = [];
+        include_once static::$workingDirectory . '/config/apps.env.php';
+
+        foreach ($environments as $name => $env) {
+            if (empty($_SERVER['HTTP_HOST'])) {
+                $host = 'cli';
+                static::$currentApp = 'default';
+
+                $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+                $_SERVER['REQUEST_METHOD'] = 'GET';
+                $_SERVER['REQUEST_URI'] = '/';
+                $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
+            } else {
+                $host = explode(':', $_SERVER['HTTP_HOST'])[0];
+
+                if (in_array($host, $env['domains'], true)) {
+                    static::$currentApp = $name;
+                }
+            }
+        }
+
+        if (static::$currentApp === '') {
+            throw new SiteException('No site found for the current host, please make sure it\'s not a mistake.', 0500);
+        }
+
+        // Load Filesystem
+        static::$fsDirectory = static::$workingDirectory . '/storage/fs/' . static::$currentApp;
+        Filesystem::mountCore();
+        Filesystem::init();
+
+        // Load security into place so it's available everywhere
+        Security::init();
+        Security::loadSettings($securitySettings);
+
+        // Load configurations
+        static::$configDirectory = static::$workingDirectory . '/config/' . static::$currentApp;
+
+        // Load .env file
+        $dotenv = Dotenv::createImmutable(static::$workingDirectory, $environments[static::$currentApp]['file']);
+        $dotenv->load();
+
+        $config = [];
+        include_once static::$configDirectory . '/general.php';
+        $settings = new Collection($config);
+
+        $_ENV['SETTINGS'] = $settings->get($_ENV['ENVIRONMENT'] ?? 'dev');
+
+        if ($_ENV['SETTINGS']->get('devMode')) {
+            ini_set('display_errors', true);
+            error_reporting(E_ALL);
+        }
+
+        // Determine the Template directory for the site
+        static::$templateDirectory = static::$workingDirectory . '/templates/' . static::$currentApp;
+        static::$cacheDirectory = static::$workingDirectory . '/storage/cache/' . static::$currentApp;
+
+        // Register Search Adapters
+        Search::registerSystemAdapters();
+        Search::init();
+
+        // Initialize the router
+        Router::init();
+
+        // Load system containers
+        static::loadContainerFromComposer(dirname(__DIR__));
+
+        // Load all site's containers
+        if (!$skipContainers) {
+            static::loadContainerFromComposer(static::$workingDirectory);
+        }
+
+        // Load all site's modules
+        static::loadModulesFromComposer(static::$workingDirectory);
+
+        // Ensure peak performance from the database
+        static::ensurePerformance();
+    }
+
+    /**
+     *
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     * @throws JsonException
+     *
+     */
+    private static function loadContainerFromComposer(string $path): void
+    {
+        // Read the application level composer.json file
+        $composerFile = $path . '/composer.json';
+        $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+
+        if ($composer->sailcms && $composer->sailcms->containers) {
+            foreach ($composer->sailcms->containers as $containerName) {
+                $className = $containerName . '\\Container';
+
+                if (class_exists($className)) {
+                    $instance = new $className();
+                    $info = $instance->info();
+
+                    // Register the container, if required
+                    Register::instance()->registerContainer($info, $className);
+
+                    if ($info->sites->contains(static::$currentApp)) {
+                        // Install the routes
+                        $instance->routes();
+
+                        // Run the search setup
+                        $instance->configureSearch();
+
+                        // Run the GraphQL setup
+                        $instance->graphql();
+
+                        // Run middleware registration
+                        $instance->middleware();
+                    }
+                } else {
+                    throw new FileException("Container {$className} does not exist or is not named properly. Please verify and try again.", 0404);
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     * @throws JsonException
+     *
+     */
+    private static function loadModulesFromComposer(string $path): void
+    {
+        // Read the application level composer.json file
+        $composerFile = $path . '/composer.json';
+        $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+
+        if ($composer->sailcms && $composer->sailcms->modules) {
+            foreach ($composer->sailcms->modules as $moduleName) {
+                $className = $moduleName . '\\Module';
+
+                if (class_exists($className)) {
+                    $instance = new $className();
+                    $info = $instance->info();
+
+                    // Register only if the site should load it
+                    if ($info->sites->contains(static::$currentApp)) {
+                        Register::instance()->registerModule($info, $instance, $moduleName);
+                        
+                        // Run middleware registration
+                        $instance->middleware();
+                    }
+                } else {
+                    throw new FileException("Module {$className} does not exist or is not named properly. Please verify and try again.", 0404);
+                }
+            }
+        }
+    }
+
+    private static function ensurePerformance(): void
+    {
+        $models = new Collection(glob(__DIR__ . '/Models/*.php'));
+
+        $models->each(function ($key, $value)
+        {
+            $name = substr(basename($value), 0, -4);
+            $class = 'SailCMS\\Models\\' . $name;
+
+            if (method_exists($class, 'ensureIndex')) {
+                $class::ensureIndexes();
+            }
+        });
+    }
+
+    /**
+     *
+     * Launch Sail for Cron execution
+     *
+     * @param  string  $execPath
+     * @return void
+     * @throws SiteException
+     * @throws JsonException
+     * @throws DatabaseException
+     * @throws FileException
+     *
+     */
+    public static function initForCron(string $execPath): void
     {
         static::$workingDirectory = dirname($execPath);
 
@@ -127,6 +305,35 @@ class Sail
         static::$errorHandler->register();
 
         static::bootBasics($securitySettings);
+    }
+
+    /**
+     *
+     * Launch Sail for CLI execution
+     *
+     * @param  string  $execPath
+     * @return void
+     * @throws DatabaseException
+     * @throws FileException
+     * @throws JsonException
+     * @throws SiteException
+     *
+     */
+    public static function initForCli(string $execPath): void
+    {
+        static::$workingDirectory = $execPath;
+
+        $securitySettings = [];
+        include_once static::$workingDirectory . '/config/security.php';
+
+        // Register the error handler
+        static::$errorHandler = new Run();
+        $ph = new PlainTextHandler();
+
+        static::$errorHandler->pushHandler($ph);
+        static::$errorHandler->register();
+
+        static::bootBasics($securitySettings, true);
     }
 
     /**
@@ -150,8 +357,10 @@ class Sail
      */
     public static function getTemplateDirectory(): string
     {
-        return static::$templateDirectory;
+        return static::$templateDirectory . '/';
     }
+
+    // -------------------------------------------------- Private --------------------------------------------------- //
 
     /**
      *
@@ -199,153 +408,5 @@ class Sail
     public static function getErrorHandler(): Run
     {
         return static::$errorHandler;
-    }
-
-    // -------------------------------------------------- Private --------------------------------------------------- //
-
-    private static function bootBasics(array $securitySettings)
-    {
-        // Detect what site we are on
-        $environments = [];
-        include_once static::$workingDirectory . '/config/apps.env.php';
-
-        foreach ($environments as $name => $env) {
-            $host = explode(':', $_SERVER['HTTP_HOST'])[0];
-
-            if (in_array($host, $env['domains'], true)) {
-                static::$currentApp = $name;
-            }
-        }
-
-        if (static::$currentApp === '') {
-            throw new SiteException('No site found for the current host, please make sure it\'s not a mistake.', 0500);
-        }
-
-        // Load Filesystem
-        static::$fsDirectory = static::$workingDirectory . '/storage/fs/' . static::$currentApp;
-        Filesystem::mountCore();
-        Filesystem::init();
-
-        // Load security into place so it's available everywhere
-        Security::init();
-        Security::loadSettings($securitySettings);
-
-        // Load configurations
-        static::$configDirectory = static::$workingDirectory . '/config/' . static::$currentApp;
-
-        // Load .env file
-        $dotenv = Dotenv::createImmutable(static::$workingDirectory, $environments[static::$currentApp]['file']);
-        $dotenv->load();
-
-        $config = [];
-        include_once static::$configDirectory . '/general.php';
-        $settings = new Collection($config);
-
-        $_ENV['SETTINGS'] = $settings->get($_ENV['ENVIRONMENT'] ?? 'dev');
-
-        if ($_ENV['SETTINGS']->get('devMode')) {
-            ini_set('display_errors', true);
-            error_reporting(E_ALL);
-        }
-
-        // Determine the Template directory for the site
-        static::$templateDirectory = static::$workingDirectory . '/templates/' . static::$currentApp;
-        static::$cacheDirectory = static::$workingDirectory . '/storage/cache/' . static::$currentApp;
-
-        // Register Search Adapters
-        Search::registerSystemAdapters();
-        Search::init();
-
-        // Initialize the router
-        Router::init();
-
-        // Load system containers
-        static::loadSystemContainers();
-
-        // Load all site's containers
-        static::loadContainers();
-
-        // Ensure peak performance from the database
-        static::ensurePerformance();
-    }
-
-    /**
-     *
-     * @throws FileException
-     * @throws JsonException
-     * @throws Errors\DatabaseException
-     *
-     */
-    private static function loadContainers(): void
-    {
-        static::loadContainerFromComposer(static::$workingDirectory);
-    }
-
-    /**
-     *
-     * @throws FileException
-     * @throws JsonException
-     * @throws Errors\DatabaseException
-     *
-     */
-    private static function loadSystemContainers(): void
-    {
-        static::loadContainerFromComposer(dirname(__DIR__));
-    }
-
-    /**
-     *
-     * @throws Errors\DatabaseException
-     * @throws FileException
-     * @throws JsonException
-     *
-     */
-    private static function loadContainerFromComposer(string $path): void
-    {
-        // Read the application level composer.json file
-        $composerFile = $path . '/composer.json';
-        $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
-
-        if ($composer->sailcms && $composer->sailcms->containers) {
-            foreach ($composer->sailcms->containers as $containerName) {
-                $className = $containerName . '\\Container';
-
-                if (class_exists($className)) {
-                    $instance = new $className();
-                    $info = $instance->info();
-
-                    // Register the container, if required
-                    Register::instance()->registerContainer($info, $className);
-
-                    if ($info->sites->contains(static::$currentApp)) {
-                        // Install the routes
-                        $instance->routes();
-
-                        // Run the search setup
-                        $instance->configureSearch();
-
-                        // Run the GraphQL setup
-                        $instance->graphql();
-                    }
-                } else {
-                    throw new FileException("Container {$className} does not exist or is not named properly. Please verify and try again.", 0404);
-                }
-            }
-        }
-    }
-
-    private static function ensurePerformance(): void
-    {
-        $models = new Collection(glob(__DIR__ . '/Models/*.php'));
-
-        $models->each(function ($key, $value)
-        {
-            $name = substr(basename($value), 0, -4);
-            $class = 'SailCMS\\Models\\' . $name;
-
-            if (method_exists($class, 'ensureIndex')) {
-                $class::ensureIndexes();
-            }
-        });
     }
 }

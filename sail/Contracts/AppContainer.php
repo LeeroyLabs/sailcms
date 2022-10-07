@@ -19,6 +19,8 @@ abstract class AppContainer
 
     abstract public function graphql(): void;
 
+    abstract public function middleware(): void;
+
     public function __construct()
     {
         $this->router = new Router();

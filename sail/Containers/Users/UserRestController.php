@@ -7,13 +7,11 @@ use SailCMS\Contracts\AppController;
 
 class UserRestController extends AppController
 {
-    private Response $response;
     private Provider $provider;
 
     public function __construct()
     {
         parent::__construct();
-        $this->response = Response::json();
         $this->provider = new Provider();
     }
 
@@ -21,18 +19,16 @@ class UserRestController extends AppController
      *
      * Get list of users with given
      *
-     * @return Response
-     *
      */
-    public function getList(): Response
+    public function getList(): void
     {
+        $this->response->setType('json');
         $this->response->set('users', []);
-        return $this->response;
     }
 
-    public function getUser(string $param): Response
+    public function getUser(string $param): void
     {
+        $this->response->setType('json');
         $this->response->set('user', $this->provider->getUser($param));
-        return $this->response;
     }
 }

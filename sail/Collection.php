@@ -18,8 +18,8 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Initialize a static with a root array
      *
-     * @param array $baseValue
-     * @param bool $recursive
+     * @param  array  $baseValue
+     * @param  bool   $recursive
      *
      */
     public function __construct(array $baseValue = [], bool $recursive = true)
@@ -115,7 +115,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Push a new element at the end of the static
      *
-     * @param mixed $element
+     * @param  mixed  $element
      * @return $this
      *
      */
@@ -146,7 +146,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Add an element to the beginning of the static
      *
-     * @param mixed $element
+     * @param  mixed  $element
      * @return $this
      */
     public function prepend(mixed $element): static
@@ -159,8 +159,8 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Add an element to associative static with given key
      *
-     * @param string $key
-     * @param mixed $element
+     * @param  string  $key
+     * @param  mixed   $element
      * @return $this
      *
      */
@@ -187,8 +187,8 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Get a slice of the static
      *
-     * @param int $start
-     * @param int $end
+     * @param  int  $start
+     * @param  int  $end
      * @return static
      *
      */
@@ -202,7 +202,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Get and remove the last N items from the collection
      *
-     * @param int $count
+     * @param  int  $count
      * @return $this
      *
      */
@@ -243,7 +243,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Get element at index
      *
-     * @param int $index
+     * @param  int  $index
      * @return mixed
      *
      */
@@ -256,7 +256,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Alias for at method
      *
-     * @param int $index
+     * @param  int  $index
      * @return mixed
      *
      */
@@ -269,7 +269,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Alias for at method
      *
-     * @param int $index
+     * @param  int  $index
      * @return mixed
      *
      */
@@ -282,7 +282,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Run a function on every item in the static
      *
-     * @param callable $callback
+     * @param  callable  $callback
      * @return static
      *
      */
@@ -296,7 +296,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Run a filter callback on every item in the static
      *
-     * @param callable $callback
+     * @param  callable  $callback
      * @return static
      *
      */
@@ -310,8 +310,8 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Split static in chunks
      *
-     * @param int $size
-     * @param bool $preserveKeys
+     * @param  int   $size
+     * @param  bool  $preserveKeys
      * @return static
      *
      */
@@ -344,7 +344,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Check if static contains given value
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return bool
      *
      */
@@ -358,7 +358,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Remove duplicates from the static (only for core types)
      *
-     * @param int $mode
+     * @param  int  $mode
      * @return static
      */
     public function dedup(int $mode = SORT_REGULAR): static
@@ -371,7 +371,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Run each loop on the static
      *
-     * @param callable $callback
+     * @param  callable  $callback
      * @return void
      *
      */
@@ -386,7 +386,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Find value in the static
      *
-     * @param callable $callback
+     * @param  callable  $callback
      * @return mixed
      *
      */
@@ -409,7 +409,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Find index of the value (should really only be used for 0 based arrays)
      *
-     * @param callable $callback
+     * @param  callable  $callback
      * @return int
      *
      */
@@ -432,7 +432,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Reduce the static to a single value
      *
-     * @param callable $callback
+     * @param  callable  $callback
      * @return int
      *
      */
@@ -445,9 +445,9 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Basic value sorting with options
      *
-     * @param int $sort
-     * @param int $flag
-     * @param bool $maintain
+     * @param  int   $sort
+     * @param  int   $flag
+     * @param  bool  $maintain
      * @return $this
      *
      */
@@ -472,7 +472,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Sort by given object key. Only works on collection of objects where key resides.
      *
-     * @param string $key
+     * @param  string  $key
      * @return $this
      *
      */
@@ -517,7 +517,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * A Nice way to traverse static and contained array/objects
      *
-     * @param string $dotNotation
+     * @param  string  $dotNotation
      * @return mixed
      *
      */
@@ -545,8 +545,8 @@ class Collection implements \JsonSerializable, \Iterator
      * Get the differences between 2 collections
      * Note that the returned differences come from the first collection
      *
-     * @param Collection|array $collection
-     * @param bool $assoc
+     * @param  Collection|array  $collection
+     * @param  bool              $assoc
      * @return $this
      *
      */
@@ -570,8 +570,8 @@ class Collection implements \JsonSerializable, \Iterator
      * Return a collection with all the values that intersect between this collection and the
      * provided one
      *
-     * @param Collection|array $collection
-     * @param bool $assoc
+     * @param  Collection|array  $collection
+     * @param  bool              $assoc
      * @return $this
      *
      */
@@ -596,8 +596,8 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Recursive only works on associative arrays/collections
      *
-     * @param Collection|array $collection
-     * @param bool $recursive
+     * @param  Collection|array  $collection
+     * @param  bool              $recursive
      * @return $this
      *
      */
@@ -620,8 +620,8 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Pull a value out of the collection and return it
      *
-     * @param int|string $index
-     * @param bool $keepIndexes
+     * @param  int|string  $index
+     * @param  bool        $keepIndexes
      * @return mixed
      *
      */
@@ -714,5 +714,22 @@ class Collection implements \JsonSerializable, \Iterator
     public function rewind(): void
     {
         reset($this->_internal);
+    }
+
+    /**
+     *
+     * Flatten a simple array to a string
+     *
+     * @param  string  $separator
+     * @param  bool    $wrapInQuotes
+     * @return string
+     */
+    public function flatten(string $separator, bool $wrapInQuotes = false): string
+    {
+        if ($wrapInQuotes) {
+            return '"' . implode('"' . $separator . '"', $this->_internal) . '"';
+        }
+
+        return implode($separator, $this->_internal);
     }
 }

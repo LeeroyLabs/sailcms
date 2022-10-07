@@ -11,7 +11,7 @@ class Database
 
     /**
      *
-     * Connect to database and create a persistent connection
+     * Connect to database and create a unique connection
      *
      * @throws DatabaseException
      *
@@ -24,15 +24,13 @@ class Database
 
             if ($_ENV['DATABASE_DSN'] !== '') {
                 self::$client = new Client($_ENV['DATABASE_DSN'], []);
-            } else {
-                if ($_ENV['DATABASE_USER']) {
-                    $auth = "{$_ENV['DATABASE_USER']}:{$_ENV['DATABASE_PASSWORD']}@";
-                    $extra = '?serverSelectionTimeoutMS=5000&connectTimeoutMS=10000&authSource=' . $_ENV['DATABASE_AUTH_DB'] . '&authMechanism=SCRAM-SHA-256';
+            } elseif ($_ENV['DATABASE_USER']) {
+                $auth = "{$_ENV['DATABASE_USER']}:{$_ENV['DATABASE_PASSWORD']}@";
+                $extra = '?serverSelectionTimeoutMS=5000&connectTimeoutMS=10000&authSource=' . $_ENV['DATABASE_AUTH_DB'] . '&authMechanism=SCRAM-SHA-256';
 
-                    self::$client = new Client("mongodb://{$auth}{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}{$extra}", $options);
-                } else {
-                    self::$client = new Client("mongodb://{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}", $options);
-                }
+                self::$client = new Client("mongodb://{$auth}{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}{$extra}", $options);
+            } else {
+                self::$client = new Client("mongodb://{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}", $options);
             }
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
@@ -58,7 +56,7 @@ class Database
 
     /**
      *
-     * Disconnect and destroy persistent connection
+     * Disconnect and destroy unique connection
      *
      */
     public static function disconnect(): void

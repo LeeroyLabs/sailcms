@@ -2,9 +2,20 @@
 
 namespace SailCMS\Http;
 
+use JsonException;
+use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Errors\FileException;
 use SailCMS\Errors\ResponseTypeException;
+use SailCMS\Middleware;
+use SailCMS\Middleware\Data;
+use SailCMS\Middleware\Http;
+use SailCMS\Security;
 use SailCMS\Templating\Engine;
+use SailCMS\Types\MiddlewareType;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 class Response
 {
@@ -15,8 +26,9 @@ class Response
 
     public string $template = '';
     public bool $compress = false;
+    public bool $secure = false;
 
-    private array $validTypes = ['text/html', 'application/json', 'text/csv'];
+    private array $validTypes = ['text/html', 'application/json', 'text/csv', 'text/plain'];
 
     /**
      *
@@ -34,6 +46,32 @@ class Response
             $this->csvData = new Collection([]);
         } else {
             throw new ResponseTypeException("Type {$type} is not a valid response type. Valid response types are: text/html, application/json or text/csv");
+        }
+    }
+
+    /**
+     *
+     * Set the type for the response (only used when using the AppController response property)
+     *
+     * @param  string  $type
+     * @return void
+     *
+     */
+    public function setType(string $type): void
+    {
+        switch (strtolower($type)) {
+            default:
+            case 'html':
+                $this->type = 'text/html';
+                break;
+
+            case 'csv':
+                $this->type = 'text/csv';
+                break;
+
+            case 'json':
+                $this->type = 'application/json';
+                break;
         }
     }
 
@@ -77,8 +115,8 @@ class Response
      *
      * Set a key/value for templating or json output
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  string  $key
+     * @param  mixed   $value
      * @return void
      *
      */
@@ -91,7 +129,7 @@ class Response
      *
      * Set the columns for a csv
      *
-     * @param array $columns
+     * @param  array  $columns
      * @return void
      *
      */
@@ -104,13 +142,26 @@ class Response
      *
      * Set the data for CSV
      *
-     * @param array $entries
+     * @param  array  $entries
      * @return void
      *
      */
-    public function setData(array $entries): void
+    public function addRows(array $entries): void
     {
         $this->csvData->pushSpread(...$entries);
+    }
+
+    /**
+     *
+     * Add a single row to the CSV
+     *
+     * @param  array  $entry
+     * @return void
+     *
+     */
+    public function addRow(array $entry): void
+    {
+        $this->csvData->push($entry);
     }
 
     /**
@@ -118,41 +169,78 @@ class Response
      * Render the response
      *
      * @return void
-     *
-     * @throws \JsonException
+     * @throws JsonException|FileException|FilesystemException|LoaderError|RuntimeError|SyntaxError
      *
      */
-    public function render()
+    public function render(): void
     {
-        header('Content-type: ' . $this->type);
+        if ($this->secure) {
+            header('Content-type: text/plain');
+        } else {
+            header('Content-type: ' . $this->type);
+        }
 
-        if ($_ENV['USE_COMPRESSION']) {
+        // Enable compression
+        if ($_ENV['USE_COMPRESSION'] === 'true') {
             ob_start('ob_gzhandler');
         }
+
+        // Before we render
+        $result = Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeRender, data: $this->data));
+        $this->data = $result->data;
 
         switch ($this->type) {
             case 'text/html':
                 $engine = new Engine();
                 echo $engine->render($this->template, $this->data);
-
-                // TODO RENDER WITH TWIG
-                echo "HTML RENDER HERE !!!";
                 break;
 
             case 'application/json':
                 if ($_ENV['SETTINGS']->get('devMode')) {
-                    echo json_encode($this->data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+                    $json = json_encode($this->data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
                 } else {
-                    echo json_encode($this->data, JSON_THROW_ON_ERROR);
+                    $json = json_encode($this->data, JSON_THROW_ON_ERROR);
+                }
+
+                if ($this->secure) {
+                    echo base64_encode(Security::encrypt($json));
+                } else {
+                    echo $json;
                 }
                 break;
 
             case 'text/csv':
-                // TODO: RENDER CSV
+                $head = $this->columns->flatten(',', true);
+                $body = '';
+
+
+                $this->csvData->each(function ($key, $value) use (&$body)
+                {
+                    if ($body !== '') {
+                        $body .= "\n";
+                    }
+
+                    if (is_array($value)) {
+                        $col = new Collection($value);
+                        $body .= $col->flatten(',', true);
+                    } else {
+                        $body .= $value->flatten(',', true);
+                    }
+                });
+
+                $csv = $head . "\n";
+                $csv .= $body;
+
+                if ($this->secure) {
+                    echo base64_encode(Security::encrypt($csv));
+                } else {
+                    echo $csv;
+                }
+
                 break;
         }
 
-        if ($_ENV['USE_COMPRESSION']) {
+        if ($_ENV['USE_COMPRESSION'] === 'true') {
             ob_end_flush();
         }
     }

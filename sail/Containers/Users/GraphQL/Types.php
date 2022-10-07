@@ -32,7 +32,8 @@ class Types
                 'email' => ['type' => GTypes::string()],
                 'role' => ['type' => Type::nonNull(static::userType())],
                 'status' => ['type' => GTypes::boolean()],
-                'avatar' => ['type' => GTypes::string()]
+                'avatar' => ['type' => GTypes::string()],
+                'test' => ['type' => Type::listOf(Gtypes::string())]
             ]
         ]);
     }

@@ -6,7 +6,6 @@ use SailCMS\Types\SearchResults;
 
 class Database implements Adapter
 {
-
     public function store(object|array $document, string $dataIndex = '')
     {
         // TODO: Implement store() method.

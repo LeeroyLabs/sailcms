@@ -11,11 +11,11 @@ class Query
     public array $args;
     public Type $returnValue;
 
-    public function __construct(string $name, array $resolver, Type $returnValue, array $args = [])
+    public function __construct(string $operation, array $resolver, array $args, Type $returnValue)
     {
         $ctrl = new $resolver[0]();
-        
-        $this->name = $name;
+
+        $this->name = $operation;
         $this->resolver = [$ctrl, $resolver[1]];
         $this->args = $args;
         $this->returnValue = $returnValue;
@@ -25,15 +25,15 @@ class Query
      *
      * Little utility
      *
-     * @param string $name
-     * @param array $resolver
-     * @param Type $returnValue
-     * @param array $args
+     * @param  string  $operation
+     * @param  array   $resolver
+     * @param  Type    $returnValue
+     * @param  array   $args
      * @return Query
      *
      */
-    public static function init(string $name, array $resolver, Type $returnValue, array $args = []): Query
+    public static function init(string $operation, array $resolver, array $args, Type $returnValue): Query
     {
-        return new Query($name, $resolver, $returnValue, $args);
+        return new Query($operation, $resolver, $args, $returnValue);
     }
 }

@@ -2,13 +2,19 @@
 
 namespace SailCMS\Templating;
 
+use League\Flysystem\FilesystemException;
+use SailCMS\Errors\FileException;
+use SailCMS\Filesystem;
 use SailCMS\Sail;
 use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use Twig\Extension\AbstractExtension;
 use Twig\Lexer;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
-use Twig\TwigFunction;
+use SailCMS\Templating\Extensions\Bundled;
 
 class Engine
 {
@@ -19,7 +25,7 @@ class Engine
 
     public function __construct()
     {
-        $loader = new FilesystemLoader(Sail::getTemplateDirectory());
+        $loader = new FilesystemLoader([Sail::getTemplateDirectory(), dirname(__DIR__, 2) . '/cms']);
 
         // Use template caching or not
         if ($_ENV['SETTINGS']->get('templating.cache')) {
@@ -49,22 +55,45 @@ class Engine
      *
      * Render an HTML template using Twig
      *
-     * @param string $file
-     * @param object $data
+     * @param  string  $file
+     * @param  object  $data
      * @return string
+     * @throws FileException|FilesystemException|LoaderError|RuntimeError|SyntaxError
      *
      */
     public function render(string $file, object $data): string
     {
-        return '';
+        $fs = Filesystem::manager();
+        $target = 'root://templates/' . Sail::currentApp() . '/' . $file . '.twig';
+        $target2 = 'cms://' . $file . '.twig';
+        $html = '';
+
+        // Add some last minutes variables to the template
+        $data->paths = (object)[
+            'images' => '/public/' . Sail::currentApp() . '/images',
+            'css' => '/public/' . Sail::currentApp() . '/css',
+            'js' => '/public/' . Sail::currentApp() . '/js',
+            'fonts' => '/public/' . Sail::currentApp() . '/fonts',
+            'public' => '/public/' . Sail::currentApp()
+        ];
+
+        if ($fs->fileExists($target) || $fs->fileExists($target2)) {
+            ob_start();
+            $this->twig->display($file . '.twig', (array)$data);
+            $html = ob_get_clean();
+        } else {
+            throw new FileException("Template {$file} does not exist, please make sure it exists before using it", 0404);
+        }
+
+        return $html;
     }
 
     /**
      *
      * Register a filter for use in templates
      *
-     * @param string $name
-     * @param callable $callback
+     * @param  string    $name
+     * @param  callable  $callback
      * @return void
      *
      */
@@ -77,8 +106,8 @@ class Engine
      *
      * Register a function for use in templates
      *
-     * @param string $name
-     * @param callable $callback
+     * @param  string    $name
+     * @param  callable  $callback
      * @return void
      *
      */
@@ -91,7 +120,7 @@ class Engine
      *
      * Add an extension for use in templates
      *
-     * @param AbstractExtension $extension
+     * @param  AbstractExtension  $extension
      * @return void
      *
      */
@@ -100,22 +129,21 @@ class Engine
         static::$extensions[] = $extension;
     }
 
-    // -------------------------------------------------- Private  -------------------------------------------------- //
+    // -------------------------------------------------- Private -------------------------------------------------- //
 
     private function setupExtensions(): void
     {
-        $this->twig->addFunction($debug);
-        $this->twig->addFunction($env);
+        $this->twig->addExtension(new Bundled());
 
-        foreach (self::$extensions as $extension) {
+        foreach (static::$extensions as $extension) {
             $this->twig->addExtension($extension);
         }
 
-        foreach (self::$filters as $filter) {
+        foreach (static::$filters as $filter) {
             $this->twig->addFilter($filter);
         }
 
-        foreach (self::$functions as $function) {
+        foreach (static::$functions as $function) {
             $this->twig->addFunction($function);
         }
     }

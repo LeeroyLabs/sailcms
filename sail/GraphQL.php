@@ -22,7 +22,7 @@ class GraphQL
      *
      * Add a Query to the Schema
      *
-     * @param Query $query
+     * @param  Query  $query
      * @return void
      *
      */
@@ -74,21 +74,23 @@ class GraphQL
             $data = ['query' => $query, 'variables' => $variableValues];
 
             if (!empty($input['query'])) {
-                Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeQuery, data: $data));
+                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeQuery, data: $data));
             } else {
-                Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeMutation, data: $data));
+                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeMutation, data: $data));
             }
 
-            $result = GQL::executeQuery(static::$schema, $query, null, new Context(), $variableValues);
+            $data = $mresult->data;
+
+            $result = GQL::executeQuery(static::$schema, $data['query'], null, new Context(), $data['variables']);
             $serializableResult = $result->toArray();
 
             if (!empty($input['query'])) {
-                Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterQuery, data: $result));
+                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterQuery, data: $result));
             } else {
-                Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $result));
+                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $result));
             }
-
-            return json_encode($serializableResult, JSON_THROW_ON_ERROR);
+            
+            return json_encode($mresult->data, JSON_THROW_ON_ERROR);
         } catch (InvariantViolation $e) {
             echo $e->getMessage();
             return json_encode([], JSON_THROW_ON_ERROR);
