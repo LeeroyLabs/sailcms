@@ -35,8 +35,9 @@
         "league/flysystem": "^3.2",
         "league/mime-type-detection": "^1.11",
         "spatie/ray": "^1.36",
-        "splitbrain/php-cli": "^1.2",
-        "symfony/yaml": "^6.1"
+        "symfony/yaml": "^6.1",
+        "nunomaduro/termwind": "^1.14",
+        "symfony/console": "^6.1"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

@@ -31,4 +31,9 @@ class Container extends AppContainer
     {
         // Register your middlewares
     }
+
+    public function cli(): array
+    {
+        return [];
+    }
 }

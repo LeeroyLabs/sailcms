@@ -41,4 +41,9 @@ class Container extends AppContainer
     {
         // TODO: Implement middleware() method.
     }
+
+    public function cli(): array
+    {
+        return [];
+    }
 }

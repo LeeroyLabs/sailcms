@@ -2,12 +2,9 @@
 
 namespace SailCMS\Contracts;
 
-abstract class AppModule
+interface AppModule
 {
-    abstract public function middleware(): void;
-    
-    public function __construct()
-    {
-        // TODO: IMPLEMENT WHATEVER
-    }
+    public function middleware(): void;
+
+    public function cli(): array;
 }

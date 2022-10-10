@@ -19,6 +19,8 @@ use Whoops\Run;
 
 class Sail
 {
+    public const SAIL_VERSION = '3.0.0-next.1';
+
     // Directories
     private static string $workingDirectory = '';
     private static string $configDirectory = '';
@@ -31,6 +33,8 @@ class Sail
 
     // Error Handler
     private static Run $errorHandler;
+
+    private static bool $isCLI = false;
 
     /**
      *
@@ -220,6 +224,10 @@ class Sail
 
                         // Run middleware registration
                         $instance->middleware();
+
+                        // Run the command registration
+                        $commands = $instance->cli();
+                        CLI::$registeredCommands = [...CLI::$registeredCommands, $commands];
                     }
                 } else {
                     throw new FileException("Container {$className} does not exist or is not named properly. Please verify and try again.", 0404);
@@ -252,9 +260,13 @@ class Sail
                     // Register only if the site should load it
                     if ($info->sites->contains(static::$currentApp)) {
                         Register::instance()->registerModule($info, $instance, $moduleName);
-                        
+
                         // Run middleware registration
                         $instance->middleware();
+
+                        // Run the command registration
+                        $commands = $instance->cli();
+                        CLI::$registeredCommands = [...CLI::$registeredCommands, $commands];
                     }
                 } else {
                     throw new FileException("Module {$className} does not exist or is not named properly. Please verify and try again.", 0404);
@@ -293,6 +305,7 @@ class Sail
     public static function initForCron(string $execPath): void
     {
         static::$workingDirectory = dirname($execPath);
+        static::$isCLI = true;
 
         $securitySettings = [];
         include_once static::$workingDirectory . '/config/security.php';
@@ -322,6 +335,7 @@ class Sail
     public static function initForCli(string $execPath): void
     {
         static::$workingDirectory = $execPath;
+        static::$isCLI = true;
 
         $securitySettings = [];
         include_once static::$workingDirectory . '/config/security.php';
@@ -333,7 +347,7 @@ class Sail
         static::$errorHandler->pushHandler($ph);
         static::$errorHandler->register();
 
-        static::bootBasics($securitySettings, true);
+        static::bootBasics($securitySettings);
     }
 
     /**

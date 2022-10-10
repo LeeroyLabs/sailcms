@@ -21,6 +21,8 @@ abstract class AppContainer
 
     abstract public function middleware(): void;
 
+    abstract public function cli(): array;
+
     public function __construct()
     {
         $this->router = new Router();
