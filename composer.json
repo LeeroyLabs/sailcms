@@ -37,7 +37,12 @@
         "spatie/ray": "^1.36",
         "symfony/yaml": "^6.1",
         "nunomaduro/termwind": "^1.14",
-        "symfony/console": "^6.1"
+        "symfony/console": "^6.1",
+        "robthree/twofactorauth": "^1.8",
+        "bacon/bacon-qr-code": "^2.0",
+        "ramsey/uuid": "^4.5",
+        "monolog/monolog": "^3.2",
+        "ext-curl": "*"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

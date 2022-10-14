@@ -2,6 +2,7 @@
 
 namespace SailCMS\Containers\Users;
 
+use SailCMS\Collection;
 use SailCMS\Contracts\AppContainer;
 use SailCMS\GraphQL\Query;
 use SailCMS\GraphQL;
@@ -42,8 +43,8 @@ class Container extends AppContainer
         // TODO: Implement middleware() method.
     }
 
-    public function cli(): array
+    public function cli(): Collection
     {
-        return [];
+        return new Collection([]);
     }
 }

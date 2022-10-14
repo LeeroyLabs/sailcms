@@ -2,6 +2,7 @@
 
 namespace SailCMS\Database;
 
+use MongoDB\Model\BSONArray;
 use SailCMS\Text;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\QueryOptions;
@@ -12,6 +13,8 @@ use \MongoDB\Collection;
 
 abstract class BaseModel
 {
+    public ObjectId $_id;
+
     private Collection $collection;
 
     // Query operation Data
@@ -43,7 +46,7 @@ abstract class BaseModel
      * Make a value safe for querying. You should never query using a value
      * that is not either a string or number, unless you are sure that it's safe.
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return string|int|bool|float
      * @throws \JsonException
      *
@@ -112,8 +115,10 @@ abstract class BaseModel
 
         try {
             if ($this->currentOp === 'distinct') {
-                $results = call_user_func([$this->collection,
-                    $this->currentOp], $this->currentField, $this->currentQuery, $options);
+                $results = call_user_func([
+                    $this->collection,
+                    $this->currentOp
+                ], $this->currentField, $this->currentQuery, $options);
             } else {
                 $results = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
             }
@@ -143,8 +148,8 @@ abstract class BaseModel
      * Auto-populate a field when it is fetched from the database
      * (must be an ObjectId or a string representation)
      *
-     * @param string $field
-     * @param string $model
+     * @param  string  $field
+     * @param  string  $model
      * @return $this
      *
      */
@@ -162,8 +167,8 @@ abstract class BaseModel
      *
      * Find by id
      *
-     * @param string|ObjectId $id
-     * @param QueryOptions|null $options
+     * @param  string|ObjectId    $id
+     * @param  QueryOptions|null  $options
      * @return $this
      *
      */
@@ -191,8 +196,8 @@ abstract class BaseModel
      *
      * Find many records
      *
-     * @param array $query
-     * @param QueryOptions|null $options
+     * @param  array              $query
+     * @param  QueryOptions|null  $options
      * @return $this
      *
      */
@@ -216,8 +221,8 @@ abstract class BaseModel
      *
      * Find one
      *
-     * @param array $query
-     * @param QueryOptions|null $options
+     * @param  array              $query
+     * @param  QueryOptions|null  $options
      * @return $this
      */
     protected function findOne(array $query, QueryOptions|null $options = null): BaseModel
@@ -239,9 +244,9 @@ abstract class BaseModel
      *
      * Find distinct documents
      *
-     * @param string $field
-     * @param array $query
-     * @param QueryOptions|null $options
+     * @param  string             $field
+     * @param  array              $query
+     * @param  QueryOptions|null  $options
      * @return $this
      *
      */
@@ -265,7 +270,7 @@ abstract class BaseModel
      *
      * Run an aggregate request
      *
-     * @param array $pipeline
+     * @param  array  $pipeline
      * @return array
      * @throws DatabaseException
      *
@@ -290,7 +295,7 @@ abstract class BaseModel
      *
      * Insert a record and return its ID
      *
-     * @param object|array $doc
+     * @param  object|array  $doc
      * @return mixed|void
      * @throws DatabaseException
      *
@@ -309,7 +314,7 @@ abstract class BaseModel
      *
      * Insert many records and return the ids
      *
-     * @param array $docs
+     * @param  array  $docs
      * @return ObjectId[]
      * @throws DatabaseException
      *
@@ -331,8 +336,8 @@ abstract class BaseModel
      *
      * Update a single record
      *
-     * @param array $query
-     * @param array $update
+     * @param  array  $query
+     * @param  array  $update
      * @return int
      * @throws DatabaseException
      *
@@ -350,8 +355,8 @@ abstract class BaseModel
      *
      * Update many records
      *
-     * @param array $query
-     * @param array $update
+     * @param  array  $query
+     * @param  array  $update
      * @return int
      * @throws DatabaseException
      *
@@ -369,7 +374,7 @@ abstract class BaseModel
      *
      * Delete a record
      *
-     * @param array $query
+     * @param  array  $query
      * @return int
      * @throws DatabaseException
      *
@@ -387,7 +392,7 @@ abstract class BaseModel
      *
      * Delete many records
      *
-     * @param array $query
+     * @param  array  $query
      * @return int
      * @throws DatabaseException
      *
@@ -405,7 +410,7 @@ abstract class BaseModel
      *
      * Delete a record by its ID
      *
-     * @param string|ObjectId $id
+     * @param  string|ObjectId  $id
      * @return int
      * @throws DatabaseException
      *
@@ -429,7 +434,7 @@ abstract class BaseModel
      *
      * Count the number of records that match the query
      *
-     * @param array $query
+     * @param  array  $query
      * @return int
      *
      */
@@ -442,7 +447,7 @@ abstract class BaseModel
      *
      * Create an Index
      *
-     * @param array $index
+     * @param  array  $index
      * @throws DatabaseException
      *
      */
@@ -459,7 +464,7 @@ abstract class BaseModel
      *
      * Create many indexes
      *
-     * @param array $indexes
+     * @param  array  $indexes
      * @throws DatabaseException
      *
      */
@@ -476,7 +481,7 @@ abstract class BaseModel
      *
      * Delete an index
      *
-     * @param string $index
+     * @param  string  $index
      * @throws DatabaseException
      *
      */
@@ -493,7 +498,7 @@ abstract class BaseModel
      *
      * Delete indexes
      *
-     * @param array $indexes
+     * @param  array  $indexes
      * @throws DatabaseException
      *
      */
@@ -526,7 +531,6 @@ abstract class BaseModel
                     $doc[$field] = $this->{$field};
                 }
             }
-
         }
 
         try {
@@ -540,7 +544,7 @@ abstract class BaseModel
      *
      * Turn php timestamp (seconds) to a MongoDB compatible Date object
      *
-     * @param int|float $time
+     * @param  int|float  $time
      * @return UTCDateTime
      *
      */
@@ -553,8 +557,8 @@ abstract class BaseModel
      *
      * This should be overridden to apply specific changes to fields when they are fetched
      *
-     * @param string $field
-     * @param mixed $value
+     * @param  string  $field
+     * @param  mixed   $value
      * @return mixed
      *
      */
@@ -567,8 +571,8 @@ abstract class BaseModel
      *
      * This should be overridden to apply specific changes to fields when they are being written to database
      *
-     * @param string $field
-     * @param mixed $value
+     * @param  string  $field
+     * @param  mixed   $value
      * @return mixed
      *
      */
@@ -598,7 +602,7 @@ abstract class BaseModel
      *
      * Transform mongodb objects to clean php objects
      *
-     * @param object $doc
+     * @param  object  $doc
      * @return $this
      *
      */
@@ -611,15 +615,17 @@ abstract class BaseModel
             // Only take what is declared in fields
             if (in_array($k, $fields, true)) {
                 if (is_object($v)) {
-                    if ($k !== '_id' && $v instanceof \MongoDB\Model\BSONArray) {
-                        $instance->{$k} = $this->processOnFetch($k, $v->bsonSerialize());
-                    } elseif ($v instanceof \MongoDB\BSON\UTCDateTime) {
+                    if ($k !== '_id' && get_class($v) === BSONArray::class) {
+                        $instance->{$k} = new \SailCMS\Collection($this->processOnFetch($k, $v->bsonSerialize()));
+                    } elseif (get_class($v) === UTCDateTime::class) {
                         $instance->{$k} = $this->processOnFetch($k, new Carbon($v->toDateTime()));
-                    } elseif (!$v instanceof \MongoDB\BSON\ObjectId) {
+                    } elseif (get_class($v) !== ObjectId::class) {
                         $instance->{$k} = $this->processOnFetch($k, $this->parseRegularObject($v));
                     } else {
                         $instance->{$k} = $this->processOnFetch($k, $v);
                     }
+                } elseif (is_array($v)) {
+                    $instance->{$k} = new \SailCMS\Collection($this->processOnFetch($k, $v));
                 } else {
                     $instance->{$k} = $this->processOnFetch($k, $v);
                 }
@@ -633,7 +639,7 @@ abstract class BaseModel
      *
      * Process regular variables recursively
      *
-     * @param object $obj
+     * @param  object  $obj
      * @return \stdClass
      *
      */
@@ -643,9 +649,9 @@ abstract class BaseModel
 
         foreach ($obj as $k => $v) {
             if (is_object($v)) {
-                if ($v instanceof \MongoDB\BSON\ObjectId) {
+                if (get_class($v) === ObjectId::class) {
                     $out->{$k} = $this->processOnFetch($k, $v);
-                } elseif ($v instanceof \MongoDB\Model\BSONArray) {
+                } elseif (get_class($v) === BSONArray::class) {
                     $out->{$k} = $this->processOnFetch($k, $v->bsonSerialize());
                 } else {
                     $out->{$k} = $this->processOnFetch($k, $this->parseRegularObject($v));
@@ -662,7 +668,7 @@ abstract class BaseModel
      *
      * Simplify a variable to be easily encoded to json
      *
-     * @param mixed $entity
+     * @param  mixed  $entity
      * @return mixed
      *
      */
@@ -695,7 +701,7 @@ abstract class BaseModel
      *
      * Prepare document to be written, transform Carbon dates to MongoDB dates
      *
-     * @param array $doc
+     * @param  array  $doc
      * @return array
      *
      */
@@ -704,6 +710,10 @@ abstract class BaseModel
         foreach ($doc as $key => $value) {
             if ($value instanceof Carbon) {
                 $doc[$key] = $this->processOnStore($key, new UTCDateTime($value->toDateTime()->getTimestamp() * 1000));
+            } elseif (is_scalar($value)) {
+                $doc[$key] = $this->processOnStore($key, $value);
+            } elseif (get_class($value) === \SailCMS\Collection::class) {
+                $doc[$key] = $value->unwrap();
             } elseif (is_array($value) || is_object($value)) {
                 $doc[$key] = $this->processOnStore($key, $this->prepareForWrite($value));
             } else {

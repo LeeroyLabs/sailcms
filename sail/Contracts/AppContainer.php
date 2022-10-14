@@ -2,6 +2,7 @@
 
 namespace SailCMS\Contracts;
 
+use SailCMS\Collection;
 use SailCMS\Routing\Router;
 use SailCMS\Types\ContainerInformation;
 
@@ -21,7 +22,7 @@ abstract class AppContainer
 
     abstract public function middleware(): void;
 
-    abstract public function cli(): array;
+    abstract public function cli(): Collection;
 
     public function __construct()
     {

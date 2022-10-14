@@ -1,0 +1,13 @@
+system_2fa:
+  secure: Sécure - Recommandé
+  compat: Compatibilité - Moins Sécure
+  how_to: Comment activer votre identification à deux facteurs
+  step_1: Téléchargez une application (comme Google Authenticator) sur votre appareil mobile.
+  step_2: Scannez le code QR.
+  step_3: Entrez et vérifiez le code d'authentification généré par l'application.
+  important_note: "Note importante: Si vous utilisez MS Authenticator, veuillez utiliser la version Compatible du code QR."
+  verify: Vérifier
+  clear: Recommencer
+  invalid_code: Code invalide
+  activated_success: Identification à deux facteurs activée!
+  rescue_codes: Veuillez garder ces codes de sécurité à un endroit sécuritaire. Ces codes vous seront utiles pour accèder à votre compte en cas de perte de votre appareil mobile.

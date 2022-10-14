@@ -19,7 +19,7 @@ class CLI
 {
     public const CLI_VERSION = '1.0.0-next.1';
     private static string $workingDirectory = '';
-    public static array $registeredCommands = [];
+    public static Collection $registeredCommands;
 
     public function __construct(string $path)
     {
@@ -53,10 +53,8 @@ class CLI
         $application->add(new Command());
 
         // Custom commands
-        foreach (static::$registeredCommands as $commands) {
-            foreach ($commands as $command) {
-                $application->add(new $command());
-            }
+        foreach (static::$registeredCommands as $command) {
+            $application->add(new $command());
         }
 
         $application->run();

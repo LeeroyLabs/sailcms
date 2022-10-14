@@ -37,7 +37,10 @@ class Debug
     public static function ray(): void
     {
         $variables = func_get_args();
-        ray(...$variables);
+
+        if ($_ENV['SETTINGS']->get('logging.useRay')) {
+            ray(...$variables);
+        }
     }
 
     /**
@@ -66,7 +69,7 @@ class Debug
         $name = basename($caller['file']);
         $line = $caller['line'];
 
-        if ($_ENV['SETTINGS']->get('useRay')) {
+        if ($_ENV['SETTINGS']->get('logging.useRay')) {
             ray(...$variables);
         }
 

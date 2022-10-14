@@ -168,11 +168,12 @@ class Response
      *
      * Render the response
      *
+     * @param  bool  $executeMiddleware
      * @return void
      * @throws JsonException|FileException|FilesystemException|LoaderError|RuntimeError|SyntaxError
      *
      */
-    public function render(): void
+    public function render(bool $executeMiddleware = true): void
     {
         if ($this->secure) {
             header('Content-type: text/plain');
@@ -186,8 +187,10 @@ class Response
         }
 
         // Before we render
-        $result = Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeRender, data: $this->data));
-        $this->data = $result->data;
+        if ($executeMiddleware) {
+            $result = Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeRender, data: $this->data));
+            $this->data = $result->data;
+        }
 
         switch ($this->type) {
             case 'text/html':

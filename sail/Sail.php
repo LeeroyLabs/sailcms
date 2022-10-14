@@ -8,10 +8,15 @@ use League\Flysystem\FilesystemException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
+use SailCMS\Http\Input\Post;
+use SailCMS\Http\Request;
+use SailCMS\Http\Response;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Routing\Router;
+use SailCMS\Security\TwoFactorAuthenticationController;
 use SailCMS\Types\MiddlewareType;
+use SodiumException;
 use Whoops\Handler\JsonResponseHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Handler\PlainTextHandler;
@@ -50,6 +55,7 @@ class Sail
      * @throws JsonException
      * @throws SiteException
      * @throws FilesystemException
+     * @throws SodiumException
      *
      */
     public static function init(string $execPath): void
@@ -72,7 +78,7 @@ class Sail
         }
 
         if ($isWeb) {
-            foreach ($securitySettings['envBlacklist'] as $key => $value) {
+            foreach ($securitySettings['envBlacklist'] as $value) {
                 $ph->blacklist('_ENV', $value);
             }
         }
@@ -81,6 +87,39 @@ class Sail
         static::$errorHandler->register();
 
         static::bootBasics($securitySettings);
+
+        // 2FA Handling
+        if (stripos($_SERVER['REQUEST_URI'], '/v1/tfa') === 0) {
+            if ($_SERVER['REQUEST_URI'] === '/v1/tfa' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $req = new Request();
+
+                // Fail if one or both are missing
+                if (empty($req->post('uid')) || empty($req->post('code'))) {
+                    header('HTTP/1.0 400 Bad Request');
+                    die();
+                }
+
+                $tfa = new TwoFactorAuthenticationController($req->post('uid'));
+                $tfa->validate($req->post('code'));
+                $tfa->render();
+                exit();
+            }
+
+            $whitelist = explode(',', $_ENV['TFA_WHITELIST']);
+            $url = parse_url($_SERVER['HTTP_REFERER']);
+
+            if (in_array($url['host'], $whitelist, true)) {
+                $parts = explode('/', $_SERVER['REQUEST_URI']);
+
+                Locale::setCurrent($parts[3]);
+                $tfa = new TwoFactorAuthenticationController($parts[4]);
+                $tfa->render();
+                exit();
+            }
+
+            header('HTTP/1.0 403 Forbidden');
+            die();
+        }
 
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
@@ -162,6 +201,9 @@ class Sail
             error_reporting(E_ALL);
         }
 
+        // Initialize the logger
+        Log::init();
+
         // Determine the Template directory for the site
         static::$templateDirectory = static::$workingDirectory . '/templates/' . static::$currentApp;
         static::$cacheDirectory = static::$workingDirectory . '/storage/cache/' . static::$currentApp;
@@ -227,7 +269,12 @@ class Sail
 
                         // Run the command registration
                         $commands = $instance->cli();
-                        CLI::$registeredCommands = [...CLI::$registeredCommands, $commands];
+
+                        if (empty(CLI::$registeredCommands)) {
+                            CLI::$registeredCommands = new Collection([]);
+                        }
+
+                        CLI::$registeredCommands->pushSpread($commands);
                     }
                 } else {
                     throw new FileException("Container {$className} does not exist or is not named properly. Please verify and try again.", 0404);
@@ -266,7 +313,12 @@ class Sail
 
                         // Run the command registration
                         $commands = $instance->cli();
-                        CLI::$registeredCommands = [...CLI::$registeredCommands, $commands];
+
+                        if (empty(CLI::$registeredCommands)) {
+                            CLI::$registeredCommands = new Collection([]);
+                        }
+
+                        CLI::$registeredCommands->pushSpread($commands);
                     }
                 } else {
                     throw new FileException("Module {$className} does not exist or is not named properly. Please verify and try again.", 0404);

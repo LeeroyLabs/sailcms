@@ -79,12 +79,17 @@ class Request
      *
      * Get user input using xss filtering
      *
-     * @param string $key
+     * @param  string  $key
+     * @param  bool    $skip
      * @return mixed
      *
      */
-    public function get(string $key): mixed
+    public function get(string $key, bool $skip = false): mixed
     {
+        if ($skip) {
+            return $_GET[$key];
+        }
+
         return $this->_get->get($key);
     }
 
@@ -92,12 +97,17 @@ class Request
      *
      * Post user input using xss filtering
      *
-     * @param string $key
+     * @param  string  $key
+     * @param  bool    $skip
      * @return mixed
      *
      */
-    public function post(string $key): mixed
+    public function post(string $key, bool $skip = false): mixed
     {
+        if ($skip) {
+            return $_POST[$key];
+        }
+
         return $this->_post->get($key);
     }
 
@@ -105,7 +115,7 @@ class Request
      *
      * Get a specific header
      *
-     * @param string $key
+     * @param  string  $key
      * @return mixed
      *
      */

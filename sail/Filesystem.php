@@ -48,11 +48,24 @@ class Filesystem
         $wd = Sail::getWorkingDirectory();
 
         static::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'));
-        static::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/' . Sail::currentApp() . '/'));
+        static::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/' . Sail::currentApp() . '/'));
+        static::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/' . Sail::currentApp() . '/logs/'));
         static::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));
         static::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/install/'));
         static::$adapters['cms'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/cms/'));
         static::$adapters['cms_root'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/'));
+    }
+
+    /**
+     *
+     * Get the logs folder path
+     *
+     * @return string
+     *
+     */
+    public static function getLogsPath(): string
+    {
+        return Sail::getWorkingDirectory() . '/storage/fs/' . Sail::currentApp() . '/logs';
     }
 
     /**

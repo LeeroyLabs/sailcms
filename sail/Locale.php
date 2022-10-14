@@ -132,6 +132,9 @@ class Locale
             static::$strings = $yaml;
         }
 
+        // General CMS Locales
+        self::loadFromDirectories(['cms_root://sail']);
+
         // Load all container locale files
         self::loadFromDirectories($fs->listContents('root://containers', false)->toArray());
 
@@ -153,8 +156,19 @@ class Locale
         $fs = Filesystem::manager();
 
         foreach ($directories as $directory) {
-            if ($directory->isDir()) {
+            if (is_object($directory) && $directory->isDir()) {
                 $path = $directory->path() . '/locales';
+
+                if ($fs->directoryExists($path) && $fs->fileExists($path . '/' . static::$current . '.yaml')) {
+                    $file = $fs->read($path . '/' . static::$current . '.yaml');
+                    $yaml = Yaml::parse($file);
+
+                    if (!empty($yaml)) {
+                        static::$strings = [...$yaml];
+                    }
+                }
+            } elseif (is_string($directory)) {
+                $path = $directory . '/locales';
 
                 if ($fs->directoryExists($path) && $fs->fileExists($path . '/' . static::$current . '.yaml')) {
                     $file = $fs->read($path . '/' . static::$current . '.yaml');

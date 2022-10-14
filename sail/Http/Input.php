@@ -7,7 +7,7 @@ abstract class Input
     protected $pairs = [];
 
     /**
-     * @param string $key
+     * @param  string  $key
      * @return mixed
      */
     public function get(string $key): mixed
@@ -38,7 +38,6 @@ abstract class Input
         }
 
         return $data;
-
     }
 
     private function xssFilter(string $data): string
@@ -53,8 +52,10 @@ abstract class Input
         $data = preg_replace('#(<[^>]+?[\x00-\x20"\'])(?:on|xmlns)[^>]*+>#iu', '$1>', $data);
 
         // Remove javascript: and vbscript: protocols
-        $data = preg_replace('#([a-z]*)[\x00-\x20]*=[\x00-\x20]*([`\'"]*)[\x00-\x20]*j[\x00-\x20]*a[\x00-\x20]*v[\x00-\x20]*a[\x00-\x20]*s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:#iu', '$1=$2nojavascript...', $data);
-        $data = preg_replace('#([a-z]*)[\x00-\x20]*=([\'"]*)[\x00-\x20]*v[\x00-\x20]*b[\x00-\x20]*s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:#iu', '$1=$2novbscript...', $data);
+        $data = preg_replace('#([a-z]*)[\x00-\x20]*=[\x00-\x20]*([`\'"]*)[\x00-\x20]*j[\x00-\x20]*a[\x00-\x20]*v[\x00-\x20]*a[\x00-\x20]*s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:#iu',
+            '$1=$2nojavascript...', $data);
+        $data = preg_replace('#([a-z]*)[\x00-\x20]*=([\'"]*)[\x00-\x20]*v[\x00-\x20]*b[\x00-\x20]*s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:#iu',
+            '$1=$2novbscript...', $data);
         $data = preg_replace('#([a-z]*)[\x00-\x20]*=([\'"]*)[\x00-\x20]*-moz-binding[\x00-\x20]*:#u', '$1=$2nomozbinding...', $data);
 
         // Only works in IE: <span style="width: expression(alert('Ping!'));"></span>
@@ -64,6 +65,9 @@ abstract class Input
 
         // Remove namespaced elements (we do not need them)
         $data = preg_replace('#</*\w+:\w[^>]*+>#i', '', $data);
+
+        // Remove possible MongoDB Injection
+        $data = str_replace(['$ne', '$in', '$nin', '/^' . '/$', '$regex', '$match', '$exists', 'function'], '', $data);
 
         do {
             // Remove really unwanted tags
