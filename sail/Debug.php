@@ -31,15 +31,44 @@ class Debug
      *
      * Output variables to ray
      *
+     * @param  mixed  ...$variables
      * @return void
      *
      */
-    public static function ray(): void
+    public static function ray(mixed ...$variables): void
     {
-        $variables = func_get_args();
+        $level = 'debug';
+
+        if (count($variables) > 1) {
+            $level = $variables[count($variables) - 1];
+            unset($variables[count($variables) - 1]);
+        }
+
+        switch ($level) {
+            default:
+            case 'debug':
+            case 'log':
+                $levelColor = 'blue';
+                break;
+
+            case 'success':
+                $levelColor = 'green';
+                break;
+
+            case 'warning':
+            case 'warn':
+                $levelColor = 'yellow';
+                break;
+
+            case 'critical':
+            case 'error':
+                $levelColor = 'red';
+                break;
+        }
+
 
         if ($_ENV['SETTINGS']->get('logging.useRay')) {
-            ray(...$variables);
+            ray(...$variables)->color($levelColor);
         }
     }
 

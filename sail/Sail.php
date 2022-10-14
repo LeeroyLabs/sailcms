@@ -13,6 +13,7 @@ use SailCMS\Http\Request;
 use SailCMS\Http\Response;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
+use SailCMS\Models\User;
 use SailCMS\Routing\Router;
 use SailCMS\Security\TwoFactorAuthenticationController;
 use SailCMS\Types\MiddlewareType;
@@ -148,6 +149,9 @@ class Sail
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
     {
+        // Initialize the ACLs
+        ACL::init();
+        
         // Detect what site we are on
         $environments = [];
         include_once static::$workingDirectory . '/config/apps.env.php';
@@ -215,6 +219,9 @@ class Sail
         // Initialize the router
         Router::init();
 
+        // Authenticate user
+        User::authenticate();
+
         // Load system containers
         static::loadContainerFromComposer(dirname(__DIR__));
 
@@ -267,8 +274,13 @@ class Sail
                         // Run middleware registration
                         $instance->middleware();
 
+                        // Run the ACL registration
+                        $acls = $instance->permissions();
+
+                        ACL::loadCustom($acls);
+
                         // Run the command registration
-                        $commands = $instance->cli();
+                        $commands = $instance->cli()->unwrap();
 
                         if (empty(CLI::$registeredCommands)) {
                             CLI::$registeredCommands = new Collection([]);

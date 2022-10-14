@@ -20,17 +20,17 @@ class Container extends AppContainer
     public function routes(): void
     {
         // Read
-        $this->router->redirect($this->currentApiURL . '/users', $this->currentApiURL . '/users/1');
-        $this->router->get($this->currentApiURL . '/users/:num', 'en', UserRestController::class, 'getList');
-        $this->router->get($this->currentApiURL . '/users/:any', 'en', UserRestController::class, 'getUser');
+//        $this->router->redirect($this->currentApiURL . '/users', $this->currentApiURL . '/users/1');
+//        $this->router->get($this->currentApiURL . '/users/:num', 'en', UserRestController::class, 'getList');
+//        $this->router->get($this->currentApiURL . '/users/:any', 'en', UserRestController::class, 'getUser');
         // Write
     }
 
     public function graphql(): void
     {
-        GraphQL::addQuery(
-            Query::init('user', [UserGraphqlController::class, 'getUser'], ['id' => GTypes::string()], Types::user())
-        );
+//        GraphQL::addQuery(
+//            Query::init('user', [UserGraphqlController::class, 'getUser'], ['id' => GTypes::string()], Types::user())
+//        );
     }
 
     public function configureSearch(): void
@@ -44,6 +44,11 @@ class Container extends AppContainer
     }
 
     public function cli(): Collection
+    {
+        return new Collection([]);
+    }
+
+    public function permissions(): Collection
     {
         return new Collection([]);
     }

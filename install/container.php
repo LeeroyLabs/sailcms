@@ -2,6 +2,7 @@
 
 namespace [NAME];
 
+use SailCMS\Collection;
 use SailCMS\Types\ContainerInformation;
 use SailCMS\Contracts\AppContainer;
 
@@ -32,8 +33,13 @@ class Container extends AppContainer
         // Register your middlewares
     }
 
-    public function cli(): array
+    public function cli(): Collection
     {
-        return [];
+        return new Collection([]);
+    }
+
+    public function permissions(): Collection
+    {
+        return new Collection([]);
     }
 }

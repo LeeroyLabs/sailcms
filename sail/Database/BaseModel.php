@@ -2,6 +2,7 @@
 
 namespace SailCMS\Database;
 
+use JsonException;
 use MongoDB\Model\BSONArray;
 use SailCMS\Text;
 use SailCMS\Errors\DatabaseException;
@@ -43,12 +44,29 @@ abstract class BaseModel
 
     /**
      *
+     * Make sure the value given is already an ObjectId or transform it to one
+     *
+     * @param  string|ObjectId  $id
+     * @return ObjectId
+     *
+     */
+    public function ensureObjectId(string|ObjectId $id): ObjectId
+    {
+        if (is_string($id)) {
+            return new ObjectId($id);
+        }
+
+        return $id;
+    }
+
+    /**
+     *
      * Make a value safe for querying. You should never query using a value
      * that is not either a string or number, unless you are sure that it's safe.
      *
      * @param  mixed  $value
      * @return string|int|bool|float
-     * @throws \JsonException
+     * @throws JsonException
      *
      */
     protected function safe(mixed $value): string|int|bool|float
@@ -535,7 +553,7 @@ abstract class BaseModel
 
         try {
             return json_encode($doc, JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT | JSON_PRETTY_PRINT);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             return "{}";
         }
     }

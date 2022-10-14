@@ -7,6 +7,13 @@ use SailCMS\Errors\DatabaseException;
 
 class User extends BaseModel
 {
+    public static User $currentUser;
+
+    public static function authenticate(): void
+    {
+        static::$currentUser = new User();
+    }
+
     public function fields(): array
     {
         return ['_id', 'name', 'role', 'email', 'status', 'avatar'];
@@ -16,7 +23,7 @@ class User extends BaseModel
      *
      * Get user by id
      *
-     * @param string $id
+     * @param  string  $id
      * @return User|null
      *
      * @throws DatabaseException
@@ -32,7 +39,7 @@ class User extends BaseModel
      *
      * Get User by id
      *
-     * @param string $id
+     * @param  string  $id
      * @return User|null
      * @throws DatabaseException
      *
