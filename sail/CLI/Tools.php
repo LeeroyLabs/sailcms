@@ -1,6 +1,6 @@
 <?php
 
-namespace SailCMS\Cli;
+namespace SailCMS\CLI;
 
 use Exception;
 use League\Flysystem\FilesystemException;

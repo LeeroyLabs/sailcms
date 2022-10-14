@@ -137,9 +137,6 @@ class Locale
 
         // Load all container locale files
         self::loadFromDirectories($fs->listContents('root://containers', false)->toArray());
-
-        // Load all system containers locale files
-        self::loadFromDirectories($fs->listContents('cms_root://sail/containers', false)->toArray());
     }
 
     /**

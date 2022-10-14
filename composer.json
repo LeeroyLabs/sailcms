@@ -57,8 +57,6 @@
         "test": "./vendor/bin/pest"
     },
     "sailcms": {
-        "containers": [
-            "SailCMS\\Containers\\Users"
-        ]
+        "containers": []
     }
 }

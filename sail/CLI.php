@@ -53,8 +53,10 @@ class CLI
         $application->add(new Command());
 
         // Custom commands
-        foreach (static::$registeredCommands as $command) {
-            $application->add(new $command());
+        foreach (static::$registeredCommands->unwrap() as $commands) {
+            foreach ($commands as $command) {
+                $application->add(new $command());
+            }
         }
 
         $application->run();

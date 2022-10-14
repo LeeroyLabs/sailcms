@@ -1,16 +1,17 @@
 <?php
 
-namespace SailCMS\Containers\Users\GraphQL;
+namespace SailCMS\GraphQL\Types;
 
 use GraphQL\Type\Definition\EnumType;
+use GraphQL\Type\Definition\ListOfType;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
 use SailCMS\Collection;
 use SailCMS\Models\Role;
 use SailCMS\Errors\DatabaseException;
-use \SailCMS\GraphQL\Types as GTypes;
+use SailCMS\GraphQL\Types as GTypes;
 
-class Types
+class User
 {
     public static Collection $roles;
 
@@ -30,10 +31,10 @@ class Types
                 '_id' => ['type' => GTypes::ID()],
                 'name' => ['type' => Type::nonNull(static::fullname())],
                 'email' => ['type' => GTypes::string()],
-                'role' => ['type' => Type::nonNull(static::userType())],
+                'role' => ['type' => GTypes::string()],
                 'status' => ['type' => GTypes::boolean()],
                 'avatar' => ['type' => GTypes::string()],
-                'test' => ['type' => Type::listOf(Gtypes::string())]
+                'permissions' => ['type' => Type::listOf(GTypes::string())]
             ]
         ]);
     }
@@ -54,36 +55,6 @@ class Types
                 'last' => ['type' => GTypes::string()],
                 'full' => ['type' => GTypes::string()]
             ]
-        ]);
-    }
-
-    /**
-     *
-     * Generate the UserType type instance
-     *
-     * @return Type
-     * @throws DatabaseException
-     *
-     */
-    public static function userType(): Type
-    {
-        if (!isset(static::$roles)) {
-            static::$roles = Role::getAll();
-        }
-
-        $values = [
-            'USER' => ['value' => 'user'],
-            'AUTHOR' => ['value' => 'author'],
-            'ADMIN' => ['value' => 'admin'],
-        ];
-
-        foreach (static::$roles->unwrap() as $role) {
-            $values[strtoupper($role->slug)] = ['value' => $role->slug];
-        }
-
-        return new EnumType([
-            'name' => 'UserType',
-            'values' => $values
         ]);
     }
 }
