@@ -42,7 +42,9 @@
         "bacon/bacon-qr-code": "^2.0",
         "ramsey/uuid": "^4.5",
         "monolog/monolog": "^3.2",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "josantonius/session": "^2.0",
+        "lcobucci/jwt": "^4.2"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

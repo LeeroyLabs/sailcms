@@ -5,6 +5,14 @@ namespace SailCMS;
 use SailCMS\Types\Sorting;
 use SailCMS\Text;
 
+/**
+ *
+ * @property int         $length
+ * @property false|mixed $first
+ * @property false|mixed $last
+ * @property bool        empty
+ *
+ */
 class Collection implements \JsonSerializable, \Iterator
 {
     private array $_internal;

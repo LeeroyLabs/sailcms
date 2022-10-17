@@ -8,16 +8,18 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Text;
 
 class Role extends BaseModel
 {
     public string $name;
     public string $description;
+    public int $level;
     public Collection $permissions;
 
-    public function fields(): array
+    public function fields(bool $fetchAllFields = false): array
     {
-        return ['_id', 'name', 'description', 'permissions'];
+        return ['_id', 'name', 'description', 'level', 'permissions'];
     }
 
     /**
@@ -35,7 +37,12 @@ class Role extends BaseModel
     public function add(string $name, string $description, Collection|array $permissions): string
     {
         if (ACL::hasPermission(User::$currentUser, ACL::write('role'))) {
-            return $this->insert(['name' => $name, 'description' => $description, 'permissions' => $permissions]);
+            return $this->insert([
+                'name' => $name,
+                'slug' => Text::kebabCase(Text::deburr($name)),
+                'description' => $description,
+                'permissions' => $permissions
+            ]);
         }
 
         return '';
@@ -47,6 +54,7 @@ class Role extends BaseModel
      *
      * @param  string|ObjectId   $id
      * @param  string            $name
+     * @param  int               $level
      * @param  string            $description
      * @param  Collection|array  $permissions
      * @return bool
@@ -54,14 +62,27 @@ class Role extends BaseModel
      * @throws ACLException
      *
      */
-    public function update(string|ObjectId $id, string $name, string $description, Collection|array $permissions): bool
+    public function update(string|ObjectId $id, string $name, int $level, string $description, Collection|array $permissions): bool
     {
         if (ACL::hasPermission(User::$currentUser, ACL::write('role'))) {
             $id = $this->ensureObjectId($id);
 
+            // We do not allow for a role to be higher than 950 (Admin) (super admin is 1000)
+            if ($level >= 950) {
+                $level = 900;
+            }
+
             $this->updateOne(
                 ['_id' => $id],
-                ['$set' => ['name' => $name, 'description' => $description, 'permissions' => $permissions]]
+                [
+                    '$set' => [
+                        'name' => $name,
+                        'slug' => Text::kebabCase(Text::deburr($name)),
+                        'description' => $description,
+                        'level' => $level,
+                        'permissions' => $permissions
+                    ]
+                ]
             );
 
             return true;
@@ -105,5 +126,19 @@ class Role extends BaseModel
         }
 
         return new Collection([]);
+    }
+
+    /**
+     *
+     * Get a role by its name
+     *
+     * @param  string  $role
+     * @return ?Role
+     * @throws DatabaseException
+     *
+     */
+    public function getByName(string $role): ?Role
+    {
+        return $this->findOne(['slug' => strtolower(Text::deburr($role))])->exec();
     }
 }

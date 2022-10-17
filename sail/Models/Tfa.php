@@ -21,7 +21,7 @@ class Tfa extends BaseModel
         parent::__construct('tfa_data');
     }
 
-    public function fields(): array
+    public function fields(bool $fetchAllFields = false): array
     {
         return ['_id', 'user_id', 'secret', 'codes'];
     }

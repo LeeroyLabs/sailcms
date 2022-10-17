@@ -2,6 +2,7 @@
 
 namespace [NAME];
 
+use SailCMS\Collection;
 use \SailCMS\Contracts\AppModule;
 use \SailCMS\Types\ModuleInformation;
 
@@ -12,13 +13,14 @@ class Module implements AppModule
         return new ModuleInformation("[NAME]", '*', 1.0, '1.0.0');
     }
 
-    public function cli(): array
+    public function cli(): Collection
     {
         return [];
     }
 
-    // Your code
     public function middleware(): void
     {
     }
+
+    // Your code
 }

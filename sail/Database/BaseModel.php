@@ -29,7 +29,7 @@ abstract class BaseModel
     private string $currentField = '';
     private bool $isSingle = false;
 
-    abstract public function fields(): array;
+    abstract public function fields(bool $fetchAllFields = false): array;
 
     public function __construct(string $collection = '')
     {
@@ -82,11 +82,12 @@ abstract class BaseModel
      *
      * Execute a query call (cannot be run with a mutation type method)
      *
+     * @param  bool  $fetchAllFields
      * @return array|$this|null
      * @throws DatabaseException
      *
      */
-    protected function exec(): BaseModel|array|null
+    protected function exec(bool $fetchAllFields = false): BaseModel|array|null
     {
         $options = [];
         $docs = [];
@@ -105,7 +106,7 @@ abstract class BaseModel
 
 
             if ($result) {
-                $doc = $this->transformDocToModel($result);
+                $doc = $this->transformDocToModel($result, $fetchAllFields);
 
                 // Run all population requests
                 foreach ($this->currentPopulation as $populate) {
@@ -145,7 +146,7 @@ abstract class BaseModel
         }
 
         foreach ($results as $result) {
-            $doc = $this->transformDocToModel($result);
+            $doc = $this->transformDocToModel($result, $fetchAllFields);
 
             // Run all population requests
             foreach ($this->currentPopulation as $populate) {
@@ -363,6 +364,7 @@ abstract class BaseModel
     protected function updateOne(array $query, array $update): int
     {
         try {
+            $update['$set'] = $this->prepareForWrite($update['$set']);
             return $this->collection->updateOne($query, $update)->getModifiedCount();
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
@@ -382,6 +384,7 @@ abstract class BaseModel
     protected function updateMany(array $query, array $update): int
     {
         try {
+            $update['$set'] = $this->prepareForWrite($update['$set']);
             return $this->collection->updateMany($query, $update)->getModifiedCount();
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
@@ -621,13 +624,14 @@ abstract class BaseModel
      * Transform mongodb objects to clean php objects
      *
      * @param  object  $doc
+     * @param  bool    $fetchAllFields
      * @return $this
      *
      */
-    private function transformDocToModel(object $doc): static
+    private function transformDocToModel(object $doc, bool $fetchAllFields = false): static
     {
         $instance = new static();
-        $fields = $instance->fields();
+        $fields = $instance->fields($fetchAllFields);
 
         foreach ($doc as $k => $v) {
             // Only take what is declared in fields

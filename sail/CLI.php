@@ -8,6 +8,7 @@ use SailCMS\Cli\Command;
 use SailCMS\Cli\Container;
 use SailCMS\Cli\Controller;
 use SailCMS\Cli\Install;
+use SailCMS\CLI\Model;
 use SailCMS\Cli\Version;
 use SailCMS\Cli\Module;
 use SailCMS\Errors\DatabaseException;
@@ -17,7 +18,7 @@ use Symfony\Component\Console\Application;
 
 class CLI
 {
-    public const CLI_VERSION = '1.0.0-next.1';
+    public const CLI_VERSION = '1.0.0-next.2';
     private static string $workingDirectory = '';
     public static Collection $registeredCommands;
 
@@ -51,6 +52,7 @@ class CLI
         $application->add(new Version());
         $application->add(new Install());
         $application->add(new Command());
+        $application->add(new Model());
 
         // Custom commands
         foreach (static::$registeredCommands->unwrap() as $commands) {

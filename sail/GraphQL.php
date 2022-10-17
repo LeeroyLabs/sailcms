@@ -6,6 +6,7 @@ use \GraphQL\GraphQL as GQL;
 use \GraphQL\Type\Definition\ObjectType;
 use \GraphQL\Type\Schema;
 use \GraphQL\Error\InvariantViolation;
+use JsonException;
 use \SailCMS\GraphQL\Context;
 use \SailCMS\GraphQL\Query;
 use \SailCMS\Middleware\Data;
@@ -43,7 +44,7 @@ class GraphQL
      * Initialize and run queries
      *
      * @return string
-     * @throws \JsonException
+     * @throws JsonException
      *
      */
     public static function init(): string
@@ -89,7 +90,7 @@ class GraphQL
             } else {
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $result));
             }
-            
+
             return json_encode($mresult->data, JSON_THROW_ON_ERROR);
         } catch (InvariantViolation $e) {
             echo $e->getMessage();

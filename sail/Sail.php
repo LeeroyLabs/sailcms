@@ -8,9 +8,7 @@ use League\Flysystem\FilesystemException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
-use SailCMS\Http\Input\Post;
 use SailCMS\Http\Request;
-use SailCMS\Http\Response;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\User;
@@ -81,6 +79,7 @@ class Sail
         if ($isWeb) {
             foreach ($securitySettings['envBlacklist'] as $value) {
                 $ph->blacklist('_ENV', $value);
+                $ph->blacklist('_SERVER', $value);
             }
         }
 
@@ -106,7 +105,7 @@ class Sail
                 exit();
             }
 
-            $whitelist = explode(',', $_ENV['TFA_WHITELIST']);
+            $whitelist = explode(',', $_ENV['SETTINGS']->get('tfa.whitelist'));
             $url = parse_url($_SERVER['HTTP_REFERER']);
 
             if (in_array($url['host'], $whitelist, true)) {
@@ -151,7 +150,7 @@ class Sail
     {
         // Initialize the ACLs
         ACL::init();
-        
+
         // Detect what site we are on
         $environments = [];
         include_once static::$workingDirectory . '/config/apps.env.php';
@@ -218,6 +217,15 @@ class Sail
 
         // Initialize the router
         Router::init();
+
+        // If We are not in the CLI, setup session
+        if (!static::$isCLI) {
+            Session::init();
+            $s = new Session();
+//            $s->setUserId('62d4792a8331fd07dea92a0a');
+//            $s->get('');
+//            die();
+        }
 
         // Authenticate user
         User::authenticate();

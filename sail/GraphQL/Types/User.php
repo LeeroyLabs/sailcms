@@ -20,7 +20,6 @@ class User
      * Get User type instance
      *
      * @return Type
-     * @throws DatabaseException
      *
      */
     public static function user(): Type

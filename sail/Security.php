@@ -135,4 +135,31 @@ class Security
         $hashed = hash('sha256', $compare);
         return ($hashed === $hash);
     }
+
+    /**
+     *
+     * Securely hash a password
+     *
+     * @param  string  $password
+     * @return string
+     *
+     */
+    public static function hashPassword(string $password): string
+    {
+        return password_hash($password, PASSWORD_DEFAULT, ['cost' => 9]);
+    }
+
+    /**
+     *
+     * Verify if a password matches given hash
+     *
+     * @param  string  $password
+     * @param  string  $hash
+     * @return bool
+     *
+     */
+    public static function verifyPassword(string $password, string $hash): bool
+    {
+        return password_verify($password, $hash);
+    }
 }

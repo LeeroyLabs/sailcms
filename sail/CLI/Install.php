@@ -59,6 +59,7 @@ class Install extends Command
             'web/default/fonts/.gitkeep' => '',
             'config/default/general.php' => 'config/general.php',
             'config/apps.env.php' => 'env.php',
+            'config/security.php' => 'security.php',
             'modules/.gitkeep' => '',
             'templates/default/.gitkeep' => '',
             '.env.default' => 'env.default',

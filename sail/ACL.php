@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use SailCMS\ACL\System;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Models\User;
 
 class ACL
@@ -117,48 +118,103 @@ class ACL
      *
      * @param  Collection  $acls
      * @return void
+     * @throws ACLException
      *
      */
     public static function loadCustom(Collection $acls): void
     {
-        static::$loadedACL->pushSpread(...$acls->unwrap());
+        foreach ($acls->unwrap() as $acl) {
+            if (!is_object($acl) || get_class($acl) !== Types\ACL::class) {
+                throw new ACLException('Trying to load an ACL that is not of type \SailCMS\Types\ACL.');
+            }
+
+            if (in_array($acl->providedName, System::RESERVED)) {
+                throw new ACLException("Cannot use reserved namespace '{$acl->providedName}'. Please choose something else.");
+            }
+
+            static::$loadedACL->push($acl);
+        }
     }
 
-    public static function hasRole(): bool
+    /**
+     *
+     * Check if current user or given user has required role
+     *
+     * @param  string|User  $user
+     * @param  string       $role
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public static function hasRole(string|User $user, string $role): bool
     {
-        // Get User
-        // Get Role
-        return true;
+        $role = Text::kebabCase(Text::deburr($role));
+
+        if (is_string($user)) {
+            $userModel = new User();
+            $user = $userModel->getById($user);
+        }
+
+        return $user->roles->contains($role);
     }
 
     /**
      *
      * Check if user has one of the given permissions
      *
-     * @param  string|User  $userId
+     * @param  string|User  $user
      * @param  Types\ACL    ...$permissions
      * @return bool
+     * @throws DatabaseException
+     *
      */
-    public static function hasPermission(string|User $userId, Types\ACL ...$permissions): bool
+    public static function hasPermission(string|User $user, Types\ACL ...$permissions): bool
     {
-        // Get User
-        // Get Role
-        // Validate
-        //print_r($permissions);
+        if (is_string($user)) {
+            $userModel = new User();
+            $user = $userModel->getById($user);
+        }
 
-        return true;
+        if ($user) {
+            $perms = [];
+
+            foreach ($permissions as $permission) {
+                $perms[] = $permission->value;
+            }
+
+            return ($user->permissions->intersect($perms)->length > 0);
+        }
+
+        return false;
     }
 
     /**
      *
      * Check if user has all the given permissions
      *
-     * @param  string|User  $userId
+     * @param  string|User  $user
      * @param  Types\ACL    ...$permissions
      * @return bool
+     * @throws DatabaseException
+     *
      */
-    public static function hasAllPermissions(string|User $userId, Types\ACL ...$permissions): bool
+    public static function hasAllPermissions(string|User $user, Types\ACL ...$permissions): bool
     {
+        if (is_string($user)) {
+            $userModel = new User();
+            $user = $userModel->getById($user);
+        }
+
+        if ($user) {
+            $perms = [];
+
+            foreach ($permissions as $permission) {
+                $perms[] = $permission->value;
+            }
+
+            return ($user->permissions->intersect($permissions)->length === count($perms));
+        }
+
         return true;
     }
 }
