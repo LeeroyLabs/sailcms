@@ -7,6 +7,9 @@ use SailCMS\Errors\DatabaseException;
 
 class Log extends BaseModel
 {
+    public string $message;
+    public int $date;
+
     public function fields(bool $fetchAllFields = false): array
     {
         return ['message', 'date'];

@@ -211,7 +211,7 @@ class User extends BaseModel
      */
     public function logout(): void
     {
-        $session = new Session();
+        $session = Session::manager();
         $session->clear();
         static::$currentUser = null;
     }
