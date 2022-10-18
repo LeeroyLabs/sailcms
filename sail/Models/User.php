@@ -53,7 +53,7 @@ class User extends BaseModel
     public static function authenticate(): void
     {
         // Check session for current $user id
-        $session = new Session();
+        $session = Session::manager();
 
         if ($session->type() === 'stateless') {
             $uid = $session->getId(); // Get the user ID from the stateless session

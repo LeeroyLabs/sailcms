@@ -48,6 +48,8 @@ class Sail
 
     private static bool $isCLI = false;
 
+    private static bool $installMode = false;
+
     /**
      *
      * Initialize the CMS
@@ -139,29 +141,51 @@ class Sail
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
     {
+        if (!file_exists(static::$workingDirectory . '/config')) {
+            static::$installMode = true;
+        }
+
         // Initialize the ACLs
         ACL::init();
 
         // Detect what site we are on
         $environments = [];
-        include_once static::$workingDirectory . '/config/apps.env.php';
 
-        foreach ($environments as $name => $env) {
-            if (empty($_SERVER['HTTP_HOST'])) {
-                $host = 'cli';
-                static::$currentApp = 'default';
+        if (!static::$installMode) {
+            include_once static::$workingDirectory . '/config/apps.env.php';
 
-                $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-                $_SERVER['REQUEST_METHOD'] = 'GET';
-                $_SERVER['REQUEST_URI'] = '/';
-                $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
-            } else {
-                $host = explode(':', $_SERVER['HTTP_HOST'])[0];
+            foreach ($environments as $name => $env) {
+                if (empty($_SERVER['HTTP_HOST'])) {
+                    $host = 'cli';
+                    static::$currentApp = 'default';
 
-                if (in_array($host, $env['domains'], true)) {
-                    static::$currentApp = $name;
+                    $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+                    $_SERVER['REQUEST_METHOD'] = 'GET';
+                    $_SERVER['REQUEST_URI'] = '/';
+                    $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
+                } else {
+                    $host = explode(':', $_SERVER['HTTP_HOST'])[0];
+
+                    if (in_array($host, $env['domains'], true)) {
+                        static::$currentApp = $name;
+                    }
                 }
             }
+        } elseif (empty($_SERVER['HTTP_HOST'])) {
+            $host = 'cli';
+            static::$currentApp = 'default';
+
+            $environments = [
+                'default' => [
+                    'domains' => ['localhost'],
+                    'file' => '.env.default'
+                ]
+            ];
+
+            $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+            $_SERVER['REQUEST_METHOD'] = 'GET';
+            $_SERVER['REQUEST_URI'] = '/';
+            $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
 
         if (static::$currentApp === '') {
@@ -185,7 +209,13 @@ class Sail
         $dotenv->load();
 
         $config = [];
-        include_once static::$configDirectory . '/general.php';
+
+        if (!static::$installMode) {
+            include_once static::$configDirectory . '/general.php';
+        } else {
+            include_once dirname(__DIR__) . '/install/config/general.php';
+        }
+
         $settings = new Collection($config);
 
         $_ENV['SETTINGS'] = $settings->get($_ENV['ENVIRONMENT'] ?? 'dev');
@@ -211,7 +241,7 @@ class Sail
 
         // If We are not in the CLI, setup session
         if (!static::$isCLI) {
-            Session::init();
+            Session::manager();
         }
 
         // Authenticate user
@@ -390,6 +420,7 @@ class Sail
      * @throws FileException
      * @throws JsonException
      * @throws SiteException
+     * @throws ACLException
      *
      */
     public static function initForCli(string $execPath): void
@@ -404,7 +435,7 @@ class Sail
         } else {
             $securitySettings = ['envBlacklist' => []];
         }
-        
+
         // Register the error handler
         static::$errorHandler = new Run();
         $ph = new PlainTextHandler();

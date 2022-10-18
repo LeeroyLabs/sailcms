@@ -18,10 +18,10 @@ class Session
      *
      * Initialize the session
      *
-     * @return AppSession
+     * @return Session
      *
      */
-    public static function manager(): AppSession
+    public static function manager(): Session
     {
         if (!isset(static::$adapter)) {
             $adapter = $_ENV['SETTINGS']->get('session.mode');

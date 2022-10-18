@@ -40,9 +40,9 @@ class Install extends Command
             'storage/fs/default',
             'storage/fs/default/uploads',
             'storage/cache/',
+            'storage/cache/default',
             'storage/vault',
             'storage/vault/default',
-            'storage/cache/default',
             'config',
             'config/default',
             'modules',
@@ -55,35 +55,43 @@ class Install extends Command
         $files = [
             'web/index.php' => 'index.php',
             'web/.htaccess' => 'htaccess',
-            'web/default/images/.gitkeep' => '',
-            'web/default/css/.gitkeep' => '',
-            'web/default/js/.gitkeep' => '',
-            'web/default/fonts/.gitkeep' => '',
+            'web/public/default/images/.gitkeep' => '',
+            'web/public/default/css/.gitkeep' => '',
+            'web/public/default/js/.gitkeep' => '',
+            'web/public/default/fonts/.gitkeep' => '',
             'config/default/general.php' => 'config/general.php',
             'config/apps.env.php' => 'env.php',
             'config/security.php' => 'security.php',
             'modules/.gitkeep' => '',
             'templates/default/.gitkeep' => '',
             '.env.default' => 'env.default',
-            'storage/fs/default/upload/.gitkeep' => '',
+            'storage/fs/default/uploads/.gitkeep' => '',
             'storage/cache/default/.gitkeep' => '',
-            'locales/default/en.yaml'
+            'locales/default/en.yaml' => ''
         ];
 
         Tools::showTitle('Installing SailCMS v' . Sail::SAIL_VERSION);
 
         foreach ($folders as $folder) {
-            if (!mkdir($concurrentDirectory = CLI::getWorkingDirectory() . '/' . $folder) && !is_dir($concurrentDirectory)) {
-                throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            $concurrentDirectory = CLI::getWorkingDirectory() . '/' . $folder;
+
+            if (!file_exists($concurrentDirectory)) {
+                if (!mkdir($concurrentDirectory) && !is_dir($concurrentDirectory)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+                }
             }
         }
 
-        $workPath = dirname(__DIR__) . '/install/';
+        $workPath = dirname(__DIR__, 2) . '/install/';
 
         foreach ($files as $key => $file) {
-            if (str_contains($key, 'gitkeep')) {
+            if (str_contains($key, '.gitkeep')) {
                 touch(CLI::getWorkingDirectory() . '/' . $key);
             } else {
+                if ($file === '') {
+                    continue;
+                }
+
                 file_put_contents(CLI::getWorkingDirectory() . '/' . $key, file_get_contents($workPath . $file));
             }
         }
