@@ -221,10 +221,6 @@ class Sail
         // If We are not in the CLI, setup session
         if (!static::$isCLI) {
             Session::init();
-            $s = new Session();
-//            $s->setUserId('62d4792a8331fd07dea92a0a');
-//            $s->get('');
-//            die();
         }
 
         // Authenticate user
