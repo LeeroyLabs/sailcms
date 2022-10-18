@@ -5,13 +5,33 @@ $config = [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'CSRF' => [
+            'use' => true,
+            'leeway' => 5,
+            'expiration' => 120
+        ],
         'graphql' => [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5
         ],
+        'cors' => [
+            'use' => true,
+            'allowOrigins' => ['*'],
+            'allowCredentials' => true,
+            'maxAge' => 86400,
+            'methods' => ['POST', 'GET', 'DELETE', 'PUT', 'OPTIONS'],
+            'headers' => ['Accept', 'Upgrade-Insecure-Requests', 'Content-Type', 'x-requested-with']
+        ],
         'session' => [
-            'mode' => 'standard' // or stateless (JWT)
+            'mode' => \SailCMS\Session\Stateless::class,
+            'httpOnly' => true,
+            'samesite' => 'strict',
+            'ttl' => 21_600, // 6h
+            'jwt' => [
+                'issuer' => 'SailCMS',
+                'domain' => 'localhost'
+            ]
         ],
         'templating' => [
             'cache' => false,

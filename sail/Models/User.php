@@ -177,9 +177,8 @@ class User extends BaseModel
         $user = $this->findOne(['email' => $email])->exec(true);
 
         if ($user && Security::verifyPassword($password, $user->password)) {
-            $session = new Session();
-            $session->setUserId((string)$user->_id);
-            $session->get('set_token');
+            $session = Session::manager();
+            $session->$session->get('set_token');
 
             $instance = new static();
             static::$currentUser = $instance->findById((string)$user->_id)->exec();

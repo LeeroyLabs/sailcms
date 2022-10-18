@@ -53,14 +53,4 @@ class Database
 
         return self::$client;
     }
-
-    /**
-     *
-     * Disconnect and destroy unique connection
-     *
-     */
-    public static function disconnect(): void
-    {
-        self::$client = null;
-    }
 }

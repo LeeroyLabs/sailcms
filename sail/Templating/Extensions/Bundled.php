@@ -2,8 +2,11 @@
 
 namespace SailCMS\Templating\Extensions;
 
+use Exception;
+use SailCMS\Debug;
 use SailCMS\Locale;
 use SailCMS\Sail;
+use SailCMS\Security;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -17,7 +20,8 @@ class Bundled extends AbstractExtension
             new TwigFunction('publicPath', [$this, 'publicPath']),
             new TwigFunction('locale', [$this, 'getLocale']),
             new TwigFunction('__', [$this, 'translate']),
-            new TwigFunction('twoFactor', [$this, 'twoFactor'])
+            new TwigFunction('twoFactor', [$this, 'twoFactor']),
+            new TwigFunction('csrf', [$this, 'csrf'])
         ];
     }
 
@@ -36,9 +40,7 @@ class Bundled extends AbstractExtension
      */
     public function debug(mixed $data): void
     {
-        echo '<pre>';
-        print_r($data);
-        echo '</pre>';
+        Debug::dump($data);
     }
 
     /**
@@ -139,5 +141,25 @@ class Bundled extends AbstractExtension
                 });
             </script>
             HTML;
+    }
+
+    /**
+     *
+     * Generate CSRF token
+     *
+     * @return string
+     * @throws Exception
+     *
+     */
+    public function csrf(): string
+    {
+        $use = $_ENV['SETTINGS']->get('CSRF.use');
+
+        if ($use) {
+            $token = Security::csrf();
+            return '<input type="hidden" name="_csrf_" value="' . $token . '" />';
+        }
+
+        return '';
     }
 }

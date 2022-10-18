@@ -34,5 +34,22 @@ abstract class AppController
         return $this->response;
     }
 
-    // TODO : IMPLEMENT BASICS
+    /**
+     *
+     * Redirect quickly
+     *
+     * @param  string  $url
+     * @param  bool    $permanent
+     * @return void
+     *
+     */
+    public function redirect(string $url, bool $permanent = false): void
+    {
+        if ($permanent) {
+            header("HTTP/1.1 301 Moved Permanently");
+        }
+
+        header('location: ' . $url);
+        die();
+    }
 }

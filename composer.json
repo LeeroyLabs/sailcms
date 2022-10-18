@@ -47,7 +47,8 @@
         "lcobucci/jwt": "^4.2",
         "symfony/mailer": "^6.1",
         "symfony/sendgrid-mailer": "^6.1",
-        "symfony/twig-bridge": "^6.1"
+        "symfony/twig-bridge": "^6.1",
+        "symfony/security-csrf": "^6.1"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

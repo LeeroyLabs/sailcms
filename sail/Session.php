@@ -7,31 +7,30 @@ use SailCMS\Contracts\AppSession;
 
 class Session
 {
-    private static $inited = false;
     private static AppSession $adapter;
     private static string $adapterType;
 
-    public function __construct()
+    private function __construct()
     {
-        $adapter = $_ENV['SETTINGS']->get('session.mode');
-
-        static::$adapter = new $adapter();
-        static::$adapterType = strtolower(static::$adapter->type());
     }
 
     /**
      *
      * Initialize the session
      *
-     * @return void
+     * @return AppSession
      *
      */
-    public static function init(): void
+    public static function manager(): AppSession
     {
-        if (!static::$inited) {
-            static::$inited = true;
-            new Session();
+        if (!isset(static::$adapter)) {
+            $adapter = $_ENV['SETTINGS']->get('session.mode');
+
+            static::$adapter = new $adapter();
+            static::$adapterType = strtolower(static::$adapter->type());
         }
+
+        return new static();
     }
 
     /**

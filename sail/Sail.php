@@ -3,12 +3,17 @@
 namespace SailCMS;
 
 use Dotenv\Dotenv;
+use Exception;
 use JsonException;
 use League\Flysystem\FilesystemException;
+use RobThree\Auth\TwoFactorAuthException;
+use SailCMS\Database\Database;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Http\Request;
+use SailCMS\Http\Response;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\User;
@@ -16,6 +21,9 @@ use SailCMS\Routing\Router;
 use SailCMS\Security\TwoFactorAuthenticationController;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use Whoops\Handler\JsonResponseHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Handler\PlainTextHandler;
@@ -45,16 +53,19 @@ class Sail
      * Initialize the CMS
      *
      * @param  string  $execPath
-     *
      * @return void
-     *
-     * @throws Errors\DatabaseException
+     * @throws DatabaseException
      * @throws Errors\RouteReturnException
      * @throws FileException
-     * @throws JsonException
-     * @throws SiteException
      * @throws FilesystemException
+     * @throws JsonException
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SiteException
      * @throws SodiumException
+     * @throws SyntaxError
+     * @throws TwoFactorAuthException
+     * @throws ACLException
      *
      */
     public static function init(string $execPath): void
@@ -88,38 +99,17 @@ class Sail
 
         static::bootBasics($securitySettings);
 
-        // 2FA Handling
-        if (stripos($_SERVER['REQUEST_URI'], '/v1/tfa') === 0) {
-            if ($_SERVER['REQUEST_URI'] === '/v1/tfa' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                $req = new Request();
+        // CORS setup
+        static::setupCORS();
 
-                // Fail if one or both are missing
-                if (empty($req->post('uid')) || empty($req->post('code'))) {
-                    header('HTTP/1.0 400 Bad Request');
-                    die();
-                }
+        // CSRF Check
+        Security::verifyCSRF();
 
-                $tfa = new TwoFactorAuthenticationController($req->post('uid'));
-                $tfa->validate($req->post('code'));
-                $tfa->render();
-                exit();
-            }
+        // 2FA Setup
+        static::setup2FA();
 
-            $whitelist = explode(',', $_ENV['SETTINGS']->get('tfa.whitelist'));
-            $url = parse_url($_SERVER['HTTP_REFERER']);
-
-            if (in_array($url['host'], $whitelist, true)) {
-                $parts = explode('/', $_SERVER['REQUEST_URI']);
-
-                Locale::setCurrent($parts[3]);
-                $tfa = new TwoFactorAuthenticationController($parts[4]);
-                $tfa->render();
-                exit();
-            }
-
-            header('HTTP/1.0 403 Forbidden');
-            die();
-        }
+        // Headless CSRF Setup
+        static::setupHeadlessCSRF();
 
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
@@ -144,6 +134,7 @@ class Sail
      * @throws JsonException
      * @throws FileException
      * @throws SiteException
+     * @throws ACLException
      *
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
@@ -246,6 +237,7 @@ class Sail
      * @throws Errors\DatabaseException
      * @throws FileException
      * @throws JsonException
+     * @throws Errors\ACLException
      *
      */
     private static function loadContainerFromComposer(string $path): void
@@ -406,8 +398,13 @@ class Sail
         static::$isCLI = true;
 
         $securitySettings = [];
-        include_once static::$workingDirectory . '/config/security.php';
 
+        if (file_exists(static::$workingDirectory . '/config')) {
+            include_once static::$workingDirectory . '/config/security.php';
+        } else {
+            $securitySettings = ['envBlacklist' => []];
+        }
+        
         // Register the error handler
         static::$errorHandler = new Run();
         $ph = new PlainTextHandler();
@@ -441,8 +438,6 @@ class Sail
     {
         return static::$templateDirectory . '/';
     }
-
-    // -------------------------------------------------- Private --------------------------------------------------- //
 
     /**
      *
@@ -490,5 +485,114 @@ class Sail
     public static function getErrorHandler(): Run
     {
         return static::$errorHandler;
+    }
+
+    /**
+     *
+     * Setup CORS headers
+     *
+     * @return void
+     *
+     */
+    private static function setupCORS(): void
+    {
+        $cors = $_ENV['SETTINGS']->get('cors');
+
+        if ($cors->get('use')) {
+            $origins = implode(',', $cors->get('origins')->unwrap());
+            $creds = ($cors->get('allowCredentials')) ? 'true' : 'false';
+
+            header("Access-Control-Allow-Origin: {$origins}");
+            header("Access-Control-Allow-Credentials: {$creds}");
+            header("Access-Control-Max-Age: {$cors->get('maxAge')}");
+
+            if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+                $methods = implode(",", $cors->get('methods')->unwrap());
+                $headers = implode(",", $cors->get('headers')->unwrap());
+
+                header("Access-Control-Allow-Methods: {$methods}");
+                header("Access-Control-Allow-Headers: {$headers}");
+                header('Content-Length: 0');
+                header('Content-Type: text/plain');
+                die(); // Options just needs headers, the rest is not required. Stop now!
+            }
+        }
+    }
+
+    /**
+     *
+     * Setup 2FA system
+     *
+     * @return void
+     * @throws DatabaseException
+     * @throws FileException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     * @throws TwoFactorAuthException
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
+     *
+     */
+    private static function setup2FA(): void
+    {
+        if (stripos($_SERVER['REQUEST_URI'], '/v1/tfa') === 0) {
+            if ($_SERVER['REQUEST_URI'] === '/v1/tfa' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $req = new Request();
+
+                // Fail if one or both are missing
+                if (empty($req->post('uid')) || empty($req->post('code'))) {
+                    header('HTTP/1.0 400 Bad Request');
+                    die();
+                }
+
+                $tfa = new TwoFactorAuthenticationController($req->post('uid'));
+                $tfa->validate($req->post('code'));
+                $tfa->render();
+                exit();
+            }
+
+            $whitelist = explode(',', $_ENV['SETTINGS']->get('tfa.whitelist'));
+            $url = parse_url($_SERVER['HTTP_REFERER']);
+
+            if (in_array($url['host'], $whitelist, true)) {
+                $parts = explode('/', $_SERVER['REQUEST_URI']);
+
+                Locale::setCurrent($parts[3]);
+                $tfa = new TwoFactorAuthenticationController($parts[4]);
+                $tfa->render();
+                exit();
+            }
+
+            header('HTTP/1.0 403 Forbidden');
+            die();
+        }
+    }
+
+    /**
+     *
+     * Setup Headless CSRF
+     *
+     * @return void
+     * @throws FileException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
+     * @throws Exception
+     *
+     */
+    private static function setupHeadlessCSRF(): void
+    {
+        if (stripos($_SERVER['REQUEST_URI'], '/v1/csrf') === 0) {
+            $token = Security::csrf();
+
+            $response = Response::json();
+            $response->set('token', $token);
+            $response->render(false);
+            die();
+        }
     }
 }

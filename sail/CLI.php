@@ -4,13 +4,13 @@ namespace SailCMS;
 
 use Exception;
 use JsonException;
-use SailCMS\Cli\Command;
-use SailCMS\Cli\Container;
-use SailCMS\Cli\Controller;
-use SailCMS\Cli\Install;
+use SailCMS\CLI\Command;
+use SailCMS\CLI\Container;
+use SailCMS\CLI\Controller;
+use SailCMS\CLI\Install;
 use SailCMS\CLI\Model;
-use SailCMS\Cli\Version;
-use SailCMS\Cli\Module;
+use SailCMS\CLI\Version;
+use SailCMS\CLI\Module;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
@@ -25,6 +25,18 @@ class CLI
     public function __construct(string $path)
     {
         static::$workingDirectory = $path;
+    }
+
+    /**
+     *
+     * Get working directory
+     *
+     * @return string
+     *
+     */
+    public static function getWorkingDirectory(): string
+    {
+        return static::$workingDirectory;
     }
 
     /**
@@ -55,6 +67,10 @@ class CLI
         $application->add(new Model());
 
         // Custom commands
+        if (!isset(static::$registeredCommands)) {
+            static::$registeredCommands = new Collection([]);
+        }
+
         foreach (static::$registeredCommands->unwrap() as $commands) {
             foreach ($commands as $command) {
                 $application->add(new $command());

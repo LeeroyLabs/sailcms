@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use Exception;
 use League\Flysystem\FilesystemException;
+use SailCMS\Models\CSRF;
 use SodiumException;
 
 class Security
@@ -161,5 +162,45 @@ class Security
     public static function verifyPassword(string $password, string $hash): bool
     {
         return password_verify($password, $hash);
+    }
+
+    /**
+     *
+     * Create a CSRF token for a form
+     *
+     * @return string
+     * @throws Exception
+     *
+     */
+    public static function csrf(): string
+    {
+        return (new CSRF())->create();
+    }
+
+    /**
+     *
+     * Check if received CSRF is valid and set the result in the ENV variable
+     *
+     * @return void
+     * @throws Errors\DatabaseException
+     *
+     */
+    public static function verifyCSRF(): void
+    {
+        $use = $_ENV['SETTINGS']->get('CSRF.use');
+
+        if ($use && !empty($_POST['_csrf_'])) {
+            $_ENV['CSRF_VALID'] = (new CSRF())->validate($_POST['_csrf_']);
+            return;
+        }
+
+        // If we don't use it, flag it as always valid
+        if (!$use) {
+            $_ENV['CSRF_VALID'] = true;
+            return;
+        }
+
+        // We tried everything, fail!
+        $_ENV['CSRF_VALID'] = false;
     }
 }

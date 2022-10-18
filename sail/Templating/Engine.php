@@ -15,6 +15,7 @@ use Twig\Lexer;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
 use SailCMS\Templating\Extensions\Bundled;
+use Twig\TwigFunction;
 
 class Engine
 {
@@ -113,7 +114,7 @@ class Engine
      */
     public static function addFunction(string $name, callable $callback): void
     {
-        static::$filters[] = ['name' => $name, 'callback' => $callback];
+        static::$filters[] = new TwigFunction($name, $callback);
     }
 
     /**

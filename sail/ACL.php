@@ -140,14 +140,18 @@ class ACL
      *
      * Check if current user or given user has required role
      *
-     * @param  string|User  $user
-     * @param  string       $role
+     * @param  string|User|null  $user
+     * @param  string            $role
      * @return bool
      * @throws DatabaseException
      *
      */
-    public static function hasRole(string|User $user, string $role): bool
+    public static function hasRole(string|User|null $user, string $role): bool
     {
+        if ($user === null) {
+            return false;
+        }
+
         $role = Text::kebabCase(Text::deburr($role));
 
         if (is_string($user)) {
@@ -162,14 +166,18 @@ class ACL
      *
      * Check if user has one of the given permissions
      *
-     * @param  string|User  $user
-     * @param  Types\ACL    ...$permissions
+     * @param  string|User|null  $user
+     * @param  Types\ACL         ...$permissions
      * @return bool
      * @throws DatabaseException
      *
      */
-    public static function hasPermission(string|User $user, Types\ACL ...$permissions): bool
+    public static function hasPermission(string|User|null $user, Types\ACL ...$permissions): bool
     {
+        if ($user === null) {
+            return false;
+        }
+
         if (is_string($user)) {
             $userModel = new User();
             $user = $userModel->getById($user);
@@ -192,14 +200,18 @@ class ACL
      *
      * Check if user has all the given permissions
      *
-     * @param  string|User  $user
-     * @param  Types\ACL    ...$permissions
+     * @param  string|User|null  $user
+     * @param  Types\ACL         ...$permissions
      * @return bool
      * @throws DatabaseException
      *
      */
-    public static function hasAllPermissions(string|User $user, Types\ACL ...$permissions): bool
+    public static function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool
     {
+        if ($user === null) {
+            return false;
+        }
+
         if (is_string($user)) {
             $userModel = new User();
             $user = $userModel->getById($user);
