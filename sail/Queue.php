@@ -2,6 +2,9 @@
 
 namespace SailCMS;
 
+use JsonException;
+use \SailCMS\Models\Queue as QueueModel;
+
 class Queue
 {
     private static Queue $manager;
@@ -10,6 +13,13 @@ class Queue
     {
     }
 
+    /**
+     *
+     * Get an instance of the Queue
+     *
+     * @return Queue
+     *
+     */
     public function manager(): Queue
     {
         if (!isset(static::$manager)) {
@@ -17,5 +27,68 @@ class Queue
         }
 
         return static::$manager;
+    }
+
+    /**
+     *
+     * Process queue items
+     *
+     * Note: All = 50 000 items max
+     *
+     * @return void
+     * @throws Errors\DatabaseException
+     * @throws JsonException
+     *
+     */
+    public function process(): void
+    {
+        $maxProcess = $_ENV['QUEUE_MAX_PROCESS_PER_RUN'] ?? 'all';
+
+        if ($maxProcess !== 'all') {
+            $maxProcess = (int)$maxProcess;
+        } else {
+            $maxProcess = 50_000;
+        }
+
+        $model = new QueueModel();
+        $tasks = $model->get($maxProcess);
+
+        $tasks->each(function ($key, $value) use ($model)
+        {
+            $locked = $model->checkLockStatus($value->_id);
+            $retry_count = 0;
+
+            if ($value->retry_count === $_ENV['QUEUE_MAX_RETRY']) {
+                $model->closeTask($value->_id, 'Too many retries', false);
+            }
+
+            if ($value->retriable) {
+                $retry_count = $value->retry_count + 1;
+            }
+
+            if (!$locked) {
+                $model->setLockStatus($value->_id, true);
+
+                if (class_exists($value->handler)) {
+                    $instance = new $value->handler();
+
+                    if (method_exists($instance, $value->action)) {
+                        $result = $instance->{$value->action}(...$value->settings->unwrap());
+
+                        if (empty($result)) {
+                            $result = 'Executed successfully with no return';
+                        } elseif (!is_string($result) && !is_scalar($result)) {
+                            $result = json_encode($result, JSON_THROW_ON_ERROR);
+                        }
+
+                        $model->closeTask($value->_id, $result);
+                    } else {
+                        $model->closeTask($value->_id, "Action '{$value->action}' does not exist, please make sure it exists.", false, $retry_count);
+                    }
+                } else {
+                    $model->closeTask($value->_id, "Handler '{$value->handler}' does not exist, please make sure it exists.", false, $retry_count);
+                }
+            }
+        });
     }
 }
