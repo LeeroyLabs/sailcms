@@ -20,7 +20,7 @@ class Queue
      * @return Queue
      *
      */
-    public function manager(): Queue
+    public static function manager(): Queue
     {
         if (!isset(static::$manager)) {
             static::$manager = new static();

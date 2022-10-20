@@ -11,6 +11,7 @@ use SailCMS\CLI\Install;
 use SailCMS\CLI\Model;
 use SailCMS\CLI\Version;
 use SailCMS\CLI\Module;
+use SailCMS\CLI\Queue;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
@@ -65,6 +66,7 @@ class CLI
         $application->add(new Install());
         $application->add(new Command());
         $application->add(new Model());
+        $application->add(new Queue());
 
         // Custom commands
         if (!isset(static::$registeredCommands)) {
