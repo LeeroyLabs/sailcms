@@ -125,7 +125,7 @@ class Locale
         $fs = Filesystem::manager();
 
         // Load global locale file
-        $file = $fs->read('root://locales/' . Sail::currentApp() . '/' . static::$current . '.yaml');
+        $file = $fs->read('root://locales/' . static::$current . '.yaml');
         $yaml = Yaml::parse($file);
 
         if (!empty($yaml)) {

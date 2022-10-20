@@ -10,8 +10,6 @@ abstract class AppContainer
 {
     protected Router $router;
 
-    protected string $currentApiURL = '/api/v3';
-
     abstract public function info(): ContainerInformation;
 
     abstract public function routes(): void;
@@ -25,7 +23,7 @@ abstract class AppContainer
     abstract public function cli(): Collection;
 
     abstract public function permissions(): Collection;
-    
+
     public function __construct()
     {
         $this->router = new Router();

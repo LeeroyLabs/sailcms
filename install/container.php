@@ -10,7 +10,7 @@ class Container extends AppContainer
 {
     public function info(): ContainerInformation
     {
-        return new ContainerInformation(name: '[NAME]', sites: ['*'], version: 1.0, semver: '1.0.0');
+        return new ContainerInformation(name: '[NAME]', description: 'your description', version: 1.0, semver: '1.0.0');
     }
 
     public function routes(): void

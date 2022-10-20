@@ -7,7 +7,6 @@ use Exception;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use RobThree\Auth\TwoFactorAuthException;
-use SailCMS\Database\Database;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -151,36 +150,8 @@ class Sail
         // Detect what site we are on
         $environments = [];
 
-        if (!static::$installMode) {
-            include_once static::$workingDirectory . '/config/apps.env.php';
-
-            foreach ($environments as $name => $env) {
-                if (empty($_SERVER['HTTP_HOST'])) {
-                    $host = 'cli';
-                    static::$currentApp = 'default';
-
-                    $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-                    $_SERVER['REQUEST_METHOD'] = 'GET';
-                    $_SERVER['REQUEST_URI'] = '/';
-                    $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
-                } else {
-                    $host = explode(':', $_SERVER['HTTP_HOST'])[0];
-
-                    if (in_array($host, $env['domains'], true)) {
-                        static::$currentApp = $name;
-                    }
-                }
-            }
-        } elseif (empty($_SERVER['HTTP_HOST'])) {
+        if (empty($_SERVER['HTTP_HOST'])) {
             $host = 'cli';
-            static::$currentApp = 'default';
-
-            $environments = [
-                'default' => [
-                    'domains' => ['localhost'],
-                    'file' => '.env.default'
-                ]
-            ];
 
             $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
             $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -188,12 +159,8 @@ class Sail
             $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
 
-        if (static::$currentApp === '') {
-            throw new SiteException('No site found for the current host, please make sure it\'s not a mistake.', 0500);
-        }
-
         // Load Filesystem
-        static::$fsDirectory = static::$workingDirectory . '/storage/fs/' . static::$currentApp;
+        static::$fsDirectory = static::$workingDirectory . '/storage/fs';
         Filesystem::mountCore();
         Filesystem::init();
 
@@ -202,10 +169,10 @@ class Sail
         Security::loadSettings($securitySettings);
 
         // Load configurations
-        static::$configDirectory = static::$workingDirectory . '/config/' . static::$currentApp;
+        static::$configDirectory = static::$workingDirectory . '/config';
 
         // Load .env file
-        $dotenv = Dotenv::createImmutable(static::$workingDirectory, $environments[static::$currentApp]['file']);
+        $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
         $dotenv->load();
 
         $config = [];
@@ -229,8 +196,8 @@ class Sail
         Log::init();
 
         // Determine the Template directory for the site
-        static::$templateDirectory = static::$workingDirectory . '/templates/' . static::$currentApp;
-        static::$cacheDirectory = static::$workingDirectory . '/storage/cache/' . static::$currentApp;
+        static::$templateDirectory = static::$workingDirectory . '/templates/';
+        static::$cacheDirectory = static::$workingDirectory . '/storage/cache';
 
         // Register Search Adapters
         Search::registerSystemAdapters();
@@ -287,33 +254,31 @@ class Sail
                     // Register the container, if required
                     Register::instance()->registerContainer($info, $className);
 
-                    if ($info->sites->contains(static::$currentApp)) {
-                        // Install the routes
-                        $instance->routes();
+                    // Install the routes
+                    $instance->routes();
 
-                        // Run the search setup
-                        $instance->configureSearch();
+                    // Run the search setup
+                    $instance->configureSearch();
 
-                        // Run the GraphQL setup
-                        $instance->graphql();
+                    // Run the GraphQL setup
+                    $instance->graphql();
 
-                        // Run middleware registration
-                        $instance->middleware();
+                    // Run middleware registration
+                    $instance->middleware();
 
-                        // Run the ACL registration
-                        $acls = $instance->permissions();
+                    // Run the ACL registration
+                    $acls = $instance->permissions();
 
-                        ACL::loadCustom($acls);
+                    ACL::loadCustom($acls);
 
-                        // Run the command registration
-                        $commands = $instance->cli()->unwrap();
+                    // Run the command registration
+                    $commands = $instance->cli()->unwrap();
 
-                        if (empty(CLI::$registeredCommands)) {
-                            CLI::$registeredCommands = new Collection([]);
-                        }
-
-                        CLI::$registeredCommands->pushSpread($commands);
+                    if (empty(CLI::$registeredCommands)) {
+                        CLI::$registeredCommands = new Collection([]);
                     }
+
+                    CLI::$registeredCommands->pushSpread($commands);
                 } else {
                     throw new FileException("Container {$className} does not exist or is not named properly. Please verify and try again.", 0404);
                 }
@@ -343,21 +308,20 @@ class Sail
                     $info = $instance->info();
 
                     // Register only if the site should load it
-                    if ($info->sites->contains(static::$currentApp)) {
-                        Register::instance()->registerModule($info, $instance, $moduleName);
 
-                        // Run middleware registration
-                        $instance->middleware();
+                    Register::instance()->registerModule($info, $instance, $moduleName);
 
-                        // Run the command registration
-                        $commands = $instance->cli();
+                    // Run middleware registration
+                    $instance->middleware();
 
-                        if (empty(CLI::$registeredCommands)) {
-                            CLI::$registeredCommands = new Collection([]);
-                        }
+                    // Run the command registration
+                    $commands = $instance->cli();
 
-                        CLI::$registeredCommands->pushSpread($commands);
+                    if (empty(CLI::$registeredCommands)) {
+                        CLI::$registeredCommands = new Collection([]);
                     }
+
+                    CLI::$registeredCommands->pushSpread($commands);
                 } else {
                     throw new FileException("Module {$className} does not exist or is not named properly. Please verify and try again.", 0404);
                 }
@@ -390,6 +354,7 @@ class Sail
      * @throws JsonException
      * @throws DatabaseException
      * @throws FileException
+     * @throws ACLException
      *
      */
     public static function initForCron(string $execPath): void
@@ -492,18 +457,6 @@ class Sail
     public static function getFSDirectory(): string
     {
         return static::$fsDirectory;
-    }
-
-    /**
-     *
-     * Access the name of the current application
-     *
-     * @return string
-     *
-     */
-    public static function currentApp(): string
-    {
-        return static::$currentApp;
     }
 
     /**

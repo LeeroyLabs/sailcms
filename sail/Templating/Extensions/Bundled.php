@@ -65,7 +65,7 @@ class Bundled extends AbstractExtension
      */
     public function publicPath(): string
     {
-        return '/public/' . Sail::currentApp();
+        return '/public';
     }
 
     /**

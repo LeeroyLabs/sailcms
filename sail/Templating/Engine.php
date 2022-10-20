@@ -65,17 +65,17 @@ class Engine
     public function render(string $file, object $data): string
     {
         $fs = Filesystem::manager();
-        $target = 'root://templates/' . Sail::currentApp() . '/' . $file . '.twig';
+        $target = 'root://templates/' . $file . '.twig';
         $target2 = 'cms://' . $file . '.twig';
         $html = '';
 
         // Add some last minutes variables to the template
         $data->paths = (object)[
-            'images' => '/public/' . Sail::currentApp() . '/images',
-            'css' => '/public/' . Sail::currentApp() . '/css',
-            'js' => '/public/' . Sail::currentApp() . '/js',
-            'fonts' => '/public/' . Sail::currentApp() . '/fonts',
-            'public' => '/public/' . Sail::currentApp()
+            'images' => '/public/images',
+            'css' => '/public/css',
+            'js' => '/public/js',
+            'fonts' => '/public/fonts',
+            'public' => '/public'
         ];
 
         if ($fs->fileExists($target) || $fs->fileExists($target2)) {
