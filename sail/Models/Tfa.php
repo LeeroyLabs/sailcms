@@ -80,4 +80,10 @@ class Tfa extends BaseModel
         $this->deleteOne(['user_id' => $user_id]);
         $this->insert(['user_id' => $user_id, 'secret' => $enc, 'codes' => $codes]);
     }
+
+    public function rescueAccount(Collection|array $codes): ?User
+    {
+        // TODO: IMPLEMENT
+        return null;
+    }
 }

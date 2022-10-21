@@ -19,7 +19,7 @@
         }
     ],
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.1",
         "ext-sodium": "*",
         "vlucas/phpdotenv": "^5.4",
         "myclabs/php-enum": "^1.8",

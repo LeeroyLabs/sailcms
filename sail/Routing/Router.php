@@ -161,7 +161,14 @@ class Router
      *
      * Dispatch the route detection and execute and render matching route
      *
-     * @throws RouteReturnException|JsonException|FilesystemException|FileException|LoaderError|RuntimeError|SyntaxError
+     * @return void
+     * @throws FileException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws LoaderError
+     * @throws RouteReturnException
+     * @throws RuntimeError
+     * @throws SyntaxError
      *
      */
     public static function dispatch(): void

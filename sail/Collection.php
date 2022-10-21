@@ -75,7 +75,7 @@ class Collection implements \JsonSerializable, \Iterator
      */
     public function __set($property, $value): void
     {
-        $reserved = ['length', 'first', 'last'];
+        $reserved = ['length', 'first', 'last', 'empty'];
 
         if (!in_array($property, $reserved, true)) {
             $this->_internal[$property] = $value;

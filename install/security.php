@@ -11,6 +11,7 @@ $securitySettings = [
         'DATABASE_AUTH_DB',
         'MEILI_HOST',
         'SEARCH_ENGINE',
+        'MAIL_DSN',
         'MEILI_PORT',
         'MEILI_INDEX',
         'MEILI_MASTER_KEY',

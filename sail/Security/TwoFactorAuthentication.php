@@ -7,6 +7,9 @@ use RobThree\Auth\Providers\Rng\OpenSSLRNGProvider;
 use RobThree\Auth\Providers\Time\HttpTimeProvider;
 use RobThree\Auth\TwoFactorAuth;
 use RobThree\Auth\TwoFactorAuthException;
+use SailCMS\Collection;
+use SailCMS\Models\Tfa;
+use SailCMS\Models\User;
 
 class TwoFactorAuthentication
 {
@@ -86,5 +89,18 @@ class TwoFactorAuthentication
     public function validate(string $secret, string $code): bool
     {
         return static::$auth->verifyCode($secret, $code, 2);
+    }
+
+    /**
+     *
+     * Try to rescue an account with the given codes
+     *
+     * @param  Collection  $codes
+     * @return ?User
+     *
+     */
+    public function rescueAccount(Collection $codes): ?User
+    {
+        return (new Tfa())->rescueAccount($codes);
     }
 }
