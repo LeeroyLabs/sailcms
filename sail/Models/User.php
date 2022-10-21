@@ -27,7 +27,7 @@ class User extends BaseModel
     public function fields(bool $fetchAllFields = false): array
     {
         if ($fetchAllFields) {
-            return ['_id', 'name', 'roles', 'email', 'status', 'avatatar', 'meta', 'password'];
+            return ['_id', 'name', 'roles', 'email', 'status', 'avatar', 'meta', 'password'];
         }
 
         return ['_id', 'name', 'roles', 'email', 'status', 'avatar', 'meta'];
