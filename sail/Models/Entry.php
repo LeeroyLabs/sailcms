@@ -22,17 +22,37 @@ class Entry extends BaseModel
     // Fields (content)
 
     // Entry Type id
-    public EntryType $entryType;
+    public string $entryTypeId;
 
-    public function __construct(string $collection = '') {
+    /**
+     * Construct a new entry and set the collection name with the entry type
+     *
+     * @param  EntryType  $entryType
+     */
+    public function __construct(EntryType $entryType) {
+        $this->entryTypeId = $entryType->_id;
+        $collection = $entryType->handle;
         parent::__construct($collection);
     }
 
+    /**
+     * @param  bool  $fetchAllFields
+     * @return string[]
+     */
     public function fields(bool $fetchAllFields = false): array
     {
-        return ['_id', 'title', 'slug', 'authors', 'dates', 'categories'];
+        // TODO add parent id and site id...
+        return ['_id', 'entry_type_id', 'title', 'slug', 'authors', 'dates', 'categories'];
     }
 
+    /**
+     * Process fields normally excepts authors and dates
+     *
+     * @param  string  $field
+     * @param  mixed   $value
+     * @return mixed
+     */
+    #[Pure]
     protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
