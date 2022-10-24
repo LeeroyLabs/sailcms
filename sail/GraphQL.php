@@ -2,16 +2,21 @@
 
 namespace SailCMS;
 
-use \GraphQL\GraphQL as GQL;
-use \GraphQL\Type\Definition\ObjectType;
-use \GraphQL\Type\Schema;
-use \GraphQL\Error\InvariantViolation;
+use GraphQL\GraphQL as GQL;
+use GraphQL\Type\Definition\ObjectType;
+use GraphQL\Type\Definition\StringType;
+use GraphQL\Type\Schema;
+use GraphQL\Error\InvariantViolation;
 use JsonException;
-use \SailCMS\GraphQL\Context;
-use \SailCMS\GraphQL\Query;
-use \SailCMS\Middleware\Data;
-use \SailCMS\Middleware\GraphQL as MGQL;
-use \SailCMS\Types\MiddlewareType;
+use SailCMS\GraphQL\Context;
+use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\Users;
+use SailCMS\GraphQL\Mutation;
+use SailCMS\GraphQL\Query;
+use SailCMS\GraphQL\Types\User;
+use SailCMS\Middleware\Data;
+use SailCMS\Middleware\GraphQL as MGQL;
+use SailCMS\Types\MiddlewareType;
 
 class GraphQL
 {
@@ -41,15 +46,38 @@ class GraphQL
 
     /**
      *
+     * Add a Mutation fo the Schema
+     *
+     * @param  Mutation  $mutation
+     * @return void
+     *
+     */
+    public static function addMutation(Mutation $mutation): void
+    {
+        $m = (object)[
+            'name' => $mutation->name,
+            'args' => $mutation->args,
+            'returns' => $mutation->returnValue,
+            'resolver' => $mutation->resolver
+        ];
+
+        static::$mutations[] = $m;
+    }
+
+    /**
+     *
      * Initialize and run queries
      *
      * @return string
      * @throws JsonException
      *
      */
-    public static function init(): string
+    public static function init(): mixed
     {
         $fields = [];
+        $mfields = [];
+
+        static::initSystem();
 
         foreach (static::$queries as $query) {
             $fields[$query->name] = [
@@ -59,10 +87,23 @@ class GraphQL
             ];
         }
 
+        foreach (static::$mutations as $mutation) {
+            $mfields[$mutation->name] = [
+                'type' => $mutation->returns,
+                'args' => $mutation->args,
+                'resolve' => fn($rootValue, array $args, $context) => call_user_func($mutation->resolver, $rootValue, $args, $context)
+            ];
+        }
+
         // Assemble
         $queries = new ObjectType(['name' => 'Query', 'fields' => $fields]);
 
-        static::$schema = new Schema(['query' => $queries]);
+        if (count($mfields) > 0) {
+            $mutations = new ObjectType(['name' => 'Mutation', 'fields' => $mfields]);
+            static::$schema = new Schema(['query' => $queries, 'mutation' => $mutations]);
+        } else {
+            static::$schema = new Schema(['query' => $queries]);
+        }
 
         try {
             static::$schema->assertValid();
@@ -91,10 +132,23 @@ class GraphQL
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $result));
             }
 
-            return json_encode($mresult->data, JSON_THROW_ON_ERROR);
+            return $mresult->data;
         } catch (InvariantViolation $e) {
             echo $e->getMessage();
-            return json_encode([], JSON_THROW_ON_ERROR);
+            return null;
         }
+    }
+
+    private static function initSystem(): void
+    {
+        // Basic/Misc things
+        static::addQuery(
+            Query::init('version', [Basics::class, 'version'], [], StringType::string())
+        );
+
+        // User related
+        static::addQuery(
+            Query::init('user', [Users::class, 'user'], ['id' => StringType::string()], User::user())
+        );
     }
 }

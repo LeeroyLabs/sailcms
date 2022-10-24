@@ -116,7 +116,7 @@ class Sail
             // Run GraphQL
             $data = Graphql::init();
 
-            header('Content-Type: application/json');
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode($data, JSON_THROW_ON_ERROR);
             exit();
         }
@@ -166,7 +166,6 @@ class Sail
 
         // Load security into place so it's available everywhere
         Security::init();
-        Security::loadSettings($securitySettings);
 
         // Load configurations
         static::$configDirectory = static::$workingDirectory . '/config';

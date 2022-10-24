@@ -9,8 +9,6 @@ use SodiumException;
 
 class Security
 {
-    private static array $settings = [];
-
     /**
      *
      * Initialize security, generate an encryption key if required
@@ -31,19 +29,6 @@ class Security
         } catch (FilesystemException $e) {
             throw new \RuntimeException('Could not create a secure encryption key. Please STOP! You should fix this now. Reason: ' . $e->getMessage());
         }
-    }
-
-    /**
-     *
-     * Load security settings
-     *
-     * @param  array  $settings
-     * @return void
-     *
-     */
-    public static function loadSettings(array $settings): void
-    {
-        static::$settings = $settings;
     }
 
     /**
@@ -162,6 +147,18 @@ class Security
     public static function verifyPassword(string $password, string $hash): bool
     {
         return password_verify($password, $hash);
+    }
+
+    /**
+     *
+     * Generate a rather secure key for temporary usage
+     *
+     * @return string
+     *
+     */
+    public static function secureTemporaryKey(): string
+    {
+        return hash('sha256', microtime() . uniqid(uniqid('', true), true));
     }
 
     /**

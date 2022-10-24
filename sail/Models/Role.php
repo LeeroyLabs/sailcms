@@ -13,13 +13,14 @@ use SailCMS\Text;
 class Role extends BaseModel
 {
     public string $name;
+    public string $slug;
     public string $description;
     public int $level;
     public Collection $permissions;
 
     public function fields(bool $fetchAllFields = false): array
     {
-        return ['_id', 'name', 'description', 'level', 'permissions'];
+        return ['_id', 'name', 'slug', 'description', 'level', 'permissions'];
     }
 
     /**
