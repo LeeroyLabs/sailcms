@@ -9,6 +9,8 @@ use SodiumException;
 
 class Security
 {
+    public static string $overrideKey = '';
+
     /**
      *
      * Initialize security, generate an encryption key if required
@@ -20,6 +22,10 @@ class Security
     {
         $manager = Filesystem::manager();
         $path = 'local://vault';
+
+        if (static::$overrideKey) {
+            return;
+        }
 
         try {
             if ($manager->directoryExists($path) && !$manager->fileExists($path . '/.security_key')) {
@@ -42,7 +48,7 @@ class Security
     public static function encrypt(string $data): string
     {
         $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-        $key = Filesystem::manager()->read('local://vault/.security_key');
+        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('local://vault/.security_key') : static::$overrideKey;
         $encrypted = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($data, '', $nonce, $key);
 
         $nonceHex = bin2hex($nonce);
@@ -71,7 +77,7 @@ class Security
 
         $nonce = hex2bin($nonceHex);
         $hash = hex2bin($hashHex);
-        $key = Filesystem::manager()->read('local://vault/.security_key');
+        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('local://vault/.security_key') : static::$overrideKey;
         return sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($hash, '', $nonce, $key);
     }
 

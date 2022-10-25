@@ -31,6 +31,8 @@ use Whoops\Run;
 class Sail
 {
     public const SAIL_VERSION = '3.0.0-next.1';
+    public const STATE_WEB = 10001;
+    public const STATE_CLI = 10002;
 
     // Directories
     private static string $workingDirectory = '';
@@ -39,15 +41,16 @@ class Sail
     private static string $cacheDirectory = '';
     private static string $fsDirectory = '';
 
-    // Current running app
-    private static string $currentApp = '';
-
     // Error Handler
     private static Run $errorHandler;
 
+    // Cli flag
     private static bool $isCLI = false;
 
+    // In install mode?
     private static bool $installMode = false;
+
+    private static int $appState = Sail::STATE_WEB;
 
     /**
      *
@@ -456,6 +459,40 @@ class Sail
     public static function getFSDirectory(): string
     {
         return static::$fsDirectory;
+    }
+
+    /**
+     *
+     * Are we in the CLI
+     *
+     * @return bool
+     *
+     */
+    public static function isCLI(): bool
+    {
+        return static::$isCLI;
+    }
+
+    /**
+     *
+     * Set app state (either web or cli) for some very specific use cases
+     *
+     * @param  int  $state
+     * @return void
+     *
+     */
+    public static function setAppState(int $state): void
+    {
+        if ($state === static::STATE_CLI) {
+            static::$appState = $state;
+            static::$isCLI = true;
+
+            ACL::init();
+            return;
+        }
+
+        static::$appState = static::STATE_WEB;
+        static::$isCLI = false;
     }
 
     /**

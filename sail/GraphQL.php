@@ -2,66 +2,86 @@
 
 namespace SailCMS;
 
+use ArrayAccess;
 use GraphQL\GraphQL as GQL;
-use GraphQL\Type\Definition\ObjectType;
-use GraphQL\Type\Definition\StringType;
-use GraphQL\Type\Schema;
+use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Error\InvariantViolation;
+use GraphQL\Utils\BuildSchema;
 use JsonException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Users;
-use SailCMS\GraphQL\Mutation;
-use SailCMS\GraphQL\Query;
-use SailCMS\GraphQL\Types\User;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\GraphQL as MGQL;
 use SailCMS\Types\MiddlewareType;
+use SailCMS\Types\UserMeta;
 
 class GraphQL
 {
     private static array $queries = [];
     private static array $mutations = [];
-    private static Schema $schema;
+    private static array $resolvers = [];
+
+    private static array $querySchemaParts = [];
+    private static array $mutationSchemaParts = [];
+    private static array $typeSchemaParts = [];
 
     /**
      *
-     * Add a Query to the Schema
+     * Add a Query Resolver
      *
-     * @param  Query  $query
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
-     *
      */
-    public static function addQuery(Query $query): void
+    public static function addQueryResolver(string $operationName, string $className, string $method): void
     {
-        $q = (object)[
-            'name' => $query->name,
-            'args' => $query->args,
-            'returns' => $query->returnValue,
-            'resolver' => $query->resolver
-        ];
-
-        static::$queries[] = $q;
+        static::$queries[$operationName] = (object)['class' => $className, 'method' => $method];
     }
 
     /**
      *
-     * Add a Mutation fo the Schema
+     * Add a Mutation Resolver to the Schema
      *
-     * @param  Mutation  $mutation
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
+     * @return void
+     */
+    public static function addMutationResolver(string $operationName, string $className, string $method): void
+    {
+        static::$mutations[$operationName] = (object)['class' => $className, 'method' => $method];
+    }
+
+    /**
+     *
+     * Add a Resolver to the Schema
+     *
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      *
      */
-    public static function addMutation(Mutation $mutation): void
+    public static function addResolver(string $type, string $className, string $method): void
     {
-        $m = (object)[
-            'name' => $mutation->name,
-            'args' => $mutation->args,
-            'returns' => $mutation->returnValue,
-            'resolver' => $mutation->resolver
-        ];
+        static::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
+    }
 
-        static::$mutations[] = $m;
+    public static function addQuerySchema(string $content): void
+    {
+        static::$querySchemaParts[] = $content;
+    }
+
+    public static function addMutationSchema(string $content): void
+    {
+        static::$mutationSchemaParts[] = $content;
+    }
+
+    public static function addTypeSchema(string $content): void
+    {
+        static::$typeSchemaParts[] = $content;
     }
 
     /**
@@ -74,39 +94,22 @@ class GraphQL
      */
     public static function init(): mixed
     {
-        $fields = [];
-        $mfields = [];
-
         static::initSystem();
 
-        foreach (static::$queries as $query) {
-            $fields[$query->name] = [
-                'type' => $query->returns,
-                'args' => $query->args,
-                'resolve' => fn($rootValue, array $args, $context) => call_user_func($query->resolver, $rootValue, $args, $context)
-            ];
-        }
-
-        foreach (static::$mutations as $mutation) {
-            $mfields[$mutation->name] = [
-                'type' => $mutation->returns,
-                'args' => $mutation->args,
-                'resolve' => fn($rootValue, array $args, $context) => call_user_func($mutation->resolver, $rootValue, $args, $context)
-            ];
-        }
-
-        // Assemble
-        $queries = new ObjectType(['name' => 'Query', 'fields' => $fields]);
-
-        if (count($mfields) > 0) {
-            $mutations = new ObjectType(['name' => 'Mutation', 'fields' => $mfields]);
-            static::$schema = new Schema(['query' => $queries, 'mutation' => $mutations]);
-        } else {
-            static::$schema = new Schema(['query' => $queries]);
-        }
-
         try {
-            static::$schema->assertValid();
+            $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
+            $schemaContent = str_replace(
+                ['#{CUSTOM_QUERIES}#', '#{CUSTOM_MUTATIONS}#', '#{CUSTOM_TYPES}#', '#{CUSTOM_FLAGS}#', '#{CUSTOM_META}#'],
+                [
+                    implode("\n", static::$querySchemaParts),
+                    implode("\n", static::$mutationSchemaParts),
+                    implode("\n", static::$typeSchemaParts),
+                    UserMeta::getAvailableFlags(),
+                    UserMeta::getAvailableMeta()
+                ], $schemaContent
+            );
+
+            $schema = BuildSchema::build($schemaContent);
 
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true, $_ENV['SETTINGS']->get('graphql.depthLimit'), JSON_THROW_ON_ERROR); // N+1 protection
@@ -123,13 +126,25 @@ class GraphQL
 
             $data = $mresult->data;
 
-            $result = GQL::executeQuery(static::$schema, $data['query'], null, new Context(), $data['variables']);
-            $serializableResult = $result->toArray();
+            $result = GQL::executeQuery($schema, $data['query'], null, new Context(), $data['variables'], null, [static::class, 'resolvers']);
+            $errors = $result->errors;
+            $serializableResult = (object)$result->toArray();
 
             if (!empty($input['query'])) {
-                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterQuery, data: $result));
+                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterQuery, data: $serializableResult));
             } else {
-                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $result));
+                $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $serializableResult));
+            }
+
+            if ($errors) {
+                foreach ($errors as $error) {
+                    $mresult->data->errors = [
+                        'message' => $error->getMessage(),
+                        'extensions' => ['category' => 'internal'],
+                        'locations' => [['line' => $error->getLine(), 'column' => 1]],
+                        'path' => ['']
+                    ];
+                }
             }
 
             return $mresult->data;
@@ -141,14 +156,81 @@ class GraphQL
 
     private static function initSystem(): void
     {
-        // Basic/Misc things
-        static::addQuery(
-            Query::init('version', [Basics::class, 'version'], [], StringType::string())
-        );
+        static::addQueryResolver('version', Basics::class, 'version');
+        static::addQueryResolver('user', Users::class, 'user');
+        static::addQueryResolver('users', Users::class, 'users');
 
-        // User related
-        static::addQuery(
-            Query::init('user', [Users::class, 'user'], ['id' => StringType::string()], User::user())
-        );
+        static::addResolver('User', Users::class, 'resolver');
+    }
+
+    /**
+     *
+     * Resolve everything
+     *
+     * @param               $objectValue
+     * @param  array        $args
+     * @param               $contextValue
+     * @param  ResolveInfo  $info
+     * @return ArrayAccess|mixed
+     *
+     */
+    public static function resolvers($objectValue, array $args, $contextValue, ResolveInfo $info): mixed
+    {
+        $fieldName = $info->fieldName;
+        $type = $info->parentType->name;
+        $property = null;
+
+        if (is_array($objectValue) || $objectValue instanceof ArrayAccess) {
+            if (isset($objectValue[$fieldName])) {
+                $property = $objectValue[$fieldName];
+            }
+        } elseif (is_object($objectValue)) {
+            if (isset($objectValue->{$fieldName})) {
+                if (is_object($objectValue->{$fieldName}) && get_class($objectValue->{$fieldName}) === Collection::class) {
+                    $property = $objectValue->{$fieldName}->unwrap();
+                } else {
+                    $property = $objectValue->{$fieldName};
+                }
+            }
+        }
+
+        if (isset($property)) {
+            foreach (static::$resolvers as $name => $resolver) {
+                if ($type === $name) {
+                    return (new $resolver->class())->{$resolver->method}($objectValue, $args, $contextValue, $info);
+                }
+            }
+
+            return $property;
+        }
+
+        if ($type === 'Query') {
+            foreach (static::$queries as $name => $query) {
+                if ($fieldName === $name) {
+                    return (new $query->class())->{$query->method}($objectValue, $args, $contextValue);
+                }
+            }
+
+            throw new \RuntimeException("Cannot find resolver for Query '{$fieldName}'");
+        }
+
+        if ($type === 'Mutation') {
+            foreach (static::$mutations as $name => $mutation) {
+                if ($fieldName === $name) {
+                    return (new $mutation->class())->{$mutation->method}($objectValue, $args, $contextValue);
+                }
+            }
+
+            throw new \RuntimeException("Cannot find resolver for Mutation '{$fieldName}'");
+        }
+
+        // One last try on the resolvers
+        foreach (static::$resolvers as $name => $resolver) {
+            if ($type === $name) {
+                return (new $resolver->class())->{$resolver->method}($objectValue, $args, $contextValue, $info);
+            }
+        }
+
+        return $objectValue;
     }
 }

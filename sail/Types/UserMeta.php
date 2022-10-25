@@ -3,10 +3,12 @@
 namespace SailCMS\Types;
 
 use SailCMS\Collection;
+use SailCMS\Contracts\DatabaseType;
 use SailCMS\GraphQL\Types as GTypes;
+use SailCMS\Text;
 use stdClass;
 
-class UserMeta
+class UserMeta implements DatabaseType
 {
     public const TYPE_STRING = 1;
     public const TYPE_INT = 2;
@@ -17,13 +19,13 @@ class UserMeta
     public readonly stdClass $flags;
 
     private static array $registered = [
-        'flags' => [
+        'Flags' => [
             'type' => UserMeta::TYPE_CUSTOM,
             'callback' => [UserMeta::class, 'getAvailableFlags']
         ]
     ];
 
-    private static array $registeredFlags = ['cubeler'];
+    private static array $registeredFlags = ['use2fa'];
 
     public function __construct(object $object)
     {
@@ -133,29 +135,68 @@ class UserMeta
      *
      * Get all available meta registered in the system
      *
-     * @return Collection
+     * @return string
      *
      */
-    public static function getAvailableMeta(): Collection
+    public static function getAvailableMeta(): string
     {
-        return new Collection(static::$registered);
+        $graphql = '';
+
+        foreach (static::$registered as $key => $options) {
+            switch ($options['type']) {
+                case static::TYPE_BOOL:
+                    $graphql .= $key . ": Boolean\n";
+                    break;
+
+                case static::TYPE_FLOAT:
+                    $graphql .= $key . ": Float\n";
+                    break;
+
+                case static::TYPE_INT:
+                    $graphql .= $key . ": Int\n";
+                    break;
+
+                default:
+                case static::TYPE_STRING:
+                    $graphql .= $key . ": String\n";
+                    break;
+
+                case static::TYPE_CUSTOM:
+                    $graphql .= Text::snakeCase($key) . ": {$key}\n";
+                    break;
+            }
+        }
+        
+        return $graphql;
     }
 
     /**
      *
      * Get all available flag registered in the system
      *
-     * @return Collection
+     * @return string
      *
      */
-    public static function getAvailableFlags(): Collection
+    public static function getAvailableFlags(): string
     {
-        $list = [];
+        $graphql = '';
 
         foreach (static::$registeredFlags as $value) {
-            $list[$value] = GTypes::boolean();
+            $graphql .= $value . ": Boolean!\n";
         }
 
-        return new Collection($list);
+        return $graphql;
+    }
+
+    /**
+     *
+     * Return a simple format for the database
+     *
+     * @return stdClass|array
+     *
+     */
+    public function toDBObject(): \stdClass|array
+    {
+        return $this->simplify();
     }
 }

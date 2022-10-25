@@ -174,6 +174,11 @@ class ACL
      */
     public static function hasPermission(string|User|null $user, Types\ACL ...$permissions): bool
     {
+        // CLI user is allowed RW on everything
+        if (Sail::isCLI()) {
+            return true;
+        }
+
         if ($user === null) {
             return false;
         }
@@ -190,7 +195,7 @@ class ACL
                 $perms[] = $permission->value;
             }
 
-            return ($user->permissions->intersect($perms)->length > 0);
+            return ($user->permissions()->intersect($perms)->length > 0);
         }
 
         return false;

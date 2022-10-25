@@ -1,0 +1,54 @@
+type Query {
+    version: String
+    user(id: String): User
+    users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
+    #{CUSTOM_QUERIES}#
+}
+
+type Mutation {
+    user(t: String): Boolean
+    #{CUSTOM_MUTATIONS}#
+}
+
+enum SortingOrder {
+    ASC
+    DESC
+}
+
+type User {
+    _id: ID!
+    name: UserName!
+    email: String!
+    roles: [String!]
+    status: Boolean!
+    avatar: String!
+    permissions: [String!]
+    meta: UserMeta!
+}
+
+type UserListing {
+    pagination: Pagination
+    list: [User!]
+}
+
+type Pagination {
+    current: Int!
+    totalPages: Int!
+    total: Int!
+}
+
+type UserName {
+    first: String!
+    last: String!
+    full: String!
+}
+
+type UserMeta {
+    #{CUSTOM_META}#
+}
+
+type Flags {
+    #{CUSTOM_FLAGS}#
+}
+
+#{CUSTOM_TYPES}#

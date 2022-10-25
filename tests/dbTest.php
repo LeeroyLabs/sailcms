@@ -11,7 +11,7 @@ class DbTest extends BaseModel
         parent::__construct('tests');
     }
 
-    public function fields(): array
+    public function fields(bool $fetchAllFields = false): array
     {
         return ['_id', 'version'];
     }
@@ -21,7 +21,7 @@ class DbTest extends BaseModel
         return $this->findOne(['version' => '1.0.0'])->exec();
     }
 
-    public function getV2(): dbTest
+    public function getV2(): ?dbTest
     {
         return $this->findOne(['version' => '2.0.0'])->exec();
     }
@@ -33,39 +33,38 @@ class DbTest extends BaseModel
 
     public function updateTest()
     {
-        $this->updateOne(['version' => '1.0.0'], ['version' => '2.0.0']);
+        $this->updateOne(['version' => '1.0.0'], ['$set' => ['version' => '2.0.0']]);
     }
 
-    public function deletTest()
+    public function deleteTest()
     {
         $this->deleteOne(['version' => '2.0.0']);
     }
 }
 
-//test('Write an entry to db', function ()
-//{
-//    $model = new DbTest();
-//    $model->writeTest();
-//    $rec = $model->getV1();
-//
-//    expect($rec)->not->toBe(null);
-//});
-//
-//test('Update an entry from db', function ()
-//{
-//    $model = new DbTest();
-//    $model->updateTest();
-//    $rec = $model->getV2();
-//
-//    expect($rec)->not->toBe(null);
-//    expect($rec->version)->toBe('2.0.0');
-//});
-//
-//test('Delete an entry from db', function ()
-//{
-//    $model = new DbTest();
-//    $model->deletTest();
-//    $rec = $model->getV2();
-//
-//    expect($rec)->toBe(null);
-//});
+test('Write an entry to db', function ()
+{
+    $model = new DbTest();
+    $model->writeTest();
+    $rec = $model->getV1();
+
+    expect($rec)->not->toBe(null);
+});
+
+test('Update an entry from db', function ()
+{
+    $model = new DbTest();
+    $model->updateTest();
+    $rec = $model->getV2();
+
+    expect($rec)->not->toBe(null)->and($rec->version)->toBe('2.0.0');
+});
+
+test('Delete an entry from db', function ()
+{
+    $model = new DbTest();
+    $model->deleteTest();
+    $rec = $model->getV2();
+
+    expect($rec)->toBe(null);
+});
