@@ -13,6 +13,8 @@ use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
+use SailCMS\Types\UserMeta;
+use SailCMS\Types\Username;
 use SodiumException;
 
 /*
@@ -20,12 +22,13 @@ use SodiumException;
  *
  * - user
  * - users
- * createUser
- * - updateUser
+ * - createUser
+ * createAdminUser
+ * updateUser
  * - deleteUser
  * - authenticate
  * - verifyAuthenticationToken
- * verifyTFA
+ * - verifyTFA
  *
  */
 
@@ -134,7 +137,30 @@ class Users
         return false;
     }
 
+    /**
+     *
+     * Create a new user
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
     public function createUser(mixed $obj, Collection $args, Context $context): bool
+    {
+        $user = new User();
+
+        $name = Username::initWith($args->get('name'));
+        $meta = ($args->get('meta')) ? new UserMeta($args->get('meta')) : null;
+
+        $id = $user->createRegularUser($name, $args->get('email'), $args->get('password'), $args->get('avatar') ?? '', $meta);
+
+        return (!empty($id));
+    }
+
+    public function updateUser(mixed $obj, Collection $args, Context $context): bool
     {
         return false;
     }
