@@ -19,7 +19,7 @@ class Entry extends BaseModel
     public Authors $authors;
     public Dates $dates;
     public Collection $categories;
-    // Fields (content)
+    public Collection $content;
 
     // Entry Type id
     public string $entryTypeId;
@@ -42,7 +42,7 @@ class Entry extends BaseModel
     public function fields(bool $fetchAllFields = false): array
     {
         // TODO add parent id and site id...
-        return ['_id', 'entry_type_id', 'title', 'slug', 'authors', 'dates', 'categories'];
+        return ['_id', 'entry_type_id', 'title', 'slug', 'authors', 'dates', 'categories', 'content'];
     }
 
     /**

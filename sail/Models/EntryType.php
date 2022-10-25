@@ -14,6 +14,7 @@ class EntryType extends BaseModel
     public string $title;
     public string $handle;
     public string $urlPrefix;
+    public string $entryTypeLayoutId;
 
     const HANDLE_MISSING_IN_COLLECTION = "You must set the entry type handle in your collection";
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
