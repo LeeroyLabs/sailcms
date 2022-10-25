@@ -184,7 +184,7 @@ class UserMeta implements DatabaseType
         $graphql = '';
 
         foreach (static::$registeredFlags as $value) {
-            $graphql .= $value . ": Boolean!\n";
+            $graphql .= $value . ": Boolean\n";
         }
 
         return $graphql;

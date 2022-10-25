@@ -15,7 +15,7 @@ type Query {
 }
 
 type Mutation {
-    user(t: String): Boolean
+    placeholderForNow(t: String): Boolean
     #{CUSTOM_MUTATIONS}#
 }
 
