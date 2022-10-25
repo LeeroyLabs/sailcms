@@ -24,6 +24,8 @@ abstract class AppContainer
 
     abstract public function permissions(): Collection;
 
+    abstract public function events(): void;
+
     public function __construct()
     {
         $this->router = new Router();

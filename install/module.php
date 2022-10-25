@@ -22,5 +22,10 @@ class Module implements AppModule
     {
     }
 
+    public function events(): void
+    {
+        // register for events
+    }
+
     // Your code
 }

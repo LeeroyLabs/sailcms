@@ -135,10 +135,11 @@ class UserMeta implements DatabaseType
      *
      * Get all available meta registered in the system
      *
+     * @param  bool  $inputs
      * @return string
      *
      */
-    public static function getAvailableMeta(): string
+    public static function getAvailableMeta(bool $inputs = false): string
     {
         $graphql = '';
 
@@ -162,11 +163,12 @@ class UserMeta implements DatabaseType
                     break;
 
                 case static::TYPE_CUSTOM:
-                    $graphql .= Text::snakeCase($key) . ": {$key}\n";
+                    $input = ($inputs) ? 'Input' : '';
+                    $graphql .= Text::snakeCase($key) . ": {$key}{$input}\n";
                     break;
             }
         }
-        
+
         return $graphql;
     }
 

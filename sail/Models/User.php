@@ -9,6 +9,7 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\ACLException;
+use SailCMS\Event;
 use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
@@ -19,6 +20,10 @@ use SailCMS\Types\Username;
 
 class User extends BaseModel
 {
+    public const EVENT_DELETE = 'event_delete_user';
+    public const EVENT_CREATE = 'event_create_user';
+    public const EVENT_UPDATE = 'event_update_user';
+
     public static ?User $currentUser = null;
 
     private static Collection $permsCache;
@@ -139,11 +144,16 @@ class User extends BaseModel
      * @param  string  $id
      * @return User|null
      * @throws DatabaseException
+     * @throws ACLException
      *
      */
     public function getById(string $id): ?User
     {
-        return $this->findById($id)->exec();
+        if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id) || ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
+            return $this->findById($id)->exec();
+        }
+
+        return null;
     }
 
     /**
@@ -159,8 +169,6 @@ class User extends BaseModel
     {
         return $this->findOne(['email' => $email])->exec();
     }
-
-    // TODO: Get by role
 
     /**
      *
@@ -211,6 +219,7 @@ class User extends BaseModel
      * @return string
      * @throws ACLException
      * @throws DatabaseException
+     *
      */
     public function create(Username $name, string $email, string $password, Collection $roles, string $avatar = '', UserMeta|null $meta = null): string
     {
@@ -221,7 +230,7 @@ class User extends BaseModel
             }
 
             if ($meta === null) {
-                $meta = new UserMeta((object)[]);
+                $meta = new UserMeta((object)['flags' => ['use2fa' => false]]);
             }
 
             return $this->insert([
@@ -237,6 +246,13 @@ class User extends BaseModel
         }
 
         return '';
+    }
+
+    public function update(): bool
+    {
+        if ((string)static::$currentUser->_id === (string)$this->_id || ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+            // TODO: update user
+        }
     }
 
     /**
@@ -300,6 +316,7 @@ class User extends BaseModel
     {
         if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
             $this->deleteById($this->_id);
+            Event::dispatch(static::EVENT_DELETE, (string)$this->_id);
             return true;
         }
 
@@ -324,6 +341,7 @@ class User extends BaseModel
             }
 
             $this->deleteById($id);
+            Event::dispatch(static::EVENT_DELETE, (string)$id);
             return true;
         }
 
@@ -344,6 +362,7 @@ class User extends BaseModel
     {
         if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
             $this->deleteOne(['email' => $email]);
+            Event::dispatch(static::EVENT_DELETE, $email);
             return true;
         }
 
@@ -373,7 +392,7 @@ class User extends BaseModel
         $user = $this->findOne(['email' => $email])->exec(true);
 
         if ($user && Security::verifyPassword($password, $user->password)) {
-            if ($user->use2fa) {
+            if ($user->meta->flags->use2fa) {
                 return '2fa';
             }
 
@@ -396,26 +415,20 @@ class User extends BaseModel
      */
     public function verifyTemporaryToken(string $token): ?User
     {
+        echo "HERE";
+        die();
         $user = $this->findOne(['temporary_token' => $token])->exec();
 
         if ($user) {
             $session = Session::manager();
-            $session->$session->get('set_token');
+            $session->setUserId((string)$user->_id);
+            $session->set('user_id', (string)$user->_id);
+            $session->get('set_token');
 
             static::$currentUser = $this->findById((string)$user->_id)->exec();
 
             // Get role
             $roleModel = new Role();
-
-            static::$currentUser->permissions = new Collection([]);
-
-            foreach (static::$currentUser->roles->unwrap() as $roleSlug) {
-                $role = $roleModel->getByName($roleSlug);
-
-                if ($role) {
-                    static::$currentUser->permissions = $role->permissions;
-                }
-            }
 
             // Clear temporary token
             $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => '']]);

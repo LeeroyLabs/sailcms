@@ -99,13 +99,21 @@ class GraphQL
         try {
             $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
             $schemaContent = str_replace(
-                ['#{CUSTOM_QUERIES}#', '#{CUSTOM_MUTATIONS}#', '#{CUSTOM_TYPES}#', '#{CUSTOM_FLAGS}#', '#{CUSTOM_META}#'],
+                [
+                    '#{CUSTOM_QUERIES}#',
+                    '#{CUSTOM_MUTATIONS}#',
+                    '#{CUSTOM_TYPES}#',
+                    '#{CUSTOM_FLAGS}#',
+                    '#{CUSTOM_META}#',
+                    '#{CUSTOM_META_INPUT}#'
+                ],
                 [
                     implode("\n", static::$querySchemaParts),
                     implode("\n", static::$mutationSchemaParts),
                     implode("\n", static::$typeSchemaParts),
                     UserMeta::getAvailableFlags(),
-                    UserMeta::getAvailableMeta()
+                    UserMeta::getAvailableMeta(),
+                    UserMeta::getAvailableMeta(true)
                 ], $schemaContent
             );
 
@@ -142,6 +150,8 @@ class GraphQL
                         'message' => $error->getMessage(),
                         'extensions' => ['category' => 'internal'],
                         'locations' => [['line' => $error->getLine(), 'column' => 1]],
+                        'file' => $error->getFile(),
+                        'stack' => debug_backtrace(),
                         'path' => ['']
                     ];
                 }
@@ -156,10 +166,19 @@ class GraphQL
 
     private static function initSystem(): void
     {
+        // General
         static::addQueryResolver('version', Basics::class, 'version');
+
+        // User
         static::addQueryResolver('user', Users::class, 'user');
         static::addQueryResolver('users', Users::class, 'users');
 
+        // Authentication
+        static::addQueryResolver('authenticate', Users::class, 'authenticate');
+        static::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
+        static::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+
+        // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');
     }
 
@@ -197,7 +216,7 @@ class GraphQL
         if (isset($property)) {
             foreach (static::$resolvers as $name => $resolver) {
                 if ($type === $name) {
-                    return (new $resolver->class())->{$resolver->method}($objectValue, $args, $contextValue, $info);
+                    return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                 }
             }
 
@@ -207,7 +226,7 @@ class GraphQL
         if ($type === 'Query') {
             foreach (static::$queries as $name => $query) {
                 if ($fieldName === $name) {
-                    return (new $query->class())->{$query->method}($objectValue, $args, $contextValue);
+                    return (new $query->class())->{$query->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -217,7 +236,7 @@ class GraphQL
         if ($type === 'Mutation') {
             foreach (static::$mutations as $name => $mutation) {
                 if ($fieldName === $name) {
-                    return (new $mutation->class())->{$mutation->method}($objectValue, $args, $contextValue);
+                    return (new $mutation->class())->{$mutation->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -227,7 +246,7 @@ class GraphQL
         // One last try on the resolvers
         foreach (static::$resolvers as $name => $resolver) {
             if ($type === $name) {
-                return (new $resolver->class())->{$resolver->method}($objectValue, $args, $contextValue, $info);
+                return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
             }
         }
 

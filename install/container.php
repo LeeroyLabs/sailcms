@@ -33,6 +33,11 @@ class Container extends AppContainer
         // Register your middlewares
     }
 
+    public function events(): void
+    {
+        // register for events
+    }
+
     public function cli(): Collection
     {
         return new Collection([]);

@@ -1,7 +1,16 @@
 type Query {
     version: String
-    user(id: String): User
+
+    # Users
+    user(id: ID!): User
     users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
+    createUser(name: UserNameInput!, email: String!, password: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!): Boolean!
+    deleteUser(id: ID!): Boolean!
+
+    # Authentication
+    authenticate(email: String!, password: String!): String!
+    verifyAuthenticationToken(token: String!): User
+    verifyTFA(user_id: ID!, code: String!): Boolean!
     #{CUSTOM_QUERIES}#
 }
 
@@ -43,11 +52,24 @@ type UserName {
     full: String!
 }
 
+input UserNameInput {
+    first: String!
+    last: String!
+}
+
 type UserMeta {
     #{CUSTOM_META}#
 }
 
+input UserMetaInput {
+    #{CUSTOM_META_INPUT}#
+}
+
 type Flags {
+    #{CUSTOM_FLAGS}#
+}
+
+input FlagsInput {
     #{CUSTOM_FLAGS}#
 }
 
