@@ -255,36 +255,36 @@ class User extends BaseModel
      */
     public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = BaseModel::SORT_ASC): Listing
     {
-        //if (ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-        $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
+        if (ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
+            $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
 
-        $options = QueryOptions::initWithSort([$sort => $direction]);
-        $options->skip = $offset;
-        $options->limit = ($limit > 100) ? 25 : $limit;
+            $options = QueryOptions::initWithSort([$sort => $direction]);
+            $options->skip = $offset;
+            $options->limit = ($limit > 100) ? 25 : $limit;
 
-        $query = [];
+            $query = [];
 
-        if (!empty($search)) {
-            $query = [
-                '$or' => [
-                    ['name.full' => new Regex($search, 'gi')],
-                    ['email' => $search]
-                ]
-            ];
+            if (!empty($search)) {
+                $query = [
+                    '$or' => [
+                        ['name.full' => new Regex($search, 'gi')],
+                        ['email' => $search]
+                    ]
+                ];
+            }
+
+            // Pagination
+            $total = $this->count($query);
+            $pages = ceil($total / $limit);
+            $current = $page;
+            $pagination = new Pagination($current, $pages, $total);
+
+            $list = $this->find($query, $options)->exec();
+
+            return new Listing($pagination, new Collection($list));
         }
-        
-        // Pagination
-        $total = $this->count($query);
-        $pages = ceil($total / $limit);
-        $current = $page;
-        $pagination = new Pagination($current, $pages, $total);
 
-        $list = $this->find($query, $options)->exec();
-
-        return new Listing($pagination, new Collection($list));
-        //}
-
-        //return Listing::empty();
+        return Listing::empty();
     }
 
     /**
