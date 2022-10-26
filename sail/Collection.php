@@ -2,8 +2,8 @@
 
 namespace SailCMS;
 
+use JsonException;
 use SailCMS\Types\Sorting;
-use SailCMS\Text;
 
 /**
  *
@@ -117,6 +117,19 @@ class Collection implements \JsonSerializable, \Iterator
         }
 
         return $arr;
+    }
+
+    /**
+     *
+     * Alias of unwrap
+     * Alias of unwrap
+     *
+     * @return array
+     *
+     */
+    public function toArray(): array
+    {
+        return $this->unwrap();
     }
 
     /**
@@ -312,6 +325,23 @@ class Collection implements \JsonSerializable, \Iterator
     {
         $filtered = array_filter($this->_internal, $callback, ARRAY_FILTER_USE_BOTH);
         return new static($filtered);
+    }
+
+    /**
+     *
+     * Remove part of a collection or replace it with something else
+     *
+     * @param  int       $offset
+     * @param  int|null  $length
+     * @return Collection
+     *
+     */
+    public function splice(int $offset, int $length = null): Collection
+    {
+        $copy = $this->_internal;
+        $new = array_splice($copy, $offset, $length);
+
+        return new Collection($new);
     }
 
     /**
@@ -649,6 +679,19 @@ class Collection implements \JsonSerializable, \Iterator
         return null;
     }
 
+    /**
+     *
+     * serialize the array to json
+     *
+     * @return string
+     * @throws JsonException
+     *
+     */
+    public function toJSON(): string
+    {
+        return json_encode($this->_internal, JSON_THROW_ON_ERROR);
+    }
+
     // ----------------------------------------- Interface Implementations ----------------------------------------- //
 
     /**
@@ -739,5 +782,391 @@ class Collection implements \JsonSerializable, \Iterator
         }
 
         return implode($separator, $this->_internal);
+    }
+
+    /**
+     *
+     * Return elements that match key/value
+     *
+     * This does not keep indexes
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return Collection
+     *
+     */
+    public function where(string $key, mixed $value): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $_v === $v) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v === $value) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && $v->{$key} === $value) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Get elements that have a value within the given array for given key
+     *
+     * Does not keep indexes and evaluates loosely
+     *
+     * @param  string            $key
+     * @param  array|Collection  $values
+     * @param  bool              $strict
+     * @return Collection
+     *
+     */
+    public function whereIn(string $key, array|Collection $values, bool $strict = false): Collection
+    {
+        if (is_object($values)) {
+            $values = $values->unwrap();
+        }
+
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && in_array($_v, $values, $strict)) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && in_array($_v, $values, $strict)) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && in_array($v->{$key}, $values, $strict)) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Shorthand for whereIn with strict set to true
+     *
+     * @param  string            $key
+     * @param  array|Collection  $values
+     * @return Collection
+     *
+     */
+    public function whereInStrict(string $key, array|Collection $values): Collection
+    {
+        return $this->whereIn($key, $values, true);
+    }
+
+    /**
+     *
+     * Get elements that do not have the given key value within the given list of values
+     *
+     * Does not keep indexes and evaluates loosely
+     *
+     * @param  string            $key
+     * @param  array|Collection  $values
+     * @param  bool              $strict
+     * @return Collection
+     *
+     */
+    public function whereNotIn(string $key, array|Collection $values, bool $strict = false): Collection
+    {
+        if (is_object($values)) {
+            $values = $values->unwrap();
+        }
+
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && !in_array($_v, $values, $strict)) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && !in_array($_v, $values, $strict)) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && !in_array($v->{$key}, $values, $strict)) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Shorthand for whereNotIn with strict set to true
+     *
+     * @param  string            $key
+     * @param  array|Collection  $values
+     * @return Collection
+     *
+     */
+    public function whereNotInStrict(string $key, array|Collection $values): Collection
+    {
+        return $this->whereNotIn($key, $values, true);
+    }
+
+    /**
+     *
+     * Get items where given key's value is between the two given numbers
+     *
+     * @param  string     $key
+     * @param  int|float  $low
+     * @param  int|float  $high
+     * @return Collection
+     *
+     */
+    public function whereBetween(string $key, int|float $low, int|float $high): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $v >= $low && $v <= $high) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v >= $low && $_v <= $high) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && $v->{$key} >= $low && $v->{$key} <= $high) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Get items where given key's value is not between the two given numbers
+     *
+     * @param  string     $key
+     * @param  int|float  $low
+     * @param  int|float  $high
+     * @return Collection
+     *
+     */
+    public function whereNotBetween(string $key, int|float $low, int|float $high): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $v < $low && $v > $high) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v < $low && $_v > $high) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && $v->{$key} < $low && $v->{$key} > $high) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Get items where the given key's value is null
+     *
+     * @param  string  $key
+     * @return Collection
+     *
+     */
+    public function whereNull(string $key): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $_v === null) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v === null) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (!$v->{$key}) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Get items where the given key's value is not null
+     *
+     * @param  string  $key
+     * @return Collection
+     *
+     */
+    public function whereNotNull(string $key): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $_v !== null) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v !== null) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif ($v->{$key}) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Get elements that key's value is an object of the given type
+     *
+     * @param  string  $key
+     * @param  string  $className
+     * @return Collection
+     *
+     */
+    public function whereInstanceOf(string $key, string $className): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && is_object($_v) && get_class($_v) === $className) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && is_object($_v) && get_class($_v) === $className) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif ($v->{$key} && is_object($v->{$key}) && get_class($v[$key]) === $className) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Get elements that key's value is an object not of the given type
+     *
+     * @param  string  $key
+     * @param  string  $className
+     * @return Collection
+     *
+     */
+    public function whereNotInstanceOf(string $key, string $className): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && (!is_object($_v) || get_class($_v) !== $className)) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && (!is_object($_v) || get_class($_v) !== $className)) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif ($v->{$key} && (!is_object($v->{$key}) || get_class($v[$key]) !== $className)) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
     }
 }

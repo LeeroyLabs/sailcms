@@ -12,11 +12,7 @@ class EncryptionTest
 
 beforeAll(function ()
 {
-    Filesystem::mountCore(__DIR__ . '/mock/fs');
-    Filesystem::init();
-
-    Security::init();
-    Security::loadSettings([]);
+    Security::$overrideKey = sodium_crypto_aead_xchacha20poly1305_ietf_keygen();
 });
 
 test('Encrypt', function () use ($phrase)
@@ -30,4 +26,27 @@ test('Encrypt', function () use ($phrase)
 test('Decrypt', function () use ($phrase)
 {
     expect(Security::decrypt(EncryptionTest::$encrypted))->toBe($phrase);
+});
+
+test('Hash generation', function ()
+{
+    try {
+        $hash = Security::hash('hello world!', true);
+
+        expect($hash)->not()->toBe('');
+    } catch (Exception $e) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Hash verification', function ()
+{
+    try {
+        $hash = Security::hash('hello world!', true);
+        $verified = Security::valueMatchHash($hash, 'hello world!');
+
+        expect($verified)->toBe(true);
+    } catch (Exception $e) {
+        expect(true)->toBe(false);
+    }
 });

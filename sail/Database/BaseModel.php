@@ -4,6 +4,7 @@ namespace SailCMS\Database;
 
 use JsonException;
 use MongoDB\Model\BSONArray;
+use SailCMS\Contracts\DatabaseType;
 use SailCMS\Text;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\QueryOptions;
@@ -11,9 +12,13 @@ use \Carbon\Carbon;
 use \MongoDB\BSON\ObjectId;
 use \MongoDB\BSON\UTCDateTime;
 use \MongoDB\Collection;
+use stdClass;
 
 abstract class BaseModel
 {
+    public const SORT_ASC = 1;
+    public const SORT_DESC = -1;
+
     public ObjectId $_id;
 
     private Collection $collection;
@@ -563,6 +568,33 @@ abstract class BaseModel
 
     /**
      *
+     * Transform data to php stdClass
+     *
+     * @return stdClass
+     *
+     */
+    public function toPHPObject(): \stdClass
+    {
+        $fields = $this->fields();
+        $doc = [];
+
+        foreach ($fields as $field) {
+            if ($field === '_id') {
+                $doc[$field] = (string)$this->{$field};
+            } else {
+                if (is_object($this->{$field}) || is_array($this->{$field})) {
+                    $doc[$field] = $this->simplifyEntity($this->{$field});
+                } else {
+                    $doc[$field] = $this->{$field};
+                }
+            }
+        }
+
+        return (object)$doc;
+    }
+
+    /**
+     *
      * Turn php timestamp (seconds) to a MongoDB compatible Date object
      *
      * @param  int|float  $time
@@ -662,12 +694,12 @@ abstract class BaseModel
      * Process regular variables recursively
      *
      * @param  object  $obj
-     * @return \stdClass
+     * @return stdClass
      *
      */
-    private function parseRegularObject(object $obj): \stdClass
+    private function parseRegularObject(object $obj): stdClass
     {
-        $out = new \stdClass;
+        $out = new stdClass;
 
         foreach ($obj as $k => $v) {
             if (is_object($v)) {
@@ -709,6 +741,12 @@ abstract class BaseModel
                 return (string)$entity;
             }
 
+            $impl = class_implements($entity);
+
+            if (is_object($entity) && isset($impl[DatabaseType::class])) {
+                return $entity->toDBObject();
+            }
+
             foreach ($entity as $key => $value) {
                 $entity->{$key} = $this->simplifyEntity($value);
             }
@@ -724,22 +762,29 @@ abstract class BaseModel
      * Prepare document to be written, transform Carbon dates to MongoDB dates
      *
      * @param  array  $doc
-     * @return array
-     *
+     * @return stdClass|array
      */
-    private function prepareForWrite(array $doc): array
+    private function prepareForWrite(mixed $doc): stdClass|array
     {
-        foreach ($doc as $key => $value) {
-            if ($value instanceof Carbon) {
-                $doc[$key] = $this->processOnStore($key, new UTCDateTime($value->toDateTime()->getTimestamp() * 1000));
-            } elseif (is_scalar($value)) {
-                $doc[$key] = $this->processOnStore($key, $value);
-            } elseif (get_class($value) === \SailCMS\Collection::class) {
-                $doc[$key] = $value->unwrap();
-            } elseif (is_array($value) || is_object($value)) {
-                $doc[$key] = $this->processOnStore($key, $this->prepareForWrite($value));
-            } else {
-                $doc[$key] = $this->processOnStore($key, $value);
+        if (is_array($doc) || is_iterable($doc)) {
+            foreach ($doc as $key => $value) {
+                if ($value instanceof Carbon) {
+                    $doc[$key] = $this->processOnStore($key, new UTCDateTime($value->toDateTime()->getTimestamp() * 1000));
+                } elseif (is_scalar($value)) {
+                    $doc[$key] = $this->processOnStore($key, $value);
+                } elseif (get_class($value) === \SailCMS\Collection::class) {
+                    $doc[$key] = $value->unwrap();
+                } elseif (is_array($value) || is_object($value)) {
+                    $doc[$key] = $this->processOnStore($key, $this->prepareForWrite($value));
+                } else {
+                    $doc[$key] = $this->processOnStore($key, $value);
+                }
+            }
+        } elseif (is_object($doc)) {
+            $impl = class_implements(get_class($doc));
+
+            if (isset($impl[DatabaseType::class])) {
+                $doc = $doc->toDBObject();
             }
         }
 

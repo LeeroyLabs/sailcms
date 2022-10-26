@@ -10,7 +10,7 @@ class Container extends AppContainer
 {
     public function info(): ContainerInformation
     {
-        return new ContainerInformation(name: '[NAME]', description: 'your description', version: 1.0, semver: '1.0.0');
+        return new ContainerInformation('[NAME]', 'your description', 1.0, '1.0.0');
     }
 
     public function routes(): void
@@ -31,6 +31,11 @@ class Container extends AppContainer
     public function middleware(): void
     {
         // Register your middlewares
+    }
+
+    public function events(): void
+    {
+        // register for events
     }
 
     public function cli(): Collection

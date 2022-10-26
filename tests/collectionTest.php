@@ -27,7 +27,7 @@ test('Traversal #2: (collection of collections) index.index.property (0.2.test)'
 
     $col = new Collection([$col1, $col2]);
     $value = $col->get('0.2.test');
-    
+
     expect($value)->toBe('Hello World!');
 });
 
@@ -142,7 +142,7 @@ test('Check if collection contains a certain value', function ()
 
 test('Remove duplicates from collection', function ()
 {
-    $arr = ['hello', 'bob', 'jones', 'hello'];
+    $arr = ['hello', 'bob', 'jones', 'john', 'hello'];
     $this->collection->pushSpread(...$arr);
 
     $before = $this->collection->length;
@@ -268,4 +268,166 @@ test('Pull element out of collection', function ()
     $pulled = $col->pull(4);
 
     expect($pulled)->toBe(5);
+});
+
+test('Splice a piece out of the collection', function ()
+{
+    $col = new Collection([1, 2, 3, 4, 5, 6, 7]);
+    $new = $col->splice(0, 5);
+
+    expect($new->length)->toBe(5);
+});
+
+test("where with array", function ()
+{
+    $col = new Collection([
+        ['mykey' => 'super'],
+        ['mykey' => 'hello'],
+        ['mykey' => 'world'],
+        ['mykey' => 'hello']
+    ]);
+
+    $new = $col->where('mykey', 'hello');
+    expect($new->length)->toBe(2);
+});
+
+test("where with Object", function ()
+{
+    $obj1 = (object)['mykey' => 'world'];
+    $obj2 = (object)['mykey' => 'hello'];
+
+    $col = new Collection([
+        $obj1,
+        $obj2,
+    ]);
+
+    $new = $col->where('mykey', 'hello');
+
+    expect($new->length)->toBe(1)->and($new->get('0')->mykey)->toBe('hello');
+});
+
+test('whereIn', function ()
+{
+    $col = new Collection([
+        ['key' => 'hello'],
+        ['key' => 'world'],
+        ['key' => 'not in'],
+        ['key' => 'nope not it']
+    ]);
+
+    $new = $col->whereIn('key', ['hello', 'world']);
+
+    expect($new->length)->toBe(2);
+});
+
+test('whereIn with objects', function ()
+{
+    $col = new Collection([
+        (object)['key' => 'hello'],
+        (object)['key' => 'world'],
+        (object)['key' => 'not in'],
+        (object)['key' => 'nope not it']
+    ]);
+
+    $new = $col->whereIn('key', ['hello', 'world']);
+
+    expect($new->length)->toBe(2);
+});
+
+test('whereNotIn', function ()
+{
+    $col = new Collection([
+        ['key' => 'hello'],
+        ['key' => 'world'],
+        ['key' => 'not in'],
+        ['key' => 'nope not it']
+    ]);
+
+    $new = $col->whereNotIn('key', ['not in', 'nope not it']);
+
+    expect($new->length)->toBe(2);
+});
+
+test('whereBetween', function ()
+{
+    $col = new Collection([
+        ['key' => 1],
+        ['key' => 2],
+        ['key' => 3],
+        ['key' => 4]
+    ]);
+
+    $new = $col->whereBetween('key', 1, 3);
+
+    expect($new->length)->toBe(3);
+});
+
+test('whereNotBetween', function ()
+{
+    $col = new Collection([
+        ['key' => 1],
+        ['key' => 2],
+        ['key' => 3],
+        ['key' => 4]
+    ]);
+
+    $new = $col->whereBetween('key', 3, 6);
+
+    expect($new->length)->toBe(2);
+});
+
+test('whereNull', function ()
+{
+    $col = new Collection([
+        ['key' => 1],
+        ['key' => null],
+        ['key' => 3],
+        ['key' => 4]
+    ]);
+
+    $new = $col->whereNull('key');
+
+    expect($new->length)->toBe(1);
+});
+
+test('whereNotNull', function ()
+{
+    $col = new Collection([
+        ['key' => 1],
+        ['key' => null],
+        ['key' => 3],
+        ['key' => 4]
+    ]);
+
+    $new = $col->whereNotNull('key');
+
+    expect($new->length)->toBe(3);
+});
+
+test('whereInstanceOf', function ()
+{
+    $col = new Collection([
+        ['key' => (object)['test' => 1]],
+        ['key' => new DateTime()],
+        ['key' => null],
+        ['key' => 4]
+    ]);
+
+    $new = $col->whereInstanceOf('key', \stdClass::class);
+
+    expect($new->length)->toBe(1);
+});
+
+test('whereNotInstanceOf', function ()
+{
+    $col = new Collection([
+        ['key' => (object)['test' => 1]],
+        ['key' => new DateTime()],
+        ['key' => null],
+        ['key' => 4]
+    ]);
+
+    $new = $col->whereNotInstanceOf('key', \stdClass::class);
+
+    expect($new->length)->toBe(3);
 });

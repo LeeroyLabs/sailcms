@@ -18,22 +18,22 @@ class User
      *
      * Get User type instance
      *
-     * @return Type
+     * @return ObjectType
      *
      */
-    public static function user(): Type
+    public static function user(): ObjectType
     {
         return new ObjectType([
             'name' => 'User',
             'fields' => [
-                '_id' => ['type' => GTypes::ID()],
-                'name' => ['type' => Type::nonNull(static::fullname())],
-                'email' => ['type' => GTypes::string()],
-                'roles' => ['type' => Type::listOf(GTypes::string())],
-                'status' => ['type' => GTypes::boolean()],
-                'avatar' => ['type' => GTypes::string()],
-                'permissions' => ['type' => Type::listOf(GTypes::string())],
-                'meta' => ['type' => Type::nonNull(static::meta())]
+                '_id' => GTypes::ID(),
+                'name' => Type::nonNull(static::fullname()),
+                'email' => GTypes::string(),
+                'roles' => Type::listOf(GTypes::string()),
+                'status' => GTypes::boolean(),
+                'avatar' => GTypes::string(),
+                'permissions' => Type::listOf(GTypes::string()),
+                'meta' => Type::nonNull(static::meta())
             ],
             'resolveField' => function (UserModel $user, array $args, $context, ResolveInfo $info)
             {
@@ -48,12 +48,31 @@ class User
 
     /**
      *
-     * Get UserName type instance
+     * List of users
      *
-     * @return Type
+     * @return ObjectType
      *
      */
-    public static function fullname(): Type
+    public static function listing(): ObjectType
+    {
+        $user = static::user();
+
+        return new ObjectType([
+            'name' => 'UserListing',
+            'fields' => [
+                'pagination' => General::pagination(),
+                'list' => Type::listOf(Type::nonNull($user))
+            ]
+        ]);
+    }
+
+    /**
+     *
+     * Get UserName type instance
+     *
+     * @return ObjectType
+     */
+    public static function fullname(): ObjectType
     {
         return new ObjectType([
             'name' => 'UserName',
@@ -65,7 +84,14 @@ class User
         ]);
     }
 
-    public static function meta(): Type
+    /**
+     *
+     * Meta data for a user
+     *
+     * @return ObjectType
+     *
+     */
+    public static function meta(): ObjectType
     {
         // Fetch Available flags from the User model
         $metas = UserMeta::getAvailableMeta();

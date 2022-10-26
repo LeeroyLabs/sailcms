@@ -38,6 +38,12 @@ class Container extends Command
             $fs->createDirectory($path);
             $fs->createDirectory($path . '/Commands');
             $fs->createDirectory($path . '/Controllers');
+            $fs->createDirectory($path . '/Graphql');
+
+            // Create all 3 files
+            $fs->write($path . '/Graphql/queries.graphql', '');
+            $fs->write($path . '/Graphql/mutations.graphql', '');
+            $fs->write($path . '/Graphql/resolver.graphql', '');
 
             // Create module file
             $mod = $fs->read('install://container.php');

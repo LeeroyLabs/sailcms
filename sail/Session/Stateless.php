@@ -162,7 +162,7 @@ class Stateless implements AppSession
 
             $parser = new Parser(new JoseEncoder());
             $token = $parser->parse($cookie);
-
+            
             return $token->claims()->get('sub') ?? '';
         }
 
