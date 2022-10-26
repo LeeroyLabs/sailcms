@@ -772,7 +772,7 @@ abstract class BaseModel
                     $doc[$key] = $this->processOnStore($key, new UTCDateTime($value->toDateTime()->getTimestamp() * 1000));
                 } elseif (is_scalar($value)) {
                     $doc[$key] = $this->processOnStore($key, $value);
-                } elseif (get_class($value) === \SailCMS\Collection::class) {
+                } elseif (is_object($value) && get_class($value) === \SailCMS\Collection::class) {
                     $doc[$key] = $value->unwrap();
                 } elseif (is_array($value) || is_object($value)) {
                     $doc[$key] = $this->processOnStore($key, $this->prepareForWrite($value));
