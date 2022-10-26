@@ -8,9 +8,19 @@ class Dates
     {
     }
 
-    static public function atCreation() {
+    /**
+     * Get an array of dates when we create a element
+     *
+     * @param  bool  $publish
+     * @return array
+     */
+    static public function atCreation(bool $publish=false):array {
         $now = time();
-        $dates = new Dates($now, $now, null, null);
+        $publishDate = null;
+        if ($publish) {
+            $publishDate = $now;
+        }
+        $dates = new Dates($now, $now, $publishDate, null);
         return $dates->toArray();
     }
 

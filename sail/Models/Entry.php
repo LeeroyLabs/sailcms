@@ -84,6 +84,7 @@ class Entry extends BaseModel
      */
     public function getBySlug(string $slug): array|Entry|null
     {
+        // TODO add status!
         return $this->findOne(['slug'=>$slug])->exec();
     }
 
@@ -98,7 +99,7 @@ class Entry extends BaseModel
     protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
-            "status" => EntryStatus::INACTIVE,
+            "status" => EntryStatus::getStatusEnum($value),
             "authors" => new Authors($value->createdBy, $value->updatedBy, $value->publishedBy, $value->deletedBy),
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
@@ -113,11 +114,19 @@ class Entry extends BaseModel
      * @throws DatabaseException
      */
     private function _create(Collection $data): array|Entry|null {
+        // TODO test if url of the entry is available.
+
         $title = $data->get('title');
         $slug = $data->get('slug');
+        $status = $data->get('status', EntryStatus::INACTIVE);
         // TODO implements others fields
-        $status = EntryStatus::INACTIVE;
         $authors = new Authors('','','','');
+
+        $published = false;
+        if ($status->value == EntryStatus::LIVE) {
+            $published = true;
+        }
+        $dates = Dates::atCreation($published);
 
         if (!isset($slug)) {
             $slug = Text::slugify($title);
@@ -128,7 +137,7 @@ class Entry extends BaseModel
             'slug' => $slug,
             'status' => $status->value,
             'authors' => $authors->toArray(),
-            'dates' => Dates::atCreation(),
+            'dates' => $dates,
             'categories' => new Collection([]),
             'content' => new Collection([])
         ]);
