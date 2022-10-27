@@ -9,15 +9,18 @@ class Dates
     }
 
     /**
-     * Get an array of dates when we create a element
      *
-     * @param  bool  $publish
+     * Get an array of dates when we create an element
+     *
+     * @param  bool  $published
      * @return array
+     *
      */
-    static public function atCreation(bool $publish=false):array {
+    static public function atCreation(bool $published = false): array
+    {
         $now = time();
         $publishDate = null;
-        if ($publish) {
+        if ($published) {
             $publishDate = $now;
         }
         $dates = new Dates($now, $now, $publishDate, null);
@@ -25,12 +28,15 @@ class Dates
     }
 
     /**
+     *
      * Transform class to an array
      *  TODO maybe extend a type that does that dynamically
      *
      * @return array
+     *
      */
-    public function toArray():array {
+    public function toArray(): array
+    {
         return [
             'created' => $this->created,
             'updated' => $this->updated,
