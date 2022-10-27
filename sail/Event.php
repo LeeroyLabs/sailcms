@@ -36,7 +36,7 @@ class Event
      */
     public static function dispatch(string $event, mixed $data): void
     {
-        if (static::$registered->get($event)) {
+        if (isset(static::$registered) && static::$registered->get($event)) {
             static::$registered->get($event)->each(static function ($key, $value) use ($event, $data)
             {
                 $instance = $value->get('class');

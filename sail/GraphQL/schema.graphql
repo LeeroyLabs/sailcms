@@ -4,18 +4,29 @@ type Query {
     # Users
     user(id: ID!): User
     users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
-    createUser(name: UserNameInput!, email: String!, password: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!): Boolean!
-    deleteUser(id: ID!): Boolean!
 
     # Authentication
     authenticate(email: String!, password: String!): String!
     verifyAuthenticationToken(token: String!): User
     verifyTFA(user_id: ID!, code: String!): Boolean!
+
+    # Roles & ACL
+    roles: [Role!]!
+    role(id: ID!): RoleConfig
     #{CUSTOM_QUERIES}#
 }
 
 type Mutation {
-    placeholderForNow(t: String): Boolean
+    # Users
+    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!): Boolean!
+    createAdminUser(name: UserNameInput!, email: String!, password: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!): Boolean!
+    updateUser(id: ID!, name: UserMetaInput, email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput): Boolean!
+    deleteUser(id: ID!): Boolean!
+
+    # Roles
+    createRole(name: String!, description: String!, level: Int!, permissions: [String!]!): Boolean!
+    updateRole(id: ID!, name: String, description: String, level: Int, permissions: [String!]): Boolean!
+    deleteRole(id: ID!): Boolean!
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -71,6 +82,26 @@ type Flags {
 
 input FlagsInput {
     #{CUSTOM_FLAGS}#
+}
+
+type Role {
+    _id: ID!
+    name: String!
+    description: String!
+    slug: String!
+    level: Int!
+    permissions: [String!]!
+}
+
+type RoleConfig {
+    role: Role!
+    allowedPermissions: [ACL!]!
+    permissions: [ACL!]!
+}
+
+type ACL {
+    category: String!
+    value: String!
 }
 
 #{CUSTOM_TYPES}#

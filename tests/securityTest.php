@@ -33,7 +33,7 @@ test('Hash generation', function ()
     try {
         $hash = Security::hash('hello world!', true);
 
-        expect($hash)->not()->toBe('');
+        expect($hash)->not->toBe('');
     } catch (Exception $e) {
         expect(true)->toBe(false);
     }
@@ -50,3 +50,15 @@ test('Hash verification', function ()
         expect(true)->toBe(false);
     }
 });
+
+// TODO: TEST PASSWORD
+/*
+ *
+ *
+ * $p1 = Security::validatePassword('12345678');
+        $p2 = Security::validatePassword('123456');
+        $p3 = Security::validatePassword('HelloWorld');
+        $p4 = Security::validatePassword('helloworld');
+        $p5 = Security::validatePassword('helloworld2');
+        $p6 = Security::validatePassword('HelloWorld1');
+ */

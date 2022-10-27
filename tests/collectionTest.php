@@ -127,12 +127,16 @@ test('Create chunks of the collection by 2 (end up with 3 chunks)', function ()
 
 test('Collection shuffling', function ()
 {
-    $arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    $arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
     $this->collection->pushSpread(...$arr);
     $first = $this->collection->first;
-    $sfirst = $this->collection->shuffle()->first;
+    $second = $this->collection->at(1);
 
-    expect($first)->not->toBe($sfirst);
+    $shuf = $this->collection->shuffle();
+    $sfirst = $shuf->first;
+    $ssecond = $shuf->at(1);
+
+    expect($first)->not->toBe($sfirst)->and($second)->not->toBe($ssecond);
 });
 
 test('Check if collection contains a certain value', function ()
@@ -430,4 +434,57 @@ test('whereNotInstanceOf', function ()
     $new = $col->whereNotInstanceOf('key', \stdClass::class);
 
     expect($new->length)->toBe(3);
+});
+
+test('Get highest value of array', function ()
+{
+    $array = new Collection([1, 2, 10, 20, 3, 0, 1456, 521, 6721, 2456]);
+    $high = $array->max();
+
+    expect($high)->toBe(6721);
+});
+
+test('Get highest value of array by key - Collection', function ()
+{
+    $array = new Collection([
+        new Collection(['key' => 100, 'title' => 'test1']),
+        new Collection(['key' => 120, 'title' => 'test1']),
+        new Collection(['key' => 40, 'title' => 'test1']),
+        new Collection(['key' => 509, 'title' => 'test1']),
+        new Collection(['key' => 1640, 'title' => 'test1']),
+        new Collection(['key' => 12, 'title' => 'test1']),
+    ]);
+
+    $high = $array->maxBy('key');
+    expect($high)->toBe(1640);
+});
+
+test('Get highest value of array by key - Array', function ()
+{
+    $array = new Collection([
+        ['key' => 100, 'title' => 'test1'],
+        ['key' => 120, 'title' => 'test1'],
+        ['key' => 40, 'title' => 'test1'],
+        ['key' => 509, 'title' => 'test1'],
+        ['key' => 1640, 'title' => 'test1'],
+        ['key' => 12, 'title' => 'test1'],
+    ]);
+
+    $high = $array->maxBy('key');
+    expect($high)->toBe(1640);
+});
+
+test('Get highest value of array by key - Object', function ()
+{
+    $array = new Collection([
+        (object)['key' => 100, 'title' => 'test1'],
+        (object)['key' => 120, 'title' => 'test1'],
+        (object)['key' => 40, 'title' => 'test1'],
+        (object)['key' => 509, 'title' => 'test1'],
+        (object)['key' => 1640, 'title' => 'test1'],
+        (object)['key' => 12, 'title' => 'test1'],
+    ]);
+
+    $high = $array->maxBy('key');
+    expect($high)->toBe(1640);
 });

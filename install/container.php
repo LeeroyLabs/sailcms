@@ -3,6 +3,7 @@
 namespace [NAME];
 
 use SailCMS\Collection;
+use SailCMS\GraphQL;
 use SailCMS\Types\ContainerInformation;
 use SailCMS\Contracts\AppContainer;
 
@@ -25,6 +26,11 @@ class Container extends AppContainer
 
     public function graphql(): void
     {
+        // Schema
+        GraphQL::addQuerySchema(__DIR__ . '/Graphql/queries.graphql');
+        GraphQL::addMutationSchema(__DIR__ . '/Graphql/mutations.graphql');
+        GraphQL::addTypeSchema(__DIR__ . '/Graphql/types.graphql');
+
         // GraphQL additions
     }
 

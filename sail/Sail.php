@@ -114,7 +114,7 @@ class Sail
 
         // Headless CSRF Setup
         static::setupHeadlessCSRF();
-
+        
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
             $data = Graphql::init();
@@ -486,6 +486,10 @@ class Sail
         if ($state === static::STATE_CLI) {
             static::$appState = $state;
             static::$isCLI = true;
+
+            $config = [];
+            include_once dirname(__DIR__) . '/install/config/general.php';
+            $_ENV['SETTINGS'] = new Collection($config);
 
             ACL::init();
             return;

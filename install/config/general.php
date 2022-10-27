@@ -5,6 +5,12 @@ $config = [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'passwords' => [
+            'minLength' => 8,
+            'maxLength' => 64,
+            'enforceAlphanum' => true,
+            'enforceUpperLower' => true
+        ],
         'CSRF' => [
             'use' => true,
             'leeway' => 5,
@@ -17,7 +23,7 @@ $config = [
         ],
         'cors' => [
             'use' => true,
-            'allowOrigins' => ['*'],
+            'origins' => ['*'],
             'allowCredentials' => true,
             'maxAge' => 86400,
             'methods' => ['POST', 'GET', 'DELETE', 'PUT', 'OPTIONS'],

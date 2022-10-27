@@ -3,18 +3,23 @@
 namespace SailCMS;
 
 use ArrayAccess;
+use GraphQL\Error\SyntaxError;
 use GraphQL\GraphQL as GQL;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Error\InvariantViolation;
 use GraphQL\Utils\BuildSchema;
 use JsonException;
+use League\Flysystem\FilesystemException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\GraphQL as MGQL;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\UserMeta;
+use GraphQL\Utils\AST;
+use GraphQL\Language\Parser;
 
 class GraphQL
 {
@@ -88,8 +93,10 @@ class GraphQL
      *
      * Initialize and run queries
      *
-     * @return string
+     * @return mixed
      * @throws JsonException
+     * @throws SyntaxError
+     * @throws FilesystemException
      *
      */
     public static function init(): mixed
@@ -97,27 +104,58 @@ class GraphQL
         static::initSystem();
 
         try {
-            $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
-            $schemaContent = str_replace(
-                [
-                    '#{CUSTOM_QUERIES}#',
-                    '#{CUSTOM_MUTATIONS}#',
-                    '#{CUSTOM_TYPES}#',
-                    '#{CUSTOM_FLAGS}#',
-                    '#{CUSTOM_META}#',
-                    '#{CUSTOM_META_INPUT}#'
-                ],
-                [
-                    implode("\n", static::$querySchemaParts),
-                    implode("\n", static::$mutationSchemaParts),
-                    implode("\n", static::$typeSchemaParts),
-                    UserMeta::getAvailableFlags(),
-                    UserMeta::getAvailableMeta(),
-                    UserMeta::getAvailableMeta(true)
-                ], $schemaContent
-            );
+            $pathAST = 'cache://graphql.ast';
 
-            $schema = BuildSchema::build($schemaContent);
+            if ($_ENV['ENVIRONMENT'] === 'dev' || !Filesystem::manager()->fileExists($pathAST)) {
+                // Load all files for the schema
+                $queries = [];
+                $mutations = [];
+                $types = [];
+
+                foreach (static::$querySchemaParts as $file) {
+                    $queries[] = file_get_contents($file);
+                }
+
+                foreach (static::$mutationSchemaParts as $file) {
+                    $mutations[] = file_get_contents($file);
+                }
+
+                foreach (static::$typeSchemaParts as $file) {
+                    $types[] = file_get_contents($file);
+                }
+
+                $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
+                $schemaContent = str_replace(
+                    [
+                        '#{CUSTOM_QUERIES}#',
+                        '#{CUSTOM_MUTATIONS}#',
+                        '#{CUSTOM_TYPES}#',
+                        '#{CUSTOM_FLAGS}#',
+                        '#{CUSTOM_META}#',
+                        '#{CUSTOM_META_INPUT}#'
+                    ],
+                    [
+                        implode("\n", $queries),
+                        implode("\n", $mutations),
+                        implode("\n", $types),
+                        UserMeta::getAvailableFlags(),
+                        UserMeta::getAvailableMeta(),
+                        UserMeta::getAvailableMeta(true)
+                    ],
+                    $schemaContent
+                );
+
+                // Parse schema
+                $document = Parser::parse($schemaContent);
+
+                // Save AST format
+                Filesystem::manager()->write($pathAST, "<?php\nreturn " . var_export(AST::toArray($document), true) . ";\n");
+            } else {
+                $ast = require Sail::getWorkingDirectory() . '/storage/cache/graphql.ast';
+                $document = AST::fromArray($ast);
+            }
+
+            $schema = BuildSchema::build($document);
 
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true, $_ENV['SETTINGS']->get('graphql.depthLimit'), JSON_THROW_ON_ERROR); // N+1 protection
@@ -172,11 +210,18 @@ class GraphQL
         // User
         static::addQueryResolver('user', Users::class, 'user');
         static::addQueryResolver('users', Users::class, 'users');
+        static::addMutationResolver('createUser', Users::class, 'createUser');
+        static::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
+        static::addMutationResolver('updateUser', Users::class, 'updateUser');
+        static::addMutationResolver('deleteUser', Users::class, 'deleteUser');
 
         // Authentication
         static::addQueryResolver('authenticate', Users::class, 'authenticate');
         static::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
         static::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+
+        // Roles & ACL
+        static::addQueryResolver('roles', Roles::class, 'all');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

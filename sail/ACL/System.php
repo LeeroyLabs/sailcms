@@ -25,7 +25,7 @@ class System
             new ACL('EntryType', ACLType::READ_WRITE),
             new ACL('EntryType', ACLType::READ),
             new ACL('EntryTypeLayout', ACLType::READ_WRITE),
-            new ACL('EntryTypeLayout', ACLType::READ),
+            new ACL('EntryTypeLayout', ACLType::READ)
         ]);
     }
 }
