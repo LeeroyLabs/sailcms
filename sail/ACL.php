@@ -260,4 +260,16 @@ class ACL
 
         return $list;
     }
+
+    /**
+     *
+     * Get the amount of loaded ACL
+     *
+     * @return int
+     *
+     */
+    public static function count(): int
+    {
+        return static::$loadedACL->length;
+    }
 }

@@ -221,7 +221,9 @@ class GraphQL
         static::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
 
         // Roles & ACL
-        static::addQueryResolver('roles', Roles::class, 'all');
+        static::addQueryResolver('role', Roles::class, 'role');
+        static::addQueryResolver('roles', Roles::class, 'roles');
+        static::addMutationResolver('deleteRole', Roles::class, 'delete');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

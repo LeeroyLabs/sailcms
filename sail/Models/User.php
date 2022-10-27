@@ -295,10 +295,7 @@ class User extends BaseModel
     {
         if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id) || ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
             $update = [];
-
-            if (is_string($id)) {
-                $id = new ObjectId($id);
-            }
+            $id = $this->ensureObjectId($id);
 
             if ($name !== null) {
                 $update['name'] = $name;
@@ -426,10 +423,8 @@ class User extends BaseModel
     public function removeById(string|ObjectId $id): bool
     {
         if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            if (is_string($id)) {
-                $id = new ObjectId($id);
-            }
-
+            $id = $this->ensureObjectId($id);
+         
             $this->deleteById($id);
             Event::dispatch(static::EVENT_DELETE, (string)$id);
             return true;
@@ -693,5 +688,20 @@ class User extends BaseModel
         }
 
         return false;
+    }
+
+    /**
+     *
+     * Remove a role from all users
+     *
+     * @param  string  $role
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public static function removeRoleFromAll(string $role): void
+    {
+        $instance = new static();
+        $instance->updateMany([], ['$pull' => ['roles' => $role]]);
     }
 }

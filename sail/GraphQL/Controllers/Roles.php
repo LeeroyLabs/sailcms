@@ -2,26 +2,23 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use RuntimeException;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Role;
-use SailCMS\Models\User;
 
 /**
  *
  * Implementation list
  *
- * all
- * update
- * create
- * delete
+ * single
  *
  */
 class Roles
 {
-    public function single(mixed $obj, Collection $args, Context $context): ?Role
+    public function role(mixed $obj, Collection $args, Context $context): ?Role
     {
         return null;
     }
@@ -38,39 +35,70 @@ class Roles
      * @throws DatabaseException
      *
      */
-    public function all(mixed $obj, Collection $args, Context $context): Collection
+    public function roles(mixed $obj, Collection $args, Context $context): Collection
     {
         return (new Role())->list();
     }
 
-    public function create(mixed $obj, Collection $args, Context $context): bool
-    {
-        return true;
-    }
-
-    public function update(mixed $obj, Collection $args, Context $context): bool
-    {
-        return true;
-    }
-
-    public function delete(mixed $obj, Collection $args, Context $context): bool
-    {
-        return true;
-    }
-
     /**
      *
-     * Get a user by id
+     * Create a role
      *
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return User|null
+     * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws RuntimeException
+     *
      */
-    public function user(mixed $obj, Collection $args, Context $context): ?User
+    public function create(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new User())->getById($args->get('id'));
+        return (new Role())->create(
+            $args->get('name'),
+            $args->get('description'),
+            $args->get('permissions')
+        );
+    }
+
+    /**
+     *
+     * Update a role
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function update(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new Role())->update(
+            $args->get('id'),
+            $args->get('name' . ''),
+            $args->get('level', -1),
+            $args->get('description', ''),
+            $args->get('permissions', [])
+        );
+    }
+
+    /**
+     *
+     * Delete a role
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function delete(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new Role())->remove($args->get('id'));
     }
 }

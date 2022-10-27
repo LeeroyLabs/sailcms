@@ -198,12 +198,8 @@ abstract class BaseModel
      */
     protected function findById(string|ObjectId $id, QueryOptions|null $options = null): BaseModel
     {
-        $_id = $id;
-
-        if (is_string($id)) {
-            $_id = new ObjectId($id);
-        }
-
+        $_id = $this->ensureObjectId($id);
+        
         if (!$options) {
             $options = QueryOptions::init(null, 0, 1);
         }
