@@ -8,7 +8,7 @@ use SailCMS\Types\ACLType;
 
 class System
 {
-    public const RESERVED = ['role', 'user'];
+    public const RESERVED = ['role', 'user', 'entry_type', 'entry_type_layout'];
 
     public static function getAll(): Collection
     {
@@ -19,7 +19,13 @@ class System
 
             // Users
             new ACL('User', ACLType::READ_WRITE),
-            new ACL('User', ACLType::READ)
+            new ACL('User', ACLType::READ),
+
+            // Entry
+            new ACL('EntryType', ACLType::READ_WRITE),
+            new ACL('EntryType', ACLType::READ),
+            new ACL('EntryTypeLayout', ACLType::READ_WRITE),
+            new ACL('EntryTypeLayout', ACLType::READ)
         ]);
     }
 }
