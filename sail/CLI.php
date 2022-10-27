@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use Exception;
 use JsonException;
+use SailCMS\CLI\Cache;
 use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
 use SailCMS\CLI\Controller;
@@ -67,6 +68,7 @@ class CLI
         $application->add(new Command());
         $application->add(new Model());
         $application->add(new Queue());
+        $application->add(new Cache());
 
         // Custom commands
         if (!isset(static::$registeredCommands)) {
