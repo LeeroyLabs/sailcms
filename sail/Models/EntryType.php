@@ -2,15 +2,17 @@
 
 namespace SailCMS\Models;
 
+use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 
 
 /**
  * TODO add homepage flag
- * check url
+ *  check url
  */
 class EntryType extends BaseModel
 {
@@ -52,6 +54,10 @@ class EntryType extends BaseModel
         return $entryType;
     }
 
+    public function getById(string $entryTypeId): EntryType|null
+    {
+    }
+
     /**
      *
      * Get an entryType by handle
@@ -71,21 +77,55 @@ class EntryType extends BaseModel
         return $result;
     }
 
+    public function all($limit, $offset): EntryType|null
+    {
+    }
+
     /**
+     *
      * Wrapper to handle permission for entry creation
      *
      * @param  Collection  $data
      * @return array|EntryType|null
-     * @throws DatabaseException
-     * @throws EntryException
+     * @throws DatabaseException|EntryException|ACLException
+     *
      */
-    public function createFromAPI(Collection $data): array|EntryType|null
+    public function create(Collection $data): array|EntryType|null
     {
         if (!ACL::hasPermission(User::$currentUser, ACL::write('entryType'))) {
             throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
         }
 
         return $this->_create($data);
+    }
+
+    public function update(Collection $data): bool
+    {
+        if (!ACL::hasPermission(User::$currentUser, ACL::write('entryType'))) {
+            throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
+        }
+
+        return $this->_update($data);
+    }
+
+    public function softDelete(string $entryTypeId): bool
+    {
+        // TODO do we will have delete permission ?
+        if (!ACL::hasPermission(User::$currentUser, ACL::write('entryType'))) {
+            throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
+        }
+
+        return $this->_delete($entryTypeId);
+    }
+
+    public function hardDelete(string $entryTypeId): bool
+    {
+        // TODO do we will have delete permission ?
+        if (!ACL::hasPermission(User::$currentUser, ACL::write('entryType'))) {
+            throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
+        }
+
+        return $this->_delete($entryTypeId, true);
     }
 
     /**
@@ -125,6 +165,14 @@ class EntryType extends BaseModel
         ]);
 
         return $this->findById($entryTypeId)->exec();
+    }
+
+    private function _update(Collection $data): bool
+    {
+    }
+
+    private function _delete(string $entryTypeId, bool $hard = false): bool
+    {
     }
 
     /**

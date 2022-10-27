@@ -7,6 +7,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
@@ -76,6 +77,11 @@ class Entry extends BaseModel
         return $entry;
     }
 
+    public function getById(string $entryTypeId): Entry|null
+    {
+        // TODO add status! wait for MARC
+    }
+
     /**
      * Get an entry by slug
      *
@@ -85,11 +91,16 @@ class Entry extends BaseModel
      */
     public function getBySlug(string $slug): array|Entry|null
     {
-        // TODO add status!
+        // TODO add status! wait for MARC
         return $this->findOne(['slug' => $slug])->exec();
     }
 
-    public function createFromAPI()
+    public function all($filters, $limit, $offset): EntryType|null
+    {
+        // Filters available date, author, category, status
+    }
+
+    public function create()
     {
         // Put ACL
         // TODO add ACL dynamically
@@ -109,7 +120,7 @@ class Entry extends BaseModel
         $title = $data->get('title');
         $slug = $data->get('slug');
         $status = $data->get('status', EntryStatus::INACTIVE);
-        // TODO implements others fields
+        // TODO implements others fields: categories content
 
         $published = false;
         if ($status->value == EntryStatus::LIVE) {
@@ -142,6 +153,14 @@ class Entry extends BaseModel
         return $this->findById($entryId)->exec();
     }
 
+    private function _update(Collection $data)
+    {
+    }
+
+    private function _delete(string $entryTypeId)
+    {
+    }
+
     /**
      * Process fields normally excepts authors and dates
      *
@@ -158,5 +177,22 @@ class Entry extends BaseModel
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
         };
+    }
+
+    /**
+     *
+     * Validation on store
+     *
+     * @throws EntryException
+     *
+     */
+    protected function processOnStore(string $field, mixed $value): mixed
+    {
+        // Data verification
+        if ($field == "title" && empty($value)) {
+            throw new EntryException(self::TITLE_MISSING_IN_COLLECTION);
+        }
+
+        return parent::processOnStore($field, $value);
     }
 }
