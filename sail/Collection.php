@@ -555,11 +555,12 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * A Nice way to traverse static and contained array/objects
      *
-     * @param  string  $dotNotation
+     * @param  string      $dotNotation
+     * @param  mixed|null  $defaultValue
      * @return mixed
      *
      */
-    public function get(string $dotNotation): mixed
+    public function get(string $dotNotation, mixed $defaultValue = null): mixed
     {
         $parts = explode('.', $dotNotation);
         $value = $this->_internal;
@@ -569,13 +570,13 @@ class Collection implements \JsonSerializable, \Iterator
                 $slice = array_slice($parts, $num, count($parts), false);
                 $value = $value->get(implode('.', $slice));
             } elseif (is_object($value)) {
-                $value = $value->{$part} ?? null;
+                $value = $value->{$part} ?? $defaultValue;
             } elseif (is_array($value)) {
-                $value = $value[$part] ?? null;
+                $value = $value[$part] ?? $defaultValue;
             }
         }
 
-        return $value;
+        return $value ?? $defaultValue;
     }
 
     /**
@@ -1168,5 +1169,43 @@ class Collection implements \JsonSerializable, \Iterator
         }
 
         return new Collection($list);
+    }
+
+    /**
+     *
+     * Get max value from the collection
+     *
+     * @return mixed
+     *
+     */
+    public function max(): mixed
+    {
+        return max($this->_internal);
+    }
+
+    /**
+     *
+     * Return highest value from a collection of array/collection/object by the given key
+     *
+     * @param  string  $key
+     * @return mixed
+     *
+     */
+    public function maxBy(string $key): mixed
+    {
+        $map = $this->map(function ($value) use ($key)
+        {
+            if (is_array($value)) {
+                return $value[$key];
+            }
+
+            if (is_object($value) && get_class($value) === Collection::class) {
+                return $value->get($key);
+            }
+
+            return $value->{$key};
+        });
+
+        return max($map->unwrap());
     }
 }

@@ -4,3 +4,6 @@
 .DS_Store
 mock/
 cms_html
+.phpunit.result.cache
+*.cache
+composer.lock

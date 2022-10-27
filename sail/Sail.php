@@ -487,6 +487,10 @@ class Sail
             static::$appState = $state;
             static::$isCLI = true;
 
+            $config = [];
+            include_once dirname(__DIR__) . '/install/config/general.php';
+            $_ENV['SETTINGS'] = new Collection($config);
+
             ACL::init();
             return;
         }

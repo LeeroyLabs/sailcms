@@ -172,6 +172,10 @@ class GraphQL
         // User
         static::addQueryResolver('user', Users::class, 'user');
         static::addQueryResolver('users', Users::class, 'users');
+        static::addMutationResolver('createUser', Users::class, 'createUser');
+        static::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
+        static::addMutationResolver('updateUser', Users::class, 'updateUser');
+        static::addMutationResolver('deleteUser', Users::class, 'deleteUser');
 
         // Authentication
         static::addQueryResolver('authenticate', Users::class, 'authenticate');

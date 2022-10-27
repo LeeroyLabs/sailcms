@@ -206,4 +206,37 @@ class Security
         // We tried everything, fail!
         $_ENV['CSRF_VALID'] = false;
     }
+
+    /**
+     *
+     * Validate password against configured level of security
+     *
+     * @param  string  $password
+     * @return bool
+     *
+     */
+    public static function validatePassword(string $password): bool
+    {
+        $min = $_ENV['SETTINGS']->get('passwords.minLength');
+        $max = $_ENV['SETTINGS']->get('passwords.maxLength');
+        $alphanum = $_ENV['SETTINGS']->get('passwords.enforceAlphanum');
+        $mixcase = $_ENV['SETTINGS']->get('passwords.enforceUpperLower');
+
+        if ($alphanum && $mixcase) {
+            $rule = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{' . $min . ',' . $max . '}$/';
+            return (preg_match($rule, $password));
+        }
+
+        if ($mixcase) {
+            $rule = '/^(?=.*[a-z\d])(?=.*[A-Z\d]).{' . $min . ',' . $max . '}$/';
+            return (preg_match($rule, $password));
+        }
+
+        if ($alphanum) {
+            $rule = '/^(?=.*\d)(?=.*[a-zA-Z]).{' . $min . ',' . $max . '}$/';
+            return (preg_match($rule, $password));
+        }
+
+        return true;
+    }
 }

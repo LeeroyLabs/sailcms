@@ -17,21 +17,6 @@ use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SodiumException;
 
-/*
- * Implementation list
- *
- * - user
- * - users
- * - createUser
- * createAdminUser
- * updateUser
- * - deleteUser
- * - authenticate
- * - verifyAuthenticationToken
- * - verifyTFA
- *
- */
-
 class Users
 {
     /**
@@ -154,15 +139,87 @@ class Users
 
         $name = Username::initWith($args->get('name'));
         $meta = ($args->get('meta')) ? new UserMeta($args->get('meta')) : null;
-
-        $id = $user->createRegularUser($name, $args->get('email'), $args->get('password'), $args->get('avatar') ?? '', $meta);
+        $id = $user->createRegularUser(
+            $name,
+            $args->get('email'),
+            $args->get('password'),
+            $args->get('avatar', ''),
+            $meta
+        );
 
         return (!empty($id));
     }
 
+    /**
+     *
+     * Create an admin user
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function createAdminUser(mixed $obj, Collection $args, Context $context): bool
+    {
+        $user = new User();
+
+        $name = Username::initWith($args->get('name'));
+        $meta = ($args->get('meta')) ? new UserMeta($args->get('meta')) : null;
+        $id = $user->create(
+            $name,
+            $args->get('email'),
+            $args->get('password'),
+            $args->get('roles', []),
+            $args->get('avatar', ''),
+            $meta
+        );
+
+        return (!empty($id));
+    }
+
+    /**
+     *
+     * Update a user
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
     public function updateUser(mixed $obj, Collection $args, Context $context): bool
     {
-        return false;
+        $user = new User();
+        $roles = $args->get('roles', null);
+        $meta = $args->get('meta', null);
+        $name = $args->get('name', null);
+
+        if ($roles) {
+            $roles = new Collection($roles);
+        }
+
+        if ($meta) {
+            $meta = new UserMeta((object)$meta);
+        }
+
+        if ($name) {
+            $name = Username::initWith((object)$name);
+        }
+
+        return $user->update(
+            $args->get('id'),
+            $name,
+            $args->get('email', null),
+            $args->get('password', null),
+            $roles,
+            $args->get('avatar', null),
+            $meta
+        );
     }
 
     /**

@@ -142,4 +142,24 @@ class Role extends BaseModel
     {
         return $this->findOne(['slug' => strtolower(Text::deburr($role))])->exec();
     }
+
+    /**
+     *
+     * Get the highest leveled role from the list
+     *
+     * @param  Collection|array  $list
+     * @return int
+     * @throws DatabaseException
+     *
+     */
+    public static function getHighestLevel(Collection|array $list): int
+    {
+        if (is_object($list)) {
+            $list = $list->unwrap();
+        }
+
+        $instance = new static();
+        $roles = new Collection($instance->find(['slug' => ['$in' => $list]])->exec());
+        return $roles->maxBy('level');
+    }
 }

@@ -17,6 +17,7 @@ use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
+use Somnambulist\Components\Validation\Factory;
 
 class User extends BaseModel
 {
@@ -54,6 +55,12 @@ class User extends BaseModel
         }
 
         return ['_id', 'name', 'roles', 'email', 'status', 'avatar', 'meta', 'temporary_token'];
+    }
+
+    public static function initForTest()
+    {
+        static::$currentUser = new User();
+        static::$currentUser->_id = new ObjectId();
     }
 
     protected function processOnFetch(string $field, mixed $value): mixed
@@ -183,7 +190,7 @@ class User extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function createRegularUser(Username $name, string $email, string $password, string $avatar = '', UserMeta|null $meta = null): string
+    public function createRegularUser(Username $name, string $email, string $password, string $avatar = '', ?UserMeta $meta = null): string
     {
         // Make sure full is assigned
         if ($name->full === '') {
@@ -192,6 +199,16 @@ class User extends BaseModel
 
         if ($meta === null) {
             $meta = new UserMeta((object)[]);
+        }
+
+        // Validate email properly
+        $this->validateEmail($email, '', true);
+
+        // Validate password
+        $valid = Security::validatePassword($password);
+
+        if (!$valid) {
+            throw new DatabaseException('Password does not pass minimum security level', 0403);
         }
 
         return $this->insert([
@@ -221,7 +238,7 @@ class User extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function create(Username $name, string $email, string $password, Collection $roles, string $avatar = '', UserMeta|null $meta = null): string
+    public function create(Username $name, string $email, string $password, Collection $roles, string $avatar = '', ?UserMeta $meta = null): string
     {
         if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
             // Make sure full is assigned
@@ -230,7 +247,17 @@ class User extends BaseModel
             }
 
             if ($meta === null) {
-                $meta = new UserMeta((object)['flags' => ['use2fa' => false]]);
+                $meta = new UserMeta((object)['flags' => (object)['use2fa' => false]]);
+            }
+
+            // Validate email properly
+            $this->validateEmail($email, '', true);
+
+            // Validate password
+            $valid = Security::validatePassword($password);
+
+            if (!$valid) {
+                throw new DatabaseException('Password does not pass minimum security level', 0403);
             }
 
             return $this->insert([
@@ -248,11 +275,74 @@ class User extends BaseModel
         return '';
     }
 
-    public function update(): bool
+    /**
+     *
+     * Update a user
+     *
+     * @param  string|ObjectId  $id
+     * @param  Username|null    $name
+     * @param  string|null      $email
+     * @param  string|null      $password
+     * @param  Collection|null  $roles
+     * @param  string|null      $avatar
+     * @param  UserMeta|null    $meta
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function update(string|ObjectId $id, ?Username $name = null, ?string $email = null, ?string $password = null, ?Collection $roles = null, ?string $avatar = '', ?UserMeta $meta = null): bool
     {
-        if ((string)static::$currentUser->_id === (string)$this->_id || ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            // TODO: update user
+        if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id) || ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+            $update = [];
+
+            if (is_string($id)) {
+                $id = new ObjectId($id);
+            }
+
+            if ($name !== null) {
+                $update['name'] = $name;
+            }
+
+            // Validate email properly
+            if ($email !== null && trim($email) !== '') {
+                $valid = $this->validateEmail($email, $id, true);
+                $update['email'] = $email;
+            }
+
+            if ($password !== null && trim($password) !== '') {
+                $valid = Security::validatePassword($password);
+
+                if (!$valid) {
+                    throw new DatabaseException('Password does not pass minimum security level', 0403);
+                }
+
+                $update['password'] = Security::hashPassword($password);
+            }
+
+            if ($roles) {
+                // Make sure we are not allowing a user with lower role to give higher role (by hack)
+                $current = Role::getHighestLevel(static::$currentUser->roles);
+                $requested = Role::getHighestLevel($roles);
+
+                if ($current >= $requested) {
+                    $update['roles'] = $roles;
+                }
+            }
+
+            if ($avatar) {
+                $update['avatar'] = $avatar;
+            }
+
+            if ($meta) {
+                $update['meta'] = $meta;
+            }
+
+            $this->updateOne(['_id' => $id], ['$set' => $update]);
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -415,8 +505,6 @@ class User extends BaseModel
      */
     public function verifyTemporaryToken(string $token): ?User
     {
-        echo "HERE";
-        die();
         $user = $this->findOne(['temporary_token' => $token])->exec();
 
         if ($user) {
@@ -567,5 +655,43 @@ class User extends BaseModel
         }
 
         return new Collection([]);
+    }
+
+    /**
+     *
+     * Validate email
+     *
+     * @param  string  $email
+     * @param  string  $id
+     * @param  bool    $throw
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    private function validateEmail(string $email, string $id = '', bool $throw = false): bool
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            // Check that it does not exist already
+            $found = $this->getByEmail($email);
+
+            // Error if the email already used by someone that is not the updated user's id
+            if ($found) {
+                if ((string)$found->_id !== $id) {
+                    if ($throw) {
+                        throw new DatabaseException("Cannot use email '{$email}', already in use.", 0403);
+                    }
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ($throw) {
+            throw new DatabaseException("Email '{$email}' is not a valid email.", 0400);
+        }
+
+        return false;
     }
 }
