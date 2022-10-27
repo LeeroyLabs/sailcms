@@ -116,7 +116,7 @@ class GraphQL
                     UserMeta::getAvailableMeta(true)
                 ], $schemaContent
             );
-
+            
             $schema = BuildSchema::build($schemaContent);
 
             $rawInput = file_get_contents('php://input');

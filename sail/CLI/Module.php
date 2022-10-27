@@ -37,12 +37,6 @@ class Module extends Command
             // Create module directory
             $fs->createDirectory($path);
             $fs->createDirectory($path . '/Commands');
-            $fs->createDirectory($path . '/Graphql');
-
-            // Create all 3 files
-            $fs->write($path . '/Graphql/queries.graphql', '');
-            $fs->write($path . '/Graphql/mutations.graphql', '');
-            $fs->write($path . '/Graphql/resolver.graphql', '');
 
             // Create module file
             $mod = $fs->read('install://module.php');

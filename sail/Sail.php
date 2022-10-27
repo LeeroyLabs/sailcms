@@ -114,7 +114,7 @@ class Sail
 
         // Headless CSRF Setup
         static::setupHeadlessCSRF();
-
+        
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
             $data = Graphql::init();
