@@ -144,6 +144,7 @@ class ACL
      * @param  string            $role
      * @return bool
      * @throws DatabaseException
+     * @throws ACLException
      *
      */
     public static function hasRole(string|User|null $user, string $role): bool
@@ -170,6 +171,7 @@ class ACL
      * @param  Types\ACL         ...$permissions
      * @return bool
      * @throws DatabaseException
+     * @throws ACLException
      *
      */
     public static function hasPermission(string|User|null $user, Types\ACL ...$permissions): bool
@@ -209,6 +211,7 @@ class ACL
      * @param  Types\ACL         ...$permissions
      * @return bool
      * @throws DatabaseException
+     * @throws ACLException
      *
      */
     public static function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool
@@ -229,9 +232,32 @@ class ACL
                 $perms[] = $permission->value;
             }
 
-            return ($user->permissions->intersect($permissions)->length === count($perms));
+            return ($user->permissions()->intersect($permissions)->length === count($perms));
         }
 
         return true;
+    }
+
+    /**
+     *
+     * List of loaded permissions
+     *
+     * @return Collection
+     *
+     */
+    public static function getList(): Collection
+    {
+        $list = new Collection([]);
+
+        static::$loadedACL->each(function ($key, $value) use (&$list)
+        {
+            $list->push((object)[
+                'group' => $value->providedName,
+                'type' => $value->category,
+                'value' => $value->value
+            ]);
+        });
+
+        return $list;
     }
 }

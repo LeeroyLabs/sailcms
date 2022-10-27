@@ -9,6 +9,7 @@ use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Text;
+use SailCMS\Types\RoleConfig;
 
 class Role extends BaseModel
 {
@@ -116,17 +117,48 @@ class Role extends BaseModel
      * Get list of available roles
      *
      * @return Collection
-     * @throws DatabaseException
      * @throws ACLException
+     * @throws DatabaseException
      *
      */
     public function list(): Collection
     {
         if (ACL::hasPermission(User::$currentUser, ACL::read('role'), ACL::readwrite('role'))) {
-            return new Collection((array)$this->find([])->exec());
+            $userRoles = User::$currentUser->roles;
+            $roles = new Collection($this->find([])->exec());
+
+            return $roles->intersect($userRoles);
         }
 
         return new Collection([]);
+    }
+
+    /**
+     *
+     * Get a role and the set of possible permissions to add (based on user's ACL)
+     *
+     * @param  string|ObjectId  $id
+     * @return RoleConfig|null
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function getById(string|ObjectId $id): ?RoleConfig
+    {
+        if (ACL::hasPermission(User::$currentUser, ACL::read('role'), ACL::readwrite('role'))) {
+            $role = $this->findById($id);
+
+            $permissionList = ACL::getList();
+            $userPermissions = $userRoles = User::$currentUser->roles;
+
+            if ($userPermissions->length === 1 && $userPermissions->at(0) === '*') {
+                $userPermissions = $permissionList;
+            }
+
+            return new RoleConfig($role, $userPermissions, $permissionList);
+        }
+
+        return null;
     }
 
     /**

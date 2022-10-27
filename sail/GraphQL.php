@@ -12,6 +12,7 @@ use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\GraphQL as MGQL;
@@ -218,6 +219,9 @@ class GraphQL
         static::addQueryResolver('authenticate', Users::class, 'authenticate');
         static::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
         static::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+
+        // Roles & ACL
+        static::addQueryResolver('roles', Roles::class, 'all');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');
