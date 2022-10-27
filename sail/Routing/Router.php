@@ -13,6 +13,7 @@ use SailCMS\Http\Response;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
+use SailCMS\Models\Entry;
 use SailCMS\Types\MiddlewareType;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -191,6 +192,7 @@ class Router
         }
 
         // TODO: PROCESS CMS routes first (look at urls in the database)
+        $entry = Entry::findByURL($uri);
 
         // Not found, check if we have something defined
         $method = strtolower($_SERVER['REQUEST_METHOD']);

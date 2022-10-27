@@ -79,36 +79,38 @@ class Request
      *
      * Get user input using xss filtering
      *
-     * @param  string  $key
-     * @param  bool    $skip
+     * @param  string      $key
+     * @param  bool        $skip
+     * @param  mixed|null  $default
      * @return mixed
      *
      */
-    public function get(string $key, bool $skip = false): mixed
+    public function get(string $key, bool $skip = false, mixed $default = null): mixed
     {
         if ($skip) {
-            return $_GET[$key];
+            return $_GET[$key] ?? $default;
         }
 
-        return $this->_get->get($key);
+        return $this->_get->get($key, $default);
     }
 
     /**
      *
      * Post user input using xss filtering
      *
-     * @param  string  $key
-     * @param  bool    $skip
+     * @param  string      $key
+     * @param  bool        $skip
+     * @param  mixed|null  $default
      * @return mixed
      *
      */
-    public function post(string $key, bool $skip = false): mixed
+    public function post(string $key, bool $skip = false, mixed $default = null): mixed
     {
         if ($skip) {
-            return $_POST[$key];
+            return $_POST[$key] ?? $default;
         }
 
-        return $this->_post->get($key);
+        return $this->_post->get($key, $default);
     }
 
     /**
