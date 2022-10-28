@@ -41,7 +41,7 @@ abstract class BaseModel
         // Manual name or detected by class name (plural)
         $name = array_reverse(explode('\\', get_class($this)))[0];
 
-        $collection = (empty($collection)) ? strtolower(Text::inflector()->pluralize($name)[0]) : $collection;
+        $collection = (empty($collection)) ? Text::snakeCase(Text::inflector()->pluralize($name)[0]) : $collection;
         $client = Database::instance();
 
         $this->collection = $client->selectCollection($_ENV['DATABASE_DB'], $collection);
@@ -199,7 +199,7 @@ abstract class BaseModel
     protected function findById(string|ObjectId $id, QueryOptions|null $options = null): BaseModel
     {
         $_id = $this->ensureObjectId($id);
-        
+
         if (!$options) {
             $options = QueryOptions::init(null, 0, 1);
         }

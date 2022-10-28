@@ -7,20 +7,25 @@ abstract class Input
     protected $pairs = [];
 
     /**
-     * @param  string  $key
+     *
+     * $_GET handler
+     *
+     * @param  string      $key
+     * @param  mixed|null  $default
      * @return mixed
+     *
      */
-    public function get(string $key): mixed
+    public function get(string $key, mixed $default = null): mixed
     {
         if (!empty($this->pairs[$key])) {
             if (is_string($this->pairs[$key]) || is_array($this->pairs[$key])) {
-                return $this->filter($this->pairs[$key]);
+                return $this->filter($this->pairs[$key]) ?? $default;
             }
 
-            return $this->pairs[$key];
+            return $this->pairs[$key] ?? $default;
         }
 
-        return null;
+        return $default;
     }
 
     private function filter(mixed $data): mixed
