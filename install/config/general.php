@@ -63,6 +63,17 @@ $config = [
             ],
             'minLevel' => \Monolog\Level::Debug,
             'bubble' => true
+        ],
+        'assets' => [
+            'path' => 'local://uploads',
+            'optimizeOnUpload' => true,
+            'transformOutputFormat' => 'webp',
+            'transformQuality' => 0.92, // 92%
+            'storeTransforms' => true,
+            'maxUploadSize' => 5, // in MB
+            'onUploadTransforms' => [
+                'thumbnail' => ['size' => '100x100', 'crop' => true]
+            ]
         ]
     ],
     'staging' => [
@@ -101,6 +112,17 @@ $config = [
             ],
             'minLevel' => \Monolog\Level::Debug,
             'bubble' => true
+        ],
+        'assets' => [
+            'path' => 'local://uploads',
+            'optimizeOnUpload' => true,
+            'transformOutputFormat' => 'webp',
+            'transformQuality' => 0.92, // 92%
+            'storeTransforms' => true,
+            'maxUploadSize' => 5, // in MB
+            'onUploadTransforms' => [
+                'thumbnail' => ['size' => '100x100', 'crop' => true]
+            ]
         ]
     ],
     'production' => [
@@ -140,6 +162,17 @@ $config = [
             ],
             'minLevel' => \Monolog\Level::Debug,
             'bubble' => true
+        ],
+        'assets' => [
+            'path' => 'local://uploads',
+            'optimizeOnUpload' => true,
+            'transformOutputFormat' => 'webp',
+            'transformQuality' => 0.92, // 92%
+            'storeTransforms' => true,
+            'maxUploadSize' => 5, // in MB
+            'onUploadTransforms' => [
+                'thumbnail' => ['size' => '100x100', 'crop' => true]
+            ]
         ]
     ]
 ];

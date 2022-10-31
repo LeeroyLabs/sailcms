@@ -191,13 +191,18 @@ class ACL
         }
 
         if ($user) {
+            $userPerms = $user->permissions();
             $perms = [];
+
+            if ($userPerms->has('*')) {
+                return true;
+            }
 
             foreach ($permissions as $permission) {
                 $perms[] = $permission->value;
             }
 
-            return ($user->permissions()->intersect($perms)->length > 0);
+            return ($userPerms->intersect($perms)->length > 0);
         }
 
         return false;
@@ -226,13 +231,18 @@ class ACL
         }
 
         if ($user) {
+            $userPerms = $user->permissions();
             $perms = [];
+
+            if ($userPerms->has('*')) {
+                return true;
+            }
 
             foreach ($permissions as $permission) {
                 $perms[] = $permission->value;
             }
 
-            return ($user->permissions()->intersect($permissions)->length === count($perms));
+            return ($userPerms->intersect($permissions)->length === count($perms));
         }
 
         return true;
