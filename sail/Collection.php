@@ -121,6 +121,19 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
+     * Check if collection has given value in (works only on simple key/value pairs)
+     *
+     * @param  mixed  $value
+     * @return bool
+     *
+     */
+    public function has(mixed $value): bool
+    {
+        return (in_array($value, $this->_internal, true));
+    }
+
+    /**
+     *
      * Alias of unwrap
      * Alias of unwrap
      *
