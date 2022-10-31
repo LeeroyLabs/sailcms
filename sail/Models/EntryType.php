@@ -2,12 +2,14 @@
 
 namespace SailCMS\Models;
 
+use MongoDB\BSON\ObjectId;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Text;
 
 class EntryType extends BaseModel
 {
@@ -15,22 +17,24 @@ class EntryType extends BaseModel
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
     const TITLE_MISSING_IN_COLLECTION = "You must set the entry type title in your data collection";
     const CANNOT_CREATE_ENTRY_TYPE = "You don't have the right to create an entry type";
+    const DOES_NOT_EXISTS = "Entry type %s does not exists";
+    const DATABASE_ERROR = "Exception when creating an entry type";
 
     // Fields
-    public string $collectionName;
+    public string $collection_name;
     public string $title;
     public string $handle;
-    public string $urlPrefix;
-    public string $entryTypeLayoutId;
+    public string $url_prefix;
+    public string $entry_type_layout_id;
 
     public function fields(bool $fetchAllFields = false): array
     {
         return [
             'title',
             'handle',
-            'collectionName',
-            'urlPrefix',
-            'entryTypeLayoutId'
+            'collection_name',
+            'url_prefix',
+            'entry_type_layout_id'
         ];
     }
 
@@ -66,40 +70,52 @@ class EntryType extends BaseModel
      *
      * Wrapper to handle permission for entry creation
      *
-     * @param  Collection  $data
-     * @return array|EntryType|null
-     * @throws DatabaseException|EntryException|ACLException
-     *
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  string                $url_prefix
+     * @param  string|ObjectId|null  $entry_type_layout_id
+     * @param  bool                  $getObject
+     * @return array|EntryType|string|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
      */
-    public function create(Collection $data): array|EntryType|null
+    public function create(string $handle, string $title, string $url_prefix, string|ObjectId $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->_hasPermission();
 
-        return $this->_create($data);
+        return $this->_create($handle, $title, $url_prefix, $entry_type_layout_id);
     }
 
     /**
      *
-     * Wrapper to handle permission for entry creation
+     * Wrapper to handle permission for entry modification by handle
      *
+     * @param  string      $handle
      * @param  Collection  $data
      * @return bool
-     * @throws DatabaseException|EntryException|ACLException
-     *
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
      */
-    public function update(Collection $data): bool
+    public function updateByHandle(string $handle, Collection $data): bool
     {
         $this->_hasPermission();
 
-        return $this->_update($data);
+        $entryType = $this->findOne(['handle' => $handle])->exec();
+
+        if (!$entryType) {
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
+        }
+
+        return $this->_update($entryType, $data);
     }
 
     /**
      *
      * @param  string  $entryTypeId
      * @return bool
-     * @throws EntryException
-     *
+     * @throws ACLException|DatabaseException|EntryException
      */
     public function softDelete(string $entryTypeId): bool
     {
@@ -113,8 +129,7 @@ class EntryType extends BaseModel
      *
      * @param  string  $entryTypeId
      * @return bool
-     * @throws EntryException
-     *
+     * @throws ACLException|DatabaseException|EntryException
      */
     public function hardDelete(string $entryTypeId): bool
     {
@@ -144,9 +159,14 @@ class EntryType extends BaseModel
         return parent::processOnStore($field, $value);
     }
 
+    /**
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws EntryException
+     */
     private function _hasPermission()
     {
-        if (!ACL::hasPermission(User::$currentUser, ACL::write('entryType'))) {
+        if (!ACL::hasPermission(User::$currentUser, ACL::write('EntryType'))) {
             throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
         }
     }
@@ -155,49 +175,79 @@ class EntryType extends BaseModel
      *
      * Create an entry type
      *
-     * @param  Collection  $data
-     * @param  bool        $checkIfHandleExists
-     * @return array|EntryType|null
-     * @throws EntryException|DatabaseException
-     *
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  string                $url_prefix
+     * @param  string|ObjectId|null  $entry_type_layout_id
+     * @param  bool                  $getObject
+     * @return array|EntryType|string|null
+     * @throws DatabaseException
+     * @throws EntryException
      */
-    private function _create(Collection $data, bool $checkIfHandleExists = true): array|EntryType|null
+    private function _create(string $handle, string $title, string $url_prefix, string|ObjectId $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
-        $title = $data->get('title');
-        $handle = $data->get('handle');
-        $urlPrefix = $data->get('urlPrefix', '');
-        $entryTypeLayoutId = $data->get('entryTypeLayoutId', null);
-
-        // Create an empty layout
-        if ($entryTypeLayoutId === null) {
-            $entryTypeLayoutQs = new EntryTypeLayout();
-            $entryTypeLayoutId = $entryTypeLayoutQs->createEmpty($title);
-        }
-
         // Check everytime if the handle is already exists
-        if ($checkIfHandleExists && $this->getByHandle($handle) !== null) {
+        if ($this->getByHandle($handle) !== null) {
             throw new EntryException(self::HANDLE_ALREADY_EXISTS);
         }
 
+        $collection_name = Text::snakeCase(Text::deburr(Text::inflector()->pluralize($handle)[0]));
+
         // Create the entry type
         $entryTypeId = $this->insert([
+            'collection_name' => $collection_name,
             'handle' => $handle,
             'title' => $title,
-            'url_prefix' => $urlPrefix,
-            'entry_type_layout_id' => $entryTypeLayoutId
+            'url_prefix' => $url_prefix,
+            'entry_type_layout_id' => $entry_type_layout_id
         ]);
 
-        return $this->findById($entryTypeId)->exec();
+        if ($getObject) {
+            return $this->findById($entryTypeId)->exec();
+        }
+
+        return $entryTypeId;
     }
 
-    private function _update(Collection $data): bool
+    /**
+     *
+     * @param  EntryType   $entryType
+     * @param  Collection  $data
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    private function _update(EntryType $entryType, Collection $data): bool
     {
+        $handle = $data->get('handle');
+        $title = $data->get('title');
+        $url_prefix = $data->get('url_prefix');
+        $update = [];
+
+        if ($handle && $handle != $entryType->handle) {
+            // TODO validate if handle is ok and different
+        }
+        if ($title) {
+            $update['title'] = $title;
+        }
+        if ($url_prefix !== null) {
+            $update['url_prefix'] = $url_prefix;
+        }
+
+        try {
+            $this->updateOne(['_id' => $entryType->_id], [
+                '$set' => $update
+            ]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(self::DATABASE_ERROR . PHP_EOL . $exception->getMessage());
+        }
+
+        return true;
     }
 
     private function _delete(string $entryTypeId, bool $hard = false): bool
     {
     }
-
 }
 
 //    /**

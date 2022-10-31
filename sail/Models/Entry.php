@@ -5,8 +5,8 @@ namespace SailCMS\Models;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
-use SailCMS\Errors\EntryException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Http\Request;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
@@ -80,12 +80,11 @@ class Entry extends BaseModel
             }
 
             // Search for what collection has this url (if any)
-            $entry = new Entry($value->collectionName);
+            $entry = new Entry($value->collection_name);
             $found = $entry->count(['url' => $url]);
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                // TODO Add status to that ?
                 $content = $entry->findOne(['url' => $url])->exec();
 
                 $preview = $request->get('pm', false, null);
@@ -121,6 +120,7 @@ class Entry extends BaseModel
     {
         // Put ACL
         // TODO add ACL dynamically
+        $this->_create();
     }
 
     protected function processOnFetch(string $field, mixed $value): mixed
