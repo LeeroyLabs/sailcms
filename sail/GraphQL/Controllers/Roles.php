@@ -8,19 +8,25 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Role;
+use SailCMS\Types\RoleConfig;
 
-/**
- *
- * Implementation list
- *
- * single
- *
- */
 class Roles
 {
-    public function role(mixed $obj, Collection $args, Context $context): ?Role
+    /**
+     *
+     * Get a role by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return RoleConfig|null
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function role(mixed $obj, Collection $args, Context $context): ?RoleConfig
     {
-        return null;
+        return (new Role())->getById($args->get('id'));
     }
 
     /**
