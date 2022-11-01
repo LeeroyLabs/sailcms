@@ -21,6 +21,7 @@ class Entry extends BaseModel
     public string $site_id;
     public string $parent_id;
     public string $locale;
+    public Collection $alternates; // Array object "locale" -> "lang_code", "entry" -> "entry_id"
     public Authors $authors;
     public Dates $dates;
     public string $status;

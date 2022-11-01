@@ -2,7 +2,6 @@
 
 namespace SailCMS\Types;
 
-// TODO do we add delete ?
 enum ACLType: string
 {
     case WRITE = 'write';

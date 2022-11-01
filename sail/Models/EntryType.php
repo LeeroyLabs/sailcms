@@ -25,11 +25,12 @@ class EntryType extends BaseModel
     public string $title;
     public string $handle;
     public string $url_prefix;
-    public string $entry_type_layout_id;
+    public ?string $entry_type_layout_id;
 
     public function fields(bool $fetchAllFields = false): array
     {
         return [
+            '_id',
             'title',
             'handle',
             'collection_name',
@@ -80,7 +81,7 @@ class EntryType extends BaseModel
      * @throws DatabaseException
      * @throws EntryException
      */
-    public function create(string $handle, string $title, string $url_prefix, string|ObjectId $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    public function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->_hasPermission();
 
@@ -113,30 +114,22 @@ class EntryType extends BaseModel
 
     /**
      *
-     * @param  string  $entryTypeId
-     * @return bool
-     * @throws ACLException|DatabaseException|EntryException
-     */
-    public function softDelete(string $entryTypeId): bool
-    {
-        // TODO do we will have delete permission ?
-        $this->_hasPermission();
-
-        return $this->_delete($entryTypeId);
-    }
-
-    /**
+     * Real deletion on the entry types
      *
      * @param  string  $entryTypeId
      * @return bool
      * @throws ACLException|DatabaseException|EntryException
+     *
      */
     public function hardDelete(string $entryTypeId): bool
     {
-        // TODO do we will have delete permission ?
         $this->_hasPermission();
 
-        return $this->_delete($entryTypeId, true);
+        // TODO check if there is entry content
+
+        $qtyDeleted = $this->deleteById($entryTypeId);
+
+        return $qtyDeleted === 1;
     }
 
     /**
@@ -160,15 +153,50 @@ class EntryType extends BaseModel
     }
 
     /**
+     *
+     * Does the user has permission to do modification on entry type
+     *
      * @throws DatabaseException
      * @throws ACLException
      * @throws EntryException
+     *
      */
     private function _hasPermission()
     {
-        if (!ACL::hasPermission(User::$currentUser, ACL::write('EntryType'))) {
+        if (!ACL::hasPermission(User::$currentUser, ACL::write('entrytype'))) {
             throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
         }
+    }
+
+    /**
+     *
+     * Check if handle is available
+     *
+     * @param  string  $handle
+     * @return void
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    private function _checkHandle(string $handle): void
+    {
+        // Check everytime if the handle is already exists
+        if ($this->getByHandle($handle) !== null) {
+            throw new EntryException(self::HANDLE_ALREADY_EXISTS);
+        }
+    }
+
+    /**
+     *
+     * Get collection name with handle
+     *
+     * @param  string  $handle
+     * @return string
+     *
+     */
+    private function _getCollectionName(string $handle): string
+    {
+        return Text::snakeCase(Text::deburr(Text::inflector()->pluralize($handle)[0]));
     }
 
     /**
@@ -184,14 +212,11 @@ class EntryType extends BaseModel
      * @throws DatabaseException
      * @throws EntryException
      */
-    private function _create(string $handle, string $title, string $url_prefix, string|ObjectId $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    private function _create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
-        // Check everytime if the handle is already exists
-        if ($this->getByHandle($handle) !== null) {
-            throw new EntryException(self::HANDLE_ALREADY_EXISTS);
-        }
+        $this->_checkHandle($handle);
 
-        $collection_name = Text::snakeCase(Text::deburr(Text::inflector()->pluralize($handle)[0]));
+        $collection_name = $this->_getCollectionName($handle);
 
         // Create the entry type
         $entryTypeId = $this->insert([
@@ -211,6 +236,8 @@ class EntryType extends BaseModel
 
     /**
      *
+     * Update the entry type
+     *
      * @param  EntryType   $entryType
      * @param  Collection  $data
      * @return bool
@@ -219,14 +246,10 @@ class EntryType extends BaseModel
      */
     private function _update(EntryType $entryType, Collection $data): bool
     {
-        $handle = $data->get('handle');
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');
         $update = [];
 
-        if ($handle && $handle != $entryType->handle) {
-            // TODO validate if handle is ok and different
-        }
         if ($title) {
             $update['title'] = $title;
         }
@@ -244,31 +267,4 @@ class EntryType extends BaseModel
 
         return true;
     }
-
-    private function _delete(string $entryTypeId, bool $hard = false): bool
-    {
-    }
 }
-
-//    /**
-//     *
-//     * Get or create an entryType by handle
-//     *  nb: almost only for test
-//     *
-//     * @throws EntryException|DatabaseException
-//     *
-//     */
-//    public function getOrCreateByHandle(Collection $data): EntryType|null
-//    {
-//        $handle = $data->get('handle') ?? '';
-//        if (empty($handle)) {
-//            throw new EntryException(self::HANDLE_MISSING_IN_COLLECTION);
-//        }
-//
-//        $entryType = $this->getByHandle($handle);
-//
-//        if (!$entryType) {
-//            $entryType = $this->_create($data, false);
-//        }
-//        return $entryType;
-//    }
