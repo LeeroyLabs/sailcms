@@ -41,20 +41,6 @@ class EntryType extends BaseModel
 
     /**
      *
-     * Get an entryType by handle
-     *
-     * @param  string  $handle
-     * @return EntryType|null
-     * @throws DatabaseException
-     *
-     */
-    public function getByHandle(string $handle): EntryType|null
-    {
-        return $this->findOne(['handle' => $handle])->exec();
-    }
-
-    /**
-     *
      * Get a list of all available types
      *
      * @return Collection
@@ -65,6 +51,43 @@ class EntryType extends BaseModel
     {
         $instance = new static();
         return new Collection($instance->find([])->exec());
+    }
+
+    /**
+     *
+     * @return EntryType
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public static function getDefaultType(): EntryType
+    {
+        $instance = new static();
+        $entryType = $instance->getByHandle($_ENV['SETTINGS']->get('entry.defaultType.handle'));
+
+        if (!$entryType) {
+            $id = $instance->_create(
+                $_ENV['SETTINGS']->get('entry.defaultType.handle'),
+                $_ENV['SETTINGS']->get('entry.defaultType.title'),
+                $_ENV['SETTINGS']->get('entry.defaultType.url_prefix')
+            );
+            $entryType = $instance->findById($id);
+        }
+        return $entryType;
+    }
+
+    /**
+     *
+     * Get an entryType by handle
+     *
+     * @param  string  $handle
+     * @return EntryType|null
+     * @throws DatabaseException
+     *
+     */
+    public function getByHandle(string $handle): EntryType|null
+    {
+        return $this->findOne(['handle' => $handle])->exec();
     }
 
     /**

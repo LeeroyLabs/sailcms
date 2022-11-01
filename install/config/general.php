@@ -74,6 +74,13 @@ $config = [
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => true]
             ]
+        ],
+        'entry' => [
+            'defaultType' => [
+                'title' => 'Page',
+                'handle' => 'page',
+                'url_prefix' => ''
+            ]
         ]
     ],
     'staging' => [
@@ -122,6 +129,13 @@ $config = [
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => true]
+            ]
+        ],
+        'entry' => [
+            'defaultType' => [
+                'title' => 'Page',
+                'handle' => 'page',
+                'url_prefix' => ''
             ]
         ]
     ],
@@ -172,6 +186,13 @@ $config = [
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => true]
+            ]
+        ],
+        'entry' => [
+            'defaultType' => [
+                'title' => 'Page',
+                'handle' => 'page',
+                'url_prefix' => ''
             ]
         ]
     ]

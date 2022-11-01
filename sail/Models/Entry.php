@@ -21,12 +21,14 @@ class Entry extends BaseModel
     public string $site_id;
     public string $parent_id;
     public string $locale;
-    public Collection $alternates; // Array object "locale" -> "lang_code", "entry" -> "entry_id"
+    public Collection $alternates; // Array of object "locale" -> "lang_code", "entry" -> "entry_id"
     public Authors $authors;
     public Dates $dates;
     public string $status;
     public Collection $categories;
     public Collection $content;
+
+    private EntryType $_entryType;
 
     /* Errors */
     const TITLE_MISSING_IN_COLLECTION = "You must set the entry type title in your data collection";
@@ -35,7 +37,11 @@ class Entry extends BaseModel
 
     public function __construct(string $collection = '')
     {
-        // Determine the type used with the collection name (?)
+        // Get or create the default entry type
+        if (!$collection) {
+            $this->_entryType = EntryType::getDefaultType();
+            $collection = $this->_entryType->collection_name;
+        }
 
         parent::__construct($collection);
     }
@@ -150,6 +156,10 @@ class Entry extends BaseModel
         }
 
         return parent::processOnStore($field, $value);
+    }
+
+    private function _hasPermission(): void
+    {
     }
 
     /**

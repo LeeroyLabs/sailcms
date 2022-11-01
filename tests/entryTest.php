@@ -54,22 +54,15 @@ test('Update an entry type', function ()
     }
 });
 
-//test("Create an entry", function ()
-//{
-//    $model = new Entry();
-//
-//
-//    try {
-//    } catch (Exception $exception) {
-//    }
-//});
+test("Create an entry with the default type", function ()
+{
+    $model = new Entry();
+});
 
 test('Delete an entry type', function ()
 {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
-
-    print_r($entryType);
 
     try {
         $result = $model->hardDelete($entryType->_id);

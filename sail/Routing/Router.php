@@ -6,9 +6,9 @@ use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Contracts\AppController;
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\RouteReturnException;
-use SailCMS\Filesystem;
 use SailCMS\Http\Response;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
@@ -170,6 +170,7 @@ class Router
      * @throws RouteReturnException
      * @throws RuntimeError
      * @throws SyntaxError
+     * @throws DatabaseException
      *
      */
     public static function dispatch(): void
