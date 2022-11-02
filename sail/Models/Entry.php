@@ -2,7 +2,6 @@
 
 namespace SailCMS\Models;
 
-use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\DatabaseException;
@@ -15,33 +14,47 @@ use SailCMS\Types\EntryStatus;
 
 class Entry extends BaseModel
 {
+    /* Errors */
+    const TITLE_MISSING = "You must set the entry title in your data";
+    const SLUG_MISSING = "You must set the entry slug in your data";
+    const HOMEPAGE_ALREADY_EXISTS = "Your project has already an homepage that is live";
+
     /* Fields */
-    public string $title;
-    public string $slug;
-    public string $site_id;
-    public string $parent_id;
+    public string $entry_type_id;
+    public ?string $parent_id;
+    public ?string $site_id;
     public string $locale;
     public Collection $alternates; // Array of object "locale" -> "lang_code", "entry" -> "entry_id"
+    public bool $is_homepage;
+    public string $status;
+    public string $title;
+    public ?string $slug;
+    public string $url; // Concatenation of the slug and the entry type url_prefix
     public Authors $authors;
     public Dates $dates;
-    public string $status;
     public Collection $categories;
     public Collection $content;
 
     private EntryType $_entryType;
 
-    /* Errors */
-    const TITLE_MISSING_IN_COLLECTION = "You must set the entry type title in your data collection";
-
     // TODO: populate CONTENT
 
+    /**
+     * @throws DatabaseException
+     * @throws EntryException
+     */
     public function __construct(string $collection = '')
     {
         // Get or create the default entry type
         if (!$collection) {
             $this->_entryType = EntryType::getDefaultType();
-            $collection = $this->_entryType->collection_name;
+        } else {
+            // Get entry type by collection name
+            $this->_entryType = EntryType::getByCollectionName($collection);
         }
+
+        $this->entry_type_id = $this->_entryType->_id;
+        $collection = $this->_entryType->collection_name;
 
         parent::__construct($collection);
     }
@@ -50,12 +63,16 @@ class Entry extends BaseModel
     {
         return [
             '_id',
+            'entry_type_id',
             'parent_id',
             'site_id',
             'locale',
+            'alternates',
+            'is_homepage',
+            'status',
             'title',
             'slug',
-            'status',
+            'url',
             'authors',
             'dates',
             'categories',
@@ -69,7 +86,7 @@ class Entry extends BaseModel
      *
      * @param  string  $url
      * @return Entry|null
-     * @throws DatabaseException
+     * @throws DatabaseException|EntryException
      *
      */
     public static function findByURL(string $url): ?Entry
@@ -121,24 +138,63 @@ class Entry extends BaseModel
     public function all($filters, $limit, $offset): EntryType|null
     {
         // Filters available date, author, category, status
+        return null;
     }
 
-    public function create()
+    /**
+     *
+     * Create an entry
+     *  The extra data can contains:
+     *      - parent_id default null
+     *      - authors default User::currentUser
+     *      - categories default empty Collection
+     *      - content default empty Collection
+     *
+     * TODO handle site_id, alternates
+     *
+     * @param  string              $locale
+     * @param  string              $isHomepage
+     * @param  EntryStatus|string  $status
+     * @param  string              $title
+     * @param  string|null         $slug
+     * @param  array|Collection    $optionalData
+     * @return array|Entry|null
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function create(string $locale, string $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
-        // Put ACL
-        // TODO add ACL dynamically
-        $this->_create();
+        // TODO If author is set, the current user and author must have permission (?)
+        $this->_hasPermission();
+
+        if ($status instanceof EntryStatus) {
+            $status = $status->value;
+        }
+
+        $data = new Collection([
+            'locale' => $locale,
+            'is_homepage' => $isHomepage,
+            'title' => $title,
+            'status' => $status,
+            'slug' => $slug
+        ]);
+
+        // Add the optional data to the creations
+        if (is_array($optionalData)) {
+            $data->merge(new Collection($optionalData));
+        }
+
+        return $this->_create($data);
     }
 
     protected function processOnFetch(string $field, mixed $value): mixed
     {
-        return $value;
-//        return match ($field) {
-//            "status" => EntryStatus::getStatusEnum($value),
-//            "authors" => new Authors($value->createdBy, $value->updatedBy, $value->publishedBy, $value->deletedBy),
-//            "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
-//            default => $value,
-//        };
+        return match ($field) {
+            "authors" => new Authors($value->createdBy, $value->updatedBy, $value->publishedBy, $value->deletedBy),
+            "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
+            default => $value,
+        };
     }
 
     /**
@@ -152,7 +208,7 @@ class Entry extends BaseModel
     {
         // Data verification
         if ($field == "title" && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING_IN_COLLECTION);
+            throw new EntryException(self::TITLE_MISSING);
         }
 
         return parent::processOnStore($field, $value);
@@ -160,6 +216,54 @@ class Entry extends BaseModel
 
     private function _hasPermission(): void
     {
+        // Put ACL
+        // TODO add ACL dynamically
+    }
+
+    /**
+     * @throws EntryException
+     */
+    private function _validUrlDataOnSave(Collection $data)
+    {
+        $isHomepage = $data->get('is_homepage');
+        $slug = $data->get('slug');
+        $status = $data->get('status');
+        print_r($status == EntryStatus::LIVE->value);
+        
+        if ($status == EntryStatus::LIVE->value) {
+            $hasHomepage = $this->count(['is_homepage' => true]);
+
+            if ($isHomepage && $hasHomepage) {
+                throw new EntryException(self::HOMEPAGE_ALREADY_EXISTS);
+            }
+        }
+
+        if (!$isHomepage && !$slug) {
+            throw new EntryException(self::SLUG_MISSING);
+        }
+    }
+
+    /**
+     *
+     * Get the relative url of the entry will be saved
+     *
+     * @param  string  $slug
+     * @param  bool    $isHomepage
+     * @return string
+     *
+     */
+    private function _getRelativeUrl(string $slug, bool $isHomepage): string
+    {
+        $relativeUrl = "";
+        if ($isHomepage) {
+            $relativeUrl = "/";
+        } else {
+            if ($this->_entryType->url_prefix) {
+                $relativeUrl .= $this->_entryType->url_prefix . '/';
+            }
+            $relativeUrl .= $slug;
+        }
+        return $relativeUrl;
     }
 
     /**
@@ -167,41 +271,48 @@ class Entry extends BaseModel
      * @param  Collection  $data
      * @return array|Entry|null
      * @throws DatabaseException
+     * @throws EntryException
      *
      */
     private function _create(Collection $data): array|Entry|null
     {
-        // TODO test if url of the entry is available.
+        // Test if url of the entry is available and if there is another isHomepage.
+        $this->_validUrlDataOnSave($data);
 
+        $locale = $data->get('locale');
+        $is_homepage = $data->get('is_homepage');
+        $status = $data->get('status', EntryStatus::INACTIVE->value);
         $title = $data->get('title');
         $slug = $data->get('slug');
-        $status = $data->get('status', EntryStatus::INACTIVE);
-        // TODO implements others fields: categories content
+        $author = User::$currentUser; // Handle permission and possible value from the call
+        // TODO implements others fields: categories content alternates site_id
 
         $published = false;
-        if ($status->value == EntryStatus::LIVE) {
+        if ($status == EntryStatus::LIVE->value) {
             $published = true;
         }
 
-        $currentUser = User::$currentUser;
-        if (!$currentUser) {
-            $currentUser = new User();
-            $currentUser->_id = new ObjectId();
-            $currentUser->email = "code@test.com";
-        }
         $dates = Dates::init($published);
-        $authors = Authors::init($currentUser, $published);
+        $authors = Authors::init($author, $published);
 
         if (!isset($slug)) {
             $slug = Text::slugify($title);
         }
 
         $entryId = $this->insert([
+            'entry_type_id' => $this->_entryType->_id->serialize(),
+            'locale' => $locale,
+            'is_homepage' => $is_homepage,
+            'status' => $status,
             'title' => $title,
             'slug' => $slug,
-            'status' => $status->value,
+            'url' => $this->_getRelativeUrl($slug, $is_homepage),
             'authors' => $authors,
             'dates' => $dates,
+            // TODO
+            'parent_id' => null,
+            'site_id' => null,
+            'alternates' => new Collection([]),
             'categories' => new Collection([]),
             'content' => new Collection([])
         ]);

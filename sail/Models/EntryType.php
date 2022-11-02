@@ -13,19 +13,23 @@ use SailCMS\Text;
 
 class EntryType extends BaseModel
 {
-    const HANDLE_MISSING_IN_COLLECTION = "You must set the entry type handle in your data collection";
+    const HANDLE_MISSING = "You must set the entry type handle in your data";
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
-    const TITLE_MISSING_IN_COLLECTION = "You must set the entry type title in your data collection";
+    const TITLE_MISSING = "You must set the entry type title in your data";
     const CANNOT_CREATE_ENTRY_TYPE = "You don't have the right to create an entry type";
     const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = "Exception when creating an entry type";
+
+    private const _DEFAULT_HANDLE = "page";
+    private const _DEFAULT_TITLE = "Page";
+    private const _DEFAULT_URL_PREFIX = "";
 
     // Fields
     public string $collection_name;
     public string $title;
     public string $handle;
     public string $url_prefix;
-    public ?string $entry_type_layout_id;
+    public ?string $entry_type_layout_id; // TODO implement layout!
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -55,6 +59,8 @@ class EntryType extends BaseModel
 
     /**
      *
+     * Use the settings to create the default type
+     *
      * @return EntryType
      * @throws DatabaseException
      * @throws EntryException
@@ -62,18 +68,55 @@ class EntryType extends BaseModel
      */
     public static function getDefaultType(): EntryType
     {
+        // Get default values for default type
+        $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle') ?? self::_DEFAULT_HANDLE;
+        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title') ?? self::_DEFAULT_TITLE;
+        $defaultUrlPrefix = $_ENV['SETTINGS']->get('entry.defaultType.url_prefix') ?? self::_DEFAULT_URL_PREFIX;
+
         $instance = new static();
-        $entryType = $instance->getByHandle($_ENV['SETTINGS']->get('entry.defaultType.handle'));
+        $entryType = $instance->getByHandle($defaultHandle);
 
         if (!$entryType) {
-            $id = $instance->_create(
-                $_ENV['SETTINGS']->get('entry.defaultType.handle'),
-                $_ENV['SETTINGS']->get('entry.defaultType.title'),
-                $_ENV['SETTINGS']->get('entry.defaultType.url_prefix')
-            );
+            $id = $instance->_create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
             $entryType = $instance->findById($id);
         }
         return $entryType;
+    }
+
+    /**
+     *
+     * Get an entry type by his collection name
+     *
+     * @param  string  $collectionName
+     * @return EntryType
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public static function getByCollectionName(string $collectionName): EntryType
+    {
+        $instance = new static();
+        $entryType = $instance->find(['collection_name' => $collectionName])->exec();
+
+        if (!$entryType) {
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $collectionName));
+        }
+
+        return $entryType;
+    }
+
+    /**
+     *
+     * Shortcut to get entry model and make queries
+     *
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function getEntryModel(): Entry
+    {
+        return new Entry($this->collection_name);
     }
 
     /**
@@ -141,7 +184,9 @@ class EntryType extends BaseModel
      *
      * @param  string  $entryTypeId
      * @return bool
-     * @throws ACLException|DatabaseException|EntryException
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
      *
      */
     public function hardDelete(string $entryTypeId): bool
@@ -166,10 +211,10 @@ class EntryType extends BaseModel
     {
         // Data verification
         if ($field === "handle" && empty($value)) {
-            throw new EntryException(self::HANDLE_MISSING_IN_COLLECTION);
+            throw new EntryException(self::HANDLE_MISSING);
         }
         if ($field === "title" && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING_IN_COLLECTION);
+            throw new EntryException(self::TITLE_MISSING);
         }
 
         return parent::processOnStore($field, $value);
@@ -234,6 +279,7 @@ class EntryType extends BaseModel
      * @return array|EntryType|string|null
      * @throws DatabaseException
      * @throws EntryException
+     *
      */
     private function _create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
@@ -278,6 +324,7 @@ class EntryType extends BaseModel
         }
         if ($url_prefix !== null) {
             $update['url_prefix'] = $url_prefix;
+            // TODO update all entry url of this entry type
         }
 
         try {
