@@ -25,7 +25,7 @@ class Dates implements DatabaseType
      * @return array
      *
      */
-    static public function atCreation(bool $published = false): array
+    static public function init(bool $published = false): array
     {
         $now = time();
         $publishDate = null;

@@ -21,7 +21,7 @@ class Authors
      * @return array
      *
      */
-    static public function atCreation(User $author, bool $published): array
+    static public function init(User $author, bool $published): array
     {
         $publisherId = null;
         if ($published) {
