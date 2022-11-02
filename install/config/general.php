@@ -1,5 +1,7 @@
 <?php
 
+use SailCMS\Assets\Transformer;
+
 $config = [
     'dev' => [
         'devMode' => true,
@@ -65,14 +67,14 @@ $config = [
             'bubble' => true
         ],
         'assets' => [
-            'path' => 'local://uploads',
+            'adapter' => 'local',
             'optimizeOnUpload' => true,
             'transformOutputFormat' => 'webp',
-            'transformQuality' => 0.92, // 92%
+            'transformQuality' => 92, // 92%
             'storeTransforms' => true,
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
-                'thumbnail' => ['size' => '100x100', 'crop' => true]
+                'thumbnail' => ['width' => 100, 'height' => 100, 'crop' => Transformer::CROP_CC]
             ]
         ]
     ],
@@ -114,14 +116,14 @@ $config = [
             'bubble' => true
         ],
         'assets' => [
-            'path' => 'local://uploads',
+            'adapter' => 'local',
             'optimizeOnUpload' => true,
             'transformOutputFormat' => 'webp',
-            'transformQuality' => 0.92, // 92%
+            'transformQuality' => 92, // 92%
             'storeTransforms' => true,
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
-                'thumbnail' => ['size' => '100x100', 'crop' => true]
+                'thumbnail' => ['size' => '100x100', 'crop' => Transformer::CROP_CC]
             ]
         ]
     ],
@@ -164,14 +166,14 @@ $config = [
             'bubble' => true
         ],
         'assets' => [
-            'path' => 'local://uploads',
+            'adapter' => 'local',
             'optimizeOnUpload' => true,
             'transformOutputFormat' => 'webp',
-            'transformQuality' => 0.92, // 92%
+            'transformQuality' => 92, // 92%
             'storeTransforms' => true,
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
-                'thumbnail' => ['size' => '100x100', 'crop' => true]
+                'thumbnail' => ['size' => '100x100', 'crop' => Transformer::CROP_CC]
             ]
         ]
     ]

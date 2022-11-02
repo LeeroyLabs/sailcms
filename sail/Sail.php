@@ -70,6 +70,7 @@ class Sail
      * @throws SyntaxError
      * @throws TwoFactorAuthException
      * @throws ACLException
+     * @throws \GraphQL\Error\SyntaxError
      *
      */
     public static function init(string $execPath): void
@@ -114,7 +115,7 @@ class Sail
 
         // Headless CSRF Setup
         static::setupHeadlessCSRF();
-        
+
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
             $data = Graphql::init();
@@ -162,6 +163,10 @@ class Sail
             $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
 
+        // Load .env file
+        $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
+        $dotenv->load();
+
         // Load Filesystem
         static::$fsDirectory = static::$workingDirectory . '/storage/fs';
         Filesystem::mountCore();
@@ -172,10 +177,6 @@ class Sail
 
         // Load configurations
         static::$configDirectory = static::$workingDirectory . '/config';
-
-        // Load .env file
-        $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
-        $dotenv->load();
 
         $config = [];
 

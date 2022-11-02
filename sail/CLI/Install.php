@@ -91,6 +91,9 @@ class Install extends Command
             }
         }
 
+        // Create a symlink for 'assets' to the upload folder
+        symlink(CLI::getWorkingDirectory() . '/storage/fs/uploads', 'web/assets');
+
         // Generate Security Key file
         Tools::outputInfo('generate', 'Generating secure key for encryption', 'bg-sky-400');
         Security::init();

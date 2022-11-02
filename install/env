@@ -1,5 +1,7 @@
 ENVIRONMENT=dev
 
+SITE_URL=http://localhost
+
 # Composer location
 COMPOSER_LOCATION=/usr/local/bin/composer
 
