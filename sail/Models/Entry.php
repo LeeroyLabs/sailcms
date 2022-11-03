@@ -391,7 +391,7 @@ class Entry extends BaseModel
                 '$set' => [
                     'authors' => $authors,
                     'dates' => $dates,
-                    'status' => EntryStatus::TRASH
+                    'status' => EntryStatus::TRASH->value
                 ]
             ]);
         } catch (DatabaseException $exception) {
