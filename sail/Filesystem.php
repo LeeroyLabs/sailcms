@@ -46,8 +46,9 @@ class Filesystem
         }
 
         $wd = Sail::getWorkingDirectory();
+        $host = '/assets';
 
-        static::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'));
+        static::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
         static::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/'));
         static::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/logs/'));
         static::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));

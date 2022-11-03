@@ -157,7 +157,15 @@ abstract class BaseModel
             foreach ($this->currentPopulation as $populate) {
                 $instance = new $populate['class']();
                 $field = $populate['field'];
-                $doc->{$field} = $instance->findById($doc->{$field})->exec();
+                $target = $populate['targetField'];
+
+                // Make sure to run only if field is not null and not empty string
+                if ($doc->{$field} !== null && $doc->{$field} !== '') {
+                    $doc->{$target} = $instance->findById($doc->{$field})->exec();
+                } else {
+                    // Nullify the field, most probably going to be called from GraphQL
+                    $doc->{$target} = null;
+                }
             }
 
             $docs[] = $doc;
@@ -173,14 +181,16 @@ abstract class BaseModel
      * (must be an ObjectId or a string representation)
      *
      * @param  string  $field
+     * @param  string  $target
      * @param  string  $model
      * @return $this
      *
      */
-    protected function populate(string $field, string $model): BaseModel
+    protected function populate(string $field, string $target, string $model): BaseModel
     {
         $this->currentPopulation[] = [
             'field' => $field,
+            'targetField' => $target,
             'class' => $model
         ];
 
@@ -365,7 +375,10 @@ abstract class BaseModel
     protected function updateOne(array $query, array $update): int
     {
         try {
-            $update['$set'] = $this->prepareForWrite($update['$set']);
+            if (isset($update['$set'])) {
+                $update['$set'] = $this->prepareForWrite($update['$set']);
+            }
+
             return $this->collection->updateOne($query, $update)->getModifiedCount();
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
@@ -385,7 +398,10 @@ abstract class BaseModel
     protected function updateMany(array $query, array $update): int
     {
         try {
-            $update['$set'] = $this->prepareForWrite($update['$set']);
+            if (isset($update['$set'])) {
+                $update['$set'] = $this->prepareForWrite($update['$set']);
+            }
+
             return $this->collection->updateMany($query, $update)->getModifiedCount();
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);

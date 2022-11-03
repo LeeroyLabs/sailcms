@@ -21,7 +21,9 @@
     "require": {
         "php": ">=8.1",
         "ext-sodium": "*",
-        "ext-gd": "*",
+        "ext-imagick": "*",
+        "ext-exif": "*",
+        "ext-mbstring": "*",
         "vlucas/phpdotenv": "^5.4",
         "myclabs/php-enum": "^1.8",
         "symfony/string": "^6.0",
@@ -50,7 +52,7 @@
         "symfony/sendgrid-mailer": "^6.1",
         "symfony/twig-bridge": "^6.1",
         "symfony/security-csrf": "^6.1",
-        "sybio/image-workshop": "^2.2"
+        "intervention/image": "^2.7"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"
