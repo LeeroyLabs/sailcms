@@ -277,6 +277,7 @@ class ACL
                 // TODO FAIL Silently should log something
             }
             static::$loadedACL->pushSpread(...$entryACL->unwrap());
+            static::$entryTypeLoaded = true;
         }
         // END ASKMARC
 

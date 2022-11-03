@@ -4,6 +4,7 @@ namespace SailCMS\Models;
 
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Http\Request;
@@ -17,6 +18,7 @@ class Entry extends BaseModel
     const TITLE_MISSING = "You must set the entry title in your data";
     const SLUG_MISSING = "You must set the entry slug in your data";
     const HOMEPAGE_ALREADY_EXISTS = "Your project has already an homepage that is live";
+    const CANNOT_CREATE_ENTRY = "You don't have the right to create an entry";
     const DATABASE_ERROR = "Exception when %s an entry";
 
     /* Fields */
@@ -35,7 +37,7 @@ class Entry extends BaseModel
     public Collection $categories;
     public Collection $content;
 
-    private EntryType $_entryType;
+    private EntryType $entryType;
 
     // TODO: populate CONTENT
 
@@ -47,14 +49,14 @@ class Entry extends BaseModel
     {
         // Get or create the default entry type
         if (!$collection) {
-            $this->_entryType = EntryType::getDefaultType();
+            $this->entryType = EntryType::getDefaultType();
         } else {
             // Get entry type by collection name
-            $this->_entryType = EntryType::getByCollectionName($collection);
+            $this->entryType = EntryType::getByCollectionName($collection);
         }
 
-        $this->entry_type_id = $this->_entryType->_id;
-        $collection = $this->_entryType->collection_name;
+        $this->entry_type_id = $this->entryType->_id;
+        $collection = $this->entryType->collection_name;
 
         parent::__construct($collection);
     }
@@ -181,7 +183,7 @@ class Entry extends BaseModel
     public function createOne(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         // TODO If author is set, the current user and author must have permission (?)
-        $this->_hasPermission();
+        $this->hasPermission();
 
         if ($status instanceof EntryStatus) {
             $status = $status->value;
@@ -200,7 +202,7 @@ class Entry extends BaseModel
             $data->merge(new Collection($optionalData));
         }
 
-        return $this->_create($data);
+        return $this->create($data);
     }
 
     /**
@@ -215,13 +217,13 @@ class Entry extends BaseModel
      */
     public function delete(string $entryId, bool $soft = true): bool
     {
-        $this->_hasPermission();
+        $this->hasPermission();
 
         if ($soft) {
             $entry = $this->findById($entryId);
-            $result = $this->_softDelete($entry);
+            $result = $this->softDelete($entry);
         } else {
-            $result = $this->_hardDelete($entryId);
+            $result = $this->hardDelete($entryId);
         }
         return $result;
     }
@@ -261,10 +263,20 @@ class Entry extends BaseModel
         return parent::processOnStore($field, $value);
     }
 
-    private function _hasPermission(): void
+    /**
+     *
+     * @return void
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws ACLException
+     *
+     */
+    private function hasPermission(): void
     {
-        // Put ACL
-        // TODO add ACL dynamically
+        // TODO check this
+//        if (!ACL::hasPermission(User::$currentUser, ACL::write($this->_entryType->handle))) {
+//            throw new EntryException(self::CANNOT_CREATE_ENTRY);
+//        }
     }
 
     /**
@@ -304,8 +316,8 @@ class Entry extends BaseModel
         if ($isHomepage) {
             $relativeUrl = "/";
         } else {
-            if ($this->_entryType->url_prefix) {
-                $relativeUrl .= $this->_entryType->url_prefix . '/';
+            if ($this->entryType->url_prefix) {
+                $relativeUrl .= $this->entryType->url_prefix . '/';
             }
             $relativeUrl .= $slug;
         }
@@ -322,7 +334,7 @@ class Entry extends BaseModel
      * @throws EntryException
      *
      */
-    private function _create(Collection $data): array|Entry|null
+    private function create(Collection $data): array|Entry|null
     {
         // Test if url of the entry is available and if there is another isHomepage.
         $this->validUrlDataOnSave($data);
@@ -345,7 +357,7 @@ class Entry extends BaseModel
 
         try {
             $entryId = $this->insert([
-                'entry_type_id' => (string)$this->_entryType->_id,
+                'entry_type_id' => (string)$this->entryType->_id,
                 'locale' => $locale,
                 'is_homepage' => $is_homepage,
                 'status' => $status,
@@ -368,7 +380,7 @@ class Entry extends BaseModel
         return $this->findById($entryId)->exec();
     }
 
-    private function _update(Collection $data)
+    private function update(Collection $data)
     {
     }
 
@@ -381,7 +393,7 @@ class Entry extends BaseModel
      * @throws EntryException
      *
      */
-    private function _softDelete(Entry $entry): bool
+    private function softDelete(Entry $entry): bool
     {
         $authors = Authors::deleted($entry->authors, User::$currentUser->_id);
         $dates = Dates::deleted($entry->dates);
@@ -408,7 +420,7 @@ class Entry extends BaseModel
      * @throws EntryException
      *
      */
-    private function _hardDelete(string $entryTypeId): bool
+    private function hardDelete(string $entryTypeId): bool
     {
         try {
             $qtyDeleted = $this->deleteById($entryTypeId);
@@ -419,25 +431,3 @@ class Entry extends BaseModel
         return $qtyDeleted === 1;
     }
 }
-
-//    /**
-//     * Get or create an entry
-//     *  nb: almost only for test
-//     *
-//     * @param  Collection  $data
-//     * @return array|Entry|null
-//     * @throws DatabaseException
-//     */
-//    public function getOrCreate(Collection $data): array|Entry|null
-//    {
-//        $entry = null;
-//        $slug = $data->get('slug');
-//        if (isset($slug)) {
-//            $entry = $this->getBySlug($slug);
-//        }
-//
-//        if (!$entry) {
-//            $entry = $this->_create($data);
-//        }
-//        return $entry;
-//    }

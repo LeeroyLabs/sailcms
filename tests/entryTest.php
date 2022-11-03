@@ -31,7 +31,7 @@ test('Create an entry type', function ()
     $model = new EntryType();
 
     try {
-        $id = $model->create('test', 'Test', 'test', null, false);
+        $id = $model->createOne('test', 'Test', 'test', null, false);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -43,7 +43,7 @@ test('Failed to create an entry type because the handle is already in use', func
     $model = new EntryType();
 
     try {
-        $model->create('test', 'Test', 'test', null, false);
+        $model->createOne('test', 'Test', 'test', null, false);
         expect(true)->not->toBe(false);
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::HANDLE_ALREADY_EXISTS);
