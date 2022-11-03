@@ -75,7 +75,7 @@ test("Create an entry with the default type", function ()
     $model = new Entry();
 
     try {
-        $entry = $model->create('fr', true, EntryStatus::LIVE, 'Home', null, []);
+        $entry = $model->createOne('fr', true, EntryStatus::LIVE, 'Home', null, []);
         expect($entry->title)->toBe('Home');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');

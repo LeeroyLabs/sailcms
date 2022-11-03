@@ -178,7 +178,7 @@ class Entry extends BaseModel
      * @throws EntryException
      *
      */
-    public function create(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function createOne(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         // TODO If author is set, the current user and author must have permission (?)
         $this->_hasPermission();
@@ -195,7 +195,7 @@ class Entry extends BaseModel
             'slug' => $slug
         ]);
 
-        // Add the optional data to the creations
+        // Add the optional data to the creation
         if (is_array($optionalData)) {
             $data->merge(new Collection($optionalData));
         }
@@ -270,7 +270,7 @@ class Entry extends BaseModel
     /**
      * @throws EntryException
      */
-    private function _validUrlDataOnSave(Collection $data)
+    private function validUrlDataOnSave(Collection $data)
     {
         $isHomepage = $data->get('is_homepage');
         $slug = $data->get('slug');
@@ -298,7 +298,7 @@ class Entry extends BaseModel
      * @return string
      *
      */
-    private function _getRelativeUrl(?string $slug, bool $isHomepage): string
+    private function getRelativeUrl(?string $slug, bool $isHomepage): string
     {
         $relativeUrl = "";
         if ($isHomepage) {
@@ -325,7 +325,7 @@ class Entry extends BaseModel
     private function _create(Collection $data): array|Entry|null
     {
         // Test if url of the entry is available and if there is another isHomepage.
-        $this->_validUrlDataOnSave($data);
+        $this->validUrlDataOnSave($data);
 
         $locale = $data->get('locale');
         $is_homepage = $data->get('is_homepage');
@@ -351,7 +351,7 @@ class Entry extends BaseModel
                 'status' => $status,
                 'title' => $title,
                 'slug' => $slug,
-                'url' => $this->_getRelativeUrl($slug, $is_homepage),
+                'url' => $this->getRelativeUrl($slug, $is_homepage),
                 'authors' => $authors,
                 'dates' => $dates,
                 // TODO
