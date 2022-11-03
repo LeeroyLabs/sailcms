@@ -3,8 +3,13 @@
 namespace SailCMS\Templating\Extensions;
 
 use Exception;
+use ImagickException;
+use League\Flysystem\FilesystemException;
+use SailCMS\Assets\Transformer;
 use SailCMS\Debug;
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Locale;
+use SailCMS\Models\Asset;
 use SailCMS\Sail;
 use SailCMS\Security;
 use Twig\Extension\AbstractExtension;
@@ -21,7 +26,8 @@ class Bundled extends AbstractExtension
             new TwigFunction('locale', [$this, 'getLocale']),
             new TwigFunction('__', [$this, 'translate']),
             new TwigFunction('twoFactor', [$this, 'twoFactor']),
-            new TwigFunction('csrf', [$this, 'csrf'])
+            new TwigFunction('csrf', [$this, 'csrf']),
+            new TwigFunction('transform', [$this, 'transform'])
         ];
     }
 
@@ -161,5 +167,25 @@ class Bundled extends AbstractExtension
         }
 
         return '';
+    }
+
+    /**
+     *
+     * Transform an asset
+     *
+     * @param  string    $id
+     * @param  string    $name
+     * @param  int|null  $width
+     * @param  int|null  $height
+     * @param  string    $crop
+     * @return string
+     * @throws ImagickException
+     * @throws FilesystemException
+     * @throws DatabaseException
+     *
+     */
+    public function transform(string $id, string $name, ?int $width = null, ?int $height = null, string $crop = Transformer::CROP_CC): string
+    {
+        return Asset::transformById($id, $name, $width, $height);
     }
 }
