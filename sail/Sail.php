@@ -52,6 +52,8 @@ class Sail
 
     private static int $appState = Sail::STATE_WEB;
 
+    private static string $siteID = 'main';
+
     /**
      *
      * Initialize the CMS
@@ -166,6 +168,9 @@ class Sail
         // Load .env file
         $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
         $dotenv->load();
+
+        // Load Sites
+        static::loadAndDetectSites();
 
         // Load Filesystem
         static::$fsDirectory = static::$workingDirectory . '/storage/fs';
@@ -428,6 +433,19 @@ class Sail
 
     /**
      *
+     * Set the working directory
+     *
+     * @param  string  $path
+     * @return void
+     *
+     */
+    public static function setWorkingDirectory(string $path): void
+    {
+        static::$workingDirectory = $path;
+    }
+
+    /**
+     *
      * Get the template directory for the current site
      *
      * @return string
@@ -478,11 +496,12 @@ class Sail
      *
      * Set app state (either web or cli) for some very specific use cases
      *
-     * @param  int  $state
+     * @param  int     $state
+     * @param  string  $env
+     * @param  string  $forceIOPath
      * @return void
-     *
      */
-    public static function setAppState(int $state): void
+    public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
     {
         if ($state === static::STATE_CLI) {
             static::$appState = $state;
@@ -490,9 +509,18 @@ class Sail
 
             $config = [];
             include_once dirname(__DIR__) . '/install/config/general.php';
-            $_ENV['SETTINGS'] = new Collection($config);
+
+            if ($env !== '') {
+                $_ENV['SETTINGS'] = new Collection($config[$env]);
+            } else {
+                $_ENV['SETTINGS'] = new Collection($config);
+            }
 
             ACL::init();
+
+            static::loadAndDetectSites();
+            Filesystem::mountCore($forceIOPath);
+            Filesystem::init();
             return;
         }
 
@@ -510,6 +538,18 @@ class Sail
     public static function getErrorHandler(): Run
     {
         return static::$errorHandler;
+    }
+
+    /**
+     *
+     * Get the current Site ID
+     *
+     * @return string
+     *
+     */
+    public static function siteId(): string
+    {
+        return static::$siteID;
     }
 
     /**
@@ -618,6 +658,31 @@ class Sail
             $response->set('token', $token);
             $response->render(false);
             die();
+        }
+    }
+
+    /**
+     *
+     * Detect what site is running
+     *
+     * @return void
+     *
+     */
+    private static function loadAndDetectSites(): void
+    {
+        $sites = include static::$workingDirectory . '/config/sites.php';
+        
+        foreach ($sites as $name => $config) {
+            if (isset($_SERVER['HTTP_HOST'])) {
+                $host = explode(':', $_SERVER['HTTP_HOST'])[0];
+            } else {
+                $host = explode(':', $_ENV['SITE_URL'])[0];
+            }
+
+            if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
+                static::$siteID = $name;
+                Locale::setAvailableLocales($config['locales']);
+            }
         }
     }
 }

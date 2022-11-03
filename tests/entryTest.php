@@ -7,6 +7,7 @@ use SailCMS\Sail;
 
 beforeEach(function ()
 {
+    $_ENV['SITE_URL'] = 'http://localhost:8888';
     Sail::setAppState(Sail::STATE_CLI);
 });
 
@@ -69,7 +70,7 @@ test('Delete an entry type', function ()
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
 
-    print_r($entryType);
+    //print_r($entryType);
 
     try {
         $result = $model->hardDelete($entryType->_id);

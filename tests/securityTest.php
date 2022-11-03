@@ -1,6 +1,5 @@
 <?php
 
-use SailCMS\Filesystem;
 use SailCMS\Security;
 
 $phrase = 'Hello World!';

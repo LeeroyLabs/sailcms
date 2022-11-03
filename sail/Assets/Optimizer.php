@@ -2,6 +2,7 @@
 
 namespace SailCMS\Assets;
 
+use Imagick;
 use ImagickException;
 
 class Optimizer
@@ -19,9 +20,9 @@ class Optimizer
      */
     public static function process(string $img, float $quality = 92, bool $keepAlpha = true): string
     {
-        $image = new \Imagick();
+        $image = new Imagick();
         $image->readImageBlob($img);
-        
+
         $image->setImageCompressionQuality($quality);
         $image->setImageFormat('webp');
         $image->setOption('webp:lossless', true);

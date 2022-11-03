@@ -71,7 +71,6 @@ $config = [
             'optimizeOnUpload' => true,
             'transformOutputFormat' => 'webp',
             'transformQuality' => 92, // 92%
-            'storeTransforms' => true,
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['width' => 100, 'height' => 100, 'crop' => Transformer::CROP_CC]
@@ -120,7 +119,6 @@ $config = [
             'optimizeOnUpload' => true,
             'transformOutputFormat' => 'webp',
             'transformQuality' => 92, // 92%
-            'storeTransforms' => true,
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => Transformer::CROP_CC]
@@ -170,7 +168,6 @@ $config = [
             'optimizeOnUpload' => true,
             'transformOutputFormat' => 'webp',
             'transformQuality' => 92, // 92%
-            'storeTransforms' => true,
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => Transformer::CROP_CC]

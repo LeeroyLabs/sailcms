@@ -5,8 +5,9 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Username;
 
-beforeEach(function ()
+beforeAll(function ()
 {
+    $_ENV['SITE_URL'] = 'http://localhost:8888';
     Sail::setAppState(Sail::STATE_CLI);
 });
 
