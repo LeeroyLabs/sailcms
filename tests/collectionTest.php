@@ -127,7 +127,15 @@ test('Create chunks of the collection by 2 (end up with 3 chunks)', function ()
 
 test('Collection shuffling', function ()
 {
-    $arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+    $arr = [];
+    $a = 0;
+    $max = 1000;
+
+    while ($a < $max) {
+        $arr[] = $a;
+        $a++;
+    }
+
     $this->collection->pushSpread(...$arr);
     $first = $this->collection->first;
     $second = $this->collection->at(1);

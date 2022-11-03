@@ -11,6 +11,7 @@ use SailCMS\Types\Username;
 
 beforeAll(function ()
 {
+    $_ENV['SITE_URL'] = 'http://localhost:8888';
     Sail::setAppState(Sail::STATE_CLI);
 
     $authorModel = new User();
@@ -108,7 +109,7 @@ test('Delete an entry type', function ()
 {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
-
+    
     try {
         $result = $model->hardDelete($entryType->_id);
         expect($result)->toBe(true);

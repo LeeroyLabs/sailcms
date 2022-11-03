@@ -10,6 +10,8 @@ class Locale
     public static string $current;
     public static array $strings = [];
 
+    private static array $availableLocales = [];
+
     /**
      *
      * Set the current locale
@@ -113,6 +115,31 @@ class Locale
     public function _e(string $path): void
     {
         echo static::translate($path);
+    }
+
+    /**
+     *
+     * Set available locales for site
+     *
+     * @param  array  $locales
+     * @return void
+     *
+     */
+    public static function setAvailableLocales(array $locales): void
+    {
+        static::$availableLocales = $locales;
+    }
+
+    /**
+     *
+     * Get available locales for site
+     *
+     * @return Collection
+     *
+     */
+    public static function getAvailableLocales(): Collection
+    {
+        return new Collection(static::$availableLocales);
     }
 
     /**

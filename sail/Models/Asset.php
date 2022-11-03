@@ -16,18 +16,20 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Filesystem;
+use SailCMS\Locale;
+use SailCMS\Sail;
+use SailCMS\Types\AssetTitle;
 use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 
-// TODO: Update (set title)
-// TODO: Delete
-
 class Asset extends BaseModel
 {
     public string $filename;
+    public string $site_id;
     public string $name;
-    public string $title;
+    public AssetTitle $title;
+    public string $folder;
     public string $url;
     public int $filesize;
     public Size $size;
@@ -41,6 +43,7 @@ class Asset extends BaseModel
     {
         return [
             '_id',
+            'site_id',
             'filename',
             'title',
             'name',
@@ -51,7 +54,8 @@ class Asset extends BaseModel
             'uploader_id',
             'public',
             'created_at',
-            'transforms'
+            'transforms',
+            'folder'
         ];
     }
 
@@ -59,6 +63,10 @@ class Asset extends BaseModel
     {
         if ($field === 'size') {
             return new Size($value->width, $value->height);
+        }
+
+        if ($field === 'title') {
+            return new AssetTitle($value);
         }
 
         return $value;
@@ -73,9 +81,25 @@ class Asset extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function getById(string|ObjectId $id): ?Asset
+    public static function getById(string|ObjectId $id): ?Asset
     {
-        return $this->findById($id)->exec();
+        $instance = new static();
+        return $instance->findById($id)->exec();
+    }
+
+    /**
+     *
+     * Get an asset by its id
+     *
+     * @param  string  $name
+     * @return Asset|null
+     * @throws DatabaseException
+     *
+     */
+    public static function getByName(string $name): ?Asset
+    {
+        $instance = new static();
+        return $instance->findOne(['name' => $name])->exec();
     }
 
     /**
@@ -84,6 +108,7 @@ class Asset extends BaseModel
      *
      * @param  int     $page
      * @param  int     $limit
+     * @param  string  $folder
      * @param  string  $search
      * @param  string  $sort
      * @param  int     $direction
@@ -92,11 +117,11 @@ class Asset extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function getList(int $page = 1, int $limit = 50, string $search = '', string $sort = 'name', int $direction = BaseModel::SORT_ASC): Listing
+    public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = BaseModel::SORT_ASC): Listing
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('asset'))) {
+        if (ACL::hasPermission(User::$currentUser, ACL::read('asset'), ACL::readwrite('asset'))) {
             $offset = $page * $limit - $limit;
-            $query = [];
+            $query = ['site_id' => Sail::siteId(), 'folder' => $folder];
 
             // Search by name
             if (!empty($search)) {
@@ -128,17 +153,20 @@ class Asset extends BaseModel
      *
      * @param  string                $data
      * @param  string                $filename
+     * @param  string                $folder
      * @param  ObjectId|User|string  $uploader
      * @return string
      * @throws DatabaseException
      * @throws FileException
-     * @throws ImagickException
      * @throws FilesystemException
+     * @throws ImagickException
      *
      */
-    public function upload(string $data, string $filename, ObjectId|User|string $uploader = ''): string
+    public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = ''): string
     {
         $fs = Filesystem::manager();
+
+        $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
 
         // Options
         $adapter = $_ENV['SETTINGS']->get('assets.adapter');
@@ -170,6 +198,10 @@ class Asset extends BaseModel
         $info = explode('.', $filename);
         $ext = end($info);
 
+        // Add the unique id to the asset now
+        $the_name = basename($filename);
+        $filename = str_replace(".{$ext}", "-{$upload_id}.{$ext}", $filename);
+
         // Check support formats for post-processing
         $processableImage = match ($ext) {
             'jpeg', 'jpg', 'png' => true,
@@ -186,6 +218,7 @@ class Asset extends BaseModel
             if ($optimize) {
                 $data = Optimizer::process($data, $quality);
                 $filename = str_replace($ext, 'webp', $filename);
+                $the_name = str_replace($ext, 'webp', $the_name);
             }
 
             // Size of the file (width/height)
@@ -209,11 +242,21 @@ class Asset extends BaseModel
             $uploader_id = (string)$uploader->_id;
         }
 
+        $locales = Locale::getAvailableLocales();
+        $title = [];
+
+        foreach ($locales as $locale) {
+            $title[$locale] = $the_name;
+        }
+
+        $titles = new AssetTitle($title);
+
         // Create entry
         $id = $this->insert([
+            'site_id' => Sail::siteId(),
             'filename' => $path . $timePath . $filename,
-            'name' => basename($filename),
-            'title' => basename($filename),
+            'name' => $the_name,
+            'title' => $titles,
             'url' => $fs->publicUrl($basePath . $timePath . $filename),
             'is_image' => $isImage,
             'filesize' => $sizeBytes,
@@ -221,7 +264,8 @@ class Asset extends BaseModel
             'uploader_id' => $uploader_id,
             'public' => ($uploader_id === ''),
             'transforms' => [],
-            'created_at' => time()
+            'created_at' => time(),
+            'folder' => $folder
         ]);
 
         // Run all transforms on upload configured
@@ -359,5 +403,91 @@ class Asset extends BaseModel
         }
 
         return $asset->url ?? '';
+    }
+
+    /**
+     *
+     * Update asset's title in the requested locale
+     *
+     * @param  string  $locale
+     * @param  string  $title
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function update(string $locale, string $title): bool
+    {
+        if (ACL::hasPermission(User::$currentUser, ACL::write('asset'))) {
+            $this->updateOne(['_id' => $this->_id], ['$set' => ["title.{$locale}" => $title]]);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Update an asset's title in the request locale by its id
+     *
+     * @param  ObjectId|string  $id
+     * @param  string           $locale
+     * @param  string           $title
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public static function updateById(ObjectId|string $id, string $locale, string $title): bool
+    {
+        $instance = new static();
+        $asset = $instance->findById($id)->exec();
+
+        if ($asset) {
+            return $asset->update($locale, $title);
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Delete an asset
+     *
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public function remove(): bool
+    {
+        if (ACL::hasPermission(User::$currentUser, ACL::write('asset'))) {
+            $this->deleteById($this->_id);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Delete an asset by id
+     *
+     * @param  ObjectId|string  $id
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     *
+     */
+    public static function removeById(ObjectId|string $id): bool
+    {
+        $instance = new static();
+        $asset = $instance->findById($id)->exec();
+
+        if ($asset) {
+            return $asset->remove();
+        }
+
+        return false;
     }
 }
