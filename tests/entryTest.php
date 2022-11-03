@@ -90,7 +90,26 @@ test("Create an entry with the default type", function ()
 // Update a default entry
 // Hard Delete a default entry
 
-test('Hard Delete an entry', function ()
+test('Soft Delete a default entry', function ()
+{
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home'
+    ]);
+
+    try {
+        $result = $entry->delete($entry->_id);
+        $entry = $model->one([
+            'title' => 'Home'
+        ]);
+        expect($result)->toBe(true);
+        expect($entry->status)->toBe(EntryStatus::TRASH->value);
+    } catch (EntryException $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Hard Delete a default entry', function ()
 {
     $model = new Entry();
     $entry = $model->one([
@@ -109,7 +128,7 @@ test('Delete an entry type', function ()
 {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
-    
+
     try {
         $result = $model->hardDelete($entryType->_id);
         expect($result)->toBe(true);
