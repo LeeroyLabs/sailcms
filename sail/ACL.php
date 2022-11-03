@@ -5,11 +5,15 @@ namespace SailCMS;
 use SailCMS\ACL\System;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
+use SailCMS\Types\ACL as ACLObj;
+use SailCMS\Types\ACLType;
 
 class ACL
 {
     private static Collection $loadedACL;
+    private static bool $entryTypeLoaded = false;
 
     /**
      *
@@ -258,6 +262,23 @@ class ACL
     public static function getList(): Collection
     {
         $list = new Collection([]);
+
+        // ASKMARC - did this make sense ? is it the good place ?
+        if (!static::$entryTypeLoaded) {
+            $entryACL = new Collection([]);
+            try {
+                $entryTypes = EntryType::getAll();
+                $entryTypes->each(function ($key, $value) use ($entryACL)
+                {
+                    $entryACL->push(new ACLObj(ucfirst($value->handle), ACLType::READ));
+                    $entryACL->push(new ACLObj(ucfirst($value->handle), ACLType::READ_WRITE));
+                });
+            } catch (DatabaseException $exception) {
+                // TODO FAIL Silently should log something
+            }
+            static::$loadedACL->pushSpread(...$entryACL->unwrap());
+        }
+        // END ASKMARC
 
         static::$loadedACL->each(function ($key, $value) use (&$list)
         {

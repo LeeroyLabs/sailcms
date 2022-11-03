@@ -2,9 +2,10 @@
 
 namespace SailCMS\Types;
 
+use SailCMS\Contracts\DatabaseType;
 use SailCMS\Models\User;
 
-class Authors
+class Authors implements DatabaseType
 {
     public function __construct(
         public readonly ?string $createdBy,
@@ -15,6 +16,8 @@ class Authors
     }
 
     /**
+     *
+     * Init an authors type with now
      *
      * @param  User  $author
      * @param  bool  $published
@@ -29,24 +32,39 @@ class Authors
         }
 
         $authors = new Authors($author->_id, $author->_id, $publisherId, null);
-        return $authors->toArray();
+        return $authors->toDBObject();
+    }
+
+    /**
+     *
+     * Update the deletedBy attribute of a given authors object
+     *
+     * @param  Authors  $authors
+     * @param  string   $deleteAuthorId
+     * @return array
+     *
+     */
+    static public function deleted(Authors $authors, string $deleteAuthorId): array
+    {
+        $newAuthors = new Authors($authors->createdBy, $authors->updatedBy, $authors->publishedBy, $deleteAuthorId);
+
+        return $newAuthors->toDBObject();
     }
 
     /**
      *
      * Transform class to an array
-     *  TODO maybe extend a type that does that dynamically
      *
      * @return array
      *
      */
-    public function toArray(): array
+    public function toDBObject(): array
     {
         return [
-            'createdBy' => $this->createdBy,
-            'updatedBy' => $this->updatedBy,
-            'publishedBy' => $this->publishedBy,
-            'deletedBy' => $this->deletedBy,
+            'created_by' => $this->createdBy,
+            'updated_by' => $this->updatedBy,
+            'published_by' => $this->publishedBy,
+            'deleted_by' => $this->deletedBy,
         ];
     }
 }

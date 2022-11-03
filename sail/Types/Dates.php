@@ -15,7 +15,6 @@ class Dates implements DatabaseType
     }
 
     // TODO: Return Collection of dates
-    // TODO: rename to init() ?
 
     /**
      *
@@ -33,20 +32,35 @@ class Dates implements DatabaseType
             $publishDate = $now;
         }
         $dates = new Dates($now, $now, $publishDate, null);
-        return $dates->toArray();
+        return $dates->toDBObject();
     }
 
     // TODO: use toDBObject instead for object simplification
 
     /**
      *
+     *
+     *
+     * @param  Dates  $dates
+     * @return array
+     *
+     */
+    static public function deleted(Dates $dates): array
+    {
+        $now = time();
+
+        $newDates = new Dates($dates->created, $dates->updated, $dates->published, $now);
+        return $newDates->toDBObject();
+    }
+
+    /**
+     *
      * Transform class to an array
-     *  TODO maybe extend a type that does that dynamically
      *
      * @return array
      *
      */
-    public function toArray(): array
+    public function toDBObject(): array
     {
         return [
             'created' => $this->created,
@@ -54,10 +68,5 @@ class Dates implements DatabaseType
             'published' => $this->published,
             'deleted' => $this->deleted,
         ];
-    }
-
-    public function toDBObject(): \stdClass|array
-    {
-        // TODO: Implement toDBObject() method.
     }
 }

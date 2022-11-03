@@ -75,6 +75,13 @@ $config = [
             'onUploadTransforms' => [
                 'thumbnail' => ['width' => 100, 'height' => 100, 'crop' => Transformer::CROP_CC]
             ]
+        ],
+        'entry' => [
+            'defaultType' => [
+                'title' => 'Page',
+                'handle' => 'page',
+                'url_prefix' => ''
+            ]
         ]
     ],
     'staging' => [
@@ -122,6 +129,13 @@ $config = [
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => Transformer::CROP_CC]
+            ]
+        ],
+        'entry' => [
+            'defaultType' => [
+                'title' => 'Page',
+                'handle' => 'page',
+                'url_prefix' => ''
             ]
         ]
     ],
@@ -171,6 +185,13 @@ $config = [
             'maxUploadSize' => 5, // in MB
             'onUploadTransforms' => [
                 'thumbnail' => ['size' => '100x100', 'crop' => Transformer::CROP_CC]
+            ]
+        ],
+        'entry' => [
+            'defaultType' => [
+                'title' => 'Page',
+                'handle' => 'page',
+                'url_prefix' => ''
             ]
         ]
     ]

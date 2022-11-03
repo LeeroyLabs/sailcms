@@ -2,13 +2,28 @@
 
 use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
+use SailCMS\Models\Entry;
 use SailCMS\Models\EntryType;
+use SailCMS\Models\User;
 use SailCMS\Sail;
+use SailCMS\Types\EntryStatus;
+use SailCMS\Types\Username;
 
-beforeEach(function ()
+beforeAll(function ()
 {
     $_ENV['SITE_URL'] = 'http://localhost:8888';
     Sail::setAppState(Sail::STATE_CLI);
+
+    $authorModel = new User();
+    $username = new Username('Test', 'Entry', 'Test Entry');
+    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', new Collection([]), '', null);
+    User::$currentUser = $authorModel->getById($userId);
+});
+
+afterAll(function ()
+{
+    $authorModel = new User();
+    $authorModel->removeByEmail('testentry@leeroy.ca');
 });
 
 test('Create an entry type', function ()
@@ -55,23 +70,46 @@ test('Update an entry type', function ()
     }
 });
 
-//test("Create an entry", function ()
-//{
-//    $model = new Entry();
-//
-//
-//    try {
-//    } catch (Exception $exception) {
-//    }
-//});
+test("Create an entry with the default type", function ()
+{
+    $model = new Entry();
+
+    try {
+        $entry = $model->create('fr', true, EntryStatus::LIVE, 'Home', null, []);
+        expect($entry->title)->toBe('Home');
+        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->locale)->toBe('fr');
+        expect($entry->slug)->toBe(null);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+// Fail to create a live entry because url already in use
+// Fail to create a live entry because slug is empty and isHomepage is true
+// Update a default entry
+// Hard Delete a default entry
+
+test('Hard Delete an entry', function ()
+{
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home'
+    ]);
+
+    try {
+        $result = $entry->delete($entry->_id, false);
+        expect($result)->toBe(true);
+    } catch (EntryException $exception) {
+        expect(true)->toBe(false);
+    }
+});
 
 test('Delete an entry type', function ()
 {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
-
-    //print_r($entryType);
-
+    
     try {
         $result = $model->hardDelete($entryType->_id);
         expect($result)->toBe(true);
