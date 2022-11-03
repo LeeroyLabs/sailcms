@@ -19,11 +19,6 @@ beforeAll(function ()
     User::$currentUser = $authorModel->getById($userId);
 });
 
-beforeEach(function ()
-{
-//    Sail::setAppState(Sail::STATE_CLI);
-});
-
 afterAll(function ()
 {
     $authorModel = new User();
@@ -76,28 +71,38 @@ test('Update an entry type', function ()
 
 test("Create an entry with the default type", function ()
 {
+    $model = new Entry();
+
     try {
-        $model = new Entry();
+        $entry = $model->create('fr', true, EntryStatus::LIVE, 'Home', null, []);
+        expect($entry->title)->toBe('Home');
+        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->locale)->toBe('fr');
+        expect($entry->slug)->toBe(null);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
-    }
-
-    if (isset($model)) {
-        try {
-            $entry = $model->create('fr', true, EntryStatus::LIVE, 'Home', null, []);
-            expect($entry->title)->toBe('Home');
-            expect($entry->status)->toBe(EntryStatus::LIVE->value);
-            expect($entry->locale)->toBe('fr');
-            expect($entry->slug)->toBe(null);
-        } catch (Exception $exception) {
-            print_r($exception->getMessage());
-            expect(true)->toBe(false);
-        }
     }
 });
 
 // Fail to create a live entry because url already in use
 // Fail to create a live entry because slug is empty and isHomepage is true
+// Update a default entry
+// Hard Delete a default entry
+
+test('Hard Delete an entry', function ()
+{
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home'
+    ]);
+
+    try {
+        $result = $entry->delete($entry->_id, false);
+        expect($result)->toBe(true);
+    } catch (EntryException $exception) {
+        expect(true)->toBe(false);
+    }
+});
 
 test('Delete an entry type', function ()
 {

@@ -7,7 +7,6 @@ use SailCMS\Database\BaseModel;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Http\Request;
-use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryStatus;
@@ -18,6 +17,7 @@ class Entry extends BaseModel
     const TITLE_MISSING = "You must set the entry title in your data";
     const SLUG_MISSING = "You must set the entry slug in your data";
     const HOMEPAGE_ALREADY_EXISTS = "Your project has already an homepage that is live";
+    const DATABASE_ERROR = "Exception when %s an entry";
 
     /* Fields */
     public string $entry_type_id;
@@ -135,10 +135,25 @@ class Entry extends BaseModel
         return $content;
     }
 
-    public function all($filters, $limit, $offset): EntryType|null
+    /**
+     *
+     * Get an entry with filters
+     *
+     * @param $filters
+     * @return Entry|null
+     *
+     */
+    public function one($filters): Entry|null
+    {
+        // TODO what to do with options
+
+        return $this->findOne($filters)->exec();
+    }
+
+    public function all($filters, $limit, $offset): array
     {
         // Filters available date, author, category, status
-        return null;
+        return [];
     }
 
     /**
@@ -153,7 +168,7 @@ class Entry extends BaseModel
      * TODO handle site_id, alternates
      *
      * @param  string              $locale
-     * @param  string              $isHomepage
+     * @param  bool                $isHomepage
      * @param  EntryStatus|string  $status
      * @param  string              $title
      * @param  string|null         $slug
@@ -163,7 +178,7 @@ class Entry extends BaseModel
      * @throws EntryException
      *
      */
-    public function create(string $locale, string $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function create(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         // TODO If author is set, the current user and author must have permission (?)
         $this->_hasPermission();
@@ -188,10 +203,42 @@ class Entry extends BaseModel
         return $this->_create($data);
     }
 
+    /**
+     *
+     * Delete an entry in soft mode or definitively
+     *
+     * @param  string  $entryId
+     * @param  bool    $soft
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    public function delete(string $entryId, bool $soft = true): bool
+    {
+        $this->_hasPermission();
+
+        if ($soft) {
+            $entry = $this->findById($entryId);
+            $result = $this->_softDelete($entry);
+        } else {
+            $result = $this->_hardDelete($entryId);
+        }
+        return $result;
+    }
+
+    /**
+     *
+     * Process authors and dates fields
+     *
+     * @param  string  $field
+     * @param  mixed   $value
+     * @return mixed
+     *
+     */
     protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
-            "authors" => new Authors($value->createdBy, $value->updatedBy, $value->publishedBy, $value->deletedBy),
+            "authors" => new Authors($value->created_by, $value->created_by, $value->created_by, $value->created_by),
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
         };
@@ -228,12 +275,11 @@ class Entry extends BaseModel
         $isHomepage = $data->get('is_homepage');
         $slug = $data->get('slug');
         $status = $data->get('status');
-        print_r($status == EntryStatus::LIVE->value);
-        
-        if ($status == EntryStatus::LIVE->value) {
-            $hasHomepage = $this->count(['is_homepage' => true]);
 
-            if ($isHomepage && $hasHomepage) {
+        if ($status == EntryStatus::LIVE->value) {
+            $hasHomepage = $this->count(['is_homepage' => true, 'status' => EntryStatus::LIVE->value]);
+
+            if ($isHomepage && $hasHomepage >= 1) {
                 throw new EntryException(self::HOMEPAGE_ALREADY_EXISTS);
             }
         }
@@ -247,12 +293,12 @@ class Entry extends BaseModel
      *
      * Get the relative url of the entry will be saved
      *
-     * @param  string  $slug
-     * @param  bool    $isHomepage
+     * @param  ?string  $slug
+     * @param  bool     $isHomepage
      * @return string
      *
      */
-    private function _getRelativeUrl(string $slug, bool $isHomepage): string
+    private function _getRelativeUrl(?string $slug, bool $isHomepage): string
     {
         $relativeUrl = "";
         if ($isHomepage) {
@@ -267,6 +313,8 @@ class Entry extends BaseModel
     }
 
     /**
+     *
+     * Create an entry
      *
      * @param  Collection  $data
      * @return array|Entry|null
@@ -295,27 +343,27 @@ class Entry extends BaseModel
         $dates = Dates::init($published);
         $authors = Authors::init($author, $published);
 
-        if (!isset($slug)) {
-            $slug = Text::slugify($title);
+        try {
+            $entryId = $this->insert([
+                'entry_type_id' => (string)$this->_entryType->_id,
+                'locale' => $locale,
+                'is_homepage' => $is_homepage,
+                'status' => $status,
+                'title' => $title,
+                'slug' => $slug,
+                'url' => $this->_getRelativeUrl($slug, $is_homepage),
+                'authors' => $authors,
+                'dates' => $dates,
+                // TODO
+                'parent_id' => null,
+                'site_id' => null,
+                'alternates' => new Collection([]),
+                'categories' => new Collection([]),
+                'content' => new Collection([])
+            ]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
-
-        $entryId = $this->insert([
-            'entry_type_id' => $this->_entryType->_id->serialize(),
-            'locale' => $locale,
-            'is_homepage' => $is_homepage,
-            'status' => $status,
-            'title' => $title,
-            'slug' => $slug,
-            'url' => $this->_getRelativeUrl($slug, $is_homepage),
-            'authors' => $authors,
-            'dates' => $dates,
-            // TODO
-            'parent_id' => null,
-            'site_id' => null,
-            'alternates' => new Collection([]),
-            'categories' => new Collection([]),
-            'content' => new Collection([])
-        ]);
 
         return $this->findById($entryId)->exec();
     }
@@ -324,25 +372,53 @@ class Entry extends BaseModel
     {
     }
 
-    private function _delete(string $entryTypeId)
+    /**
+     *
+     * Put an entry in the trash
+     *
+     * @param  Entry  $entry
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    private function _softDelete(Entry $entry): bool
     {
+        $authors = Authors::deleted($entry->authors, User::$currentUser->_id);
+        $dates = Dates::deleted($entry->dates);
+
+        try {
+            $qtyUpdated = $this->updateOne(['_id' => $entry->_id], [
+                '$set' => [
+                    'authors' => $authors,
+                    'dates' => $dates,
+                    'status' => EntryStatus::TRASH
+                ]
+            ]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $qtyUpdated === 1;
+    }
+
+    /**
+     *
+     * Delete an entry definitively
+     *
+     * @throws EntryException
+     *
+     */
+    private function _hardDelete(string $entryTypeId): bool
+    {
+        try {
+            $qtyDeleted = $this->deleteById($entryTypeId);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $qtyDeleted === 1;
     }
 }
-
-//    /**
-//     * Construct a new entry and set the collection name with the entry type
-//     *
-//     * @param  ?EntryType  $entryType
-//     */
-//    public function __construct(?EntryType $entryType = null)
-//    {
-//        $collection = "Entry";
-//        if ($entryType) {
-//            $this->entryTypeId = $entryType->_id;
-//            $collection = $entryType->handle;
-//        }
-//        parent::__construct($collection);
-//    }
 
 //    /**
 //     * Get or create an entry

@@ -18,7 +18,7 @@ class EntryType extends BaseModel
     const TITLE_MISSING = "You must set the entry type title in your data";
     const CANNOT_CREATE_ENTRY_TYPE = "You don't have the right to create an entry type";
     const DOES_NOT_EXISTS = "Entry type %s does not exists";
-    const DATABASE_ERROR = "Exception when creating an entry type";
+    const DATABASE_ERROR = "Exception when %s an entry type";
 
     private const _DEFAULT_HANDLE = "page";
     private const _DEFAULT_TITLE = "Page";
@@ -77,8 +77,7 @@ class EntryType extends BaseModel
         $entryType = $instance->getByHandle($defaultHandle);
 
         if (!$entryType) {
-            $id = $instance->_create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
-            $entryType = $instance->findById($id);
+            $entryType = $instance->_create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
         }
         return $entryType;
     }
@@ -185,17 +184,21 @@ class EntryType extends BaseModel
      * @param  string  $entryTypeId
      * @return bool
      * @throws ACLException
-     * @throws DatabaseException
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     public function hardDelete(string $entryTypeId): bool
     {
         $this->_hasPermission();
 
-        // TODO check if there is entry content
+        // TODO check if there is entry content before deleted it
 
-        $qtyDeleted = $this->deleteById($entryTypeId);
+        try {
+            $qtyDeleted = $this->deleteById($entryTypeId);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+        }
 
         return $qtyDeleted === 1;
     }
@@ -277,8 +280,8 @@ class EntryType extends BaseModel
      * @param  string|ObjectId|null  $entry_type_layout_id
      * @param  bool                  $getObject
      * @return array|EntryType|string|null
-     * @throws DatabaseException
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function _create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
@@ -288,13 +291,17 @@ class EntryType extends BaseModel
         $collection_name = $this->_getCollectionName($handle);
 
         // Create the entry type
-        $entryTypeId = $this->insert([
-            'collection_name' => $collection_name,
-            'handle' => $handle,
-            'title' => $title,
-            'url_prefix' => $url_prefix,
-            'entry_type_layout_id' => $entry_type_layout_id
-        ]);
+        try {
+            $entryTypeId = $this->insert([
+                'collection_name' => $collection_name,
+                'handle' => $handle,
+                'title' => $title,
+                'url_prefix' => $url_prefix,
+                'entry_type_layout_id' => $entry_type_layout_id
+            ]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+        }
 
         if ($getObject) {
             return $this->findById($entryTypeId)->exec();
@@ -332,7 +339,7 @@ class EntryType extends BaseModel
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(self::DATABASE_ERROR . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return true;
