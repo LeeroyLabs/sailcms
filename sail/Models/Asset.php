@@ -18,7 +18,7 @@ use SailCMS\Errors\FileException;
 use SailCMS\Filesystem;
 use SailCMS\Locale;
 use SailCMS\Sail;
-use SailCMS\Types\AssetTitle;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
@@ -28,7 +28,7 @@ class Asset extends BaseModel
     public string $filename;
     public string $site_id;
     public string $name;
-    public AssetTitle $title;
+    public LocaleField $title;
     public string $folder;
     public string $url;
     public int $filesize;
@@ -66,7 +66,7 @@ class Asset extends BaseModel
         }
 
         if ($field === 'title') {
-            return new AssetTitle($value);
+            return new LocaleField($value);
         }
 
         return $value;
@@ -249,7 +249,7 @@ class Asset extends BaseModel
             $title[$locale] = $the_name;
         }
 
-        $titles = new AssetTitle($title);
+        $titles = new LocaleField($title);
 
         // Create entry
         $id = $this->insert([
@@ -396,7 +396,7 @@ class Asset extends BaseModel
     public static function transformById(string|ObjectId $id, string $name, ?int $width, ?int $height, string $crop = Transformer::CROP_CC): string
     {
         $model = new Asset();
-        $asset = $model->getById($id);
+        $asset = static::getById($id);
 
         if ($asset && $asset->is_image) {
             return $asset->transform($name, $width, $height, $crop);

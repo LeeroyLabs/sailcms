@@ -13,6 +13,10 @@ type Query {
     # Roles & ACL
     roles: [Role!]!
     role(id: ID!): RoleConfig
+
+    # Assets
+    asset(id: ID!): Asset
+    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
     #{CUSTOM_QUERIES}#
 }
 
@@ -27,6 +31,12 @@ type Mutation {
     createRole(name: String!, description: String!, level: Int!, permissions: [String!]!): Boolean!
     updateRole(id: ID!, name: String, description: String, level: Int, permissions: [String!]): Boolean!
     deleteRole(id: ID!): Boolean!
+
+    # Assets
+    uploadAsset(src: String!, filename: String!): String!
+    updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
+    deleteAsset(id: ID!): Boolean!
+    transformAsset(id: ID!, name: String!, size: SizeInput!): String!
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -47,8 +57,8 @@ type User {
 }
 
 type UserListing {
-    pagination: Pagination
-    list: [User!]
+    pagination: Pagination!
+    list: [User!]!
 }
 
 type Pagination {
@@ -102,6 +112,52 @@ type RoleConfig {
 type ACL {
     category: String!
     value: String!
+}
+
+type Asset {
+    filename: String!
+    site_id: String!
+    name: String!
+    title: LocaleField!
+    folder: String!
+    url: String!
+    filesize: Int!
+    size: Size!
+    is_image: Boolean!
+    uploader: User
+    created_at: Int!
+    transforms: [Transform!]!
+}
+
+type AssetListing {
+    pagination: Pagination!
+    list: [Asset!]!
+}
+
+type LocaleField {
+    #{LOCALE_FIELDS}#
+}
+
+input LocaleFieldInput {
+    #{LOCALE_FIELDS}#
+}
+
+type Transform {
+    transform: String!
+    filename: String!
+    name: String!
+    url: String!
+}
+
+type Size {
+    width: Int!
+    height: Int!
+}
+
+input SizeInput {
+    width: Int!
+    height: Int!
+    crop: String!
 }
 
 #{CUSTOM_TYPES}#

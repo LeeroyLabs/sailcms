@@ -11,6 +11,7 @@ use GraphQL\Utils\BuildSchema;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\GraphQL\Context;
+use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -124,6 +125,13 @@ class GraphQL
                     $types[] = file_get_contents($file);
                 }
 
+                $locales = Locale::getAvailableLocales();
+                $localeString = '';
+
+                foreach ($locales as $locale) {
+                    $localeString .= "{$locale}: String\n";
+                }
+
                 $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
                 $schemaContent = str_replace(
                     [
@@ -132,7 +140,8 @@ class GraphQL
                         '#{CUSTOM_TYPES}#',
                         '#{CUSTOM_FLAGS}#',
                         '#{CUSTOM_META}#',
-                        '#{CUSTOM_META_INPUT}#'
+                        '#{CUSTOM_META_INPUT}#',
+                        '#{LOCALE_FIELDS}#'
                     ],
                     [
                         implode("\n", $queries),
@@ -140,7 +149,8 @@ class GraphQL
                         implode("\n", $types),
                         UserMeta::getAvailableFlags(),
                         UserMeta::getAvailableMeta(),
-                        UserMeta::getAvailableMeta(true)
+                        UserMeta::getAvailableMeta(true),
+                        $localeString
                     ],
                     $schemaContent
                 );
@@ -224,6 +234,14 @@ class GraphQL
         static::addQueryResolver('role', Roles::class, 'role');
         static::addQueryResolver('roles', Roles::class, 'roles');
         static::addMutationResolver('deleteRole', Roles::class, 'delete');
+
+        // Assets
+        static::addQueryResolver('asset', Assets::class, 'asset');
+        static::addQueryResolver('assets', Assets::class, 'assets');
+        static::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
+        static::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
+        static::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
+        static::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

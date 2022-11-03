@@ -5,7 +5,7 @@ namespace SailCMS\Types;
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
 
-class AssetTitle implements DatabaseType
+class LocaleField implements DatabaseType
 {
     private Collection $combinations;
 
