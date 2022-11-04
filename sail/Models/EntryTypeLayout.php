@@ -13,7 +13,7 @@ class EntryTypeLayout extends BaseModel
 
     const LAYOUT_TITLE_SUFFIX = "layout";
 
-    public function fields(bool $fetchAllFields = false) : array
+    public function fields(bool $fetchAllFields = false): array
     {
         return ['_id', 'title', 'content'];
     }
@@ -21,14 +21,14 @@ class EntryTypeLayout extends BaseModel
     /**
      * Create an empty entry type layout and return his id
      *
-     * @param string $entryTypeTitle
+     * @param  string  $entryTypeTitle
      * @return string
      * @throws DatabaseException
      */
-    public function createEmpty(string $entryTypeTitle) : string
+    public function createEmpty(string $entryTypeTitle): string
     {
         return $this->insert([
-            'title' => $this->_titleFromEntryTitle($entryTypeTitle),
+            'title' => $this->titleFromEntryTitle($entryTypeTitle),
             'content' => new Collection([])
         ]);
     }
@@ -39,7 +39,7 @@ class EntryTypeLayout extends BaseModel
      * @param  string  $entryTypeTitle
      * @return string
      */
-    private function _titleFromEntryTitle(string $entryTypeTitle): string
+    private function titleFromEntryTitle(string $entryTypeTitle): string
     {
         return $entryTypeTitle . ' ' . self::LAYOUT_TITLE_SUFFIX;
     }

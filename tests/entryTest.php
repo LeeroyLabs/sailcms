@@ -31,7 +31,7 @@ test('Create an entry type', function ()
     $model = new EntryType();
 
     try {
-        $id = $model->create('test', 'Test', 'test', null, false);
+        $id = $model->createOne('test', 'Test', 'test', null, false);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -43,7 +43,7 @@ test('Failed to create an entry type because the handle is already in use', func
     $model = new EntryType();
 
     try {
-        $model->create('test', 'Test', 'test', null, false);
+        $model->createOne('test', 'Test', 'test', null, false);
         expect(true)->not->toBe(false);
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::HANDLE_ALREADY_EXISTS);
@@ -75,7 +75,7 @@ test("Create an entry with the default type", function ()
     $model = new Entry();
 
     try {
-        $entry = $model->create('fr', true, EntryStatus::LIVE, 'Home', null, []);
+        $entry = $model->createOne('fr', true, EntryStatus::LIVE, 'Home', null, []);
         expect($entry->title)->toBe('Home');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -85,22 +85,47 @@ test("Create an entry with the default type", function ()
     }
 });
 
+// Fail to create a live entry because there is already a homepage
 // Fail to create a live entry because url already in use
-// Fail to create a live entry because slug is empty and isHomepage is true
-// Update a default entry
-// Hard Delete a default entry
+// Update an entry with an entry type
+// Create an entry with an entry type
+// Delete an entry with an entry type
 
-test('Soft Delete a default entry', function ()
+test('Update an entry with the default type', function ()
 {
     $model = new Entry();
     $entry = $model->one([
         'title' => 'Home'
     ]);
+    $before = $entry->dates->updated;
+
+    try {
+        $result = $entry->updateById($entry, [
+            'title' => 'Home page',
+        ]);
+        $entry = $model->one([
+            'title' => 'Home page'
+        ]);
+        expect($result)->toBe(true);
+        expect($entry)->not->toBe(null);
+        expect($entry->dates->updated)->toBeGreaterThan($before);
+    } catch (Exception $exception) {
+        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Soft Delete an entry with the default type', function ()
+{
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home page'
+    ]);
 
     try {
         $result = $entry->delete($entry->_id);
         $entry = $model->one([
-            'title' => 'Home'
+            'title' => 'Home page'
         ]);
         expect($result)->toBe(true);
         expect($entry->status)->toBe(EntryStatus::TRASH->value);
@@ -109,11 +134,11 @@ test('Soft Delete a default entry', function ()
     }
 });
 
-test('Hard Delete a default entry', function ()
+test('Hard Delete an entry with the default type', function ()
 {
     $model = new Entry();
     $entry = $model->one([
-        'title' => 'Home'
+        'title' => 'Home page'
     ]);
 
     try {

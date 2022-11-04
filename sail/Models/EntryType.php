@@ -77,7 +77,7 @@ class EntryType extends BaseModel
         $entryType = $instance->getByHandle($defaultHandle);
 
         if (!$entryType) {
-            $entryType = $instance->_create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
+            $entryType = $instance->create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
         }
         return $entryType;
     }
@@ -95,7 +95,7 @@ class EntryType extends BaseModel
     public static function getByCollectionName(string $collectionName): EntryType
     {
         $instance = new static();
-        $entryType = $instance->find(['collection_name' => $collectionName])->exec();
+        $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
 
         if (!$entryType) {
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $collectionName));
@@ -146,11 +146,11 @@ class EntryType extends BaseModel
      * @throws DatabaseException
      * @throws EntryException
      */
-    public function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    public function createOne(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
-        $this->_hasPermission();
+        $this->hasPermission();
 
-        return $this->_create($handle, $title, $url_prefix, $entry_type_layout_id);
+        return $this->create($handle, $title, $url_prefix, $entry_type_layout_id);
     }
 
     /**
@@ -166,7 +166,7 @@ class EntryType extends BaseModel
      */
     public function updateByHandle(string $handle, Collection $data): bool
     {
-        $this->_hasPermission();
+        $this->hasPermission();
 
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
@@ -174,7 +174,7 @@ class EntryType extends BaseModel
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
         }
 
-        return $this->_update($entryType, $data);
+        return $this->update($entryType, $data);
     }
 
     /**
@@ -190,7 +190,7 @@ class EntryType extends BaseModel
      */
     public function hardDelete(string $entryTypeId): bool
     {
-        $this->_hasPermission();
+        $this->hasPermission();
 
         // TODO check if there is entry content before deleted it
 
@@ -232,7 +232,7 @@ class EntryType extends BaseModel
      * @throws EntryException
      *
      */
-    private function _hasPermission()
+    private function hasPermission()
     {
         if (!ACL::hasPermission(User::$currentUser, ACL::write('entrytype'))) {
             throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
@@ -249,7 +249,7 @@ class EntryType extends BaseModel
      * @throws EntryException
      *
      */
-    private function _checkHandle(string $handle): void
+    private function checkHandle(string $handle): void
     {
         // Check everytime if the handle is already exists
         if ($this->getByHandle($handle) !== null) {
@@ -265,7 +265,7 @@ class EntryType extends BaseModel
      * @return string
      *
      */
-    private function _getCollectionName(string $handle): string
+    private function getCollectionName(string $handle): string
     {
         return Text::snakeCase(Text::deburr(Text::inflector()->pluralize($handle)[0]));
     }
@@ -284,11 +284,11 @@ class EntryType extends BaseModel
      * @throws DatabaseException
      *
      */
-    private function _create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    private function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
-        $this->_checkHandle($handle);
+        $this->checkHandle($handle);
 
-        $collection_name = $this->_getCollectionName($handle);
+        $collection_name = $this->getCollectionName($handle);
 
         // Create the entry type
         try {
@@ -320,7 +320,7 @@ class EntryType extends BaseModel
      * @throws EntryException
      *
      */
-    private function _update(EntryType $entryType, Collection $data): bool
+    private function update(EntryType $entryType, Collection $data): bool
     {
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');
