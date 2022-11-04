@@ -95,7 +95,7 @@ class EntryType extends BaseModel
     public static function getByCollectionName(string $collectionName): EntryType
     {
         $instance = new static();
-        $entryType = $instance->find(['collection_name' => $collectionName])->exec();
+        $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
 
         if (!$entryType) {
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $collectionName));
