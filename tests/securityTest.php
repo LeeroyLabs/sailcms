@@ -32,9 +32,9 @@ test('Hash generation', function ()
     try {
         $hash = Security::hash('hello world!', true);
 
-        expect($hash)->not->toBe('');
+        expect($hash)->not->toBeEmpty();
     } catch (Exception $e) {
-        expect(true)->toBe(false);
+        expect(true)->toBeFalse();
     }
 });
 
@@ -44,9 +44,9 @@ test('Hash verification', function ()
         $hash = Security::hash('hello world!', true);
         $verified = Security::valueMatchHash($hash, 'hello world!');
 
-        expect($verified)->toBe(true);
+        expect($verified)->toBeTrue();
     } catch (Exception $e) {
-        expect(true)->toBe(false);
+        expect(true)->toBeFalse();
     }
 });
 

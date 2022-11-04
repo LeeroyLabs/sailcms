@@ -20,10 +20,10 @@ test('Create a user', function ()
     $meta = null;
 
     try {
-        $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, '', $meta);
-        expect($id)->not->toBe('');
+        $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
+        expect($id)->not->toBeEmpty();
     } catch (Exception $e) {
-        expect(true)->toBe(false);
+        expect(true)->toBeFalse();
     }
 });
 
@@ -36,10 +36,10 @@ test('Fail at creating a user with email already in use', function ()
     $meta = null;
 
     try {
-        $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, '', $meta);
-        expect(true)->toBe(false);
+        $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
+        expect(true)->toBeFalse();
     } catch (Exception $e) {
-        expect(true)->toBe(true);
+        expect(true)->toBeTrue();
     }
 });
 
@@ -52,7 +52,7 @@ test('Fail at creating a user with an invalid email', function ()
     $meta = null;
 
     try {
-        $model->create($name, 'johndoe@leeroy', 'Hell0W0rld!', $roles, '', $meta);
+        $model->create($name, 'johndoe@leeroy', 'Hell0W0rld!', $roles, 'en', '', $meta);
         expect(true)->toBe(false);
     } catch (Exception $e) {
         expect(true)->toBe(true);
@@ -68,7 +68,7 @@ test('Fail at creating a user with an unsecure password', function ()
     $meta = null;
 
     try {
-        $model->create($name, 'johndoe@leeroy.ca', 'hello123', $roles, '', $meta);
+        $model->create($name, 'johndoe@leeroy.ca', 'hello123', $roles, 'en', '', $meta);
         expect(true)->toBe(false);
     } catch (Exception $e) {
         expect(true)->toBe(true);
@@ -158,7 +158,7 @@ test('Create a user and delete it by the instance', function ()
     $meta = null;
 
     try {
-        $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, '', $meta);
+        $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
 
         $user = $model->getById($id);
 

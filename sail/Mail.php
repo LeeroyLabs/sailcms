@@ -3,12 +3,17 @@
 namespace SailCMS;
 
 use League\Flysystem\FilesystemException;
+use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
+use SailCMS\Models\Email;
+use Symfony\Bridge\Twig\Mime\BodyRenderer;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mime\Address;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
 
 class Mail
 {
@@ -180,17 +185,11 @@ class Mail
      * @param  string      $name
      * @param  Collection  $context
      * @return $this
-     * @throws FileException
      *
      */
     public function template(string $name, Collection $context): static
     {
-        $path = Sail::getTemplateDirectory() . '/' . $name . '.twig';
-
-        if (!file_exists($path)) {
-            throw new FileException("Could not find template {$path} for email template. Please make sure it's not a mistake.", 0404);
-        }
-
+        $path = $name . '.twig';
         $this->email->htmlTemplate($path);
         $this->email->context($context->unwrap());
         return $this;
@@ -220,6 +219,11 @@ class Mail
     public function send(): bool
     {
         $mailer = new Mailer(Transport::fromDsn($_ENV['MAIL_DSN']));
+        $loader = new FilesystemLoader(Sail::getTemplateDirectory());
+        $twigEnv = new Environment($loader);
+
+        $twigBodyRenderer = new BodyRenderer($twigEnv);
+        $twigBodyRenderer->render($this->email);
 
         try {
             $mailer->send($this->email);
@@ -227,5 +231,47 @@ class Mail
         } catch (TransportExceptionInterface $e) {
             return false;
         }
+    }
+
+    /**
+     *
+     * Setup email to use a template from the templating system
+     *
+     * @param  string            $slug
+     * @param  string            $locale
+     * @param  Collection|array  $context
+     * @return $this
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     * @throws EmailException
+     *
+     */
+    public function useEmail(string $slug, string $locale, Collection|array $context = []): static
+    {
+        $template = Email::getBySlug($slug);
+
+        if ($template) {
+            $settings = $_ENV['SETTINGS']->get('emails');
+
+            if (is_array($context)) {
+                $context = new Collection($context);
+            }
+
+            $providedContent = new Collection([
+                'email_title' => $template->title->{$locale},
+                'email_content' => $template->content->{$locale},
+                'cta_link' => $template->cta->{$locale},
+                'cta_title' => $template->cta_title->{$locale}
+            ]);
+
+            $superContext = $context->merge($providedContent);
+
+            return $this
+                ->from($settings->get('from'))
+                ->subject($template->subject->{$locale})
+                ->template($template->template, $superContext);
+        }
+
+        throw new EmailException("Cannot find the email from database, please make sure it's not a typo", 0404);
     }
 }

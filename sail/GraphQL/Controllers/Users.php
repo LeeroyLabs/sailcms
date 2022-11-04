@@ -37,6 +37,21 @@ class Users
 
     /**
      *
+     * Return the user (if authentication has succeeded)
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return User|null
+     *
+     */
+    public function userWithToken(mixed $obj, Collection $args, Context $context): ?User
+    {
+        return User::$currentUser ?? null;
+    }
+
+    /**
+     *
      * List users
      *
      * @param  mixed       $obj

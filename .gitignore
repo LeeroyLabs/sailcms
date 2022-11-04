@@ -7,3 +7,4 @@ cms_html
 .phpunit.result.cache
 *.cache
 composer.lock
+tests/email2Test.php

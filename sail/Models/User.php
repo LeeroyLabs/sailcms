@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use Exception;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
 use SailCMS\ACL;
@@ -9,7 +10,9 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\FileException;
 use SailCMS\Event;
+use SailCMS\Mail;
 use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
@@ -17,7 +20,6 @@ use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
-use Somnambulist\Components\Validation\Factory;
 
 class User extends BaseModel
 {
@@ -37,6 +39,8 @@ class User extends BaseModel
     public string $avatar;
     public UserMeta $meta;
     public string $temporary_token;
+    public string $auth_token;
+    public string $locale;
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -50,11 +54,12 @@ class User extends BaseModel
                 'avatatar',
                 'meta',
                 'password',
-                'temporary_token'
+                'temporary_token',
+                'locale'
             ];
         }
 
-        return ['_id', 'name', 'roles', 'email', 'status', 'avatar', 'meta', 'temporary_token'];
+        return ['_id', 'name', 'roles', 'email', 'status', 'avatar', 'meta', 'temporary_token', 'locale'];
     }
 
     public static function initForTest()
@@ -184,13 +189,15 @@ class User extends BaseModel
      * @param  Username       $name
      * @param  string         $email
      * @param  string         $password
+     * @param  string         $locale
      * @param  string         $avatar
      * @param  UserMeta|null  $meta
      * @return string
      * @throws DatabaseException
+     * @throws FileException
      *
      */
-    public function createRegularUser(Username $name, string $email, string $password, string $avatar = '', ?UserMeta $meta = null): string
+    public function createRegularUser(Username $name, string $email, string $password, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
         // Make sure full is assigned
         if ($name->full === '') {
@@ -211,7 +218,7 @@ class User extends BaseModel
             throw new DatabaseException('Password does not pass minimum security level', 0403);
         }
 
-        return $this->insert([
+        $id = $this->insert([
             'name' => $name,
             'email' => $email,
             'status' => true,
@@ -219,8 +226,22 @@ class User extends BaseModel
             'avatar' => $avatar,
             'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),
-            'temporary_token' => ''
+            'temporary_token' => '',
+            'locale' => $locale
         ]);
+
+        if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
+            // Send a nice email to greet
+            try {
+                $mail = new Mail();
+                $mail->to($email)->useEmail('new_account', $locale)->send();
+                return $id;
+            } catch (Exception $e) {
+                return $id;
+            }
+        }
+
+        return $id;
     }
 
     /**
@@ -231,6 +252,7 @@ class User extends BaseModel
      * @param  string         $email
      * @param  string         $password
      * @param  Collection     $roles
+     * @param  string         $locale
      * @param  string         $avatar
      * @param  UserMeta|null  $meta
      * @return string
@@ -238,7 +260,7 @@ class User extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function create(Username $name, string $email, string $password, Collection $roles, string $avatar = '', ?UserMeta $meta = null): string
+    public function create(Username $name, string $email, string $password, Collection $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
         if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
             // Make sure full is assigned
@@ -260,7 +282,7 @@ class User extends BaseModel
                 throw new DatabaseException('Password does not pass minimum security level', 0403);
             }
 
-            return $this->insert([
+            $id = $this->insert([
                 'name' => $name,
                 'email' => $email,
                 'status' => true,
@@ -268,8 +290,22 @@ class User extends BaseModel
                 'avatar' => $avatar,
                 'password' => Security::hashPassword($password),
                 'meta' => $meta->simplify(),
-                'temporary_token' => ''
+                'temporary_token' => '',
+                'locale' => $locale
             ]);
+
+            if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
+                // Send a nice email to greet
+                try {
+                    $mail = new Mail();
+                    $mail->to($email)->useEmail('new_account', $locale)->send();
+                    return $id;
+                } catch (Exception $e) {
+                    return $id;
+                }
+            }
+
+            return $id;
         }
 
         return '';
@@ -424,7 +460,7 @@ class User extends BaseModel
     {
         if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
             $id = $this->ensureObjectId($id);
-         
+
             $this->deleteById($id);
             Event::dispatch(static::EVENT_DELETE, (string)$id);
             return true;
@@ -453,8 +489,6 @@ class User extends BaseModel
 
         return false;
     }
-
-    // TODO: Update
 
     /**
      *
@@ -503,10 +537,11 @@ class User extends BaseModel
         $user = $this->findOne(['temporary_token' => $token])->exec();
 
         if ($user) {
+            // Set session data, get token
             $session = Session::manager();
             $session->setUserId((string)$user->_id);
             $session->set('user_id', (string)$user->_id);
-            $session->get('set_token');
+            $token = $session->get('set_token'); // Only works with stateless
 
             static::$currentUser = $this->findById((string)$user->_id)->exec();
 
@@ -516,6 +551,7 @@ class User extends BaseModel
             // Clear temporary token
             $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => '']]);
 
+            static::$currentUser->auth_token = $token ?? '';
             return static::$currentUser;
         }
 
@@ -537,24 +573,18 @@ class User extends BaseModel
         $user = $this->findOne(['email' => $email])->exec(true);
 
         if ($user && Security::verifyPassword($password, $user->password)) {
+            // Set session data, get token
             $session = Session::manager();
-            $session->$session->get('set_token');
+            $session->setUserId((string)$user->_id);
+            $session->set('user_id', (string)$user->_id);
+            $token = $session->get('set_token'); // Only works with stateless
 
             $instance = new static();
             static::$currentUser = $instance->findById((string)$user->_id)->exec();
 
             // Get role
             $roleModel = new Role();
-
-            static::$currentUser->permissions = new Collection([]);
-
-            foreach (static::$currentUser->roles->unwrap() as $roleSlug) {
-                $role = $roleModel->getByName($roleSlug);
-
-                if ($role) {
-                    static::$currentUser->permissions = $role->permissions;
-                }
-            }
+            static::$currentUser->auth_token = $token ?? '';
 
             return true;
         }

@@ -495,6 +495,7 @@ class Sail
     /**
      *
      * Set app state (either web or cli) for some very specific use cases
+     * NOTE: DO NOT USE FOR ANYTHING, THIS IS RESERVED FOR UNIT TEST
      *
      * @param  int     $state
      * @param  string  $env
@@ -507,13 +508,16 @@ class Sail
             static::$appState = $state;
             static::$isCLI = true;
 
-            $config = [];
-            include_once dirname(__DIR__) . '/install/config/general.php';
+            static::$templateDirectory = static::$workingDirectory . '/templates';
+            static::$cacheDirectory = static::$workingDirectory . '/storage/cache';
 
-            if ($env !== '') {
+            $config = [];
+            include dirname(__DIR__) . '/install/config/general.php';
+
+            if ($env !== '' && isset($config[$env])) {
                 $_ENV['SETTINGS'] = new Collection($config[$env]);
             } else {
-                $_ENV['SETTINGS'] = new Collection($config);
+                $_ENV['SETTINGS'] = new Collection($config['dev']);
             }
 
             ACL::init();
@@ -671,7 +675,7 @@ class Sail
     private static function loadAndDetectSites(): void
     {
         $sites = include static::$workingDirectory . '/config/sites.php';
-        
+
         foreach ($sites as $name => $config) {
             if (isset($_SERVER['HTTP_HOST'])) {
                 $host = explode(':', $_SERVER['HTTP_HOST'])[0];

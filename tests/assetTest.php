@@ -20,9 +20,9 @@ test('Upload a jpg image and optimize to webp', function ()
 
     try {
         $result = $asset->upload($data, 'unit_test.jpg');
-        expect($result)->not->toBe('');
+        expect($result)->not->toBeEmpty();
     } catch (Exception $e) {
-        expect($result)->not->toBe('');
+        expect($result)->not->toBeEmpty();
     }
 });
 
@@ -45,9 +45,9 @@ test('Create a new transform on the Asset', function ()
 
     try {
         $result = $item->transform('bigbox', 200, 200);
-        expect($result)->not->toBe('');
+        expect($result)->not->toBeEmpty();
     } catch (Exception $e) {
-        expect($result)->not->toBe('');
+        expect($result)->not->toBeEmpty();
     }
 });
 
@@ -57,8 +57,8 @@ test('Delete Asset', function ()
 
     if ($item) {
         $result = $item->remove();
-        expect($result)->toBe(true);
+        expect($result)->toBeTrue();
     } else {
-        expect(false)->toBe(true);
+        expect(false)->toBeTrue();
     }
 });

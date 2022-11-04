@@ -119,7 +119,7 @@ class Asset extends BaseModel
      */
     public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = BaseModel::SORT_ASC): Listing
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('asset'), ACL::readwrite('asset'))) {
+        if (ACL::hasPermission(User::$currentUser, ACL::read('asset'))) {
             $offset = $page * $limit - $limit;
             $query = ['site_id' => Sail::siteId(), 'folder' => $folder];
 
