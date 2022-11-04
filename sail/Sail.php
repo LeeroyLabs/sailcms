@@ -24,8 +24,8 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use Whoops\Handler\JsonResponseHandler;
-use Whoops\Handler\PrettyPageHandler;
 use Whoops\Handler\PlainTextHandler;
+use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
 class Sail
@@ -168,6 +168,9 @@ class Sail
         // Load .env file
         $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
         $dotenv->load();
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
 
         // Load Sites
         static::loadAndDetectSites();
@@ -500,6 +503,8 @@ class Sail
      * @param  string  $env
      * @param  string  $forceIOPath
      * @return void
+     * @throws DatabaseException
+     *
      */
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
     {
@@ -671,7 +676,7 @@ class Sail
     private static function loadAndDetectSites(): void
     {
         $sites = include static::$workingDirectory . '/config/sites.php';
-        
+
         foreach ($sites as $name => $config) {
             if (isset($_SERVER['HTTP_HOST'])) {
                 $host = explode(':', $_SERVER['HTTP_HOST'])[0];

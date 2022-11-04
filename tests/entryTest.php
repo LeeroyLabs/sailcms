@@ -16,7 +16,7 @@ beforeAll(function ()
 
     $authorModel = new User();
     $username = new Username('Test', 'Entry', 'Test Entry');
-    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', new Collection([]), '', null);
+    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', new Collection([]));
     User::$currentUser = $authorModel->getById($userId);
 });
 
@@ -81,6 +81,7 @@ test("Create an entry with the default type", function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(null);
     } catch (Exception $exception) {
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });

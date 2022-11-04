@@ -325,7 +325,7 @@ class Entry extends BaseModel
      */
     private function hasPermission(): void
     {
-//        if (!ACL::hasPermission(User::$currentUser, ACL::write(strtolower($this->entryType->handle)))) {
+//        if (!ACL::hasPermission(User::$currentUser, ACL::write($this->entryType->handle))) {
 //            throw new EntryException(self::CANNOT_CREATE_ENTRY);
 //        }
     }
