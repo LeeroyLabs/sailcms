@@ -170,7 +170,7 @@ class Role extends BaseModel
      */
     public function list(): Collection
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('role'), ACL::readwrite('role'))) {
+        if (ACL::hasPermission(User::$currentUser, ACL::read('role'))) {
             $userRoles = User::$currentUser->roles;
             $roles = new Collection($this->find([])->exec());
 
@@ -192,7 +192,7 @@ class Role extends BaseModel
      */
     public function getById(string|ObjectId $id): ?RoleConfig
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('role'), ACL::readwrite('role'))) {
+        if (ACL::hasPermission(User::$currentUser, ACL::read('role'))) {
             $role = $this->findById($id);
 
             $permissionList = ACL::getList();

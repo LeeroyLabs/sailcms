@@ -81,7 +81,6 @@ test("Create an entry with the default type", function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(null);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -111,7 +110,6 @@ test('Update an entry with the default type', function ()
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });

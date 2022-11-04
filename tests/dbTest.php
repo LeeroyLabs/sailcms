@@ -48,7 +48,7 @@ test('Write an entry to db', function ()
     $model->writeTest();
     $rec = $model->getV1();
 
-    expect($rec)->not->toBe(null);
+    expect($rec)->not->toBeNull();
 });
 
 test('Update an entry from db', function ()
@@ -66,5 +66,5 @@ test('Delete an entry from db', function ()
     $model->deleteTest();
     $rec = $model->getV2();
 
-    expect($rec)->toBe(null);
+    expect($rec)->toBeNull();
 });

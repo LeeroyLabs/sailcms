@@ -48,7 +48,7 @@ class ACL
 
         static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
-            if ($value->category === 'R' && $value->providedName === $name) {
+            if (($value->category === 'R' || $value->category === 'RW') && $value->providedName === $name) {
                 $permissionValue = $value;
             }
         });

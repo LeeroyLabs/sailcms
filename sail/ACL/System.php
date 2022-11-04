@@ -28,7 +28,11 @@ class System
             new ACL('EntryTypeLayout', ACLType::READ),
 
             // Assets
-            new ACL('Asset', ACLType::READ_WRITE)
+            new ACL('Asset', ACLType::READ_WRITE),
+
+            // Emails
+            new ACL('Emails', ACLType::READ_WRITE),
+            new ACL('Emails', ACLType::READ)
         ]);
     }
 }

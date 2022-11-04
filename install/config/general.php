@@ -7,6 +7,13 @@ $config = [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'emails' => [
+            'from' => 'no-reply@leeroy.ca',
+            'sendNewAccount' => false,
+            'templates' => [
+                'new_account' => 'default/email/account'
+            ]
+        ],
         'passwords' => [
             'minLength' => 8,
             'maxLength' => 64,
@@ -88,6 +95,13 @@ $config = [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'emails' => [
+            'from' => 'no-reply@sailcms.io',
+            'sendNewAccount' => false,
+            'templates' => [
+                'new_account' => 'default/email/account'
+            ]
+        ],
         'graphql' => [
             'active' => true,
             'trigger' => 'graphql',
@@ -143,6 +157,13 @@ $config = [
         'devMode' => false,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'emails' => [
+            'from' => 'no-reply@sailcms.io',
+            'sendNewAccount' => false,
+            'templates' => [
+                'new_account' => 'default/email/account'
+            ]
+        ],
         'graphql' => [
             'active' => true,
             'trigger' => 'graphql',

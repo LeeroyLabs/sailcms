@@ -28,6 +28,7 @@ class Install extends Command
         $folders = [
             'templates',
             'templates/default',
+            'templates/default/email',
             'web',
             'web/public',
             'web/public/images',
@@ -62,7 +63,8 @@ class Install extends Command
             'storage/fs/uploads/.gitkeep' => '',
             'storage/fs/logs/.gitkeep' => '',
             'storage/cache/.gitkeep' => '',
-            'locales/en.yaml' => ''
+            'locales/en.yaml' => '',
+            'templates/default/email/account.twig' => 'account.email.twig'
         ];
 
         Tools::showTitle('Installing SailCMS v' . Sail::SAIL_VERSION);
@@ -106,6 +108,8 @@ class Install extends Command
 
         Tools::outputInfo('optimizing', 'Making sure everything is optimized in the database', 'bg-sky-400');
         // TODO : FINISH THIS
+
+        // TODO: CREATE BASIC EMAIL TEMPLATES (ex: Account, Forgot Password)
 
         Tools::outputInfo('success', 'Installation complete. You are ready to go! 🚀', 'bg-green-500');
         return Command::SUCCESS;

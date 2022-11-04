@@ -3,6 +3,7 @@ type Query {
 
     # Users
     user(id: ID!): User
+    userWithToken: User
     users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
 
     # Authentication

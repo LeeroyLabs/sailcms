@@ -441,7 +441,6 @@ class Entry extends BaseModel
         $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
         $update['dates'] = Dates::updated($entry->dates);
 
-        print_r($update);
         try {
             $qtyUpdated = $this->updateOne(['_id' => $entry->_id], [
                 '$set' => $update
