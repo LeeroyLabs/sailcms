@@ -162,7 +162,7 @@ class Stateless implements AppSession
 
             $parser = new Parser(new JoseEncoder());
             $token = $parser->parse($cookie);
-            
+
             return $token->claims()->get('sub') ?? '';
         }
 
@@ -180,6 +180,11 @@ class Stateless implements AppSession
     private function validate(): bool
     {
         $cookie = $_COOKIE['sc_jwt'] ?? '';
+
+        // Cookie is empty, check header instead
+        if (empty($cookie)) {
+            $cookie = getallheaders()['x-access-token'] ?? '';
+        }
 
         if (empty($cookie)) {
             return false;
