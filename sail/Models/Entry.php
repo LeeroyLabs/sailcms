@@ -427,7 +427,6 @@ class Entry extends BaseModel
 
         $this->validateUrlAvailability($status, $is_homepage, $slug, $entry->_id);
 
-
         $update = [];
         $data->each(function ($key, $value) use (&$update)
         {
@@ -436,9 +435,13 @@ class Entry extends BaseModel
             }
         });
 
+        // Automatic attributes
         // TODO generate alternates
         $update['url'] = $this->getRelativeUrl($slug, $is_homepage);
+        $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
+        $update['dates'] = Dates::updated($entry->dates);
 
+        print_r($update);
         try {
             $qtyUpdated = $this->updateOne(['_id' => $entry->_id], [
                 '$set' => $update

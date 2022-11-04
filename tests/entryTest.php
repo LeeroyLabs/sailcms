@@ -97,6 +97,7 @@ test('Update an entry with the default type', function ()
     $entry = $model->one([
         'title' => 'Home'
     ]);
+    $before = $entry->dates->updated;
 
     try {
         $result = $entry->updateById($entry, [
@@ -105,7 +106,9 @@ test('Update an entry with the default type', function ()
         $entry = $model->one([
             'title' => 'Home page'
         ]);
+        expect($result)->toBe(true);
         expect($entry)->not->toBe(null);
+        expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);

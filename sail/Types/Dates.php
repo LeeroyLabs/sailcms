@@ -7,10 +7,10 @@ use SailCMS\Contracts\DatabaseType;
 class Dates implements DatabaseType
 {
     public function __construct(
-        public readonly ?int $created,
-        public readonly ?int $updated,
-        public readonly ?int $published,
-        public readonly ?int $deleted
+        public readonly ?float $created,
+        public readonly ?float $updated,
+        public readonly ?float $published,
+        public readonly ?float $deleted
     ) {
     }
 
@@ -26,7 +26,7 @@ class Dates implements DatabaseType
      */
     static public function init(bool $published = false): array
     {
-        $now = time();
+        $now = microtime(true);
         $publishDate = null;
         if ($published) {
             $publishDate = $now;
@@ -35,11 +35,27 @@ class Dates implements DatabaseType
         return $dates->toDBObject();
     }
 
-    // TODO: use toDBObject instead for object simplification
+    /**
+     *
+     * Update the deleted attribute for a given Dates object
+     *
+     * @param  Dates  $dates
+     * @return array
+     *
+     */
+    static public function updated(Dates $dates): array
+    {
+        $now = microtime(true);
+
+        $newDates = new Dates($dates->created, $now, $dates->published, $dates->deleted);
+
+        return $newDates->toDBObject();
+    }
+
 
     /**
      *
-     *
+     * Update the deleted attribute for a given Dates object
      *
      * @param  Dates  $dates
      * @return array
@@ -47,7 +63,7 @@ class Dates implements DatabaseType
      */
     static public function deleted(Dates $dates): array
     {
-        $now = time();
+        $now = microtime(true);
 
         $newDates = new Dates($dates->created, $dates->updated, $dates->published, $now);
         return $newDates->toDBObject();

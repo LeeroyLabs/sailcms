@@ -37,7 +37,22 @@ class Authors implements DatabaseType
 
     /**
      *
-     * Update the deletedBy attribute of a given authors object
+     * Update the updateBy attribute of a given Authors object
+     *
+     * @param  Authors  $authors
+     * @param  string   $updateAuthorId
+     * @return array
+     */
+    static public function updated(Authors $authors, string $updateAuthorId)
+    {
+        $newAuthors = new Authors($authors->createdBy, $updateAuthorId, $authors->publishedBy, $authors->deletedBy);
+
+        return $newAuthors->toDBObject();
+    }
+
+    /**
+     *
+     * Update the deletedBy attribute of a given Authors object
      *
      * @param  Authors  $authors
      * @param  string   $deleteAuthorId
