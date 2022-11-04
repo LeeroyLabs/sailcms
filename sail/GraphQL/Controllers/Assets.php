@@ -6,6 +6,7 @@ use ImagickException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
+use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -55,8 +56,8 @@ class Assets
         $direction = strtolower($args->get('direction', 'ASC'));
 
         $direction = match ($direction) {
-            'desc' => -1,
-            default => 1
+            'desc' => BaseModel::SORT_DESC,
+            default => BaseModel::SORT_ASC
         };
 
         return $asset->getList($page, $limit, $folder, $search, $sort, $direction);
