@@ -7,19 +7,19 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
-use SailCMS\Types\ACL as ACLObj;
+use SailCMS\Types\ACL as ACLObject;
 use SailCMS\Types\ACLType;
 
 class ACL
 {
     private static Collection $loadedACL;
-    private static bool $entryTypeLoaded = false;
 
     /**
      *
      * Initialize the ACLs
      *
      * @return void
+     * @throws DatabaseException
      *
      */
     public static function init(): void
@@ -29,6 +29,10 @@ class ACL
 
             // Load all system ACL
             static::$loadedACL->pushSpread(...System::getAll()->unwrap());
+
+//            static::loadCmsACL();
+//            print_r(static::$loadedACL);
+//            die();
         }
     }
 
@@ -263,24 +267,6 @@ class ACL
     {
         $list = new Collection([]);
 
-        // ASKMARC - did this make sense ? is it the good place ?
-        if (!static::$entryTypeLoaded) {
-            $entryACL = new Collection([]);
-            try {
-                $entryTypes = EntryType::getAll();
-                $entryTypes->each(function ($key, $value) use ($entryACL)
-                {
-                    $entryACL->push(new ACLObj(ucfirst($value->handle), ACLType::READ));
-                    $entryACL->push(new ACLObj(ucfirst($value->handle), ACLType::READ_WRITE));
-                });
-            } catch (DatabaseException $exception) {
-                // TODO FAIL Silently should log something
-            }
-            static::$loadedACL->pushSpread(...$entryACL->unwrap());
-            static::$entryTypeLoaded = true;
-        }
-        // END ASKMARC
-
         static::$loadedACL->each(function ($key, $value) use (&$list)
         {
             $list->push((object)[
@@ -303,5 +289,28 @@ class ACL
     public static function count(): int
     {
         return static::$loadedACL->length;
+    }
+
+    /**
+     *
+     *
+     *
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    private static function loadCmsACL(): void
+    {
+        $entryACL = new Collection([]);
+
+        $entryTypes = EntryType::getAll();
+
+        $entryTypes->each(function ($key, $value) use ($entryACL)
+        {
+            $entryACL->push(new ACLObject($value->handle, ACLType::READ));
+            $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE));
+        });
+
+        static::$loadedACL->pushSpread(...$entryACL->unwrap());
     }
 }

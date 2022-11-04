@@ -85,12 +85,13 @@ test("Create an entry with the default type", function ()
     }
 });
 
+// Fail to create a live entry because there is already a homepage
 // Fail to create a live entry because url already in use
-// Fail to create a live entry because slug is empty and isHomepage is true
-// Update a default entry
-// Hard Delete a default entry
+// Update an entry with an entry type
+// Create an entry with an entry type
+// Delete an entry with an entry type
 
-test('Soft Delete a default entry', function ()
+test('Update an entry with the default type', function ()
 {
     $model = new Entry();
     $entry = $model->one([
@@ -98,9 +99,30 @@ test('Soft Delete a default entry', function ()
     ]);
 
     try {
+        $result = $entry->updateById($entry, [
+            'title' => 'Home page',
+        ]);
+        $entry = $model->one([
+            'title' => 'Home page'
+        ]);
+        expect($entry)->not->toBe(null);
+    } catch (Exception $exception) {
+        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Soft Delete an entry with the default type', function ()
+{
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home page'
+    ]);
+
+    try {
         $result = $entry->delete($entry->_id);
         $entry = $model->one([
-            'title' => 'Home'
+            'title' => 'Home page'
         ]);
         expect($result)->toBe(true);
         expect($entry->status)->toBe(EntryStatus::TRASH->value);
@@ -109,11 +131,11 @@ test('Soft Delete a default entry', function ()
     }
 });
 
-test('Hard Delete a default entry', function ()
+test('Hard Delete an entry with the default type', function ()
 {
     $model = new Entry();
     $entry = $model->one([
-        'title' => 'Home'
+        'title' => 'Home page'
     ]);
 
     try {
