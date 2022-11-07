@@ -81,6 +81,7 @@ test("Create an entry with the default type", function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(null);
     } catch (Exception $exception) {
+        print_r($exception);
         expect(true)->toBe(false);
     }
 });
