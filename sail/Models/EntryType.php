@@ -270,6 +270,7 @@ class EntryType extends BaseModel
         if ($this->getByHandle($handle) !== null) {
             throw new EntryException(self::HANDLE_ALREADY_EXISTS);
         }
+        // TODO reserved word
     }
 
     /**

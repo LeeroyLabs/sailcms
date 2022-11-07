@@ -23,6 +23,9 @@ type Query {
     # Emails
     email(id: ID!): Email
     emails: [Email!]!
+
+    # Entries
+    entryTypes: [EntryType!]!
     #{CUSTOM_QUERIES}#
 }
 
@@ -68,6 +71,13 @@ type User {
     avatar: String!
     permissions: [String!]
     meta: UserMeta!
+}
+
+type EntryType {
+    _id: ID!
+    title: String!
+    handle: String!
+    urlPrefix: String!
 }
 
 type UserListing {

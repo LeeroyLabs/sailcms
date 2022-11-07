@@ -3,10 +3,12 @@
 namespace SailCMS;
 
 use ArrayAccess;
+use GraphQL\Error\InvariantViolation;
 use GraphQL\Error\SyntaxError;
 use GraphQL\GraphQL as GQL;
+use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\ResolveInfo;
-use GraphQL\Error\InvariantViolation;
+use GraphQL\Utils\AST;
 use GraphQL\Utils\BuildSchema;
 use JsonException;
 use League\Flysystem\FilesystemException;
@@ -14,14 +16,13 @@ use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Emails;
+use SailCMS\GraphQL\Controllers\Entries;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\GraphQL as MGQL;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\UserMeta;
-use GraphQL\Utils\AST;
-use GraphQL\Language\Parser;
 
 class GraphQL
 {
@@ -254,6 +255,9 @@ class GraphQL
         static::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
         static::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
         static::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
+
+        // Entries
+        static::addQueryResolver('entryTypes', Entries::class, 'types');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

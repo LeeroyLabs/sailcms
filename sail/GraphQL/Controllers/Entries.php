@@ -11,6 +11,11 @@ use SailCMS\Models\EntryType;
 
 class Entries
 {
+    public function types(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return EntryType::getAll();
+    }
+
     /**
      *
      * Get an entry by id (MUST TESTS)

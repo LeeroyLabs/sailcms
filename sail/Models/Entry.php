@@ -104,6 +104,7 @@ class Entry extends BaseModel
         $request = $fromRequest ? new Request() : null;
         $content = null;
 
+        // TODO site
         $filters = ['url' => $url, 'status' => EntryStatus::LIVE->value];
         if ($url === '' || $url === '/') {
             $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
@@ -230,7 +231,7 @@ class Entry extends BaseModel
     private function validateUrlAvailability(string $status, bool $isHomepage, ?string $slug, ?string $currentId = null)
     {
         if ($status == EntryStatus::LIVE->value) {
-            /* Not needed anymore since we use findbyurl method
+            /* TODO change existing homepage to false and update the url
             $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
 
             if ($currentId) {
