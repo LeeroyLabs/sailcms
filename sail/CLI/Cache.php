@@ -31,8 +31,15 @@ class Cache extends Command
 
         $fs = Filesystem::manager();
         $files = $fs->listContents('cache://', true);
+        $debugfiles = $fs->listContents('debug://', true);
 
         foreach ($files as $file) {
+            if (!str_contains($file->path(), '://.')) {
+                $fs->delete($file->path());
+            }
+        }
+
+        foreach ($debugfiles as $file) {
             if (!str_contains($file->path(), '://.')) {
                 $fs->delete($file->path());
             }

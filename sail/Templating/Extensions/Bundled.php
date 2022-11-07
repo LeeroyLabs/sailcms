@@ -20,6 +20,7 @@ class Bundled extends AbstractExtension
     public function getFunctions(): array
     {
         return [
+            new TwigFunction('header', [$this, 'header']),
             new TwigFunction('debug', [$this, 'debug']),
             new TwigFunction('env', [$this, 'env']),
             new TwigFunction('publicPath', [$this, 'publicPath']),
@@ -34,6 +35,11 @@ class Bundled extends AbstractExtension
     public function getFilters(): array
     {
         return [];
+    }
+
+    public function header(): void
+    {
+        // TODO: Implement for SEO
     }
 
     /**

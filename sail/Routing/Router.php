@@ -6,6 +6,8 @@ use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Contracts\AppController;
+use SailCMS\Debug;
+use SailCMS\Debug\DebugController;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\RouteReturnException;
@@ -238,12 +240,15 @@ class Router
         $response->set('year', date('Y'));
 
         if ($uri === '/') {
+            Debug::route('GET', '/', 'system:home', 'default homepage');
+
             // If we are here, the cms did not pick up on the homepage, show built in homepage
             $response->template = 'welcome_default';
             $response->render();
             die();
         }
 
+        Debug::route('GET', '/', 'system:not_found', '404');
         $response->template = '404';
         $response->render();
         die();
@@ -272,6 +277,25 @@ class Router
         }
 
         return $alternateRoutes;
+    }
+
+    /**
+     *
+     * Register a route for the clockwork debug tool
+     *
+     * @return void
+     *
+     */
+    public static function addClockworkSupport(): void
+    {
+        $router = new static();
+        $router->addRoute(
+            'any',
+            '/__clockwork/:any',
+            'en',
+            DebugController::class,
+            'handleClockWork'
+        );
     }
 
     // -------------------------------------------------- Private -------------------------------------------------- //

@@ -5,6 +5,7 @@ namespace SailCMS\Database;
 use JsonException;
 use MongoDB\Model\BSONArray;
 use SailCMS\Contracts\DatabaseType;
+use SailCMS\Debug;
 use SailCMS\Text;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\QueryOptions;
@@ -94,6 +95,7 @@ abstract class BaseModel
      */
     protected function exec(bool $fetchAllFields = false): BaseModel|array|null
     {
+        $qt = Debug::startQuery();
         $options = [];
         $docs = [];
 
@@ -109,7 +111,6 @@ abstract class BaseModel
         if ($this->isSingle) {
             $result = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
 
-
             if ($result) {
                 $doc = $this->transformDocToModel($result, $fetchAllFields);
 
@@ -120,10 +121,12 @@ abstract class BaseModel
                     $doc->{$field} = $instance->findById($doc->{$field})->exec();
                 }
 
+                $this->debugCall('', $qt);
                 $this->clearOps();
                 return $doc;
             }
 
+            $this->debugCall('', $qt);
             $this->clearOps();
             return null;
         }
@@ -171,6 +174,7 @@ abstract class BaseModel
             $docs[] = $doc;
         }
 
+        $this->debugCall('', $qt);
         $this->clearOps();
         return $docs;
     }
@@ -307,6 +311,8 @@ abstract class BaseModel
      */
     protected function aggregate(array $pipeline): array
     {
+        $qt = Debug::startQuery();
+
         try {
             $results = $this->collection->aggregate($pipeline);
             $docs = [];
@@ -315,6 +321,7 @@ abstract class BaseModel
                 $docs[] = $this->transformDocToModel($result);
             }
 
+            $this->debugCall('aggregate', $qt, ['pipeline' => $pipeline]);
             return $docs;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
@@ -332,9 +339,14 @@ abstract class BaseModel
      */
     protected function insert(object|array $doc)
     {
+        $qt = Debug::startQuery();
+
         try {
             $doc = $this->prepareForWrite($doc);
-            return $this->collection->insertOne($doc)->getInsertedId();
+            $id = $this->collection->insertOne($doc)->getInsertedId();
+
+            $this->debugCall('insert', $qt);
+            return $id;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -351,12 +363,17 @@ abstract class BaseModel
      */
     protected function insertMany(array $docs): array
     {
+        $qt = Debug::startQuery();
+
         try {
             foreach ($docs as $num => $doc) {
                 $docs[$num] = $this->prepareForWrite($doc);
             }
 
-            return $this->collection->insertMany($docs)->getInsertedIds();
+            $ids = $this->collection->insertMany($docs)->getInsertedIds();
+
+            $this->debugCall('insertMany', $qt);
+            return $ids;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -374,12 +391,18 @@ abstract class BaseModel
      */
     protected function updateOne(array $query, array $update): int
     {
+        $qt = Debug::startQuery();
+
         try {
             if (isset($update['$set'])) {
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
-            return $this->collection->updateOne($query, $update)->getModifiedCount();
+            $count = $this->collection->updateOne($query, $update)->getModifiedCount();
+
+            $this->currentLimit = 1;
+            $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
+            return $count;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -397,12 +420,17 @@ abstract class BaseModel
      */
     protected function updateMany(array $query, array $update): int
     {
+        $qt = Debug::startQuery();
+
         try {
             if (isset($update['$set'])) {
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
-            return $this->collection->updateMany($query, $update)->getModifiedCount();
+            $count = $this->collection->updateMany($query, $update)->getModifiedCount();
+
+            $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
+            return $count;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -419,8 +447,14 @@ abstract class BaseModel
      */
     protected function deleteOne(array $query): int
     {
+        $qt = Debug::startQuery();
+
         try {
-            return $this->collection->deleteOne($query)->getDeletedCount();
+            $count = $this->collection->deleteOne($query)->getDeletedCount();
+
+            $this->currentLimit = 1;
+            $this->debugCall('deleteOne', $qt, ['query' => $query]);
+            return $count;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -437,8 +471,13 @@ abstract class BaseModel
      */
     protected function deleteMany(array $query): int
     {
+        $qt = Debug::startQuery();
+
         try {
-            return $this->collection->deleteMany($query)->getDeletedCount();
+            $count = $this->collection->deleteMany($query)->getDeletedCount();
+
+            $this->debugCall('deleteMany', $qt, ['query' => $query]);
+            return $count;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -455,6 +494,7 @@ abstract class BaseModel
      */
     protected function deleteById(string|ObjectId $id): int
     {
+        $qt = Debug::startQuery();
         $_id = $id;
 
         if (is_string($id)) {
@@ -462,7 +502,10 @@ abstract class BaseModel
         }
 
         try {
-            return $this->collection->deleteOne(['_id' => $_id])->getDeletedCount();
+            $count = $this->collection->deleteOne(['_id' => $_id])->getDeletedCount();
+
+            $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
+            return $count;
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -478,7 +521,11 @@ abstract class BaseModel
      */
     protected function count(array $query): int
     {
-        return $this->collection->countDocuments($query);
+        $qt = Debug::startQuery();
+        $count = $this->collection->countDocuments($query);
+
+        $this->debugCall('count', $qt, ['query' => $query]);
+        return $count;
     }
 
     /**
@@ -801,5 +848,34 @@ abstract class BaseModel
         }
 
         return $doc;
+    }
+
+    /**
+     *
+     * Debug the db call just called
+     *
+     * @param  string  $op
+     * @param  float   $time
+     * @param  array   $extra
+     * @return void
+     *
+     */
+    private function debugCall(string $op = '', float $time = 0, array $extra = []): void
+    {
+        $debugQuery = [
+            'operation' => ($op === '') ? $this->currentOp : $op,
+            'query' => $extra['query'] ?? $this->currentQuery,
+            'projection' => $this->currentProjection ?? [],
+            'sort' => $this->currentSort ?? [],
+            'offset' => $this->currentSkip ?? 0,
+            'limit' => $this->currentLimit ?? 10_000,
+            'model' => get_class($this),
+            'collection' => $this->collection->getCollectionName(),
+            'time' => $time,
+            'update' => $extra['update'] ?? [],
+            'pipeline' => $extra['pipeline'] ?? []
+        ];
+
+        Debug::endQuery($debugQuery);
     }
 }

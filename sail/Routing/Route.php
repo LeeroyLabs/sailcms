@@ -3,9 +3,11 @@
 namespace SailCMS\Routing;
 
 use League\Flysystem\FilesystemException;
+use SailCMS\Debug;
 use SailCMS\Http\Response;
 use SailCMS\Contracts\AppController;
 use SailCMS\Locale;
+use SailCMS\Text;
 
 class Route
 {
@@ -54,6 +56,9 @@ class Route
         if ($url === $this->url) {
             Locale::setCurrent($this->locale);
             $instance = new $this->controller();
+
+            Debug::route($this->method, $url, $this->controller . ':' . $this->method, Text::slugify($url));
+
             call_user_func_array([$instance, $this->method], []);
             return $instance->getResponse();
         }
@@ -64,6 +69,10 @@ class Route
             if (preg_match('#^' . $route . '$#', $url, $matched)) {
                 unset($matched[0]);
                 $matches = array_values($matched);
+
+                if (!str_contains($url, '__clockwork')) {
+                    Debug::route($this->method, $url, $this->controller . ':' . $this->method, Text::slugify($url));
+                }
 
                 Locale::setCurrent($this->locale);
                 $instance = new $this->controller();

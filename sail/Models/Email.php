@@ -157,26 +157,25 @@ class Email extends BaseModel
      *
      * Update an email (instance version)
      *
-     * @param  string                        $name
-     * @param  LocaleField|Collection|array  $subject
-     * @param  LocaleField|Collection|array  $title
-     * @param  LocaleField|Collection|array  $content
-     * @param  LocaleField|Collection|array  $cta
-     * @param  LocaleField|Collection|array  $cta_title
-     * @param  string                        $template
+     * @param  string|null                        $name
+     * @param  LocaleField|Collection|array|null  $subject
+     * @param  LocaleField|Collection|array|null  $title
+     * @param  LocaleField|Collection|array|null  $content
+     * @param  LocaleField|Collection|array|null  $cta
+     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  string|null                        $template
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
-     *
      */
     public function update(
-        string $name,
-        LocaleField|Collection|array $subject,
-        LocaleField|Collection|array $title,
-        LocaleField|Collection|array $content,
-        LocaleField|Collection|array $cta,
-        LocaleField|Collection|array $cta_title,
-        string $template
+        string|null $name = null,
+        LocaleField|Collection|array|null $subject = null,
+        LocaleField|Collection|array|null $title = null,
+        LocaleField|Collection|array|null $content = null,
+        LocaleField|Collection|array|null $cta = null,
+        LocaleField|Collection|array|null $cta_title = null,
+        string|null $template = null
     ): bool {
         return static::updateBy(['_id' => $this->_id], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
@@ -185,14 +184,14 @@ class Email extends BaseModel
      *
      * Update an email by id (static version)
      *
-     * @param  ObjectId|string               $id
-     * @param  string                        $name
-     * @param  LocaleField|Collection|array  $subject
-     * @param  LocaleField|Collection|array  $title
-     * @param  LocaleField|Collection|array  $content
-     * @param  LocaleField|Collection|array  $cta
-     * @param  LocaleField|Collection|array  $cta_title
-     * @param  string                        $template
+     * @param  ObjectId|string                    $id
+     * @param  string|null                        $name
+     * @param  LocaleField|Collection|array|null  $subject
+     * @param  LocaleField|Collection|array|null  $title
+     * @param  LocaleField|Collection|array|null  $content
+     * @param  LocaleField|Collection|array|null  $cta
+     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  string|null                        $template
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -200,13 +199,13 @@ class Email extends BaseModel
      */
     public static function updateById(
         ObjectId|string $id,
-        string $name,
-        LocaleField|Collection|array $subject,
-        LocaleField|Collection|array $title,
-        LocaleField|Collection|array $content,
-        LocaleField|Collection|array $cta,
-        LocaleField|Collection|array $cta_title,
-        string $template
+        string|null $name = null,
+        LocaleField|Collection|array|null $subject = null,
+        LocaleField|Collection|array|null $title = null,
+        LocaleField|Collection|array|null $content = null,
+        LocaleField|Collection|array|null $cta = null,
+        LocaleField|Collection|array|null $cta_title = null,
+        string|null $template = null
     ): bool {
         $instance = new static();
         $id = $instance->ensureObjectId($id);
@@ -217,14 +216,14 @@ class Email extends BaseModel
      *
      * Update by slug
      *
-     * @param  string                        $slug
-     * @param  string                        $name
-     * @param  LocaleField|Collection|array  $subject
-     * @param  LocaleField|Collection|array  $title
-     * @param  LocaleField|Collection|array  $content
-     * @param  LocaleField|Collection|array  $cta
-     * @param  LocaleField|Collection|array  $cta_title
-     * @param  string                        $template
+     * @param  string                             $slug
+     * @param  string|null                        $name
+     * @param  LocaleField|Collection|array|null  $subject
+     * @param  LocaleField|Collection|array|null  $title
+     * @param  LocaleField|Collection|array|null  $content
+     * @param  LocaleField|Collection|array|null  $cta
+     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  string|null                        $template
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -232,13 +231,13 @@ class Email extends BaseModel
      */
     public static function updateBySlug(
         string $slug,
-        string $name,
-        LocaleField|Collection|array $subject,
-        LocaleField|Collection|array $title,
-        LocaleField|Collection|array $content,
-        LocaleField|Collection|array $cta,
-        LocaleField|Collection|array $cta_title,
-        string $template
+        string|null $name = null,
+        LocaleField|Collection|array|null $subject = null,
+        LocaleField|Collection|array|null $title = null,
+        LocaleField|Collection|array|null $content = null,
+        LocaleField|Collection|array|null $cta = null,
+        LocaleField|Collection|array|null $cta_title = null,
+        string|null $template = null
     ): bool {
         return static::updateBy(['slug' => $slug], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
@@ -294,14 +293,14 @@ class Email extends BaseModel
      *
      * Update by the given query
      *
-     * @param  array                         $query
-     * @param  string                        $name
-     * @param  LocaleField|Collection|array  $subject
-     * @param  LocaleField|Collection|array  $title
-     * @param  LocaleField|Collection|array  $content
-     * @param  LocaleField|Collection|array  $cta
-     * @param  LocaleField|Collection|array  $cta_title
-     * @param  string                        $template
+     * @param  array                              $query
+     * @param  string|null                        $name
+     * @param  LocaleField|Collection|array|null  $subject
+     * @param  LocaleField|Collection|array|null  $title
+     * @param  LocaleField|Collection|array|null  $content
+     * @param  LocaleField|Collection|array|null  $cta
+     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  string|null                        $template
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -309,28 +308,48 @@ class Email extends BaseModel
      */
     private static function updateBy(
         array $query,
-        string $name,
-        LocaleField|Collection|array $subject,
-        LocaleField|Collection|array $title,
-        LocaleField|Collection|array $content,
-        LocaleField|Collection|array $cta,
-        LocaleField|Collection|array $cta_title,
-        string $template
+        string|null $name = null,
+        LocaleField|Collection|array|null $subject = null,
+        LocaleField|Collection|array|null $title = null,
+        LocaleField|Collection|array|null $content = null,
+        LocaleField|Collection|array|null $cta = null,
+        LocaleField|Collection|array|null $cta_title = null,
+        string|null $template = null
     ): bool {
         if (ACL::hasPermission(User::$currentUser, ACL::write('emails'))) {
             $instance = new static();
+            $set = ['last_modified' => time()];
+
+            if ($name !== null) {
+                $set['name'] = $name;
+            }
+
+            if ($subject !== null) {
+                $set['subject'] = $subject;
+            }
+
+            if ($title !== null) {
+                $set['title'] = $title;
+            }
+
+            if ($content !== null) {
+                $set['content'] = $content;
+            }
+
+            if ($cta !== null) {
+                $set['cta'] = $cta;
+            }
+
+            if ($cta_title !== null) {
+                $set['cta_title'] = $cta_title;
+            }
+
+            if ($template !== null && $template !== '') {
+                $set['template'] = $template;
+            }
 
             $instance->updateOne($query, [
-                '$set' => [
-                    'name' => $name,
-                    'subject' => $subject,
-                    'title' => $title,
-                    'content' => $content,
-                    'cta' => $cta,
-                    'cta_title' => $cta_title,
-                    'template' => $template,
-                    'last_modified' => time()
-                ]
+                '$set' => $set
             ]);
 
             return true;
