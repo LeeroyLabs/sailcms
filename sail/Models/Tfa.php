@@ -81,9 +81,34 @@ class Tfa extends BaseModel
         $this->insert(['user_id' => $user_id, 'secret' => $enc, 'codes' => $codes]);
     }
 
+    /**
+     *
+     * Rescue account with 2FA rescue codes
+     *
+     * @param  Collection|array  $codes
+     * @return User|null
+     * @throws DatabaseException
+     *
+     */
     public function rescueAccount(Collection|array $codes): ?User
     {
-        // TODO: IMPLEMENT
+        if (!is_array($codes)) {
+            $codes = $codes->unwrap();
+        }
+
+        $record = $this->findOne(['codes' => $codes[0]])->exec();
+
+        if ($record) {
+            $code1 = $record->codes->at(0);
+            $code2 = $record->codes->at(1);
+            $code3 = $record->codes->at(2);
+            $code4 = $record->codes->at(3);
+
+            if ($code1 === $codes[0] && $code2 === $codes[1] && $code3 === $codes[2] && $code4 === $codes[3]) {
+                return User::loginFromRescue($record->user_id);
+            }
+        }
+
         return null;
     }
 }

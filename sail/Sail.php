@@ -549,6 +549,7 @@ class Sail
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
     {
         if ($state === static::STATE_CLI) {
+            $_ENV['DEBUG'] = 'off';
             static::$appState = $state;
             static::$isCLI = true;
 

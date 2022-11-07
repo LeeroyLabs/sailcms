@@ -256,6 +256,22 @@ class Users
 
     /**
      *
+     * Validate an account with given code
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function validateAccount(mixed $obj, Collection $args, Context $context): bool
+    {
+        return User::validateWithCode($args->get('code', 'invalid-code'));
+    }
+
+    /**
+     *
      * Resolve custom fields
      *
      * @param  mixed        $obj

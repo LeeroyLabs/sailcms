@@ -264,7 +264,17 @@ class Mail
                 'cta_title' => $template->cta_title->{$locale}
             ]);
 
-            $superContext = $context->merge($providedContent);
+            // Context squashes providedContent to enable extensibility
+            $superContext = $providedContent->merge($context);
+
+            // cta_link is present and verification_code. Replace {code} in link for code
+            if ($context->get('verification_code', null) !== null) {
+                $superContext['cta_link'] = str_replace(
+                    '{code}',
+                    $context->get('verification_code', ''),
+                    $superContext['cta_link']
+                );
+            }
 
             return $this
                 ->from($settings->get('from'))
