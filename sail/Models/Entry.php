@@ -20,6 +20,7 @@ class Entry extends BaseModel
     const TITLE_MISSING = "You must set the entry title in your data";
     const SLUG_MISSING = "You must set the entry slug in your data";
     const HOMEPAGE_ALREADY_EXISTS = "Your project has already an homepage that is live";
+    const URL_NOT_AVAILABLE = "The %s url is not available";
     const CANNOT_CREATE_ENTRY = "You don't have the right to create an entry";
     const DATABASE_ERROR = "Exception when %s an entry";
 
@@ -89,18 +90,26 @@ class Entry extends BaseModel
      * Find a content by the url
      *
      * @param  string  $url
+     * @param  bool    $fromRequest
      * @return Entry|null
-     * @throws DatabaseException|EntryException
+     * @throws DatabaseException
+     * @throws EntryException
      *
      */
-    public static function findByURL(string $url): ?Entry
+    public static function findByURL(string $url, bool $fromRequest = true): ?Entry
     {
         // Load all entry types before scanning them
         $availableTypes = EntryType::getAll();
-        $request = new Request();
+        $request = $fromRequest ? new Request() : null;
         $content = null;
 
-        $availableTypes->each(function ($key, $value) use ($url, $request, &$content)
+        $filters = ['url' => $url, 'status' => EntryStatus::LIVE->value];
+        if ($url === '' || $url === '/') {
+            $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
+            $url = '/';
+        }
+
+        $availableTypes->each(function ($key, $value) use ($filters, $url, $request, &$content)
         {
             // We already have it, stop!
             if ($content !== null) {
@@ -109,14 +118,18 @@ class Entry extends BaseModel
 
             // Search for what collection has this url (if any)
             $entry = new Entry($value->collection_name);
-            $found = $entry->count(['url' => $url]);
+            $found = $entry->count($filters);
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                $content = $entry->findOne(['url' => $url])->exec();
+                $content = $entry->findOne(['url' => $url, 'status' => EntryStatus::LIVE->value])->exec();
 
-                $preview = $request->get('pm', false, null);
-                $previewVersion = $request->get('pv', false, null);
+                $preview = false;
+                $previewVersion = false;
+                if ($request) {
+                    $preview = $request->get('pm', false, null);
+                    $previewVersion = $request->get('pv', false, null);
+                }
 
                 // URL does not exist :/
                 if (!$content) {
@@ -155,6 +168,16 @@ class Entry extends BaseModel
         return $this->findOne($filters)->exec();
     }
 
+    /**
+     *
+     * Get all with filtering and pagination
+     *
+     * @param $filters
+     * @param $limit
+     * @param $offset
+     * @return array
+     *
+     */
     public function all($filters, $limit, $offset): array
     {
         // Filters available date, author, category, status
@@ -166,6 +189,7 @@ class Entry extends BaseModel
      * Validate the url
      *
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function validateUrlAvailability(string $status, bool $isHomepage, ?string $slug, ?string $currentId = null)
@@ -186,6 +210,11 @@ class Entry extends BaseModel
                 throw new EntryException(self::HOMEPAGE_ALREADY_EXISTS);
             }
             // TODO check if url is available
+            $newUrl = $this->getRelativeUrl($slug, $isHomepage);
+            $content = self::findByURL($newUrl, false);
+            if ($content) {
+                throw new EntryException(sprintf(self::URL_NOT_AVAILABLE, $newUrl));
+            }
         }
 
         if (!$isHomepage && !$slug) {
@@ -241,6 +270,18 @@ class Entry extends BaseModel
         return $this->create($data);
     }
 
+    /**
+     *
+     * Update an entry with a given entry id or entry instance
+     *
+     * @param  Entry|string      $entry
+     * @param  array|Collection  $data
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
     public function updateById(Entry|string $entry, array|Collection $data): bool
     {
         $this->hasPermission();
@@ -262,6 +303,8 @@ class Entry extends BaseModel
      * @param  string  $entryId
      * @param  bool    $soft
      * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
      *
      */
