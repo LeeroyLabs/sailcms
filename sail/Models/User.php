@@ -44,6 +44,7 @@ class User extends BaseModel
     public string $auth_token;
     public string $locale;
     public string $validation_code;
+    public string $reset_code;
     public bool $validated;
 
     public function fields(bool $fetchAllFields = false): array
@@ -61,7 +62,8 @@ class User extends BaseModel
                 'temporary_token',
                 'locale',
                 'validation_code',
-                'validated'
+                'validated',
+                'reset_code'
             ];
         }
 
@@ -76,7 +78,8 @@ class User extends BaseModel
             'temporary_token',
             'locale',
             'validation_code',
-            'validated'
+            'validated',
+            'reset_code'
         ];
     }
 
@@ -249,7 +252,8 @@ class User extends BaseModel
             'temporary_token' => '',
             'locale' => $locale,
             'validation_code' => $code,
-            'validated' => false
+            'validated' => false,
+            'reset_code' => ''
         ]);
 
         if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
@@ -320,7 +324,8 @@ class User extends BaseModel
                 'temporary_token' => '',
                 'locale' => $locale,
                 'validation_code' => $code,
-                'validated' => false
+                'validated' => false,
+                'reset_code' => ''
             ]);
 
             if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
@@ -544,10 +549,10 @@ class User extends BaseModel
     {
         $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
 
-        $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password]);
+        $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password, 'allowed' => false]);
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
 
-        if (!$mwResult->data) {
+        if (!$mwResult->data['allowed']) {
             if ($user && Security::verifyPassword($password, $user->password)) {
                 if ($user->meta->flags->use2fa) {
                     return '2fa';
@@ -615,9 +620,21 @@ class User extends BaseModel
      */
     public function login(string $email, string $password): bool
     {
-        $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
+        $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password, 'allowed' => false]);
+        $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
 
-        if ($user && Security::verifyPassword($password, $user->password)) {
+        $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
+        $pass = false;
+
+        if (!$mwResult->data['allowed']) {
+            if ($user && Security::verifyPassword($password, $user->password)) {
+                $pass = true;
+            }
+        } else {
+            $pass = true;
+        }
+
+        if ($pass) {
             // Set session data, get token
             $session = Session::manager();
             $session->setUserId((string)$user->_id);
@@ -793,6 +810,32 @@ class User extends BaseModel
         }
 
         return null;
+    }
+
+    public static function forgotPassword(string $email): bool
+    {
+        $data = new Middleware\Data(Middleware\Login::ForgotPassword, ['email' => $email, 'allowed' => false]);
+        $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
+
+        if ($mwResult->data['allowed']) {
+            $instance = new static();
+            $record = $instance->findOne(['email' => $email, 'validated' => true])->exec();
+
+            if ($record) {
+                $code = substr(Security::generateVerificationCode(), 5, 16);
+                $record->updateOne(['_id' => $record->_id], ['$set' => ['reset_code' => $code]]);
+
+                $mail = new Mail();
+                $mail->to($email)->useEmail('reset_password', $record->locale, ['reset_code' => $code])->send();
+                return true;
+            }
+
+            // Always return true to misdirect potential attackers
+            return true;
+        }
+
+        // This is only returned if the middleware tells us NO!
+        return false;
     }
 
     /**

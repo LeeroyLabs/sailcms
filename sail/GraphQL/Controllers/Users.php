@@ -8,6 +8,7 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\FileException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
@@ -146,6 +147,7 @@ class Users
      * @param  Context     $context
      * @return bool
      * @throws DatabaseException
+     * @throws FileException
      *
      */
     public function createUser(mixed $obj, Collection $args, Context $context): bool
@@ -268,6 +270,15 @@ class Users
     public function validateAccount(mixed $obj, Collection $args, Context $context): bool
     {
         return User::validateWithCode($args->get('code', 'invalid-code'));
+    }
+
+    public function forgotPassword(mixed $obj, Collection $args, Context $context, ResolveInfo $info): bool
+    {
+        return User::forgotPassword($args->get('email', ''));
+    }
+
+    public function changePassword(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
     }
 
     /**

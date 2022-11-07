@@ -129,7 +129,7 @@ class Sail
             static::$isGraphQL = true;
             $data = Graphql::init();
 
-            if ($_ENV['DEBUG']) {
+            if ($_ENV['DEBUG'] === 'on') {
                 static::$clockwork->requestProcessed();
             }
 
