@@ -13,9 +13,11 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\FileException;
 use SailCMS\Event;
 use SailCMS\Mail;
+use SailCMS\Middleware;
 use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
+use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
@@ -255,12 +257,15 @@ class User extends BaseModel
             try {
                 $mail = new Mail();
                 $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
+                Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             } catch (Exception $e) {
+                Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
         }
 
+        Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
         return $id;
     }
 
@@ -332,6 +337,7 @@ class User extends BaseModel
                 }
             }
 
+            Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
             return $id;
         }
 
@@ -399,6 +405,7 @@ class User extends BaseModel
             }
 
             $this->updateOne(['_id' => $id], ['$set' => $update]);
+            Event::dispatch(static::EVENT_UPDATE, ['id' => $id, 'update' => $update]);
             return true;
         }
 
@@ -537,13 +544,27 @@ class User extends BaseModel
     {
         $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
 
-        if ($user && Security::verifyPassword($password, $user->password)) {
+        $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password]);
+        $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
+
+        if (!$mwResult->data) {
+            if ($user && Security::verifyPassword($password, $user->password)) {
+                if ($user->meta->flags->use2fa) {
+                    return '2fa';
+                }
+
+                $key = Security::secureTemporaryKey();
+                $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
+                return $key;
+            }
+        } else {
+            // Middleware says everything is ok, login
             if ($user->meta->flags->use2fa) {
                 return '2fa';
             }
 
             $key = Security::secureTemporaryKey();
-            $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
+            $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
             return $key;
         }
 
@@ -571,9 +592,6 @@ class User extends BaseModel
             $token = $session->get('set_token'); // Only works with stateless
 
             static::$currentUser = $this->findById((string)$user->_id)->exec();
-
-            // Get role
-            $roleModel = new Role();
 
             // Clear temporary token
             $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => '']]);
@@ -610,7 +628,6 @@ class User extends BaseModel
             static::$currentUser = $instance->findById((string)$user->_id)->exec();
 
             // Get role
-            $roleModel = new Role();
             static::$currentUser->auth_token = $token ?? '';
 
             return true;
@@ -745,6 +762,37 @@ class User extends BaseModel
         }
 
         return false;
+    }
+
+    /**
+     *
+     * Login a user that was allowed to be by the 2FA rescue system
+     *
+     * @param  string  $id
+     * @return User|null
+     * @throws DatabaseException
+     *
+     */
+    public static function loginFromRescue(string $id): ?User
+    {
+        $instance = new static();
+        $user = $instance->findById($id)->exec();
+
+        if ($user) {
+            $session = Session::manager();
+            $session->setUserId((string)$user->_id);
+            $session->set('user_id', (string)$user->_id);
+            $token = $session->get('set_token'); // Only works with stateless
+
+            static::$currentUser = $user;
+
+            // Get role
+            static::$currentUser->auth_token = $token ?? '';
+
+            return static::$currentUser;
+        }
+
+        return null;
     }
 
     /**
