@@ -239,4 +239,9 @@ class Security
 
         return true;
     }
+
+    public static function generateVerificationCode(): string
+    {
+        return hash('sha256', uniqid(microtime(), true));
+    }
 }

@@ -13,6 +13,7 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\FileException;
 use SailCMS\Event;
 use SailCMS\Mail;
+use SailCMS\Sail;
 use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
@@ -41,6 +42,8 @@ class User extends BaseModel
     public string $temporary_token;
     public string $auth_token;
     public string $locale;
+    public string $validation_code;
+    public bool $validated;
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -55,11 +58,25 @@ class User extends BaseModel
                 'meta',
                 'password',
                 'temporary_token',
-                'locale'
+                'locale',
+                'validation_code',
+                'validated'
             ];
         }
 
-        return ['_id', 'name', 'roles', 'email', 'status', 'avatar', 'meta', 'temporary_token', 'locale'];
+        return [
+            '_id',
+            'name',
+            'roles',
+            'email',
+            'status',
+            'avatar',
+            'meta',
+            'temporary_token',
+            'locale',
+            'validation_code',
+            'validated'
+        ];
     }
 
     public static function initForTest()
@@ -218,6 +235,8 @@ class User extends BaseModel
             throw new DatabaseException('Password does not pass minimum security level', 0403);
         }
 
+        $code = Security::generateVerificationCode();
+
         $id = $this->insert([
             'name' => $name,
             'email' => $email,
@@ -227,14 +246,16 @@ class User extends BaseModel
             'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),
             'temporary_token' => '',
-            'locale' => $locale
+            'locale' => $locale,
+            'validation_code' => $code,
+            'validated' => false
         ]);
 
         if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
             // Send a nice email to greet
             try {
                 $mail = new Mail();
-                $mail->to($email)->useEmail('new_account', $locale)->send();
+                $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
                 return $id;
             } catch (Exception $e) {
                 return $id;
@@ -282,6 +303,8 @@ class User extends BaseModel
                 throw new DatabaseException('Password does not pass minimum security level', 0403);
             }
 
+            $code = Security::generateVerificationCode();
+
             $id = $this->insert([
                 'name' => $name,
                 'email' => $email,
@@ -291,14 +314,19 @@ class User extends BaseModel
                 'password' => Security::hashPassword($password),
                 'meta' => $meta->simplify(),
                 'temporary_token' => '',
-                'locale' => $locale
+                'locale' => $locale,
+                'validation_code' => $code,
+                'validated' => false
             ]);
 
             if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
                 // Send a nice email to greet
                 try {
+                    // Overwrite the cta url for the admin one
+                    $url = $_ENV['SETTINGS']->get('adminTrigger', 'admin') . '/validate/' . $code;
+
                     $mail = new Mail();
-                    $mail->to($email)->useEmail('new_account', $locale)->send();
+                    $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $url])->send();
                     return $id;
                 } catch (Exception $e) {
                     return $id;
@@ -733,5 +761,28 @@ class User extends BaseModel
     {
         $instance = new static();
         $instance->updateMany([], ['$pull' => ['roles' => $role]]);
+    }
+
+    /**
+     *
+     * Validate an account with the given code
+     *
+     * @param  string  $code
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public static function validateWithCode(string $code): bool
+    {
+        $instance = new static();
+
+        $record = $instance->findOne(['validation_code' => $code])->exec();
+
+        if ($record) {
+            $instance->updateOne(['validation_code' => $code], ['$set' => ['validation_code' => '', 'validated' => true]]);
+            return true;
+        }
+
+        return false;
     }
 }
