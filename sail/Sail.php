@@ -2,6 +2,7 @@
 
 namespace SailCMS;
 
+use Clockwork\Support\Vanilla\Clockwork;
 use Dotenv\Dotenv;
 use Exception;
 use JsonException;
@@ -54,6 +55,10 @@ class Sail
 
     private static string $siteID = 'main';
 
+    private static Clockwork $clockwork;
+
+    private static bool $isGraphQL = false;
+
     /**
      *
      * Initialize the CMS
@@ -78,6 +83,7 @@ class Sail
     public static function init(string $execPath): void
     {
         static::$workingDirectory = dirname($execPath);
+        static::setupEnv();
 
         $securitySettings = [];
         include_once static::$workingDirectory . '/config/security.php';
@@ -120,8 +126,13 @@ class Sail
 
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
+            static::$isGraphQL = true;
             $data = Graphql::init();
 
+            if ($_ENV['DEBUG']) {
+                static::$clockwork->requestProcessed();
+            }
+            
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($data, JSON_THROW_ON_ERROR);
             exit();
@@ -129,6 +140,10 @@ class Sail
 
         // Run before dispatch
         Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeRoute, data: null));
+
+        if ($_ENV['DEBUG'] === 'on') {
+            Router::addClockworkSupport();
+        }
 
         Router::dispatch();
     }
@@ -164,10 +179,6 @@ class Sail
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
-
-        // Load .env file
-        $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
-        $dotenv->load();
 
         // Load Sites
         static::loadAndDetectSites();
@@ -222,19 +233,45 @@ class Sail
         // Authenticate user
         User::authenticate();
 
-        // Load system containers
-        static::loadContainerFromComposer(dirname(__DIR__));
-
         // Load all site's containers
         if (!$skipContainers) {
+            Debug::eventStart('Initialize Containers', 'green');
             static::loadContainerFromComposer(static::$workingDirectory);
+            Debug::eventEnd('Initialize Containers');
         }
 
         // Load all site's modules
+        Debug::eventStart('Initialize Modules', 'purple');
         static::loadModulesFromComposer(static::$workingDirectory);
+        Debug::eventEnd('Initialize Modules');
 
         // Ensure peak performance from the database
         static::ensurePerformance();
+    }
+
+    /**
+     *
+     * Setup the .env
+     *
+     * @return void
+     *
+     */
+    private static function setupEnv(): void
+    {
+        // Load .env file
+        $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
+        $dotenv->load();
+
+        // Setup Clockwork for debugging info
+        if ($_ENV['DEBUG'] === 'on') {
+            static::$clockwork = Clockwork::init([
+                'storage_files_path' => static::$workingDirectory . '/storage/debug',
+                'register_helper' => true
+            ]);
+
+            register_shutdown_function('static::shutdownHandler');
+            Debug::eventStart('Running SailCMS', 'blue');
+        }
     }
 
     /**
@@ -368,6 +405,7 @@ class Sail
     public static function initForCron(string $execPath): void
     {
         static::$workingDirectory = dirname($execPath);
+        static::setupEnv();
         static::$isCLI = true;
 
         $securitySettings = [];
@@ -399,6 +437,7 @@ class Sail
     public static function initForCli(string $execPath): void
     {
         static::$workingDirectory = $execPath;
+        static::setupEnv();
         static::$isCLI = true;
 
         $securitySettings = [];
@@ -501,6 +540,8 @@ class Sail
      * @param  string  $env
      * @param  string  $forceIOPath
      * @return void
+     * @throws DatabaseException
+     *
      */
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
     {
@@ -554,6 +595,38 @@ class Sail
     public static function siteId(): string
     {
         return static::$siteID;
+    }
+
+    /**
+     *
+     * Handle shutdowns to end the debugger
+     *
+     * @return void
+     *
+     */
+    public static function shutdownHandler(): void
+    {
+        Debug::eventEnd('Running SailCMS');
+
+        if (!static::$isGraphQL) {
+            static::$clockwork->requestProcessed();
+        }
+    }
+
+    /**
+     *
+     * Get the clockwork instance
+     *
+     * @return Clockwork|null
+     *
+     */
+    public static function getClockWork(): ?Clockwork
+    {
+        if ($_ENV['DEBUG'] === 'on') {
+            return static::$clockwork;
+        }
+
+        return null;
     }
 
     /**

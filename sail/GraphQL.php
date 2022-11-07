@@ -13,6 +13,7 @@ use League\Flysystem\FilesystemException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
 use SailCMS\Middleware\Data;
@@ -242,6 +243,14 @@ class GraphQL
         static::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
         static::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
         static::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+
+        // Emails
+        static::addQueryResolver('email', Emails::class, 'email');
+        static::addQueryResolver('emails', Emails::class, 'emails');
+        static::addMutationResolver('createEmail', Emails::class, 'createEmail');
+        static::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
+        static::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
+        static::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

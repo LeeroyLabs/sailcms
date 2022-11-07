@@ -50,6 +50,7 @@ class Filesystem
 
         static::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
         static::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/'));
+        static::$adapters['debug'] = new FS(new LocalFilesystemAdapter($wd . '/storage/debug/'));
         static::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/logs/'));
         static::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));
         static::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/install/'));

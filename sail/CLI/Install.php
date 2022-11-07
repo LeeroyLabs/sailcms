@@ -36,6 +36,7 @@ class Install extends Command
             'web/public/js',
             'web/public/fonts',
             'storage',
+            'storage/debug',
             'storage/fs',
             'storage/fs/uploads',
             'storage/fs/logs',
@@ -63,6 +64,7 @@ class Install extends Command
             'storage/fs/uploads/.gitkeep' => '',
             'storage/fs/logs/.gitkeep' => '',
             'storage/cache/.gitkeep' => '',
+            'storage/debug/.gitkeep' => '',
             'locales/en.yaml' => '',
             'templates/default/email/account.twig' => 'account.email.twig'
         ];

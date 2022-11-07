@@ -2,6 +2,7 @@
 
 namespace SailCMS\Database;
 
+use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use MongoDB\Client;
 
@@ -22,6 +23,8 @@ class Database
             $options = [];
             $extra = '';
 
+            Debug::eventStart('Connect to MongoDB');
+
             if ($_ENV['DATABASE_DSN'] !== '') {
                 self::$client = new Client($_ENV['DATABASE_DSN'], []);
             } elseif ($_ENV['DATABASE_USER']) {
@@ -32,6 +35,8 @@ class Database
             } else {
                 self::$client = new Client("mongodb://{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}", $options);
             }
+
+            Debug::eventEnd('Connect to MongoDB');
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }

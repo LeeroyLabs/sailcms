@@ -3,6 +3,7 @@
 namespace SailCMS\Templating;
 
 use League\Flysystem\FilesystemException;
+use SailCMS\Debug;
 use SailCMS\Errors\FileException;
 use SailCMS\Filesystem;
 use SailCMS\Sail;
@@ -64,6 +65,8 @@ class Engine
      */
     public function render(string $file, object $data): string
     {
+        $st = microtime(true);
+
         $fs = Filesystem::manager();
         $target = 'root://templates/' . $file . '.twig';
         $target2 = 'cms://' . $file . '.twig';
@@ -85,6 +88,8 @@ class Engine
         } else {
             throw new FileException("Template {$file} does not exist, please make sure it exists before using it", 0404);
         }
+
+        Debug::view($file, (array)$data, $st);
 
         return $html;
     }

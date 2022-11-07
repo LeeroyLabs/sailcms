@@ -18,6 +18,10 @@ type Query {
     # Assets
     asset(id: ID!): Asset
     assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
+
+    # Emails
+    email(id: ID!): Email
+    emails: [Email!]!
     #{CUSTOM_QUERIES}#
 }
 
@@ -38,6 +42,12 @@ type Mutation {
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
     deleteAsset(id: ID!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
+
+    # Emails
+    createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
+    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    deleteEmail(id: ID!): Boolean!
+    deleteEmailBySlug(slug: String!): Boolean!
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -159,6 +169,30 @@ input SizeInput {
     width: Int!
     height: Int!
     crop: String!
+}
+
+type Email {
+    _id: ID!
+    name: String!
+    slug: String!
+    subject: LocaleField!
+    title: LocaleField!
+    content: LocaleField!
+    cta: LocaleField!
+    cta_title: LocaleField!
+    template: String!
+    created_at: Int!
+    last_modified: Int!
+}
+
+input EmailInput {
+    name: String!
+    subject: LocaleFieldInput!
+    title: LocaleFieldInput!
+    content: LocaleFieldInput!
+    cta: LocaleFieldInput!
+    cta_title: LocaleFieldInput!
+    template: String!
 }
 
 #{CUSTOM_TYPES}#
