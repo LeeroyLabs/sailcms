@@ -270,6 +270,18 @@ class Entry extends BaseModel
         return $this->create($data);
     }
 
+    /**
+     *
+     * Update an entry with a given entry id or entry instance
+     *
+     * @param  Entry|string      $entry
+     * @param  array|Collection  $data
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
     public function updateById(Entry|string $entry, array|Collection $data): bool
     {
         $this->hasPermission();
@@ -291,6 +303,8 @@ class Entry extends BaseModel
      * @param  string  $entryId
      * @param  bool    $soft
      * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
      *
      */
