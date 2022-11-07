@@ -13,7 +13,6 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\FileException;
 use SailCMS\Event;
 use SailCMS\Mail;
-use SailCMS\Sail;
 use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
@@ -536,7 +535,7 @@ class User extends BaseModel
      */
     public function verifyUserPass(string $email, string $password): string
     {
-        $user = $this->findOne(['email' => $email])->exec(true);
+        $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
 
         if ($user && Security::verifyPassword($password, $user->password)) {
             if ($user->meta->flags->use2fa) {
@@ -562,7 +561,7 @@ class User extends BaseModel
      */
     public function verifyTemporaryToken(string $token): ?User
     {
-        $user = $this->findOne(['temporary_token' => $token])->exec();
+        $user = $this->findOne(['temporary_token' => $token, 'validated' => true])->exec();
 
         if ($user) {
             // Set session data, get token
@@ -598,7 +597,7 @@ class User extends BaseModel
      */
     public function login(string $email, string $password): bool
     {
-        $user = $this->findOne(['email' => $email])->exec(true);
+        $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
 
         if ($user && Security::verifyPassword($password, $user->password)) {
             // Set session data, get token
@@ -712,44 +711,6 @@ class User extends BaseModel
 
     /**
      *
-     * Validate email
-     *
-     * @param  string  $email
-     * @param  string  $id
-     * @param  bool    $throw
-     * @return bool
-     * @throws DatabaseException
-     *
-     */
-    private function validateEmail(string $email, string $id = '', bool $throw = false): bool
-    {
-        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            // Check that it does not exist already
-            $found = $this->getByEmail($email);
-
-            // Error if the email already used by someone that is not the updated user's id
-            if ($found) {
-                if ((string)$found->_id !== $id) {
-                    if ($throw) {
-                        throw new DatabaseException("Cannot use email '{$email}', already in use.", 0403);
-                    }
-
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        if ($throw) {
-            throw new DatabaseException("Email '{$email}' is not a valid email.", 0400);
-        }
-
-        return false;
-    }
-
-    /**
-     *
      * Remove a role from all users
      *
      * @param  string  $role
@@ -781,6 +742,42 @@ class User extends BaseModel
         if ($record) {
             $instance->updateOne(['validation_code' => $code], ['$set' => ['validation_code' => '', 'validated' => true]]);
             return true;
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Validate email
+     *
+     * @param  string  $email
+     * @param  string  $id
+     * @param  bool    $throw
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    private function validateEmail(string $email, string $id = '', bool $throw = false): bool
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            // Check that it does not exist already
+            $found = $this->getByEmail($email);
+
+            // Error if the email already used by someone that is not the updated user's id
+            if ($found && (string)$found->_id !== $id) {
+                if ($throw) {
+                    throw new DatabaseException("Cannot use email '{$email}', already in use.", 0403);
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        if ($throw) {
+            throw new DatabaseException("Email '{$email}' is not a valid email.", 0400);
         }
 
         return false;

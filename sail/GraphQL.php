@@ -225,6 +225,7 @@ class GraphQL
         static::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
         static::addMutationResolver('updateUser', Users::class, 'updateUser');
         static::addMutationResolver('deleteUser', Users::class, 'deleteUser');
+        static::addMutationResolver('validateAccount', Users::class, 'validateAccount');
 
         // Authentication
         static::addQueryResolver('authenticate', Users::class, 'authenticate');
