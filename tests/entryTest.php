@@ -70,7 +70,7 @@ test('Update an entry type', function ()
     }
 });
 
-test("Create an entry with the default type", function ()
+test('Create an entry with the default type', function ()
 {
     $model = new Entry();
 
@@ -81,16 +81,94 @@ test("Create an entry with the default type", function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(null);
     } catch (Exception $exception) {
-        print_r($exception);
+//        print_r($exception->getMessage());
+        expect(true)->toBe(false);
         expect(true)->toBe(false);
     }
 });
 
-// Fail to create a live entry because there is already a homepage
-// Fail to create a live entry because url already in use
-// Update an entry with an entry type
-// Create an entry with an entry type
-// Delete an entry with an entry type
+test('Fail to create a live entry because there is already a homepage', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+
+    try {
+        $entryModel->createOne('fr', true, EntryStatus::LIVE, 'Test home', null, []);
+        expect(true)->toBe(false);
+    } catch (EntryException $exception) {
+        // Should be going here because there is already a homepage
+        //print_r($exception->getMessage());
+        expect(true)->toBe(true);
+    } catch (Exception $exception) {
+        //print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Create an entry with an entry type', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+
+    try {
+        $entry = $entryModel->createOne('fr', false, EntryStatus::LIVE, 'Test', 'test', []);
+        expect($entry->title)->toBe('Test');
+        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->locale)->toBe('fr');
+        expect($entry->url)->toBe('test-pages/test');
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Fail to create a live entry because url already in use', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+
+    try {
+        $entry = $entryModel->createOne('fr', false, EntryStatus::LIVE, 'Test2', 'test', []);
+        expect(true)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+    }
+});
+
+test('Update an entry with an entry type', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+    $before = $entry->dates->updated;
+
+    try {
+        $result = $entryModel->updateById($entry, [
+            'slug' => 'test-de-test',
+        ]);
+        $entry = $entryModel->one([
+            'title' => 'Test'
+        ]);
+        expect($result)->toBe(true);
+        expect($entry)->not->toBe(null);
+        expect($entry->dates->updated)->toBeGreaterThan($before);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Hard delete an entry with an entry type', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $result = $entryModel->delete($entry->_id, false);
+        expect($result)->toBe(true);
+    } catch (EntryException $exception) {
+        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
 
 test('Update an entry with the default type', function ()
 {

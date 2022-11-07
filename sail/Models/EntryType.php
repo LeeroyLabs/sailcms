@@ -106,6 +106,20 @@ class EntryType extends BaseModel
 
     /**
      *
+     * @param $handle
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public static function getEntryModelByHandle($handle): Entry
+    {
+        $entryType = (new static())->getByHandle('test');
+        return $entryType->getEntryModel();
+    }
+
+    /**
+     *
      * Shortcut to get entry model and make queries
      *
      * @return Entry
@@ -226,6 +240,7 @@ class EntryType extends BaseModel
     /**
      *
      * Does the user has permission to do modification on entry type
+     * TODO had read permission
      *
      * @throws DatabaseException
      * @throws ACLException

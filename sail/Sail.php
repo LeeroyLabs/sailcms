@@ -127,7 +127,7 @@ class Sail
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
             static::$isGraphQL = true;
-            $data = Graphql::init();
+            $data = GraphQL::init();
 
             if ($_ENV['DEBUG'] === 'on') {
                 static::$clockwork->requestProcessed();
