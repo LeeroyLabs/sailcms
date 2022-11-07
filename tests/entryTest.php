@@ -16,7 +16,7 @@ beforeAll(function ()
 
     $authorModel = new User();
     $username = new Username('Test', 'Entry', 'Test Entry');
-    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', new Collection([]), 'en', '', null);
+    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', new Collection([]));
     User::$currentUser = $authorModel->getById($userId);
 });
 
@@ -110,7 +110,6 @@ test('Update an entry with the default type', function ()
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });

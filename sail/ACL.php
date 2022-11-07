@@ -29,10 +29,6 @@ class ACL
 
             // Load all system ACL
             static::$loadedACL->pushSpread(...System::getAll()->unwrap());
-
-//            static::loadCmsACL();
-//            print_r(static::$loadedACL);
-//            die();
         }
     }
 
@@ -293,19 +289,20 @@ class ACL
 
     /**
      *
-     *
+     * Load CMS ACL from entry type
      *
      * @return void
      * @throws DatabaseException
      *
      */
-    private static function loadCmsACL(): void
+    public static function loadCmsACL(): void
     {
         $entryACL = new Collection([]);
+        $entryTypeModel = new EntryType();
 
         $entryTypes = EntryType::getAll();
 
-        $entryTypes->each(function ($key, $value) use ($entryACL)
+        $entryTypes->each(function ($key, $value) use ($entryACL, $entryTypeModel)
         {
             $entryACL->push(new ACLObject($value->handle, ACLType::READ));
             $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE));

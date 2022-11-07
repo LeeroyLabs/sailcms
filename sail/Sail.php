@@ -25,8 +25,8 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use Whoops\Handler\JsonResponseHandler;
-use Whoops\Handler\PrettyPageHandler;
 use Whoops\Handler\PlainTextHandler;
+use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
 class Sail
@@ -132,7 +132,7 @@ class Sail
             if ($_ENV['DEBUG']) {
                 static::$clockwork->requestProcessed();
             }
-            
+
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($data, JSON_THROW_ON_ERROR);
             exit();
@@ -179,6 +179,9 @@ class Sail
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
 
         // Load Sites
         static::loadAndDetectSites();
