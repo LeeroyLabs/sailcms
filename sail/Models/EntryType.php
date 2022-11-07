@@ -106,6 +106,20 @@ class EntryType extends BaseModel
 
     /**
      *
+     * @param $handle
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public static function getEntryModelByHandle($handle): Entry
+    {
+        $entryType = (new static())->getByHandle('test');
+        return $entryType->getEntryModel();
+    }
+
+    /**
+     *
      * Shortcut to get entry model and make queries
      *
      * @return Entry
@@ -115,6 +129,7 @@ class EntryType extends BaseModel
      */
     public function getEntryModel(): Entry
     {
+        print_r($this->collection_name);
         return new Entry($this->collection_name);
     }
 

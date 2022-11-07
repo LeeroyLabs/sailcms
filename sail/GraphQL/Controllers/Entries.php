@@ -29,8 +29,7 @@ class Entries
         $id = $args->get('id');
 
         if ($type) {
-            $type = (new EntryType())->getByHandle($type);
-            $entryModel = $type->getEntryModel();
+            $entryModel = EntryType::getEntryModelByHandle($type);
         } else {
             $entryModel = new Entry();
         }

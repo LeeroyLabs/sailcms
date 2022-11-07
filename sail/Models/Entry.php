@@ -154,6 +154,40 @@ class Entry extends BaseModel
 
     /**
      *
+     * Count the entry by url
+     *
+     * @param  string       $url
+     * @param  bool         $isHomepage
+     * @param  string|null  $currentId
+     * @return int
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public static function countByUrl(string $url, bool $isHomepage, ?string $currentId = null): int
+    {
+        $result = 0;
+        $availableTypes = EntryType::getAll();
+
+        $filters = ['url' => $url, 'status' => EntryStatus::LIVE->value];
+        if ($isHomepage) {
+            $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
+        }
+        if ($currentId) {
+            $filters['_id'] = ['$ne' => new ObjectId($currentId)];
+        }
+
+        $availableTypes->each(function ($key, $value) use ($filters, $url, &$result)
+        {
+            $entry = new Entry($value->collection_name);
+            $result += $entry->count($filters);
+        });
+
+        return $result;
+    }
+
+    /**
+     *
      * Get an entry with filters
      *
      * @param $filters
@@ -195,6 +229,7 @@ class Entry extends BaseModel
     private function validateUrlAvailability(string $status, bool $isHomepage, ?string $slug, ?string $currentId = null)
     {
         if ($status == EntryStatus::LIVE->value) {
+            /* Not needed anymore since we use findbyurl method
             $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
 
             if ($currentId) {
@@ -209,10 +244,13 @@ class Entry extends BaseModel
                 // so it's why I think we should keep an exception and let the user change the is_homepage to the other entry.
                 throw new EntryException(self::HOMEPAGE_ALREADY_EXISTS);
             }
-            // TODO check if url is available
+            */
+
+            // Check if url is available
             $newUrl = $this->getRelativeUrl($slug, $isHomepage);
-            $content = self::findByURL($newUrl, false);
-            if ($content) {
+            $count = self::countByUrl($newUrl, $isHomepage, $currentId);
+
+            if ($count > 0) {
                 throw new EntryException(sprintf(self::URL_NOT_AVAILABLE, $newUrl));
             }
         }
@@ -300,15 +338,14 @@ class Entry extends BaseModel
      *
      * Delete an entry in soft mode or definitively
      *
-     * @param  string  $entryId
-     * @param  bool    $soft
+     * @param  string|ObjectId  $entryId
+     * @param  bool             $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     *
      */
-    public function delete(string $entryId, bool $soft = true): bool
+    public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
         $this->hasPermission();
 
@@ -414,7 +451,7 @@ class Entry extends BaseModel
         $title = $data->get('title');
         $slug = $data->get('slug');
         $author = User::$currentUser; // Handle permission and possible value from the call
-        // TODO implements others fields: categories content alternates site_id
+        // TODO implements others fields: parent_id categories content alternates
 
         // Test if url of the entry is available and if there is another isHomepage.
         $this->validateUrlAvailability($status, $is_homepage, $slug);
@@ -430,6 +467,7 @@ class Entry extends BaseModel
         try {
             $entryId = $this->insert([
                 'entry_type_id' => (string)$this->entryType->_id,
+                'site_id' => Sail::siteId(),
                 'locale' => $locale,
                 'is_homepage' => $is_homepage,
                 'status' => $status,
@@ -440,7 +478,6 @@ class Entry extends BaseModel
                 'dates' => $dates,
                 // TODO
                 'parent_id' => null,
-                'site_id' => Sail::siteId(),
                 'alternates' => new Collection([]),
                 'categories' => new Collection([]),
                 'content' => new Collection([])
@@ -460,6 +497,7 @@ class Entry extends BaseModel
      * @param  Collection  $data
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function update(Entry $entry, Collection $data): bool
@@ -531,10 +569,10 @@ class Entry extends BaseModel
      * @throws EntryException
      *
      */
-    private function hardDelete(string $entryTypeId): bool
+    private function hardDelete(string|ObjectId $entryTypeId): bool
     {
         try {
-            $qtyDeleted = $this->deleteById($entryTypeId);
+            $qtyDeleted = $this->deleteById((string)$entryTypeId);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
