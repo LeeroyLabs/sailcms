@@ -104,9 +104,8 @@ class Tfa extends BaseModel
             $code3 = $record->codes->at(2);
             $code4 = $record->codes->at(3);
 
-
             if ($code1 === $codes[0] && $code2 === $codes[1] && $code3 === $codes[2] && $code4 === $codes[3]) {
-                User::loginFromRescue($record->user_id);
+                return User::loginFromRescue($record->user_id);
             }
         }
 
