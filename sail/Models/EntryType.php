@@ -129,7 +129,6 @@ class EntryType extends BaseModel
      */
     public function getEntryModel(): Entry
     {
-        print_r($this->collection_name);
         return new Entry($this->collection_name);
     }
 
@@ -241,6 +240,7 @@ class EntryType extends BaseModel
     /**
      *
      * Does the user has permission to do modification on entry type
+     * TODO had read permission
      *
      * @throws DatabaseException
      * @throws ACLException

@@ -37,11 +37,11 @@ class ACL
      * Get a permission in the READ list
      *
      * @param  string  $name
-     * @return Types\ACL
+     * @return Types\ACL|null
      * @throws ACLException
      *
      */
-    public static function read(string $name): Types\ACL
+    public static function read(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
@@ -53,7 +53,7 @@ class ACL
             }
         });
 
-        if ($permissionValue === null) {
+        if ($permissionValue === null && !Sail::isCLI()) {
             throw new ACLException("No READ permission found under '{$name}'", 0404);
         }
 
@@ -65,11 +65,11 @@ class ACL
      * Get a permission in the WRITE OR READWRITE list
      *
      * @param  string  $name
-     * @return Types\ACL
+     * @return Types\ACL|null
      * @throws ACLException
      *
      */
-    public static function write(string $name): Types\ACL
+    public static function write(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
@@ -81,7 +81,7 @@ class ACL
             }
         });
 
-        if ($permissionValue === null) {
+        if ($permissionValue === null && !Sail::isCLI()) {
             throw new ACLException("No WRITE or READWRITE permission found under '{$name}'", 0404);
         }
 
@@ -93,11 +93,11 @@ class ACL
      * Get a permission in the READWRITE list
      *
      * @param  string  $name
-     * @return Types\ACL
+     * @return Types\ACL|null
      * @throws ACLException
      *
      */
-    public static function readwrite(string $name): Types\ACL
+    public static function readwrite(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
@@ -109,7 +109,7 @@ class ACL
             }
         });
 
-        if ($permissionValue === null) {
+        if ($permissionValue === null && !Sail::isCLI()) {
             throw new ACLException("No READWRITE permission found under '{$name}'", 0404);
         }
 
@@ -178,7 +178,7 @@ class ACL
      * @throws ACLException
      *
      */
-    public static function hasPermission(string|User|null $user, Types\ACL ...$permissions): bool
+    public static function hasPermission(string|User|null $user, ?Types\ACL ...$permissions): bool
     {
         // CLI user is allowed RW on everything
         if (Sail::isCLI()) {
@@ -298,11 +298,10 @@ class ACL
     public static function loadCmsACL(): void
     {
         $entryACL = new Collection([]);
-        $entryTypeModel = new EntryType();
 
         $entryTypes = EntryType::getAll();
 
-        $entryTypes->each(function ($key, $value) use ($entryACL, $entryTypeModel)
+        $entryTypes->each(function ($key, $value) use ($entryACL)
         {
             $entryACL->push(new ACLObject($value->handle, ACLType::READ));
             $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE));

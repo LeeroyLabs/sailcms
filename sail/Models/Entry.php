@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
@@ -396,6 +397,7 @@ class Entry extends BaseModel
     /**
      *
      * Check if current user has permission
+     *  TODO had read permission
      *
      * @return void
      * @throws DatabaseException
@@ -405,9 +407,9 @@ class Entry extends BaseModel
      */
     private function hasPermission(): void
     {
-//        if (!ACL::hasPermission(User::$currentUser, ACL::write($this->entryType->handle))) {
-//            throw new EntryException(self::CANNOT_CREATE_ENTRY);
-//        }
+        if (!ACL::hasPermission(User::$currentUser, ACL::write($this->entryType->handle))) {
+            throw new EntryException(self::CANNOT_CREATE_ENTRY);
+        }
     }
 
     /**
