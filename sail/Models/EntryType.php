@@ -3,12 +3,12 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
-use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 
 class EntryType extends BaseModel
@@ -41,6 +41,11 @@ class EntryType extends BaseModel
             'url_prefix',
             'entry_type_layout_id'
         ];
+    }
+
+    public function init(): void
+    {
+        $this->setPermissionGroup('entrytype');
     }
 
     /**
@@ -173,10 +178,12 @@ class EntryType extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
+     *
      */
     public function createOne(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         return $this->create($handle, $title, $url_prefix, $entry_type_layout_id);
     }
@@ -191,10 +198,12 @@ class EntryType extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
+     *
      */
     public function updateByHandle(string $handle, Collection $data): bool
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
@@ -214,11 +223,12 @@ class EntryType extends BaseModel
      * @throws ACLException
      * @throws EntryException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function hardDelete(string $entryTypeId): bool
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         // TODO check if there is entry content before deleted it
 
@@ -249,23 +259,6 @@ class EntryType extends BaseModel
         }
 
         return parent::processOnStore($field, $value);
-    }
-
-    /**
-     *
-     * Does the user has permission to do modification on entry type
-     * TODO add read permission
-     *
-     * @throws DatabaseException
-     * @throws ACLException
-     * @throws EntryException
-     *
-     */
-    private function hasPermission()
-    {
-        if (!ACL::hasPermission(User::$currentUser, ACL::write('entrytype'))) {
-            throw new EntryException(self::CANNOT_CREATE_ENTRY_TYPE);
-        }
     }
 
     /**

@@ -3,12 +3,12 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
-use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
 use SailCMS\Sail;
 use SailCMS\Types\Authors;
@@ -63,6 +63,11 @@ class Entry extends BaseModel
         $collection = $this->entryType->collection_name;
 
         parent::__construct($collection);
+    }
+
+    public function init(): void
+    {
+        $this->setPermissionGroup($this->entryType->handle);
     }
 
     public function fields(bool $fetchAllFields = false): array
@@ -316,12 +321,13 @@ class Entry extends BaseModel
      * @throws DatabaseException
      * @throws EntryException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function createOne(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         // TODO If author is set, the current user and author must have permission (?)
-        $this->hasPermission();
+        $this->hasPermissions();
 
         if ($status instanceof EntryStatus) {
             $status = $status->value;
@@ -353,11 +359,12 @@ class Entry extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function updateById(Entry|string $entry, array|Collection $data): bool
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         if (is_string($entry)) {
             $entry = $this->findById($entry);
@@ -379,10 +386,12 @@ class Entry extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
+     *
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         if ($soft) {
             $entry = $this->findById($entryId);
@@ -426,24 +435,6 @@ class Entry extends BaseModel
         }
 
         return parent::processOnStore($field, $value);
-    }
-
-    /**
-     *
-     * Check if current user has permission
-     *  TODO add read permission
-     *
-     * @return void
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws ACLException
-     *
-     */
-    private function hasPermission(): void
-    {
-        if (!ACL::hasPermission(User::$currentUser, ACL::write($this->entryType->handle))) {
-            throw new EntryException(self::CANNOT_CREATE_ENTRY);
-        }
     }
 
     /**
