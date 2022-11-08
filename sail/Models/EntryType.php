@@ -134,6 +134,20 @@ class EntryType extends BaseModel
 
     /**
      *
+     * Get an entryType by id
+     *
+     * @param  string  $id
+     * @return EntryType|null
+     * @throws DatabaseException
+     *
+     */
+    public function getById(string $id): ?EntryType
+    {
+        return $this->findById($id)->exec();
+    }
+
+    /**
+     *
      * Get an entryType by handle
      *
      * @param  string  $handle
@@ -141,7 +155,7 @@ class EntryType extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function getByHandle(string $handle): EntryType|null
+    public function getByHandle(string $handle): ?EntryType
     {
         return $this->findOne(['handle' => $handle])->exec();
     }
@@ -340,6 +354,7 @@ class EntryType extends BaseModel
     {
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');
+        // TODO entry type layout id
         $update = [];
 
         if ($title) {
