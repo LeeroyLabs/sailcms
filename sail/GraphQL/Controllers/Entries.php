@@ -11,9 +11,21 @@ use SailCMS\Models\EntryType;
 
 class Entries
 {
-    public function types(mixed $obj, Collection $args, Context $context): Collection
+    public function entryTypes(mixed $obj, Collection $args, Context $context): Collection
     {
-        return EntryType::getAll();
+        $entryTypes = EntryType::getAll();
+        $result = new Collection([]);
+
+        $entryTypes->each(function ($key, $value) use ($result)
+        {
+            $result->push([
+                "_id" => $value->_id,
+                "title" => $value->title,
+                "handle" => $value->handle,
+                "urlPrefix" => $value->url_prefix
+            ]);
+        });
+        return $result;
     }
 
     /**

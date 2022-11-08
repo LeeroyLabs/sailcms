@@ -257,7 +257,7 @@ class GraphQL
         static::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
 
         // Entries
-        static::addQueryResolver('entryTypes', Entries::class, 'types');
+        static::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');
