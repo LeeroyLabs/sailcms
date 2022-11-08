@@ -9,6 +9,7 @@ use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 
@@ -40,6 +41,11 @@ class Email extends BaseModel
             'created_at',
             'last_modified'
         ];
+    }
+
+    public function init(): void
+    {
+        $this->setPermissionGroup('emails');
     }
 
     protected function processOnFetch(string $field, mixed $value): mixed
@@ -89,15 +95,13 @@ class Email extends BaseModel
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function getList(): Collection
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('emails'))) {
-            return new Collection($this->find([])->exec());
-        }
-
-        return new Collection([]);
+        $this->hasPermissions(true);
+        return new Collection($this->find([])->exec());
     }
 
     /**
@@ -115,6 +119,7 @@ class Email extends BaseModel
      * @throws EmailException
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function create(
@@ -126,31 +131,29 @@ class Email extends BaseModel
         LocaleField|Collection|array $cta_title,
         string $template
     ): bool {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('emails'))) {
-            $slug = Text::deburr(Text::snakeCase($name));
-            $record = $this->findOne(['slug' => $slug])->exec();
+        $this->hasPermissions();
 
-            if ($record) {
-                throw new EmailException('Email with this name already exists, please change the name', 0403);
-            }
+        $slug = Text::deburr(Text::snakeCase($name));
+        $record = $this->findOne(['slug' => $slug])->exec();
 
-            $this->insert([
-                'name' => $name,
-                'slug' => $slug,
-                'subject' => $subject,
-                'title' => $title,
-                'content' => $content,
-                'cta' => $cta,
-                'cta_title' => $cta_title,
-                'template' => $template,
-                'created_at' => time(),
-                'last_modified' => time()
-            ]);
-
-            return true;
+        if ($record) {
+            throw new EmailException('Email with this name already exists, please change the name', 0403);
         }
 
-        return false;
+        $this->insert([
+            'name' => $name,
+            'slug' => $slug,
+            'subject' => $subject,
+            'title' => $title,
+            'content' => $content,
+            'cta' => $cta,
+            'cta_title' => $cta_title,
+            'template' => $template,
+            'created_at' => time(),
+            'last_modified' => time()
+        ]);
+
+        return true;
     }
 
     /**
@@ -167,6 +170,8 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
+     *
      */
     public function update(
         string|null $name = null,
@@ -195,6 +200,7 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function updateById(
@@ -227,6 +233,7 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function updateBySlug(
@@ -249,6 +256,7 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function remove(): bool
@@ -264,6 +272,7 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function removeById(ObjectId|string $id): bool
@@ -282,6 +291,7 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function removeBySlug(string $slug): bool
@@ -304,6 +314,7 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     private static function updateBy(
@@ -316,46 +327,44 @@ class Email extends BaseModel
         LocaleField|Collection|array|null $cta_title = null,
         string|null $template = null
     ): bool {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('emails'))) {
-            $instance = new static();
-            $set = ['last_modified' => time()];
+        $instance = new static();
+        $instance->hasPermissions();
 
-            if ($name !== null) {
-                $set['name'] = $name;
-            }
+        $set = ['last_modified' => time()];
 
-            if ($subject !== null) {
-                $set['subject'] = $subject;
-            }
-
-            if ($title !== null) {
-                $set['title'] = $title;
-            }
-
-            if ($content !== null) {
-                $set['content'] = $content;
-            }
-
-            if ($cta !== null) {
-                $set['cta'] = $cta;
-            }
-
-            if ($cta_title !== null) {
-                $set['cta_title'] = $cta_title;
-            }
-
-            if ($template !== null && $template !== '') {
-                $set['template'] = $template;
-            }
-
-            $instance->updateOne($query, [
-                '$set' => $set
-            ]);
-
-            return true;
+        if ($name !== null) {
+            $set['name'] = $name;
         }
 
-        return false;
+        if ($subject !== null) {
+            $set['subject'] = $subject;
+        }
+
+        if ($title !== null) {
+            $set['title'] = $title;
+        }
+
+        if ($content !== null) {
+            $set['content'] = $content;
+        }
+
+        if ($cta !== null) {
+            $set['cta'] = $cta;
+        }
+
+        if ($cta_title !== null) {
+            $set['cta_title'] = $cta_title;
+        }
+
+        if ($template !== null && $template !== '') {
+            $set['template'] = $template;
+        }
+
+        $instance->updateOne($query, [
+            '$set' => $set
+        ]);
+
+        return true;
     }
 
     /**
@@ -366,17 +375,14 @@ class Email extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     private static function removeBy(array $query): bool
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('emails'))) {
-            $instance = new static();
-
-            $instance->deleteOne($query);
-            return true;
-        }
-
-        return false;
+        $instance = new static();
+        $instance->hasPermissions();
+        $instance->deleteOne($query);
+        return true;
     }
 }

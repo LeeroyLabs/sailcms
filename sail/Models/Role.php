@@ -9,6 +9,7 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 use SailCMS\Types\RoleConfig;
 
@@ -25,6 +26,11 @@ class Role extends BaseModel
         return ['_id', 'name', 'slug', 'description', 'level', 'permissions'];
     }
 
+    public function init(): void
+    {
+        $this->setPermissionGroup('role');
+    }
+
     /**
      *
      * Add a role
@@ -36,37 +42,36 @@ class Role extends BaseModel
      * @throws DatabaseException
      * @throws ACLException
      * @throws RuntimeException
+     * @throws PermissionException
      *
      */
     public function create(string $name, string $description, Collection|array $permissions): string
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('role'))) {
-            $totalACL = ACL::count();
-            $slug = Text::slugify($name);
+        $this->hasPermissions();
 
-            // Validate, if not usable, throw an exception
-            $this->usable($slug, '', true);
+        $totalACL = ACL::count();
+        $slug = Text::slugify($name);
 
-            if (is_array($permissions)) {
-                $requestedACL = count($permissions);
-                $permissions = new Collection($permissions);
-            } else {
-                $requestedACL = $permissions->length;
-            }
+        // Validate, if not usable, throw an exception
+        $this->usable($slug, '', true);
 
-            if ($requestedACL === $totalACL) {
-                $permissions = new Collection(['*']);
-            }
-
-            return $this->insert([
-                'name' => $name,
-                'slug' => $slug,
-                'description' => $description,
-                'permissions' => $permissions
-            ]);
+        if (is_array($permissions)) {
+            $requestedACL = count($permissions);
+            $permissions = new Collection($permissions);
+        } else {
+            $requestedACL = $permissions->length;
         }
 
-        return '';
+        if ($requestedACL === $totalACL) {
+            $permissions = new Collection(['*']);
+        }
+
+        return $this->insert([
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $description,
+            'permissions' => $permissions
+        ]);
     }
 
     /**
@@ -81,52 +86,51 @@ class Role extends BaseModel
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function update(string|ObjectId $id, string $name = '', int $level = -1, string $description = '', Collection|array $permissions = []): bool
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('role'))) {
-            $id = $this->ensureObjectId($id);
-            $totalACL = ACL::count();
-            $update = [];
+        $this->hasPermissions();
 
-            // We do not allow for a role to be higher than 950 (Admin) (super admin is 1000)
-            if ($level > -1) {
-                if ($level >= 950) {
-                    $level = 900;
-                }
+        $id = $this->ensureObjectId($id);
+        $totalACL = ACL::count();
+        $update = [];
 
-                $update['level'] = $level;
+        // We do not allow for a role to be higher than 950 (Admin) (super admin is 1000)
+        if ($level > -1) {
+            if ($level >= 950) {
+                $level = 900;
             }
 
-            if (!empty($permissions)) {
-                if (is_array($permissions)) {
-                    $requestedACL = count($permissions);
-                    $permissions = new Collection($permissions);
-                } else {
-                    $requestedACL = $permissions->length;
-                }
-
-                if ($requestedACL === $totalACL) {
-                    $permissions = new Collection(['*']);
-                }
-
-                $update['permissions'] = $permissions;
-            }
-
-            if (trim($name) !== '') {
-                $update['name'] = trim($name);
-            }
-
-            if (trim($description)) {
-                $update['description'] = trim($description);
-            }
-
-            $this->updateOne(['_id' => $id], ['$set' => $update]);
-            return true;
+            $update['level'] = $level;
         }
 
-        return false;
+        if (!empty($permissions)) {
+            if (is_array($permissions)) {
+                $requestedACL = count($permissions);
+                $permissions = new Collection($permissions);
+            } else {
+                $requestedACL = $permissions->length;
+            }
+
+            if ($requestedACL === $totalACL) {
+                $permissions = new Collection(['*']);
+            }
+
+            $update['permissions'] = $permissions;
+        }
+
+        if (trim($name) !== '') {
+            $update['name'] = trim($name);
+        }
+
+        if (trim($description)) {
+            $update['description'] = trim($description);
+        }
+
+        $this->updateOne(['_id' => $id], ['$set' => $update]);
+        return true;
     }
 
     /**
@@ -137,22 +141,22 @@ class Role extends BaseModel
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function remove(string|ObjectId $id): bool
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('role'))) {
-            $role = $this->findById($id)->exec();
+        $this->hasPermissions();
+        $role = $this->findById($id)->exec();
 
-            if ($role) {
-                $slug = $role->slug;
+        if ($role) {
+            $slug = $role->slug;
 
-                if ($slug !== 'super-administrator' && $slug !== 'administrator') {
-                    // Update All users (remove this role from them)
-                    User::removeRoleFromAll($slug);
-                    $this->deleteById($id);
-                    return true;
-                }
+            if ($slug !== 'super-administrator' && $slug !== 'administrator') {
+                // Update All users (remove this role from them)
+                User::removeRoleFromAll($slug);
+                $this->deleteById($id);
+                return true;
             }
         }
 
@@ -166,18 +170,15 @@ class Role extends BaseModel
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function list(): Collection
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('role'))) {
-            $userRoles = User::$currentUser->roles;
-            $roles = new Collection($this->find([])->exec());
+        $this->hasPermissions(true);
 
-            return $roles->intersect($userRoles);
-        }
-
-        return new Collection([]);
+        $userRoles = User::$currentUser->roles;
+        return (new Collection($this->find([])->exec()))->intersect($userRoles);
     }
 
     /**
@@ -188,24 +189,23 @@ class Role extends BaseModel
      * @return RoleConfig|null
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function getById(string|ObjectId $id): ?RoleConfig
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('role'))) {
-            $role = $this->findById($id);
+        $this->hasPermissions(true);
 
-            $permissionList = ACL::getList();
-            $userPermissions = $userRoles = User::$currentUser->roles;
+        $role = $this->findById($id);
 
-            if ($userPermissions->length === 1 && $userPermissions->at(0) === '*') {
-                $userPermissions = $permissionList;
-            }
+        $permissionList = ACL::getList();
+        $userPermissions = User::$currentUser->roles;
 
-            return new RoleConfig($role, $userPermissions, $permissionList);
+        if ($userPermissions->length === 1 && $userPermissions->at(0) === '*') {
+            $userPermissions = $permissionList;
         }
 
-        return null;
+        return new RoleConfig($role, $userPermissions, $permissionList);
     }
 
     /**
@@ -238,8 +238,7 @@ class Role extends BaseModel
         }
 
         $instance = new static();
-        $roles = new Collection($instance->find(['slug' => ['$in' => $list]])->exec());
-        return $roles->maxBy('level');
+        return (new Collection($instance->find(['slug' => ['$in' => $list]])->exec()))->maxBy('level');
     }
 
     /**

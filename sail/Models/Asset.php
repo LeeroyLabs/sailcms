@@ -15,6 +15,7 @@ use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Filesystem;
 use SailCMS\Locale;
 use SailCMS\Sail;
@@ -57,6 +58,11 @@ class Asset extends BaseModel
             'transforms',
             'folder'
         ];
+    }
+
+    public function init(): void
+    {
+        $this->setPermissionGroup('assets');
     }
 
     protected function processOnFetch(string $field, mixed $value): mixed
@@ -115,36 +121,35 @@ class Asset extends BaseModel
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = BaseModel::SORT_ASC): Listing
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('asset'))) {
-            $offset = $page * $limit - $limit;
-            $query = ['site_id' => Sail::siteId(), 'folder' => $folder];
+        $this->hasPermissions(true);
 
-            // Search by name
-            if (!empty($search)) {
-                $query['name'] = new Regex($search, 'gi');
-            }
+        $offset = $page * $limit - $limit;
+        $query = ['site_id' => Sail::siteId(), 'folder' => $folder];
 
-            // Options for pagination and sorting
-            $options = QueryOptions::initWithPagination($offset, $limit);
-            $options->sort = [$sort => $direction];
-
-            $results = $this
-                ->find($query, $options)
-                ->populate('uploader_id', 'uploader', User::class)
-                ->exec();
-
-            $count = $this->count([]);
-            $total = ceil($count / $limit);
-
-            $pagination = new Pagination($page, $total, $count);
-            return new Listing($pagination, new Collection($results));
+        // Search by name
+        if (!empty($search)) {
+            $query['name'] = new Regex($search, 'gi');
         }
 
-        return Listing::empty();
+        // Options for pagination and sorting
+        $options = QueryOptions::initWithPagination($offset, $limit);
+        $options->sort = [$sort => $direction];
+
+        $results = $this
+            ->find($query, $options)
+            ->populate('uploader_id', 'uploader', User::class)
+            ->exec();
+
+        $count = $this->count([]);
+        $total = ceil($count / $limit);
+
+        $pagination = new Pagination($page, $total, $count);
+        return new Listing($pagination, new Collection($results));
     }
 
     /**
@@ -395,7 +400,6 @@ class Asset extends BaseModel
      */
     public static function transformById(string|ObjectId $id, string $name, ?int $width, ?int $height, string $crop = Transformer::CROP_CC): string
     {
-        $model = new Asset();
         $asset = static::getById($id);
 
         if ($asset && $asset->is_image) {
@@ -414,16 +418,14 @@ class Asset extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function update(string $locale, string $title): bool
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('asset'))) {
-            $this->updateOne(['_id' => $this->_id], ['$set' => ["title.{$locale}" => $title]]);
-            return true;
-        }
-
-        return false;
+        $this->hasPermissions();
+        $this->updateOne(['_id' => $this->_id], ['$set' => ["title.{$locale}" => $title]]);
+        return true;
     }
 
     /**
@@ -436,6 +438,7 @@ class Asset extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function updateById(ObjectId|string $id, string $locale, string $title): bool
@@ -457,16 +460,14 @@ class Asset extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function remove(): bool
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::write('asset'))) {
-            $this->deleteById($this->_id);
-            return true;
-        }
-
-        return false;
+        $this->hasPermissions();
+        $this->deleteById($this->_id);
+        return true;
     }
 
     /**
@@ -477,6 +478,7 @@ class Asset extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function removeById(ObjectId|string $id): bool

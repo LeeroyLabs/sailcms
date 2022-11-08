@@ -10,8 +10,26 @@ $config = [
         'emails' => [
             'from' => 'no-reply@leeroy.ca',
             'sendNewAccount' => false,
-            'templates' => [
-                'new_account' => 'default/email/account'
+            'globalContext' => [
+                // You can add your own static context variables
+                'locales' => [
+                    'fr' => [
+                        'follow' => 'Suivez-nous',
+                        'privacy' => 'Politique de confidentialité',
+                        'contact' => 'Contactez nous',
+                        'faq' => 'FAQ',
+                        'team' => "L'équipe Cubeler",
+                        'thanks' => 'Merci'
+                    ],
+                    'en' => [
+                        'follow' => 'Follow Us',
+                        'privacy' => 'Privacy Policy',
+                        'contact' => 'Contact Us',
+                        'faq' => 'FAQ',
+                        'team' => 'The Cubeler Team',
+                        'thanks' => 'Thank'
+                    ]
+                ]
             ]
         ],
         'passwords' => [
@@ -98,8 +116,16 @@ $config = [
         'emails' => [
             'from' => 'no-reply@sailcms.io',
             'sendNewAccount' => false,
-            'templates' => [
-                'new_account' => 'default/email/account'
+            'globalContext' => [
+                // You can add your own static context variables
+                'locales' => [
+                    'fr' => [
+                        // Strings that are not dynamic are translated here
+                    ],
+                    'en' => [
+                        // Strings that are not dynamic are translated here
+                    ]
+                ]
             ]
         ],
         'graphql' => [
@@ -160,8 +186,16 @@ $config = [
         'emails' => [
             'from' => 'no-reply@sailcms.io',
             'sendNewAccount' => false,
-            'templates' => [
-                'new_account' => 'default/email/account'
+            'globalContext' => [
+                // You can add your own static context variables
+                'locales' => [
+                    'fr' => [
+                        // Strings that are not dynamic are translated here
+                    ],
+                    'en' => [
+                        // Strings that are not dynamic are translated here
+                    ]
+                ]
             ]
         ],
         'graphql' => [
