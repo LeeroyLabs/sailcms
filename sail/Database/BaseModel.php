@@ -4,8 +4,12 @@ namespace SailCMS\Database;
 
 use JsonException;
 use MongoDB\Model\BSONArray;
+use SailCMS\ACL;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Debug;
+use SailCMS\Errors\ACLException;
+use SailCMS\Errors\PermissionException;
+use SailCMS\Models\User;
 use SailCMS\Text;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\QueryOptions;
@@ -23,6 +27,8 @@ abstract class BaseModel
     public ObjectId $_id;
 
     private Collection $collection;
+
+    private string $_permissionGroup = '';
 
     // Query operation Data
     private string $currentOp = '';
@@ -46,6 +52,20 @@ abstract class BaseModel
         $client = Database::instance();
 
         $this->collection = $client->selectCollection($_ENV['DATABASE_DB'], $collection);
+
+        $this->init();
+    }
+
+    /**
+     *
+     * Overridable function called on construct
+     *
+     * @return void
+     *
+     */
+    public function init(): void
+    {
+        // implemented at model level
     }
 
     /**
@@ -63,6 +83,19 @@ abstract class BaseModel
         }
 
         return $id;
+    }
+
+    /**
+     *
+     * Set the group to look for in the model
+     *
+     * @param  string  $group
+     * @return void
+     *
+     */
+    public function setPermissionGroup(string $group): void
+    {
+        $this->_permissionGroup = $group;
     }
 
     /**
@@ -691,6 +724,28 @@ abstract class BaseModel
     protected function processOnStore(string $field, mixed $value): mixed
     {
         return $value;
+    }
+
+    /**
+     *
+     * A reusable permission checker
+     *
+     * @param  bool  $read
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    protected function hasPermissions(bool $read = false): void
+    {
+        if ($read) {
+            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->_permissionGroup))) {
+                throw new PermissionException('Permission Denied', 0403);
+            }
+        } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->_permissionGroup))) {
+            throw new PermissionException('Permission Denied', 0403);
+        }
     }
 
     /**

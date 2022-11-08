@@ -267,6 +267,14 @@ class Mail
             // Context squashes providedContent to enable extensibility
             $superContext = $providedContent->merge($context);
 
+            // Fetch the global scoped context
+            $globalContext = $_ENV['SETTINGS']->get('emails.globalContext');
+            $locales = $globalContext->get('locales.' . $locale);
+            $gc = $globalContext->unwrap();
+            unset($gc['locales']); // don't add twice
+
+            $superContext->pushSpreadKeyValue(...$locales, ...$gc);
+
             // cta_link is present and verification_code. Replace {code} in link for code
             if ($context->get('verification_code', null) !== null) {
                 $superContext['cta_link'] = str_replace(
@@ -275,6 +283,9 @@ class Mail
                     $superContext['cta_link']
                 );
             }
+
+            // Replace locale variable in template name to the actual locale
+            $template->template = str_replace('{locale}', $locale, $template->template);
 
             return $this
                 ->from($settings->get('from'))

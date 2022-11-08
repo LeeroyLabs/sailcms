@@ -9,6 +9,7 @@ use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
@@ -177,6 +178,7 @@ class Users
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function createAdminUser(mixed $obj, Collection $args, Context $context): bool

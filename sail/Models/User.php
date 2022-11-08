@@ -10,7 +10,9 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Event;
 use SailCMS\Mail;
 use SailCMS\Middleware;
@@ -178,15 +180,13 @@ class User extends BaseModel
      * @return User|null
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function getById(string $id): ?User
     {
-        if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id) || ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-            return $this->findById($id)->exec();
-        }
-
-        return null;
+        $this->hasPermissions(true, true, $id);
+        return $this->findById($id)->exec();
     }
 
     /**
@@ -196,10 +196,13 @@ class User extends BaseModel
      * @param  string  $email
      * @return User|null
      * @throws DatabaseException
+     * @throws PermissionException
+     * @throws ACLException
      *
      */
     public function getByEmail(string $email): ?User
     {
+        $this->hasPermissions(true);
         return $this->findOne(['email' => $email])->exec();
     }
 
@@ -287,66 +290,65 @@ class User extends BaseModel
      * @return string
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function create(Username $name, string $email, string $password, Collection $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            // Make sure full is assigned
-            if ($name->full === '') {
-                $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
-            }
+        $this->hasPermissions();
 
-            if ($meta === null) {
-                $meta = new UserMeta((object)['flags' => (object)['use2fa' => false]]);
-            }
-
-            // Validate email properly
-            $this->validateEmail($email, '', true);
-
-            // Validate password
-            $valid = Security::validatePassword($password);
-
-            if (!$valid) {
-                throw new DatabaseException('Password does not pass minimum security level', 0403);
-            }
-
-            $code = Security::generateVerificationCode();
-
-            $id = $this->insert([
-                'name' => $name,
-                'email' => $email,
-                'status' => true,
-                'roles' => $roles,
-                'avatar' => $avatar,
-                'password' => Security::hashPassword($password),
-                'meta' => $meta->simplify(),
-                'temporary_token' => '',
-                'locale' => $locale,
-                'validation_code' => $code,
-                'validated' => false,
-                'reset_code' => ''
-            ]);
-
-            if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
-                // Send a nice email to greet
-                try {
-                    // Overwrite the cta url for the admin one
-                    $url = $_ENV['SETTINGS']->get('adminTrigger', 'admin') . '/validate/' . $code;
-
-                    $mail = new Mail();
-                    $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $url])->send();
-                    return $id;
-                } catch (Exception $e) {
-                    return $id;
-                }
-            }
-
-            Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
-            return $id;
+        // Make sure full is assigned
+        if ($name->full === '') {
+            $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
         }
 
-        return '';
+        if ($meta === null) {
+            $meta = new UserMeta((object)['flags' => (object)['use2fa' => false]]);
+        }
+
+        // Validate email properly
+        $this->validateEmail($email, '', true);
+
+        // Validate password
+        $valid = Security::validatePassword($password);
+
+        if (!$valid) {
+            throw new DatabaseException('Password does not pass minimum security level', 0403);
+        }
+
+        $code = Security::generateVerificationCode();
+
+        $id = $this->insert([
+            'name' => $name,
+            'email' => $email,
+            'status' => true,
+            'roles' => $roles,
+            'avatar' => $avatar,
+            'password' => Security::hashPassword($password),
+            'meta' => $meta->simplify(),
+            'temporary_token' => '',
+            'locale' => $locale,
+            'validation_code' => $code,
+            'validated' => false,
+            'reset_code' => ''
+        ]);
+
+        if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
+            // Send a nice email to greet
+            try {
+                // Overwrite the cta url for the admin one
+                $url = $_ENV['SETTINGS']->get('adminTrigger', 'admin') . '/validate/' . $code;
+
+                $mail = new Mail();
+                $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $url, 'name' => $name->first])->send();
+                return $id;
+            } catch (Exception $e) {
+                return $id;
+            }
+        }
+
+        Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+        return $id;
     }
 
     /**
@@ -363,58 +365,57 @@ class User extends BaseModel
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function update(string|ObjectId $id, ?Username $name = null, ?string $email = null, ?string $password = null, ?Collection $roles = null, ?string $avatar = '', ?UserMeta $meta = null): bool
     {
-        if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id) || ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            $update = [];
-            $id = $this->ensureObjectId($id);
+        $this->hasPermissions(false, true, $id);
 
-            if ($name !== null) {
-                $update['name'] = $name;
-            }
+        $update = [];
+        $id = $this->ensureObjectId($id);
 
-            // Validate email properly
-            if ($email !== null && trim($email) !== '') {
-                $valid = $this->validateEmail($email, $id, true);
-                $update['email'] = $email;
-            }
-
-            if ($password !== null && trim($password) !== '') {
-                $valid = Security::validatePassword($password);
-
-                if (!$valid) {
-                    throw new DatabaseException('Password does not pass minimum security level', 0403);
-                }
-
-                $update['password'] = Security::hashPassword($password);
-            }
-
-            if ($roles) {
-                // Make sure we are not allowing a user with lower role to give higher role (by hack)
-                $current = Role::getHighestLevel(static::$currentUser->roles);
-                $requested = Role::getHighestLevel($roles);
-
-                if ($current >= $requested) {
-                    $update['roles'] = $roles;
-                }
-            }
-
-            if ($avatar) {
-                $update['avatar'] = $avatar;
-            }
-
-            if ($meta) {
-                $update['meta'] = $meta;
-            }
-
-            $this->updateOne(['_id' => $id], ['$set' => $update]);
-            Event::dispatch(static::EVENT_UPDATE, ['id' => $id, 'update' => $update]);
-            return true;
+        if ($name !== null) {
+            $update['name'] = $name;
         }
 
-        return false;
+        // Validate email properly
+        if ($email !== null && trim($email) !== '') {
+            $valid = $this->validateEmail($email, $id, true);
+            $update['email'] = $email;
+        }
+
+        if ($password !== null && trim($password) !== '') {
+            $valid = Security::validatePassword($password);
+
+            if (!$valid) {
+                throw new DatabaseException('Password does not pass minimum security level', 0403);
+            }
+
+            $update['password'] = Security::hashPassword($password);
+        }
+
+        if ($roles) {
+            // Make sure we are not allowing a user with lower role to give higher role (by hack)
+            $current = Role::getHighestLevel(static::$currentUser->roles);
+            $requested = Role::getHighestLevel($roles);
+
+            if ($current >= $requested) {
+                $update['roles'] = $roles;
+            }
+        }
+
+        if ($avatar) {
+            $update['avatar'] = $avatar;
+        }
+
+        if ($meta) {
+            $update['meta'] = $meta;
+        }
+
+        $this->updateOne(['_id' => $id], ['$set' => $update]);
+        Event::dispatch(static::EVENT_UPDATE, ['id' => $id, 'update' => $update]);
+        return true;
     }
 
     /**
@@ -429,40 +430,39 @@ class User extends BaseModel
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = BaseModel::SORT_ASC): Listing
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-            $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
+        $this->hasPermissions(true);
 
-            $options = QueryOptions::initWithSort([$sort => $direction]);
-            $options->skip = $offset;
-            $options->limit = ($limit > 100) ? 25 : $limit;
+        $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
 
-            $query = [];
+        $options = QueryOptions::initWithSort([$sort => $direction]);
+        $options->skip = $offset;
+        $options->limit = ($limit > 100) ? 25 : $limit;
 
-            if (!empty($search)) {
-                $query = [
-                    '$or' => [
-                        ['name.full' => new Regex($search, 'gi')],
-                        ['email' => $search]
-                    ]
-                ];
-            }
+        $query = [];
 
-            // Pagination
-            $total = $this->count($query);
-            $pages = ceil($total / $limit);
-            $current = $page;
-            $pagination = new Pagination($current, $pages, $total);
-
-            $list = $this->find($query, $options)->exec();
-
-            return new Listing($pagination, new Collection($list));
+        if (!empty($search)) {
+            $query = [
+                '$or' => [
+                    ['name.full' => new Regex($search, 'gi')],
+                    ['email' => $search]
+                ]
+            ];
         }
 
-        return Listing::empty();
+        // Pagination
+        $total = $this->count($query);
+        $pages = ceil($total / $limit);
+        $current = $page;
+        $pagination = new Pagination($current, $pages, $total);
+
+        $list = $this->find($query, $options)->exec();
+
+        return new Listing($pagination, new Collection($list));
     }
 
     /**
@@ -472,17 +472,16 @@ class User extends BaseModel
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function remove(): bool
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            $this->deleteById($this->_id);
-            Event::dispatch(static::EVENT_DELETE, (string)$this->_id);
-            return true;
-        }
+        $this->hasPermissions();
 
-        return false;
+        $this->deleteById($this->_id);
+        Event::dispatch(static::EVENT_DELETE, (string)$this->_id);
+        return true;
     }
 
     /**
@@ -493,19 +492,17 @@ class User extends BaseModel
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function removeById(string|ObjectId $id): bool
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            $id = $this->ensureObjectId($id);
+        $this->hasPermissions();
 
-            $this->deleteById($id);
-            Event::dispatch(static::EVENT_DELETE, (string)$id);
-            return true;
-        }
-
-        return false;
+        $id = $this->ensureObjectId($id);
+        $this->deleteById($id);
+        Event::dispatch(static::EVENT_DELETE, (string)$id);
+        return true;
     }
 
     /**
@@ -516,17 +513,16 @@ class User extends BaseModel
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function removeByEmail(string $email): bool
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            $this->deleteOne(['email' => $email]);
-            Event::dispatch(static::EVENT_DELETE, $email);
-            return true;
-        }
+        $this->hasPermissions();
 
-        return false;
+        $this->deleteOne(['email' => $email]);
+        Event::dispatch(static::EVENT_DELETE, $email);
+        return true;
     }
 
     /**
@@ -706,16 +702,14 @@ class User extends BaseModel
      * @return Collection
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public static function flagged(string $flag): Collection
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-            $instance = new static();
-            return new Collection($instance->find(["meta.flags.{$flag}" => ['$exists' => true, '$eq' => true]])->exec());
-        }
-
-        return new Collection([]);
+        $instance = new static();
+        $instance->hasPermissions(true);
+        return new Collection($instance->find(["meta.flags.{$flag}" => ['$exists' => true, '$eq' => true]])->exec());
     }
 
     /**
@@ -726,21 +720,19 @@ class User extends BaseModel
      * @return Collection
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public static function notFlagged(string $flag): Collection
     {
-        if (ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-            $instance = new static();
-            return new Collection($instance->find([
-                '$or' => [
-                    ["meta.flags.{$flag}" => ['$exists' => false]],
-                    ["meta.flags.{$flag}" => false]
-                ]
-            ])->exec());
-        }
-
-        return new Collection([]);
+        $instance = new static();
+        $instance->hasPermissions(true);
+        return new Collection($instance->find([
+            '$or' => [
+                ["meta.flags.{$flag}" => ['$exists' => false]],
+                ["meta.flags.{$flag}" => false]
+            ]
+        ])->exec());
     }
 
     /**
@@ -812,6 +804,17 @@ class User extends BaseModel
         return null;
     }
 
+    /**
+     *
+     * Forgot password handler
+     *
+     * @param  string  $email
+     * @return bool
+     * @throws DatabaseException
+     * @throws FileException
+     * @throws EmailException
+     *
+     */
     public static function forgotPassword(string $email): bool
     {
         $data = new Middleware\Data(Middleware\Login::ForgotPassword, ['email' => $email, 'allowed' => false]);
@@ -826,7 +829,14 @@ class User extends BaseModel
                 $record->updateOne(['_id' => $record->_id], ['$set' => ['reset_code' => $code]]);
 
                 $mail = new Mail();
-                $mail->to($email)->useEmail('reset_password', $record->locale, ['reset_code' => $code])->send();
+                $mail->to($email)->useEmail(
+                    'reset_password',
+                    $record->locale,
+                    [
+                        'reset_code' => $code,
+                        'name' => $record->name->first
+                    ]
+                )->send();
                 return true;
             }
 
@@ -847,6 +857,8 @@ class User extends BaseModel
      * @param  bool    $throw
      * @return bool
      * @throws DatabaseException
+     * @throws PermissionException
+     * @throws ACLException
      *
      */
     private function validateEmail(string $email, string $id = '', bool $throw = false): bool
@@ -872,5 +884,41 @@ class User extends BaseModel
         }
 
         return false;
+    }
+
+    /**
+     *
+     * Override the basemodel for a more complex version
+     *
+     * @param  bool         $read
+     * @param  bool         $advanced
+     * @param  string|null  $id
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    protected function hasPermissions(bool $read = false, bool $advanced = false, string|null $id = null): void
+    {
+        if ($advanced) {
+            if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id)) {
+                if ($read) {
+                    if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
+                        throw new PermissionException('Permission Denied', 0403);
+                    }
+                } else {
+                    if (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+                        throw new PermissionException('Permission Denied', 0403);
+                    }
+                }
+            }
+        } elseif ($read) {
+            if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
+                throw new PermissionException('Permission Denied', 0403);
+            }
+        } elseif (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+            throw new PermissionException('Permission Denied', 0403);
+        }
     }
 }

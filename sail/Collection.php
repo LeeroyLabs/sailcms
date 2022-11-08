@@ -161,7 +161,22 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
-     * Push an array or statics into seperate elements in the static
+     * Push a key/value to the collection
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return $this
+     *
+     */
+    public function pushKeyValue(string $key, mixed $value): static
+    {
+        $this->_internal[$key] = $value;
+        return $this;
+    }
+
+    /**
+     *
+     * Push an array or statics into separate elements in the static
      *
      * @param ...$elements
      * @return $this
@@ -173,7 +188,25 @@ class Collection implements \JsonSerializable, \Iterator
             $this->_internal[] = $element;
         }
 
-        return new static($this->_internal);
+        return $this;
+    }
+
+    /**
+     *
+     * Push an array or statics into separate elements in the static
+     * key/value version
+     *
+     * @param ...$elements
+     * @return $this
+     *
+     */
+    public function pushSpreadKeyValue(...$elements): static
+    {
+        foreach ($elements as $key => $element) {
+            $this->_internal[$key] = $element;
+        }
+
+        return $this;
     }
 
     /**
