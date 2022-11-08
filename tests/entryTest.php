@@ -83,10 +83,25 @@ test('Create an entry with the default type', function ()
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
+    }
+});
+
+test('Failed to create an entry with homepage at false and slug at null', function ()
+{
+    $model = new Entry();
+
+    try {
+        $entry = $model->createOne('fr', false, EntryStatus::LIVE, 'Failed entry', null, []);
+        expect(true)->toBe(false);
+    } catch (EntryException $exception) {
+        // An entry must have slug defined if homepage is false
+        expect(true)->toBe(true);
+    } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
 });
 
+// TODO this will change if homepage are resaved to false
 test('Fail to create a live entry because there is already a homepage', function ()
 {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -149,6 +164,26 @@ test('Update an entry with an entry type', function ()
         expect($result)->toBe(true);
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Fail to update when homepage is false and slug is null', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $result = $entryModel->updateById($entry, [
+            'slug' => null,
+        ]);
+        expect(true)->toBe(false);
+    } catch (EntryException $exception) {
+        // An entry must have slug defined if homepage is false
+        expect(true)->toBe(true);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }

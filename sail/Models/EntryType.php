@@ -240,7 +240,7 @@ class EntryType extends BaseModel
     /**
      *
      * Does the user has permission to do modification on entry type
-     * TODO had read permission
+     * TODO add read permission
      *
      * @throws DatabaseException
      * @throws ACLException

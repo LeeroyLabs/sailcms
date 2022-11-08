@@ -398,7 +398,7 @@ class Entry extends BaseModel
     /**
      *
      * Check if current user has permission
-     *  TODO had read permission
+     *  TODO add read permission
      *
      * @return void
      * @throws DatabaseException
@@ -505,9 +505,20 @@ class Entry extends BaseModel
      */
     private function update(Entry $entry, Collection $data): bool
     {
-        $status = $data->get('status', $entry->status);
-        $is_homepage = $data->get('is_homepage', $entry->is_homepage); // TODO Test if false
-        $slug = $data->get('slug', $entry->slug);                      // TODO test if null
+        $status = $entry->status;
+        $slug = $entry->slug;
+        $is_homepage = $entry->is_homepage;
+
+        // If it needs to be updated
+        if (in_array('status', $data->keys()->unwrap())) {
+            $status = $data->get('status');
+        }
+        if (in_array('is_homepage', $data->keys()->unwrap())) {
+            $is_homepage = $data->get('is_homepage');
+        }
+        if (in_array('slug', $data->keys()->unwrap())) {
+            $slug = $data->get('slug');
+        }
 
         $this->validateUrlAvailability($status, $is_homepage, $slug, $entry->_id);
 
