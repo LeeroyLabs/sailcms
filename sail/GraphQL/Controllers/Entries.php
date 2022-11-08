@@ -11,6 +11,23 @@ use SailCMS\Models\EntryType;
 
 class Entries
 {
+    public function entryTypes(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $entryTypes = EntryType::getAll();
+        $result = new Collection([]);
+
+        $entryTypes->each(function ($key, $value) use ($result)
+        {
+            $result->push([
+                "_id" => $value->_id,
+                "title" => $value->title,
+                "handle" => $value->handle,
+                "urlPrefix" => $value->url_prefix
+            ]);
+        });
+        return $result;
+    }
+
     /**
      *
      * Get an entry by id (MUST TESTS)

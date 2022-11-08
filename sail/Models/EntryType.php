@@ -240,7 +240,7 @@ class EntryType extends BaseModel
     /**
      *
      * Does the user has permission to do modification on entry type
-     * TODO had read permission
+     * TODO add read permission
      *
      * @throws DatabaseException
      * @throws ACLException
@@ -270,6 +270,7 @@ class EntryType extends BaseModel
         if ($this->getByHandle($handle) !== null) {
             throw new EntryException(self::HANDLE_ALREADY_EXISTS);
         }
+        // TODO reserved word
     }
 
     /**
