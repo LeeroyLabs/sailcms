@@ -8,7 +8,7 @@ use MongoDB\Client;
 
 class Database
 {
-    private static array $cliens = [];
+    private static array $clients = [];
 
     /**
      *
@@ -29,7 +29,7 @@ class Database
             Debug::eventStart('Connect to MongoDB');
 
             if (isset($_ENV[$dsn]) && $_ENV[$dsn] !== '') {
-                self::$client = new Client($_ENV[$dsn], []);
+                self::$clients[$dbIndex] = new Client($_ENV[$dsn], []);
             } else {
                 throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500);
             }
