@@ -26,6 +26,9 @@ type Query {
 
     # Entries
     entryTypes: [EntryType!]!
+    entryType(id: ID, handle: String): EntryType
+    entries: [Entry!]!
+    entry(id: ID!, typeHandle: String): Entry
     #{CUSTOM_QUERIES}#
 }
 
@@ -54,6 +57,11 @@ type Mutation {
     updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
     deleteEmail(id: ID!): Boolean!
     deleteEmailBySlug(slug: String!): Boolean!
+
+    # Entries
+    createEntryType(handle: String!, title: String!, url_prefix: String!, entry_type_layout_id: ID): EntryType
+    updateEntryType(handle: String!, title: String, url_prefix: String, entry_type_layout_id: ID): Boolean
+    deleteEntryType(id: ID!): Boolean
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -76,13 +84,6 @@ type User {
     avatar: String!
     permissions: [String!]
     meta: UserMeta!
-}
-
-type EntryType {
-    _id: ID!
-    title: String!
-    handle: String!
-    urlPrefix: String!
 }
 
 type UserListing {
@@ -161,6 +162,45 @@ type Asset {
 type AssetListing {
     pagination: Pagination!
     list: [Asset!]!
+}
+
+type Entry {
+    _id: ID!
+    entry_type_id: ID!
+    parent_id: ID
+    site_id: String!
+    locale: String!
+    alternates: [String]!
+    is_homepage: Boolean
+    status: String!
+    title: String!
+    slug: String
+    url: String!
+    authors: Authors!
+    dates: Dates!
+    categories: [String]!
+    content: [String]!
+}
+
+type EntryType {
+    _id: ID!
+    title: String!
+    handle: String!
+    url_prefix: String!
+}
+
+type Authors {
+    created_by: ID
+    updated_by: ID
+    published_by: ID
+    deleted_by: ID
+}
+
+type Dates {
+    created: Float
+    updated: Float
+    published: Float
+    deleted: Float
 }
 
 type LocaleField {

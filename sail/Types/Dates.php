@@ -14,8 +14,6 @@ class Dates implements DatabaseType
     ) {
     }
 
-    // TODO: Return Collection of dates
-
     /**
      *
      * Get an array of dates when we create an element

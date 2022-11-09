@@ -3,12 +3,12 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
-use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
 use SailCMS\Sail;
 use SailCMS\Types\Authors;
@@ -65,6 +65,11 @@ class Entry extends BaseModel
         parent::__construct($collection);
     }
 
+    public function init(): void
+    {
+        $this->setPermissionGroup($this->entryType->handle);
+    }
+
     public function fields(bool $fetchAllFields = false): array
     {
         return [
@@ -84,6 +89,34 @@ class Entry extends BaseModel
             'categories',
             'content'
         ];
+    }
+
+    /**
+     *
+     * Get all entries of all types
+     *
+     * @return Collection
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public static function getAll(): Collection
+    {
+        $entryTypes = EntryType::getAll();
+        $entries = new Collection([]);
+
+        $entryTypes->each(function ($key, $value) use (&$entries)
+        {
+            /**
+             * @var EntryType $value
+             */
+            $entryModel = $value->getEntryModel();
+            $currentEntries = $entryModel->all();
+
+            $entries->pushSpread(...$currentEntries);
+        });
+
+        return $entries;
     }
 
     /**
@@ -192,32 +225,37 @@ class Entry extends BaseModel
      *
      * Get an entry with filters
      *
-     * @param $filters
+     * @param  array  $filters
      * @return Entry|null
      * @throws DatabaseException
      *
      */
-    public function one($filters): Entry|null
+    public function one(array $filters): Entry|null
     {
-        // TODO what to do with options
+        if (isset($filters['_id'])) {
+            return $this->findById($filters['_id'])->exec();
+        }
 
         return $this->findOne($filters)->exec();
     }
 
     /**
      *
-     * Get all with filtering and pagination
+     * Get all entries of the current type
+     *  with filtering and pagination
      *
-     * @param $filters
-     * @param $limit
-     * @param $offset
-     * @return array
+     * @param  Collection|null  $filters
+     * @param  int|null         $limit
+     * @param  int|null         $offset
+     * @return Collection
      *
+     * @throws DatabaseException
      */
-    public function all($filters, $limit, $offset): array
+    public function all(?Collection $filters = null, ?int $limit = 0, ?int $offset = 0): Collection
     {
         // Filters available date, author, category, status
-        return [];
+
+        return new Collection($this->find([])->exec());
     }
 
     /**
@@ -283,12 +321,13 @@ class Entry extends BaseModel
      * @throws DatabaseException
      * @throws EntryException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function createOne(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         // TODO If author is set, the current user and author must have permission (?)
-        $this->hasPermission();
+        $this->hasPermissions();
 
         if ($status instanceof EntryStatus) {
             $status = $status->value;
@@ -320,11 +359,12 @@ class Entry extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function updateById(Entry|string $entry, array|Collection $data): bool
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         if (is_string($entry)) {
             $entry = $this->findById($entry);
@@ -346,10 +386,12 @@ class Entry extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
+     *
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
-        $this->hasPermission();
+        $this->hasPermissions();
 
         if ($soft) {
             $entry = $this->findById($entryId);
@@ -372,7 +414,7 @@ class Entry extends BaseModel
     protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
-            "authors" => new Authors($value->created_by, $value->created_by, $value->created_by, $value->created_by),
+            "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
         };
@@ -393,24 +435,6 @@ class Entry extends BaseModel
         }
 
         return parent::processOnStore($field, $value);
-    }
-
-    /**
-     *
-     * Check if current user has permission
-     *  TODO add read permission
-     *
-     * @return void
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws ACLException
-     *
-     */
-    private function hasPermission(): void
-    {
-        if (!ACL::hasPermission(User::$currentUser, ACL::write($this->entryType->handle))) {
-            throw new EntryException(self::CANNOT_CREATE_ENTRY);
-        }
     }
 
     /**
