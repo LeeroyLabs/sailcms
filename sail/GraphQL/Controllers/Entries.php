@@ -6,6 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryType;
@@ -37,6 +38,7 @@ class Entries
      * @return EntryType|null
      * @throws DatabaseException
      * @throws EntryException
+     *
      */
     public function entryType(mixed $obj, Collection $args, Context $context): ?EntryType
     {
@@ -70,6 +72,7 @@ class Entries
      * @throws DatabaseException
      * @throws EntryException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function createEntryType(mixed $obj, Collection $args, Context $context): EntryType
@@ -94,6 +97,7 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function updateEntryType(mixed $obj, Collection $args, Context $context): bool
@@ -114,6 +118,7 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function deleteEntryType(mixed $obj, Collection $args, Context $context): bool
@@ -156,27 +161,118 @@ class Entries
      */
     public function entry(mixed $obj, Collection $args, Context $context): ?Entry
     {
-        $type = $args->get('typeHandle');
+        $entry_type_handle = $args->get('entry_type_handle');
         $id = $args->get('id');
 
-        if ($type) {
-            $entryModel = EntryType::getEntryModelByHandle($type);
-        } else {
-            $entryModel = new Entry();
-        }
+        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
         return $entryModel->one(['_id' => $id]);
     }
 
-    public function createEntry(mixed $obj, Collection $args, Context $context): EntryType
+    /**
+     *
+     * Create an entry and return it
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Entry|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function createEntry(mixed $obj, Collection $args, Context $context): ?Entry
     {
+        $entry_type_handle = $args->get('entry_type_handle');
+        $locale = $args->get('locale');
+        $is_homepage = $args->get('is_homepage');
+        $status = $args->get('status');
+        $title = $args->get('title');
+        $slug = $args->get('slug');
+        $categories = $args->get('categories');
+        $content = $args->get('content');
+        // TODO support these fields
+        $parent_id = $args->get('parent_id');
+        $site_id = $args->get('site_id');
+        $alternates = $args->get('alternates');
+
+        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+
+        return $entryModel->createOne($locale, $is_homepage, $status, $title, $slug, [
+            'categories' => $categories,
+            'content' => $content
+        ]);
     }
 
+    /**
+     *
+     * Update an entry
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function updateEntry(mixed $obj, Collection $args, Context $context): bool
     {
+        $id = $args->get('id');
+        $entry_type_handle = $args->get('entry_type_handle');
+
+        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+
+        return $entryModel->updateById($id, $args);
     }
 
+    /**
+     *
+     * Delete an entry
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function deleteEntry(mixed $obj, Collection $args, Context $context): bool
     {
+        $id = $args->get('id');
+        $entry_type_handle = $args->get('entry_type_handle');
+        $soft = $args->get('soft', true);
+
+        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+
+        return $entryModel->delete($id, $soft);
+    }
+
+    /**
+     *
+     * According to the given entry type handle return the Entry Model
+     *  - if entry type handle is null, return the default entry type
+     *
+     * @param  ?string  $entry_type_handle
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    private function getEntryModelByHandle(?string $entry_type_handle): Entry
+    {
+        if (isset($entry_type_handle)) {
+            $entryModel = EntryType::getEntryModelByHandle($entry_type_handle);
+        } else {
+            $entryModel = new Entry();
+        }
+        return $entryModel;
     }
 }

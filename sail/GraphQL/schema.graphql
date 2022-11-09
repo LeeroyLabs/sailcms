@@ -28,7 +28,7 @@ type Query {
     entryTypes: [EntryType!]!
     entryType(id: ID, handle: String): EntryType
     entries: [Entry!]!
-    entry(id: ID!, typeHandle: String): Entry
+    entry(id: ID!, entry_type_handle: String): Entry
     #{CUSTOM_QUERIES}#
 }
 
@@ -62,6 +62,9 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: String!, entry_type_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: String, entry_type_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent_id: ID, site_id: ID, alternates: [String]): Entry
+    updateEntry(entry_type_handle: String, id: ID!,  locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent_id: ID, site_id: ID, alternates: [String]): Boolean
+    deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean!): Boolean
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -172,13 +175,13 @@ type Entry {
     locale: String!
     alternates: [String]!
     is_homepage: Boolean
-    status: String!
+    status: EntryStatus
     title: String!
     slug: String
     url: String!
     authors: Authors!
     dates: Dates!
-    categories: [String]!
+    categories: [ID!]!
     content: [String]!
 }
 
@@ -187,6 +190,12 @@ type EntryType {
     title: String!
     handle: String!
     url_prefix: String!
+}
+
+enum EntryStatus {
+    live
+    inactive
+    trash
 }
 
 type Authors {
