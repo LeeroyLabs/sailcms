@@ -59,6 +59,8 @@ class Sail
 
     private static bool $isGraphQL = false;
 
+    public static bool $isServerless = false;
+
     /**
      *
      * Initialize the CMS
@@ -267,8 +269,21 @@ class Sail
 
         // Setup Clockwork for debugging info
         if ($_ENV['DEBUG'] === 'on') {
+            $path = static::$workingDirectory . '/storage/debug';
+
+            if (static::$isServerless) {
+                if (!file_exists('/tmp/storage')) {
+                    try {
+                        mkdir('/tmp/storage');
+                        $path = '/tmp/storage/debug';
+                    } catch (Exception $e) {
+                        return;
+                    }
+                }
+            }
+
             static::$clockwork = Clockwork::init([
-                'storage_files_path' => static::$workingDirectory . '/storage/debug',
+                'storage_files_path' => $path,
                 'register_helper' => true
             ]);
 
