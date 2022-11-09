@@ -3,7 +3,6 @@ type Query {
 
     # Users
     user(id: ID!): User
-    userWithToken: User
     users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
 
     # Authentication
@@ -11,6 +10,7 @@ type Query {
     verifyAuthenticationToken(token: String!): User
     verifyTFA(user_id: ID!, code: String!): Boolean!
     forgotPassword(email: String!): Boolean!
+    userWithToken: User
 
     # Roles & ACL
     roles: [Role!]!
