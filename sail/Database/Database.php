@@ -2,6 +2,7 @@
 
 namespace SailCMS\Database;
 
+use MongoDB\Driver\ServerApi;
 use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use MongoDB\Client;
@@ -25,11 +26,20 @@ class Database
             $extra = '';
 
             $dsn = ($dbIndex > 0) ? "DATABASE_DSN_{$dbIndex}" : 'DATABASE_DSN';
-
             Debug::eventStart('Connect to MongoDB');
 
             if (isset($_ENV[$dsn]) && $_ENV[$dsn] !== '') {
-                self::$clients[$dbIndex] = new Client($_ENV[$dsn], []);
+                if (str_starts_with($_ENV[$dsn], 'mongodb+srv')) {
+                    $api = new ServerApi(ServerApi::V1);
+
+                    try {
+                        self::$clients[$dbIndex] = new Client($_ENV[$dsn], [], ['serverApi' => $api]);
+                    } catch (\Exception $e) {
+                        print_r($e->getMessage());
+                    }
+                } else {
+                    self::$clients[$dbIndex] = new Client($_ENV[$dsn], []);
+                }
             } else {
                 throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500);
             }
