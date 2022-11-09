@@ -282,21 +282,34 @@ class User extends BaseModel
      *
      * Create a new user
      *
-     * @param  Username       $name
-     * @param  string         $email
-     * @param  Collection     $roles
-     * @param  string         $locale
-     * @param  string         $avatar
-     * @param  UserMeta|null  $meta
+     * @param  Username          $name
+     * @param  string            $email
+     * @param  string            $password
+     * @param  Collection|array  $roles
+     * @param  string            $locale
+     * @param  string            $avatar
+     * @param  UserMeta|null     $meta
      * @return string
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
-     *
      */
-    public function create(Username $name, string $email, Collection $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
+    public function create(Username $name, string $email, string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
         $this->hasPermissions();
+
+        if (is_array($roles)) {
+            $roles = new Collection($roles);
+        }
+
+        // Validate password
+        if ($password !== '') {
+            $valid = Security::validatePassword($password);
+
+            if (!$valid) {
+                throw new DatabaseException('Password does not pass minimum security level', 0403);
+            }
+        }
 
         // Make sure full is assigned
         if ($name->full === '') {
@@ -312,13 +325,18 @@ class User extends BaseModel
 
         $code = Security::generateVerificationCode();
 
+        $pass = Uuid::uuid4();
+        if ($password !== '') {
+            $pass = $password;
+        }
+
         $id = $this->insert([
             'name' => $name,
             'email' => $email,
             'status' => true,
             'roles' => $roles,
             'avatar' => $avatar,
-            'password' => Security::hashPassword(Uuid::uuid4()),
+            'password' => Security::hashPassword($pass),
             'meta' => $meta->simplify(),
             'temporary_token' => '',
             'locale' => $locale,

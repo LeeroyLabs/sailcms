@@ -195,7 +195,7 @@ class Users
         $id = $user->create(
             $name,
             $args->get('email'),
-            $args->get('password'),
+            '', // no password for admins
             $args->get('roles', []),
             $args->get('avatar', ''),
             $meta
