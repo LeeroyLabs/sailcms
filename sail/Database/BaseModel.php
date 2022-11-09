@@ -43,13 +43,13 @@ abstract class BaseModel
 
     abstract public function fields(bool $fetchAllFields = false): array;
 
-    public function __construct(string $collection = '')
+    public function __construct(string $collection = '', int $dbIndex = 0)
     {
         // Manual name or detected by class name (plural)
         $name = array_reverse(explode('\\', get_class($this)))[0];
 
         $collection = (empty($collection)) ? Text::snakeCase(Text::inflector()->pluralize($name)[0]) : $collection;
-        $client = Database::instance();
+        $client = Database::instance($dbIndex);
 
         $this->collection = $client->selectCollection($_ENV['DATABASE_DB'], $collection);
 

@@ -8,32 +8,30 @@ use MongoDB\Client;
 
 class Database
 {
-    private static ?Client $client = null;
+    private static array $clients = [];
 
     /**
      *
      * Connect to database and create a unique connection
      *
+     * @param  int  $dbIndex
      * @throws DatabaseException
      *
      */
-    private static function init(): void
+    private static function init(int $dbIndex): void
     {
         try {
             $options = [];
             $extra = '';
 
+            $dsn = ($dbIndex > 0) ? "DATABASE_DSN_{$dbIndex}" : 'DATABASE_DSN';
+
             Debug::eventStart('Connect to MongoDB');
 
-            if ($_ENV['DATABASE_DSN'] !== '') {
-                self::$client = new Client($_ENV['DATABASE_DSN'], []);
-            } elseif ($_ENV['DATABASE_USER']) {
-                $auth = "{$_ENV['DATABASE_USER']}:{$_ENV['DATABASE_PASSWORD']}@";
-                $extra = '?serverSelectionTimeoutMS=5000&connectTimeoutMS=10000&authSource=' . $_ENV['DATABASE_AUTH_DB'] . '&authMechanism=SCRAM-SHA-256';
-
-                self::$client = new Client("mongodb://{$auth}{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}{$extra}", $options);
+            if (isset($_ENV[$dsn]) && $_ENV[$dsn] !== '') {
+                self::$clients[$dbIndex] = new Client($_ENV[$dsn], []);
             } else {
-                self::$client = new Client("mongodb://{$_ENV['DATABASE_HOST']}:{$_ENV['DATABASE_PORT']}/{$_ENV['DATABASE_DB']}", $options);
+                throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500);
             }
 
             Debug::eventEnd('Connect to MongoDB');
@@ -46,16 +44,17 @@ class Database
      *
      * Fetch the active instance (if any) or create one
      *
+     * @param  int  $dbIndex
      * @return Client|null
      * @throws DatabaseException
      *
      */
-    public static function instance(): ?Client
+    public static function instance(int $dbIndex = 0): ?Client
     {
-        if (!self::$client) {
-            self::init();
+        if (!isset(self::$clients[$dbIndex])) {
+            self::init($dbIndex);
         }
 
-        return self::$client;
+        return self::$clients[$dbIndex];
     }
 }
