@@ -265,9 +265,9 @@ class GraphQL
 
         static::addQueryResolver('entries', Entries::class, 'entries');
         static::addQueryResolver('entry', Entries::class, 'entry');
-//        static::addMutationResolver('createEntry', Entries::class, 'createEntry');
-//        static::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
-//        static::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
+        static::addMutationResolver('createEntry', Entries::class, 'createEntry');
+        static::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
+        static::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

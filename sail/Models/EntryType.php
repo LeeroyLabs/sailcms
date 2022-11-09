@@ -117,9 +117,14 @@ class EntryType extends BaseModel
      * @throws EntryException
      *
      */
-    public static function getEntryModelByHandle($handle): Entry
+    public static function getEntryModelByHandle(string $handle): Entry
     {
-        $entryType = (new static())->getByHandle('test');
+        $entryType = (new static())->getByHandle($handle);
+        
+        if (!$entryType) {
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
+        }
+
         return $entryType->getEntryModel();
     }
 
