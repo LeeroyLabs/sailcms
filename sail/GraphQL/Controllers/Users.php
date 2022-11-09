@@ -8,6 +8,7 @@ use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
@@ -15,6 +16,7 @@ use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
+use SailCMS\Types\LoginResult;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SodiumException;
@@ -31,6 +33,8 @@ class Users
      * @return User|null
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
+     *
      */
     public function user(mixed $obj, Collection $args, Context $context): ?User
     {
@@ -62,6 +66,7 @@ class Users
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function users(mixed $obj, Collection $args, Context $context): Listing
@@ -88,11 +93,11 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return string
+     * @return LoginResult
      * @throws DatabaseException
      *
      */
-    public function authenticate(mixed $obj, Collection $args, Context $context): string
+    public function authenticate(mixed $obj, Collection $args, Context $context): LoginResult
     {
         return (new User())->verifyUserPass($args->get('email'), $args->get('password'));
     }
@@ -274,13 +279,40 @@ class Users
         return User::validateWithCode($args->get('code', 'invalid-code'));
     }
 
+    /**
+     *
+     * Forgot password, send an email for the request
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return bool
+     * @throws DatabaseException
+     * @throws FileException
+     * @throws EmailException
+     *
+     */
     public function forgotPassword(mixed $obj, Collection $args, Context $context, ResolveInfo $info): bool
     {
         return User::forgotPassword($args->get('email', ''));
     }
 
+    /**
+     *
+     * Change the password of the given code's user
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return mixed
+     * @throws DatabaseException
+     *
+     */
     public function changePassword(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
+        return User::changePassword($args->get('code', ''), $args->get('password', ''));
     }
 
     /**

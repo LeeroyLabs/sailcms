@@ -5,6 +5,7 @@ namespace SailCMS\Models;
 use Exception;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
+use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
@@ -19,6 +20,7 @@ use SailCMS\Middleware;
 use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
+use SailCMS\Types\LoginResult;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
@@ -282,7 +284,6 @@ class User extends BaseModel
      *
      * @param  Username       $name
      * @param  string         $email
-     * @param  string         $password
      * @param  Collection     $roles
      * @param  string         $locale
      * @param  string         $avatar
@@ -293,7 +294,7 @@ class User extends BaseModel
      * @throws PermissionException
      *
      */
-    public function create(Username $name, string $email, string $password, Collection $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
+    public function create(Username $name, string $email, Collection $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
         $this->hasPermissions();
 
@@ -309,13 +310,6 @@ class User extends BaseModel
         // Validate email properly
         $this->validateEmail($email, '', true);
 
-        // Validate password
-        $valid = Security::validatePassword($password);
-
-        if (!$valid) {
-            throw new DatabaseException('Password does not pass minimum security level', 0403);
-        }
-
         $code = Security::generateVerificationCode();
 
         $id = $this->insert([
@@ -324,7 +318,7 @@ class User extends BaseModel
             'status' => true,
             'roles' => $roles,
             'avatar' => $avatar,
-            'password' => Security::hashPassword($password),
+            'password' => Security::hashPassword(Uuid::uuid4()),
             'meta' => $meta->simplify(),
             'temporary_token' => '',
             'locale' => $locale,
@@ -537,11 +531,11 @@ class User extends BaseModel
      *
      * @param  string  $email
      * @param  string  $password
-     * @return string
+     * @return LoginResult
      * @throws DatabaseException
      *
      */
-    public function verifyUserPass(string $email, string $password): string
+    public function verifyUserPass(string $email, string $password): LoginResult
     {
         $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
 
@@ -551,25 +545,25 @@ class User extends BaseModel
         if (!$mwResult->data['allowed']) {
             if ($user && Security::verifyPassword($password, $user->password)) {
                 if ($user->meta->flags->use2fa) {
-                    return '2fa';
+                    return new LoginResult((string)$user->_id, '2fa');
                 }
 
                 $key = Security::secureTemporaryKey();
                 $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
-                return $key;
+                return new LoginResult((string)$user->_id, $key);
             }
         } else {
             // Middleware says everything is ok, login
             if ($user->meta->flags->use2fa) {
-                return '2fa';
+                return new LoginResult((string)$user->_id, '2fa');
             }
 
             $key = Security::secureTemporaryKey();
             $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
-            return $key;
+            return new LoginResult((string)$user->_id, $key);
         }
 
-        return 'error';
+        return new LoginResult('', 'error');
     }
 
     /**
@@ -850,6 +844,39 @@ class User extends BaseModel
 
     /**
      *
+     * Change the password using the reset code
+     *
+     * @param  string  $code
+     * @param  string  $password
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public static function changePassword(string $code, string $password): bool
+    {
+        $instance = new static();
+
+        // Validate password
+        $valid = Security::validatePassword($password);
+
+        if (!$valid) {
+            throw new DatabaseException('Password does not pass minimum security level', 0403);
+        }
+
+        $instance->updateOne(['reset_code' => $code],
+            [
+                '$set' => [
+                    'password' => Security::hashPassword($password),
+                    'reset_code' => ''
+                ]
+            ]
+        );
+
+        return true;
+    }
+
+    /**
+     *
      * Validate email
      *
      * @param  string  $email
@@ -888,7 +915,7 @@ class User extends BaseModel
 
     /**
      *
-     * Override the basemodel for a more complex version
+     * Override the BaseModel for a more complex version
      *
      * @param  bool         $read
      * @param  bool         $advanced
@@ -907,10 +934,8 @@ class User extends BaseModel
                     if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
                         throw new PermissionException('Permission Denied', 0403);
                     }
-                } else {
-                    if (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-                        throw new PermissionException('Permission Denied', 0403);
-                    }
+                } elseif (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+                    throw new PermissionException('Permission Denied', 0403);
                 }
             }
         } elseif ($read) {

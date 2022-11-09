@@ -7,7 +7,7 @@ type Query {
     users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
 
     # Authentication
-    authenticate(email: String!, password: String!): String!
+    authenticate(email: String!, password: String!): LoginResult!
     verifyAuthenticationToken(token: String!): User
     verifyTFA(user_id: ID!, code: String!): Boolean!
     forgotPassword(email: String!): Boolean!
@@ -60,6 +60,11 @@ type Mutation {
 enum SortingOrder {
     ASC
     DESC
+}
+
+type LoginResult {
+    user_id: String!,
+    message: String!
 }
 
 type User {
