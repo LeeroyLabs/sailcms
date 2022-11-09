@@ -51,7 +51,7 @@ class Database
      */
     public static function instance(int $dbIndex = 0): ?Client
     {
-        if (!self::$clients[$dbIndex]) {
+        if (!isset(self::$clients[$dbIndex])) {
             self::init($dbIndex);
         }
 
