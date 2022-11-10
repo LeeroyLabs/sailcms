@@ -58,7 +58,7 @@ class Schema extends Command
             $localeString .= "{$locale}: String\n";
         }
 
-        $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
+        $schemaContent = file_get_contents(dirname(__DIR__) . '/GraphQL/schema.graphql');
         $schemaContent = str_replace(
             [
                 '#{CUSTOM_QUERIES}#',
