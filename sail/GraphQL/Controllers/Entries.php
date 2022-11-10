@@ -2,6 +2,8 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use JsonException;
+use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -10,6 +12,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryType;
+use SodiumException;
 
 class Entries
 {
@@ -181,12 +184,16 @@ class Entries
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
+     * @throws FilesystemException
+     * @throws SodiumException
      *
      */
     public function createEntry(mixed $obj, Collection $args, Context $context): ?Entry
     {
         $entry_type_handle = $args->get('entry_type_handle');
         $locale = $args->get('locale');
+        $is_homepage = $args->get('is_homepage');
         $status = $args->get('status');
         $title = $args->get('title');
         $slug = $args->get('slug');
@@ -199,13 +206,10 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
-        $entry = $entryModel->createOne($locale, $status, $title, $slug, [
+        return $entryModel->createOne($is_homepage, $locale, $status, $title, $slug, [
             'categories' => $categories,
             'content' => $content
         ]);
-
-
-        return $entry;
     }
 
     /**
@@ -219,7 +223,10 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function updateEntry(mixed $obj, Collection $args, Context $context): bool
@@ -243,7 +250,10 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function deleteEntry(mixed $obj, Collection $args, Context $context): bool
