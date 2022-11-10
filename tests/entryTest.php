@@ -130,12 +130,13 @@ test('Create an entry with an entry type with an existing url', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne('fr', EntryStatus::LIVE, 'Test 2', 'test-de-test', []);
+        $entry = $entryModel->createOne('fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', []);
         expect($entry->title)->toBe('Test 2');
-        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('test-pages/test-de-test-2');
     } catch (Exception $exception) {
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -170,6 +171,20 @@ test('Update an entry with the default type', function ()
     }
 });
 
+test('Find the entry by url', function ()
+{
+    $entry = Entry::findByURL('test-pages/test-de-test', false);
+
+    expect($entry->title)->toBe('Test');
+});
+
+test('Failed to find the entry by url', function ()
+{
+    $entry = Entry::findByURL('test-pages/test-de-test-2', false);
+
+    expect($entry)->toBe(null);
+});
+
 test('Hard delete an entry with an entry type', function ()
 {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -181,7 +196,7 @@ test('Hard delete an entry with an entry type', function ()
         $result = $entryModel->delete($entry->_id, false);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -197,7 +212,7 @@ test('Hard delete an entry with an entry type 2', function ()
         $result = $entryModel->delete($entry->_id, false);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });

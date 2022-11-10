@@ -145,11 +145,11 @@ class Entry extends BaseModel
 
             // Search for what collection has this url (if any)
             $entry = new Entry($value->collection_name);
-            $found = $entry->count(['url' => $url, 'status' => EntryStatus::LIVE->value, 'site_id' => Sail::siteId()]);
+            $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                $content = $entry->findOne(['url' => $url, 'status' => EntryStatus::LIVE->value, 'site_id' => Sail::siteId()])->exec();
+                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec();
 
                 $preview = false;
                 $previewVersion = false;
@@ -163,15 +163,16 @@ class Entry extends BaseModel
                     $content = null;
                 }
 
-                if ($preview !== null && $previewVersion !== null && EntryStatus::from($content->status) === EntryStatus::LIVE) {
+                if (EntryStatus::from($content->status) !== EntryStatus::LIVE) {
                     // Page is not published but preview mode is active
-                    if ($preview) {
+                    if ($preview && $previewVersion) {
                         // TODO: HANDLE PREVIEW
                         //$content = null;
-                    }
 
-                    // Page exists but is not published
-                    $content = null;
+                    } else {
+                        // Page exists but is not published
+                        $content = null;
+                    }
                 }
             }
         });
@@ -204,13 +205,11 @@ class Entry extends BaseModel
             if ($found > 0) {
                 return;
             }
-            print_r($value->handle);
             $entry = new Entry($value->collection_name);
             $found = $entry->count($filters);
         });
-        print_r("found:" . $found . " - " . $url . PHP_EOL);
+
         if ($found > 0) {
-            print_r('found');
             $slug = self::incrementSlug($slug);
             return self::getValidatedSlug($url_prefix, $slug, $site_id, $locale, $currentId, $availableTypes);
         }
