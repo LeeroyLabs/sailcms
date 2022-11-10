@@ -196,14 +196,16 @@ class Entries
         $parent_id = $args->get('parent_id');
         $site_id = $args->get('site_id');
         $alternates = $args->get('alternates');
-        $is_homepage = $args->get('is_homepage');
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
-        return $entryModel->createOne($locale, $status, $title, $slug, [
+        $entry = $entryModel->createOne($locale, $status, $title, $slug, [
             'categories' => $categories,
             'content' => $content
         ]);
+
+
+        return $entry;
     }
 
     /**

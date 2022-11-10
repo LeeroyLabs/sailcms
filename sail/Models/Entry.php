@@ -20,10 +20,6 @@ class Entry extends BaseModel
 {
     /* Errors */
     const TITLE_MISSING = "You must set the entry title in your data";
-    const SLUG_MISSING = "You must set the entry slug in your data";
-    const HOMEPAGE_ALREADY_EXISTS = "Your project has already an homepage that is live";
-    const URL_NOT_AVAILABLE = "The %s url is not available";
-    const CANNOT_CREATE_ENTRY = "You don't have the right to create an entry";
     const DATABASE_ERROR = "Exception when %s an entry";
 
     /* Fields */
@@ -180,6 +176,21 @@ class Entry extends BaseModel
         return $content;
     }
 
+    /**
+     *
+     * Get a validated slug that is not already existing in the db
+     *
+     * @param  string           $url_prefix
+     * @param  string           $slug
+     * @param  string           $site_id
+     * @param  string           $locale
+     * @param  string|null      $currentId
+     * @param  Collection|null  $availableTypes
+     * @return string
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
     public static function getValidatedSlug(string $url_prefix, string $slug, string $site_id, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
     {
         // Just to be sure that the slug is ok
@@ -216,6 +227,15 @@ class Entry extends BaseModel
         return $slug;
     }
 
+    /**
+     *
+     * Get the relative url of the entry
+     *
+     * @param $url_prefix
+     * @param $slug
+     * @return string
+     *
+     */
     public static function getRelativeUrl($url_prefix, $slug): string
     {
         $relativeUrl = "";
@@ -228,6 +248,14 @@ class Entry extends BaseModel
         return $relativeUrl;
     }
 
+    /**
+     *
+     * Increment the slug when it exists in the db
+     *
+     * @param $slug
+     * @return string
+     *
+     */
     public static function incrementSlug($slug): string
     {
         preg_match("/(?<base>[\w\d-]+-)(?<increment>\d+)$/", $slug, $matches);
