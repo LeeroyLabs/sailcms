@@ -5,11 +5,13 @@ namespace SailCMS\Contracts;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
 use SailCMS\Locale;
+use SailCMS\Routing\Route;
 use SailCMS\Routing\Router;
 
 abstract class AppController
 {
     protected Router $router;
+    protected Route $route;
     protected Request $request;
     protected Response $response;
     protected Locale $locale;
@@ -32,6 +34,11 @@ abstract class AppController
     public function getResponse(): Response
     {
         return $this->response;
+    }
+
+    public function setRoute(Route $route): void
+    {
+        $this->route = $route;
     }
 
     /**

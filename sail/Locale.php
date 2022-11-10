@@ -16,14 +16,18 @@ class Locale
      *
      * Set the current locale
      *
-     * @params string $locale
+     * @param  string  $locale
+     * @param  bool    $skipReload
      * @throws FilesystemException
      *
      */
-    public static function setCurrent(string $locale): void
+    public static function setCurrent(string $locale, bool $skipReload = false): void
     {
         static::$current = $locale;
-        static::loadAll();
+
+        if (!$skipReload) {
+            static::loadAll();
+        }
     }
 
     /**
@@ -33,7 +37,7 @@ class Locale
      * @return string
      *
      */
-    public function current(): string
+    public static function current(): string
     {
         return static::$current;
     }

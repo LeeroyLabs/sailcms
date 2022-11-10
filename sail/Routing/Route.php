@@ -3,6 +3,7 @@
 namespace SailCMS\Routing;
 
 use League\Flysystem\FilesystemException;
+use SailCMS\Collection;
 use SailCMS\Debug;
 use SailCMS\Http\Response;
 use SailCMS\Contracts\AppController;
@@ -14,6 +15,7 @@ class Route
     private string $name;
     private string $locale;
     private string $url;
+    private string $HTTPMethod;
     private AppController|string $controller;
     private string $method;
 
@@ -25,15 +27,16 @@ class Route
         ':all' => '(.*)'
     ];
 
-    public function __construct(string $name, string $url, string $locale, AppController|string $controller, string $method)
+    public function __construct(string $name, string $url, string $locale, AppController|string $controller, string $method, string $httpMethod = 'get')
     {
         if (is_string($controller)) {
             $controller = new $controller();
         }
 
-        $this->name = str_replace('//', '/', $method . '_' . $name);
+        $this->name = str_replace('//', '/', $name);
         $this->locale = $locale;
         $this->url = $url;
+        $this->HTTPMethod = $httpMethod;
         $this->controller = $controller;
         $this->method = $method;
     }
@@ -64,6 +67,8 @@ class Route
                 $class = get_class($this->controller);
             }
 
+            $instance->setRoute($this);
+
             Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
 
             call_user_func_array([$instance, $this->method], []);
@@ -87,6 +92,8 @@ class Route
                     $class = get_class($this->controller);
                 }
 
+                $instance->setRoute($this);
+
                 if (!str_contains($url, '__clockwork')) {
                     Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
                 }
@@ -97,5 +104,65 @@ class Route
         }
 
         return null;
+    }
+
+    /**
+     *
+     * Get route name
+     *
+     * @return string
+     *
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     *
+     * Get route method
+     *
+     * @return string
+     *
+     */
+    public function getHTTPMethod(): string
+    {
+        return $this->HTTPMethod;
+    }
+
+    /**
+     *
+     * Get Locale
+     *
+     * @return string
+     *
+     */
+    public function getLocale(): string
+    {
+        return $this->locale;
+    }
+
+    /**
+     *
+     * Get the url, if arguments passed, dynamic elements are replaced
+     *
+     * @param  string  ...$arguments
+     * @return string
+     */
+    public function getURL(string ...$arguments): string
+    {
+        $re = "/(:[a-z]+)/i";
+
+        $url = explode('/', $this->url);
+        $fragmentNumber = 0;
+
+        foreach ($url as $num => $fragment) {
+            if (preg_match_all($re, $fragment, $matches, PREG_SET_ORDER, 0)) {
+                $url[$num] = $arguments[$fragmentNumber];
+                $fragmentNumber++;
+            }
+        }
+
+        return implode('/', $url);
     }
 }

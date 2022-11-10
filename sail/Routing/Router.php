@@ -9,9 +9,11 @@ use SailCMS\Contracts\AppController;
 use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\RouteReturnException;
 use SailCMS\Http\Response;
+use SailCMS\Locale;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
@@ -42,6 +44,19 @@ class Router
 
     /**
      *
+     * Get all routes of the given method
+     *
+     * @param  string  $method
+     * @return Collection
+     *
+     */
+    public static function getAll(string $method): Collection
+    {
+        return static::$routes->get(strtolower($method));
+    }
+
+    /**
+     *
      * Stop everything and redirect to given url
      *
      * @param  string  $url
@@ -68,7 +83,7 @@ class Router
      */
     public function get(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
     {
-        $this->addRoute('get', $url, $locale, $controller, $method);
+        $this->addRoute('get', $url, $locale, $controller, $method, $name);
     }
 
     /**
@@ -85,7 +100,7 @@ class Router
      */
     public function post(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
     {
-        $this->addRoute('post', $url, $locale, $controller, $method);
+        $this->addRoute('post', $url, $locale, $controller, $method, $name);
     }
 
     /**
@@ -173,6 +188,7 @@ class Router
      * @throws RuntimeError
      * @throws SyntaxError
      * @throws DatabaseException
+     * @throws EntryException
      *
      */
     public static function dispatch(): void
@@ -258,25 +274,47 @@ class Router
      *
      * Find the alternate routes for the given name
      *
+     * @param  Route  $route
+     * @return Collection
+     */
+    public function alternate(Route $route): Collection
+    {
+        $alternateRoutes = new Collection([]);
+        $method = $route->getHTTPMethod();
+
+        static::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $method, $route)
+        {
+            if ($value->getName() === $route->getName() && $value->getLocale() !== Locale::current()) {
+                $alternateRoutes->push($value);
+            }
+        });
+
+        return $alternateRoutes;
+    }
+
+    /**
+     *
+     * Get all routes with the given name
+     *
      * @param  string  $name
      * @return Collection
      *
      */
-    public function alternate(string $name): Collection
+    public function routesByName(string $name): Collection
     {
-        $alternateRoutes = new Collection([]);
+        $routes = new Collection([]);
         $methods = ['get', 'post', 'delete', 'put', 'any'];
 
         foreach ($methods as $method) {
-            static::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $method, $name)
+            static::$routes->get($method)->each(static function ($key, $value) use (&$routes, $method, $name)
             {
-                if ($value->name === $method . '_' . $name && $value->locale !== Locale::$current) {
-                    $alternateRoutes->push($value);
+                if ($value->getName() === $name) {
+                    $routes->push($value);
                 }
             });
         }
 
-        return $alternateRoutes;
+        return $routes;
     }
 
     /**
@@ -311,7 +349,7 @@ class Router
             $name = str_replace('/', '_', $url);
         }
 
-        $route = new Route($name, $url, $locale, $controller, $callback);
-        static::$routes->get($method)->push($route);
+        $route = new Route($name, $url, $locale, $controller, $callback, $method);
+        static::$routes->get(strtolower($method))->push($route);
     }
 }

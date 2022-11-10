@@ -19,9 +19,9 @@ class Request
     public function __construct()
     {
         $this->ip = $this->getUserIp();
-        $this->method = $_SERVER['REQUEST_METHOD'];
-        $this->uri = $_SERVER['REQUEST_URI'];
-        $this->_agent = $_SERVER['HTTP_USER_AGENT'];
+        $this->method = $_SERVER['REQUEST_METHOD'] ?? 'get';
+        $this->uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $this->_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'CLI';
         $this->_post = new Post();
         $this->_get = new Get();
         $this->_headers = new Collection(getallheaders());
@@ -148,6 +148,6 @@ class Request
             return $_SERVER['HTTP_X_FORWARDED_FOR'];
         }
 
-        return $_SERVER['REMOTE_ADDR'];
+        return $_SERVER['REMOTE_ADDR'] ?? '::1';
     }
 }
