@@ -225,7 +225,7 @@ class Transformer
                 break;
         }
 
-        $fs->write($name, $imagick->getImageBlob());
+        $fs->write($name, $imagick->getImageBlob(), ['visibility' => 'public']);
     }
 
     /**

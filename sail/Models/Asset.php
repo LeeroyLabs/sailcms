@@ -234,7 +234,7 @@ class Asset extends BaseModel
         }
 
         // Store asset
-        $fs->write($path . $timePath . $filename, $data);
+        $fs->write($path . $timePath . $filename, $data, ['visibility' => 'public']);
 
         // Determine user that uploaded it, if possible
         $uploader_id = '';
@@ -351,7 +351,7 @@ class Asset extends BaseModel
                 if ($crop !== '') {
                     $transform->resizeAndCrop($width, $height, $crop)->save($transformFilename, $format);
                 } else {
-                    $transform->resize($width, $height);
+                    $transform->resize($width, $height)->save($transformFilename, $format);
                 }
 
                 // Get url of the transform (in case of local:// remove the uploads mention)
