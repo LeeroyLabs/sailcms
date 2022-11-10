@@ -104,17 +104,24 @@ abstract class BaseModel
      * that is not either a string or number, unless you are sure that it's safe.
      *
      * @param  mixed  $value
-     * @return string|int|bool|float
+     * @return string|array|bool|int|float
      * @throws JsonException
      *
      */
-    protected function safe(mixed $value): string|int|bool|float
+    protected function safe(mixed $value): string|array|bool|int|float
     {
-        if (!is_string($value) && !is_numeric($value)) {
-            return json_encode($value, JSON_THROW_ON_ERROR);
+        if (is_scalar($value)) {
+            return $value;
         }
 
-        return $value;
+        $output = [];
+
+        foreach ($value as $k => $v) {
+            $safe_k = str_replace('$', '', $k);
+            $output[$safe_k] = $this->safe($v);
+        }
+
+        return $output;
     }
 
     /**
@@ -566,13 +573,14 @@ abstract class BaseModel
      * Create an Index
      *
      * @param  array  $index
+     * @param  array  $options
      * @throws DatabaseException
      *
      */
-    protected function addIndex(array $index): void
+    protected function addIndex(array $index, array $options = []): void
     {
         try {
-            $this->collection->createIndex($index);
+            $this->collection->createIndex($index, $options);
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }
@@ -583,13 +591,14 @@ abstract class BaseModel
      * Create many indexes
      *
      * @param  array  $indexes
+     * @param  array  $options
      * @throws DatabaseException
      *
      */
-    protected function addIndexes(array $indexes): void
+    protected function addIndexes(array $indexes, array $options = []): void
     {
         try {
-            $this->collection->createIndexes($indexes);
+            $this->collection->createIndexes($indexes, $options);
         } catch (\Exception $e) {
             throw new DatabaseException($e->getMessage(), 500);
         }

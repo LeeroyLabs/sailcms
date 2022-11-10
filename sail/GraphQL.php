@@ -30,9 +30,9 @@ class GraphQL
     private static array $mutations = [];
     private static array $resolvers = [];
 
-    private static array $querySchemaParts = [];
-    private static array $mutationSchemaParts = [];
-    private static array $typeSchemaParts = [];
+    public static array $querySchemaParts = [];
+    public static array $mutationSchemaParts = [];
+    public static array $typeSchemaParts = [];
 
     /**
      *
@@ -109,7 +109,7 @@ class GraphQL
         try {
             $pathAST = 'cache://graphql.ast';
 
-            if ($_ENV['ENVIRONMENT'] === 'dev' || !Filesystem::manager()->fileExists($pathAST)) {
+            if ($_ENV['ENVIRONMENT'] === 'dev') {
                 // Load all files for the schema
                 $queries = [];
                 $mutations = [];
@@ -159,9 +159,6 @@ class GraphQL
 
                 // Parse schema
                 $document = Parser::parse($schemaContent);
-
-                // Save AST format
-                Filesystem::manager()->write($pathAST, "<?php\nreturn " . var_export(AST::toArray($document), true) . ";\n");
             } else {
                 $ast = require Sail::getWorkingDirectory() . '/storage/cache/graphql.ast';
                 $document = AST::fromArray($ast);
