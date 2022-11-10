@@ -31,7 +31,7 @@ class Route
             $controller = new $controller();
         }
 
-        $this->name = $method . '_' . $name;
+        $this->name = str_replace('//', '/', $method . '_' . $name);
         $this->locale = $locale;
         $this->url = $url;
         $this->controller = $controller;
@@ -55,9 +55,16 @@ class Route
         // Check if route is defined without regex
         if ($url === $this->url) {
             Locale::setCurrent($this->locale);
-            $instance = new $this->controller();
 
-            Debug::route($this->method, $url, $this->controller . ':' . $this->method, Text::slugify($url));
+            if (is_string($this->controller)) {
+                $instance = new $this->controller();
+                $class = $this->controller;
+            } else {
+                $instance = $this->controller;
+                $class = get_class($this->controller);
+            }
+
+            Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
 
             call_user_func_array([$instance, $this->method], []);
             return $instance->getResponse();
@@ -70,12 +77,20 @@ class Route
                 unset($matched[0]);
                 $matches = array_values($matched);
 
-                if (!str_contains($url, '__clockwork')) {
-                    Debug::route($this->method, $url, $this->controller . ':' . $this->method, Text::slugify($url));
+                Locale::setCurrent($this->locale);
+
+                if (is_string($this->controller)) {
+                    $instance = new $this->controller();
+                    $class = $this->controller;
+                } else {
+                    $instance = $this->controller;
+                    $class = get_class($this->controller);
                 }
 
-                Locale::setCurrent($this->locale);
-                $instance = new $this->controller();
+                if (!str_contains($url, '__clockwork')) {
+                    Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
+                }
+
                 call_user_func_array([$instance, $this->method], $matches);
                 return $instance->getResponse();
             }

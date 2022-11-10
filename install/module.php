@@ -15,7 +15,7 @@ class Module implements AppModule
 
     public function cli(): Collection
     {
-        return [];
+        return new Collection([]);
     }
 
     public function middleware(): void

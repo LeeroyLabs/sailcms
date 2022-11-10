@@ -308,7 +308,7 @@ class Router
 
         // Since no name was given, use the url
         if (empty($name)) {
-            $name = $url;
+            $name = str_replace('/', '_', $url);
         }
 
         $route = new Route($name, $url, $locale, $controller, $callback);
