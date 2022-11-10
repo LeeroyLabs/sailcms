@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Schema extends Command
 {
     protected static $defaultDescription = 'Build an optimized AST version of the GraphQL Schema for production';
-    protected static $defaultName = 'build:schema';
+    protected static $defaultName = 'build-schema';
 
     /**
      *
