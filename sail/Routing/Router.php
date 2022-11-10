@@ -294,6 +294,67 @@ class Router
 
     /**
      *
+     * Get a route by name, method and locale, optionally process arguments to replace dynamic placeholders
+     *
+     * @param  string            $name
+     * @param  string            $method
+     * @param  string            $locale
+     * @param  Collection|array  $arguments
+     * @return string|null
+     *
+     */
+    public static function getBy(string $name, string $method, string $locale = 'en', Collection|array $arguments = []): ?string
+    {
+        $route = null;
+        static::$routes->get($method)->each(static function ($key, $value) use (&$route, $name, $locale)
+        {
+            if ($value->getName() === $name && $value->getLocale() === $locale) {
+                $route = $value;
+            }
+        });
+
+        if ($route) {
+            return $route->getURL(...$arguments);
+        }
+
+        return null;
+    }
+
+    /**
+     *
+     * Get all routes that match name and method, optionally process all dynamics placeholders
+     *
+     * @param  string            $name
+     * @param  string            $method
+     * @param  Collection|array  $arguments
+     * @return Collection
+     *
+     */
+    public static function getAllBy(string $name, string $method, Collection|array $arguments = []): Collection
+    {
+        $routes = Collection::init();
+        static::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
+        {
+            if ($value->getName() === $name) {
+                $routes->pushKeyValue($value->getLocale(), $value);
+            }
+        });
+
+        if ($routes->length > 0) {
+            $out = Collection::init();
+
+            foreach ($routes->unwrap() as $key => $value) {
+                $out->pushKeyValue($key, $value->getURL(...$arguments));
+            }
+
+            return $out;
+        }
+
+        return Collection::init();
+    }
+
+    /**
+     *
      * Get all routes with the given name
      *
      * @param  string  $name
