@@ -187,7 +187,6 @@ class Entries
     {
         $entry_type_handle = $args->get('entry_type_handle');
         $locale = $args->get('locale');
-        $is_homepage = $args->get('is_homepage');
         $status = $args->get('status');
         $title = $args->get('title');
         $slug = $args->get('slug');
@@ -197,10 +196,11 @@ class Entries
         $parent_id = $args->get('parent_id');
         $site_id = $args->get('site_id');
         $alternates = $args->get('alternates');
+        $is_homepage = $args->get('is_homepage');
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
-        return $entryModel->createOne($locale, $is_homepage, $status, $title, $slug, [
+        return $entryModel->createOne($locale, $status, $title, $slug, [
             'categories' => $categories,
             'content' => $content
         ]);

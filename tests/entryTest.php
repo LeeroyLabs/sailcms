@@ -6,6 +6,7 @@ use SailCMS\Models\Entry;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
+use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Username;
 
@@ -75,46 +76,13 @@ test('Create an entry with the default type', function ()
     $model = new Entry();
 
     try {
-        $entry = $model->createOne('fr', true, EntryStatus::LIVE, 'Home', null, []);
+        $entry = $model->createOne('fr', EntryStatus::LIVE, 'Home', null, []);
         expect($entry->title)->toBe('Home');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
-        expect($entry->slug)->toBe(null);
+        expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
-        expect(true)->toBe(false);
-    }
-});
-
-test('Failed to create an entry with homepage at false and slug at null', function ()
-{
-    $model = new Entry();
-
-    try {
-        $entry = $model->createOne('fr', false, EntryStatus::LIVE, 'Failed entry', null, []);
-        expect(true)->toBe(false);
-    } catch (EntryException $exception) {
-        // An entry must have slug defined if homepage is false
-        expect(true)->toBe(true);
-    } catch (Exception $exception) {
-        expect(true)->toBe(false);
-    }
-});
-
-// TODO this will change if homepage are resaved to false
-test('Fail to create a live entry because there is already a homepage', function ()
-{
-    $entryModel = EntryType::getEntryModelByHandle('test');
-
-    try {
-        $entryModel->createOne('fr', true, EntryStatus::LIVE, 'Test home', null, []);
-        expect(true)->toBe(false);
-    } catch (EntryException $exception) {
-        // Should be going here because there is already a homepage
-        //print_r($exception->getMessage());
-        expect(true)->toBe(true);
-    } catch (Exception $exception) {
-        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -124,25 +92,13 @@ test('Create an entry with an entry type', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne('fr', false, EntryStatus::LIVE, 'Test', 'test', []);
+        $entry = $entryModel->createOne('fr', EntryStatus::LIVE, 'Test', 'test', []);
         expect($entry->title)->toBe('Test');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('test-pages/test');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
-    }
-});
-
-test('Fail to create a live entry because url already in use', function ()
-{
-    $entryModel = EntryType::getEntryModelByHandle('test');
-
-    try {
-        $entry = $entryModel->createOne('fr', false, EntryStatus::LIVE, 'Test2', 'test', []);
-        expect(true)->toBe(false);
-    } catch (Exception $exception) {
-        expect(true)->toBe(true);
     }
 });
 
@@ -169,40 +125,26 @@ test('Update an entry with an entry type', function ()
     }
 });
 
-test('Fail to update when homepage is false and slug is null', function ()
+test('Create an entry with an entry type with an existing url', function ()
 {
     $entryModel = EntryType::getEntryModelByHandle('test');
-    $entry = $entryModel->one([
-        'title' => 'Test'
-    ]);
 
     try {
-        $result = $entryModel->updateById($entry, [
-            'slug' => null,
-        ]);
-        expect(true)->toBe(false);
-    } catch (EntryException $exception) {
-        // An entry must have slug defined if homepage is false
-        expect(true)->toBe(true);
+        $entry = $entryModel->createOne('fr', EntryStatus::LIVE, 'Test 2', 'test-de-test', []);
+        expect($entry->title)->toBe('Test 2');
+        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->locale)->toBe('fr');
+        expect($entry->url)->toBe('test-pages/test-de-test-2');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
 });
 
-test('Hard delete an entry with an entry type', function ()
+test('Get a validated slug for an existing slug', function ()
 {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-    $entry = $entryModel->one([
-        'title' => 'Test'
-    ]);
+    $newSlug = Entry::getValidatedSlug('test-pages', 'test-de-test', Sail::siteId(), 'fr');
 
-    try {
-        $result = $entryModel->delete($entry->_id, false);
-        expect($result)->toBe(true);
-    } catch (EntryException $exception) {
-        print_r($exception->getMessage());
-        expect(true)->toBe(false);
-    }
+    expect($newSlug)->toBe('test-de-test-3');
 });
 
 test('Update an entry with the default type', function ()
@@ -224,6 +166,38 @@ test('Update an entry with the default type', function ()
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Hard delete an entry with an entry type', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $result = $entryModel->delete($entry->_id, false);
+        expect($result)->toBe(true);
+    } catch (EntryException $exception) {
+        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Hard delete an entry with an entry type 2', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test 2'
+    ]);
+
+    try {
+        $result = $entryModel->delete($entry->_id, false);
+        expect($result)->toBe(true);
+    } catch (EntryException $exception) {
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
