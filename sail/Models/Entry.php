@@ -11,6 +11,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
 use SailCMS\Sail;
+use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryStatus;
@@ -19,10 +20,6 @@ class Entry extends BaseModel
 {
     /* Errors */
     const TITLE_MISSING = "You must set the entry title in your data";
-    const SLUG_MISSING = "You must set the entry slug in your data";
-    const HOMEPAGE_ALREADY_EXISTS = "Your project has already an homepage that is live";
-    const URL_NOT_AVAILABLE = "The %s url is not available";
-    const CANNOT_CREATE_ENTRY = "You don't have the right to create an entry";
     const DATABASE_ERROR = "Exception when %s an entry";
 
     /* Fields */
@@ -31,7 +28,6 @@ class Entry extends BaseModel
     public ?string $site_id;
     public string $locale;
     public Collection $alternates; // Array of object "locale" -> "lang_code", "entry" -> "entry_id"
-    public bool $is_homepage;
     public string $status;
     public string $title;
     public ?string $slug;
@@ -79,7 +75,6 @@ class Entry extends BaseModel
             'site_id',
             'locale',
             'alternates',
-            'is_homepage',
             'status',
             'title',
             'slug',
@@ -137,14 +132,7 @@ class Entry extends BaseModel
         $request = $fromRequest ? new Request() : null;
         $content = null;
 
-        // TODO site
-        $filters = ['url' => $url, 'status' => EntryStatus::LIVE->value];
-        if ($url === '' || $url === '/') {
-            $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
-            $url = '/';
-        }
-
-        $availableTypes->each(function ($key, $value) use ($filters, $url, $request, &$content)
+        $availableTypes->each(function ($key, $value) use ($url, $request, &$content)
         {
             // We already have it, stop!
             if ($content !== null) {
@@ -153,11 +141,11 @@ class Entry extends BaseModel
 
             // Search for what collection has this url (if any)
             $entry = new Entry($value->collection_name);
-            $found = $entry->count($filters);
+            $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                $content = $entry->findOne(['url' => $url, 'status' => EntryStatus::LIVE->value])->exec();
+                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec();
 
                 $preview = false;
                 $previewVersion = false;
@@ -171,15 +159,16 @@ class Entry extends BaseModel
                     $content = null;
                 }
 
-                if ($preview !== null && $previewVersion !== null && EntryStatus::from($content->status) === EntryStatus::LIVE) {
+                if (EntryStatus::from($content->status) !== EntryStatus::LIVE) {
                     // Page is not published but preview mode is active
-                    if ($preview) {
+                    if ($preview && $previewVersion) {
                         // TODO: HANDLE PREVIEW
                         //$content = null;
-                    }
 
-                    // Page exists but is not published
-                    $content = null;
+                    } else {
+                        // Page exists but is not published
+                        $content = null;
+                    }
                 }
             }
         });
@@ -189,36 +178,96 @@ class Entry extends BaseModel
 
     /**
      *
-     * Count the entry by url
+     * Get a validated slug that is not already existing in the db
      *
-     * @param  string       $url
-     * @param  bool         $isHomepage
-     * @param  string|null  $currentId
-     * @return int
+     * @param  string           $url_prefix
+     * @param  string           $slug
+     * @param  string           $site_id
+     * @param  string           $locale
+     * @param  string|null      $currentId
+     * @param  Collection|null  $availableTypes
+     * @return string
      * @throws DatabaseException
      * @throws EntryException
      *
      */
-    public static function countByUrl(string $url, bool $isHomepage, ?string $currentId = null): int
+    public static function getValidatedSlug(string $url_prefix, string $slug, string $site_id, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
     {
-        $result = 0;
-        $availableTypes = EntryType::getAll();
+        // Just to be sure that the slug is ok
+        $slug = Text::slugify($slug, $locale);
 
-        $filters = ['url' => $url, 'status' => EntryStatus::LIVE->value];
-        if ($isHomepage) {
-            $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
-        }
+        // Form the url to find if it already exists
+        $url = self::getRelativeUrl($url_prefix, $slug);
+        $found = 0;
+
+        // Set the filters for the query
+        $filters = ['url' => $url, 'site_id' => $site_id];
         if ($currentId) {
             $filters['_id'] = ['$ne' => new ObjectId($currentId)];
         }
 
-        $availableTypes->each(function ($key, $value) use ($filters, $url, &$result)
+        // Query only the first call
+        if (!$availableTypes) {
+            $availableTypes = EntryType::getAll();
+        }
+        $availableTypes->each(function ($key, $value) use ($filters, &$found)
         {
+            // We already find one no need to continue the search
+            if ($found > 0) {
+                return;
+            }
             $entry = new Entry($value->collection_name);
-            $result += $entry->count($filters);
+            $found = $entry->count($filters);
         });
 
-        return $result;
+        if ($found > 0) {
+            $slug = self::incrementSlug($slug);
+            return self::getValidatedSlug($url_prefix, $slug, $site_id, $locale, $currentId, $availableTypes);
+        }
+        return $slug;
+    }
+
+    /**
+     *
+     * Get the relative url of the entry
+     *
+     * @param $url_prefix
+     * @param $slug
+     * @return string
+     *
+     */
+    public static function getRelativeUrl($url_prefix, $slug): string
+    {
+        $relativeUrl = "";
+
+        if ($url_prefix) {
+            $relativeUrl .= $url_prefix . '/';
+        }
+        $relativeUrl .= $slug;
+
+        return $relativeUrl;
+    }
+
+    /**
+     *
+     * Increment the slug when it exists in the db
+     *
+     * @param $slug
+     * @return string
+     *
+     */
+    public static function incrementSlug($slug): string
+    {
+        preg_match("/(?<base>[\w\d-]+-)(?<increment>\d+)$/", $slug, $matches);
+
+        if (count($matches) > 0) {
+            $increment = (int)$matches['increment'];
+            $newSlug = $matches['base'] . $increment + 1;
+        } else {
+            $newSlug = $slug . "-2";
+        }
+
+        return $newSlug;
     }
 
     /**
@@ -260,48 +309,6 @@ class Entry extends BaseModel
 
     /**
      *
-     * Validate the url
-     *
-     * @throws EntryException
-     * @throws DatabaseException
-     *
-     */
-    private function validateUrlAvailability(string $status, bool $isHomepage, ?string $slug, ?string $currentId = null)
-    {
-        if ($status == EntryStatus::LIVE->value) {
-            /* TODO change existing homepage to false and update the url
-            $filters = ['is_homepage' => true, 'status' => EntryStatus::LIVE->value];
-
-            if ($currentId) {
-                $filters['_id'] = ['$ne' => new ObjectId($currentId)];
-            }
-
-            // TODO THAT FOR EACH entry COLLECTION
-            $hasHomepage = $this->count($filters);
-
-            if ($isHomepage && $hasHomepage >= 1) {
-                // ASKMARC -> if we change all is_homepage to false, we must set the slug of these entries. But this could create errors of url validation.
-                // so it's why I think we should keep an exception and let the user change the is_homepage to the other entry.
-                throw new EntryException(self::HOMEPAGE_ALREADY_EXISTS);
-            }
-            */
-
-            // Check if url is available
-            $newUrl = $this->getRelativeUrl($slug, $isHomepage);
-            $count = self::countByUrl($newUrl, $isHomepage, $currentId);
-
-            if ($count > 0) {
-                throw new EntryException(sprintf(self::URL_NOT_AVAILABLE, $newUrl));
-            }
-        }
-
-        if (!$isHomepage && !$slug) {
-            throw new EntryException(self::SLUG_MISSING);
-        }
-    }
-
-    /**
-     *
      * Create an entry
      *  The extra data can contains:
      *      - parent_id default null
@@ -312,7 +319,6 @@ class Entry extends BaseModel
      * TODO handle site_id, alternates
      *
      * @param  string              $locale
-     * @param  bool                $isHomepage
      * @param  EntryStatus|string  $status
      * @param  string              $title
      * @param  string|null         $slug
@@ -324,7 +330,7 @@ class Entry extends BaseModel
      * @throws PermissionException
      *
      */
-    public function createOne(string $locale, bool $isHomepage, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function createOne(string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         // TODO If author is set, the current user and author must have permission (?)
         $this->hasPermissions();
@@ -335,7 +341,6 @@ class Entry extends BaseModel
 
         $data = new Collection([
             'locale' => $locale,
-            'is_homepage' => $isHomepage,
             'title' => $title,
             'status' => $status,
             'slug' => $slug
@@ -439,29 +444,6 @@ class Entry extends BaseModel
 
     /**
      *
-     * Get the relative url of the entry will be saved
-     *
-     * @param  ?string  $slug
-     * @param  bool     $isHomepage
-     * @return string
-     *
-     */
-    private function getRelativeUrl(?string $slug, bool $isHomepage): string
-    {
-        $relativeUrl = "";
-        if ($isHomepage) {
-            $relativeUrl = "/";
-        } else {
-            if ($this->entryType->url_prefix) {
-                $relativeUrl .= $this->entryType->url_prefix . '/';
-            }
-            $relativeUrl .= $slug;
-        }
-        return $relativeUrl;
-    }
-
-    /**
-     *
      * Create an entry
      *
      * @param  Collection  $data
@@ -473,15 +455,15 @@ class Entry extends BaseModel
     private function create(Collection $data): array|Entry|null
     {
         $locale = $data->get('locale');
-        $is_homepage = $data->get('is_homepage');
         $status = $data->get('status', EntryStatus::INACTIVE->value);
         $title = $data->get('title');
-        $slug = $data->get('slug');
-        $author = User::$currentUser; // Handle permission and possible value from the call
+        $slug = $data->get('slug', Text::slugify($title, $locale));
+        $site_id = $data->get('site_id', Sail::siteId());
+        $author = User::$currentUser;
         // TODO implements others fields: parent_id categories content alternates
 
-        // Test if url of the entry is available and if there is another isHomepage.
-        $this->validateUrlAvailability($status, $is_homepage, $slug);
+        // Get the validated slug just to be sure
+        $slug = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
         $published = false;
         if ($status == EntryStatus::LIVE->value) {
@@ -494,13 +476,12 @@ class Entry extends BaseModel
         try {
             $entryId = $this->insert([
                 'entry_type_id' => (string)$this->entryType->_id,
-                'site_id' => Sail::siteId(),
+                'site_id' => $site_id,
                 'locale' => $locale,
-                'is_homepage' => $is_homepage,
                 'status' => $status,
                 'title' => $title,
                 'slug' => $slug,
-                'url' => $this->getRelativeUrl($slug, $is_homepage),
+                'url' => self::getRelativeUrl($this->entryType->url_prefix, $slug),
                 'authors' => $authors,
                 'dates' => $dates,
                 // TODO
@@ -529,34 +510,32 @@ class Entry extends BaseModel
      */
     private function update(Entry $entry, Collection $data): bool
     {
-        $status = $entry->status;
+        $update = [];
         $slug = $entry->slug;
-        $is_homepage = $entry->is_homepage;
+        $locale = $entry->locale;
+        $site_id = $entry->site_id;
 
-        // If it needs to be updated
-        if (in_array('status', $data->keys()->unwrap())) {
-            $status = $data->get('status');
+        if (in_array('locale', $data->keys()->unwrap())) {
+            $locale = $data->get('locale');
         }
-        if (in_array('is_homepage', $data->keys()->unwrap())) {
-            $is_homepage = $data->get('is_homepage');
+        if (in_array('site_id', $data->keys()->unwrap())) {
+            $site_id = $data->get('site_id');
         }
         if (in_array('slug', $data->keys()->unwrap())) {
             $slug = $data->get('slug');
+            $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
 
-        $this->validateUrlAvailability($status, $is_homepage, $slug, $entry->_id);
-
-        $update = [];
         $data->each(function ($key, $value) use (&$update)
         {
-            if (in_array($key, ['parent_id', 'site_id', 'locale', 'is_homepage', 'status', 'title', 'slug', 'categories', 'content'])) {
+            if (in_array($key, ['parent_id', 'site_id', 'locale', 'status', 'title', 'categories', 'content'])) {
                 $update[$key] = $value;
             }
         });
 
         // Automatic attributes
         // TODO generate alternates
-        $update['url'] = $this->getRelativeUrl($slug, $is_homepage);
+        $update['url'] = self::getRelativeUrl($this->entryType->url_prefix, $slug);
         $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
         $update['dates'] = Dates::updated($entry->dates);
 

@@ -16,7 +16,6 @@ class EntryType extends BaseModel
     const HANDLE_MISSING = "You must set the entry type handle in your data";
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
     const TITLE_MISSING = "You must set the entry type title in your data";
-    const CANNOT_CREATE_ENTRY_TYPE = "You don't have the right to create an entry type";
     const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = "Exception when %s an entry type";
 
@@ -120,7 +119,7 @@ class EntryType extends BaseModel
     public static function getEntryModelByHandle(string $handle): Entry
     {
         $entryType = (new static())->getByHandle($handle);
-        
+
         if (!$entryType) {
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
         }
