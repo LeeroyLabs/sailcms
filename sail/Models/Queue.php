@@ -54,9 +54,11 @@ class Queue extends BaseModel
      * @throws DatabaseException
      *
      */
-    public function add(Task $task): void
+    public static function add(Task $task): void
     {
-        $this->insert([
+        $instance = new static();
+        
+        $instance->insert([
             'name' => $task->name,
             'handler' => $task->handler,
             'action' => $task->action,

@@ -15,7 +15,7 @@ class Category extends BaseModel
 
     public function fields(bool $fetchAllFields = false): array
     {
-        return ['_id', 'site_id', 'slug', 'parent_id', 'order'];
+        return ['_id', 'name', 'site_id', 'slug', 'parent_id', 'order'];
     }
 
     /**
@@ -27,4 +27,8 @@ class Category extends BaseModel
      *
      *
      */
+
+    public function create(string $name, string $parent_id = '')
+    {
+    }
 }
