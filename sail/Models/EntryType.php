@@ -13,6 +13,7 @@ use SailCMS\Text;
 
 class EntryType extends BaseModel
 {
+    /* errors */
     const HANDLE_MISSING = "You must set the entry type handle in your data";
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
     const TITLE_MISSING = "You must set the entry type title in your data";
@@ -20,11 +21,14 @@ class EntryType extends BaseModel
     const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = "Exception when %s an entry type";
 
+    const ACL_HANDLE = "entrytype";
+
+    /* default entry type */
     private const _DEFAULT_HANDLE = "page";
     private const _DEFAULT_TITLE = "Page";
     private const _DEFAULT_URL_PREFIX = "";
 
-    // Fields
+    /* fields */
     public string $collection_name;
     public string $title;
     public string $handle;
@@ -45,7 +49,7 @@ class EntryType extends BaseModel
 
     public function init(): void
     {
-        $this->setPermissionGroup('entrytype');
+        $this->setPermissionGroup(static::ACL_HANDLE);
     }
 
     /**
@@ -53,11 +57,14 @@ class EntryType extends BaseModel
      * Get a list of all available types
      *
      * @return Collection
+     * @throws ACLException
      * @throws DatabaseException
-     *
+     * @throws PermissionException
      */
     public static function getAll(): Collection
     {
+        (new static())->hasPermissions(true);
+
         $instance = new static();
         return new Collection($instance->find([])->exec());
     }
@@ -67,18 +74,22 @@ class EntryType extends BaseModel
      * Use the settings to create the default type
      *
      * @return EntryType
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public static function getDefaultType(): EntryType
     {
+        $instance = new static();
+        $instance->hasPermissions(true);
+
         // Get default values for default type
         $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle') ?? static::_DEFAULT_HANDLE;
         $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title') ?? static::_DEFAULT_TITLE;
         $defaultUrlPrefix = $_ENV['SETTINGS']->get('entry.defaultType.url_prefix') ?? static::_DEFAULT_URL_PREFIX;
 
-        $instance = new static();
         $entryType = $instance->getByHandle($defaultHandle);
 
         if (!$entryType) {
@@ -93,15 +104,18 @@ class EntryType extends BaseModel
      *
      * @param  string  $collectionName
      * @return EntryType
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public static function getByCollectionName(string $collectionName): EntryType
     {
         $instance = new static();
-        $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
+        $instance->hasPermissions(true);
 
+        $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
         if (!$entryType) {
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $collectionName));
         }
@@ -115,14 +129,18 @@ class EntryType extends BaseModel
      *
      * @param  string  $handle
      * @return Entry
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public static function getEntryModelByHandle(string $handle): Entry
     {
-        $entryType = (new static())->getByHandle($handle);
+        $instance = new static();
+        $instance->hasPermissions(true);
 
+        $entryType = $instance->getByHandle($handle);
         if (!$entryType) {
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
@@ -150,11 +168,15 @@ class EntryType extends BaseModel
      *
      * @param  string  $id
      * @return EntryType|null
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function getById(string $id): ?EntryType
     {
+        $this->hasPermissions(true);
+
         return $this->findById($id)->exec();
     }
 
