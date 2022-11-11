@@ -2,6 +2,8 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
+use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\BaseModel;
@@ -15,12 +17,17 @@ use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryStatus;
+use SodiumException;
 
 class Entry extends BaseModel
 {
+    const HOMEPAGE_CONFIG_HANDLE = 'homepage';
+    const HOMEPAGE_CONFIG_ENTRY_TYPE_KEY = 'entry_type_handle';
+    const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
+
     /* Errors */
-    const TITLE_MISSING = "You must set the entry title in your data";
-    const DATABASE_ERROR = "Exception when %s an entry";
+    const TITLE_MISSING = 'You must set the entry title in your data';
+    const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Fields */
     public string $entry_type_id;
@@ -112,6 +119,30 @@ class Entry extends BaseModel
         });
 
         return $entries;
+    }
+
+    /**
+     *
+     * Get homepage
+     *
+     * @param  bool  $getEntry
+     * @return array|object|null
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     */
+    public static function getHomepage(bool $getEntry = false): array|object|null
+    {
+        $homepageConfig = Config::getByName(self::HOMEPAGE_CONFIG_HANDLE);
+
+        if ($getEntry) {
+            $entryModel = EntryType::getEntryModelByHandle($homepageConfig->config[self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY]);
+
+            return $entryModel->findById($homepageConfig->config[self::HOMEPAGE_CONFIG_ENTRY_KEY]);
+        }
+        return $homepageConfig->config;
     }
 
     /**
@@ -318,21 +349,24 @@ class Entry extends BaseModel
      *
      * TODO handle site_id, alternates
      *
+     * @param  bool                $is_homepage
      * @param  string              $locale
      * @param  EntryStatus|string  $status
      * @param  string              $title
      * @param  string|null         $slug
      * @param  array|Collection    $optionalData
      * @return array|Entry|null
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws ACLException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
-    public function createOne(string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function createOne(bool $is_homepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
-        // TODO If author is set, the current user and author must have permission (?)
         $this->hasPermissions();
 
         if ($status instanceof EntryStatus) {
@@ -351,7 +385,13 @@ class Entry extends BaseModel
             $data->merge(new Collection($optionalData));
         }
 
-        return $this->create($data);
+        $entry = $this->create($data);
+
+        if ($is_homepage) {
+            $this->setAsHomepage();
+        }
+
+        return $entry;
     }
 
     /**
@@ -364,8 +404,10 @@ class Entry extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
-     *
+     * @throws SodiumException
      */
     public function updateById(Entry|string $entry, array|Collection $data): bool
     {
@@ -378,7 +420,25 @@ class Entry extends BaseModel
             $data = new Collection($data);
         }
 
-        return $this->update($entry, $data);
+        $updateResult = $this->update($entry, $data);
+
+        // Update homepage if needed
+        if ($updateResult) {
+            $is_homepage = $data->get('homepage');
+            $currentHomepages = Entry::getHomepage();
+            $currentHomepage = $currentHomepages[Sail::siteId()] ?? [];
+            if (count($currentHomepage) > 0) {
+                if ($is_homepage && $currentHomepage[self::HOMEPAGE_CONFIG_ENTRY_KEY] !== (string)$entry->_id) {
+                    $entry->setAsHomepage();
+                } else {
+                    if ($is_homepage === false && $currentHomepage[self::HOMEPAGE_CONFIG_ENTRY_KEY] !== (string)$entry->_id) {
+                        $this->emptyHomepage($currentHomepages);
+                    }
+                }
+            }
+        }
+
+        return $updateResult;
     }
 
     /**
@@ -391,7 +451,10 @@ class Entry extends BaseModel
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
@@ -404,6 +467,16 @@ class Entry extends BaseModel
         } else {
             $result = $this->hardDelete($entryId);
         }
+
+        // Update homepage if needed
+        if ($result) {
+            $currentHomepages = Entry::getHomepage();
+            $currentHomepage = $currentHomepages[Sail::siteId()] ?? [];
+            if (count($currentHomepage) > 0 && $currentHomepage[self::HOMEPAGE_CONFIG_ENTRY_KEY] === (string)$entryId) {
+                $this->emptyHomepage($currentHomepages);
+            }
+        }
+
         return $result;
     }
 
@@ -440,6 +513,45 @@ class Entry extends BaseModel
         }
 
         return parent::processOnStore($field, $value);
+    }
+
+    /**
+     *
+     * Set the current entry has homepage
+     *
+     * @return void
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     *
+     */
+    private function setAsHomepage(): void
+    {
+        Config::setByName(self::HOMEPAGE_CONFIG_HANDLE, [
+            Sail::siteId() => [
+                self::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
+                self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
+            ]
+        ]);
+    }
+
+    /**
+     *
+     * Empty the homepage for the current site
+     *
+     * @param  array  $currentConfig
+     * @return void
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     *
+     */
+    private function emptyHomepage(array $currentConfig): void
+    {
+        $currentConfig[Sail::siteId()] = [];
+        Config::setByName(self::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
     }
 
     /**

@@ -76,13 +76,13 @@ test('Create an entry with the default type', function ()
     $model = new Entry();
 
     try {
-        $entry = $model->createOne('fr', EntryStatus::LIVE, 'Home', null, []);
+        $entry = $model->createOne(true, 'fr', EntryStatus::LIVE, 'Home', null, []);
         expect($entry->title)->toBe('Home');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -92,7 +92,7 @@ test('Create an entry with an entry type', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne('fr', EntryStatus::LIVE, 'Test', 'test', []);
+        $entry = $entryModel->createOne(true, 'fr', EntryStatus::LIVE, 'Test', 'test', []);
         expect($entry->title)->toBe('Test');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -130,7 +130,7 @@ test('Create an entry with an entry type with an existing url', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne('fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', []);
+        $entry = $entryModel->createOne(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', []);
         expect($entry->title)->toBe('Test 2');
         expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
         expect($entry->locale)->toBe('fr');
