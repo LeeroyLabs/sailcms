@@ -102,6 +102,13 @@ test('Create an entry with an entry type', function ()
     }
 });
 
+test('Get homepage entry', function ()
+{
+    $entry = Entry::getHomepage(true);
+
+    expect($entry->title)->toBe('Test');
+});
+
 test('Update an entry with an entry type', function ()
 {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -264,4 +271,11 @@ test('Delete an entry type', function ()
     }
     $entryType = $model->getByHandle('test');
     expect($entryType)->toBe(null);
+});
+
+test('Fail to get homepage entry', function ()
+{
+    $entry = Entry::getHomepage(true);
+
+    expect($entry)->toBe(null);
 });

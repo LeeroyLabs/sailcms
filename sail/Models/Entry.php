@@ -21,6 +21,7 @@ use SodiumException;
 
 class Entry extends BaseModel
 {
+    /* Homepage config */
     const HOMEPAGE_CONFIG_HANDLE = 'homepage';
     const HOMEPAGE_CONFIG_ENTRY_TYPE_KEY = 'entry_type_handle';
     const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
@@ -49,6 +50,9 @@ class Entry extends BaseModel
     // TODO: populate CONTENT
 
     /**
+     *
+     *  Get the model according to the collection
+     *
      * @throws DatabaseException
      * @throws EntryException
      */
@@ -68,11 +72,26 @@ class Entry extends BaseModel
         parent::__construct($collection);
     }
 
+    /**
+     *
+     * Initialize the entry
+     *
+     * @return void
+     *
+     */
     public function init(): void
     {
         $this->setPermissionGroup($this->entryType->handle);
     }
 
+    /**
+     *
+     * Fields for entry
+     *
+     * @param  bool  $fetchAllFields
+     * @return string[]
+     *
+     */
     public function fields(bool $fetchAllFields = false): array
     {
         return [
@@ -138,9 +157,15 @@ class Entry extends BaseModel
         $homepageConfig = Config::getByName(self::HOMEPAGE_CONFIG_HANDLE);
 
         if ($getEntry) {
-            $entryModel = EntryType::getEntryModelByHandle($homepageConfig->config[self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY]);
+            $currentSiteHomepage = $homepageConfig->config->{Sail::siteId()} ?? null;
+            if (!$currentSiteHomepage) {
+                // TODO log !
+                return null;
+            }
+            print_r($currentSiteHomepage);
+            $entryModel = EntryType::getEntryModelByHandle($currentSiteHomepage->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
 
-            return $entryModel->findById($homepageConfig->config[self::HOMEPAGE_CONFIG_ENTRY_KEY]);
+            return $entryModel->findById($currentSiteHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY})->exec();
         }
         return $homepageConfig->config;
     }
@@ -388,7 +413,8 @@ class Entry extends BaseModel
         $entry = $this->create($data);
 
         if ($is_homepage) {
-            $this->setAsHomepage();
+            print_r($entry->title . " - " . $entry->entryType->handle);
+            $entry->setAsHomepage();
         }
 
         return $entry;
@@ -426,12 +452,12 @@ class Entry extends BaseModel
         if ($updateResult) {
             $is_homepage = $data->get('homepage');
             $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages[Sail::siteId()] ?? [];
-            if (count($currentHomepage) > 0) {
-                if ($is_homepage && $currentHomepage[self::HOMEPAGE_CONFIG_ENTRY_KEY] !== (string)$entry->_id) {
+            $currentHomepage = $currentHomepages->{Sail::siteId()} ?? false;
+            if ($currentHomepage) {
+                if ($is_homepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
                     $entry->setAsHomepage();
                 } else {
-                    if ($is_homepage === false && $currentHomepage[self::HOMEPAGE_CONFIG_ENTRY_KEY] !== (string)$entry->_id) {
+                    if ($is_homepage === false && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
                         $this->emptyHomepage($currentHomepages);
                     }
                 }
@@ -471,8 +497,8 @@ class Entry extends BaseModel
         // Update homepage if needed
         if ($result) {
             $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages[Sail::siteId()] ?? [];
-            if (count($currentHomepage) > 0 && $currentHomepage[self::HOMEPAGE_CONFIG_ENTRY_KEY] === (string)$entryId) {
+            $currentHomepage = $currentHomepages->{Sail::siteId()} ?? false;
+            if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
                 $this->emptyHomepage($currentHomepages);
             }
         }
@@ -548,9 +574,9 @@ class Entry extends BaseModel
      * @throws SodiumException
      *
      */
-    private function emptyHomepage(array $currentConfig): void
+    private function emptyHomepage(object|array $currentConfig): void
     {
-        $currentConfig[Sail::siteId()] = [];
+        $currentConfig->{Sail::siteId()} = null;
         Config::setByName(self::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
     }
 
@@ -606,7 +632,11 @@ class Entry extends BaseModel
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
-        return $this->findById($entryId)->exec();
+        $entry = $this->findById($entryId)->exec();
+        // The query has the good entry type
+        $entry->entryType = $this->entryType;
+
+        return $entry;
     }
 
     /**
