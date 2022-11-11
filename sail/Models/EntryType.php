@@ -358,6 +358,7 @@ class EntryType extends BaseModel
      * @param  Collection  $data
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function update(EntryType $entryType, Collection $data): bool
@@ -372,7 +373,6 @@ class EntryType extends BaseModel
         }
         if ($url_prefix !== null) {
             $update['url_prefix'] = $url_prefix;
-            // TODO update all entry url of this entry type
         }
 
         try {
@@ -381,6 +381,11 @@ class EntryType extends BaseModel
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+        }
+
+        // Update url of related entries
+        if (array_key_exists('url_prefix', $update)) {
+            ($entryType->getEntryModel())->updateEntriesUrl($update['url_prefix']);
         }
 
         return true;

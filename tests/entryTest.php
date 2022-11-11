@@ -53,24 +53,6 @@ test('Failed to create an entry type because the handle is already in use', func
     }
 });
 
-test('Update an entry type', function ()
-{
-    $model = new EntryType();
-
-    try {
-        $result = $model->updateByHandle('test', new Collection([
-            'title' => 'Test Pages',
-            'url_prefix' => 'test-pages'
-        ]));
-        expect($result)->toBe(true);
-        $entryType = $model->getByHandle('test');
-        expect($entryType->title)->toBe('Test Pages');
-        expect($entryType->url_prefix)->toBe('test-pages');
-    } catch (Exception $exception) {
-        expect(true)->toBe(false);
-    }
-});
-
 test('Create an entry with the default type', function ()
 {
     $model = new Entry();
@@ -96,7 +78,7 @@ test('Create an entry with an entry type', function ()
         expect($entry->title)->toBe('Test');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('test-pages/test');
+        expect($entry->url)->toBe('test/test');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -107,6 +89,24 @@ test('Get homepage entry', function ()
     $entry = Entry::getHomepage(true);
 
     expect($entry->title)->toBe('Test');
+});
+
+test('Update an entry type', function ()
+{
+    $model = new EntryType();
+
+    try {
+        $result = $model->updateByHandle('test', new Collection([
+            'title' => 'Test Pages',
+            'url_prefix' => 'test-pages'
+        ]));
+        expect($result)->toBe(true);
+        $entryType = $model->getByHandle('test');
+        expect($entryType->title)->toBe('Test Pages');
+        expect($entryType->url_prefix)->toBe('test-pages');
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
 });
 
 test('Update an entry with an entry type', function ()
@@ -217,7 +217,7 @@ test('Hard delete an entry with an entry type', function ()
         $result = $entryModel->delete($entry->_id, false);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
-//        print_r($exception->getMessage());
+        // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });

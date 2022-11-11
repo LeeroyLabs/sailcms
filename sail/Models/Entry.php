@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use JetBrains\PhpStorm\Pure;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
@@ -329,28 +330,6 @@ class Entry extends BaseModel
     }
 
     /**
-     * Count entries for the current entry type
-     *  (according to the __construct method)
-     *
-     * @param  EntryStatus|string|null  $status
-     * @return int
-     *
-     */
-    public function countEntries(EntryStatus|string|null $status = null): int
-    {
-        $filters = [];
-        if ($status) {
-            if ($status instanceof EntryStatus) {
-                $status = $status->value;
-            }
-
-            $filters = ['status' => $status];
-        }
-
-        return $this->count($filters);
-    }
-
-    /**
      *
      * Get an entry with filters
      *
@@ -385,6 +364,28 @@ class Entry extends BaseModel
         // Filters available date, author, category, status
 
         return new Collection($this->find([])->exec());
+    }
+
+    /**
+     * Count entries for the current entry type
+     *  (according to the __construct method)
+     *
+     * @param  EntryStatus|string|null  $status
+     * @return int
+     *
+     */
+    public function countEntries(EntryStatus|string|null $status = null): int
+    {
+        $filters = [];
+        if ($status) {
+            if ($status instanceof EntryStatus) {
+                $status = $status->value;
+            }
+
+            $filters = ['status' => $status];
+        }
+
+        return $this->count($filters);
     }
 
     /**
@@ -492,6 +493,32 @@ class Entry extends BaseModel
 
     /**
      *
+     * Update entries url according to an url prefix (normally comes from entry type)
+     *
+     * @param  string  $url_prefix
+     * @return void
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function updateEntriesUrl(string $url_prefix): void
+    {
+        $entries = $this->all();
+
+        // TODO can we do that in batches...
+        $entries->each(function ($key, $value) use ($url_prefix)
+        {
+            /**
+             * @var Entry $value
+             */
+            $this->update($value, new Collection([
+                'url' => Entry::getRelativeUrl($url_prefix, $value->slug)
+            ]));
+        });
+    }
+
+    /**
+     *
      * Delete an entry in soft mode or definitively
      *
      * @param  string|ObjectId  $entryId
@@ -538,7 +565,7 @@ class Entry extends BaseModel
      * @return mixed
      *
      */
-    protected function processOnFetch(string $field, mixed $value): mixed
+    #[Pure] protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
             "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
@@ -589,13 +616,12 @@ class Entry extends BaseModel
      *
      * Empty the homepage for the current site
      *
-     * @param  array  $currentConfig
+     * @param  object|array  $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     *
      */
     private function emptyHomepage(object|array $currentConfig): void
     {
