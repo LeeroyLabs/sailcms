@@ -41,6 +41,6 @@ class EntryTypeLayout extends BaseModel
      */
     private function titleFromEntryTitle(string $entryTypeTitle): string
     {
-        return $entryTypeTitle . ' ' . self::LAYOUT_TITLE_SUFFIX;
+        return $entryTypeTitle . ' ' . static::LAYOUT_TITLE_SUFFIX;
     }
 }

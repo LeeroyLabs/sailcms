@@ -16,6 +16,7 @@ class EntryType extends BaseModel
     const HANDLE_MISSING = "You must set the entry type handle in your data";
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
     const TITLE_MISSING = "You must set the entry type title in your data";
+    const CANNOT_DELETE = "You must emptied all related entries before deleting an entry type";
     const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = "Exception when %s an entry type";
 
@@ -73,9 +74,9 @@ class EntryType extends BaseModel
     public static function getDefaultType(): EntryType
     {
         // Get default values for default type
-        $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle') ?? self::_DEFAULT_HANDLE;
-        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title') ?? self::_DEFAULT_TITLE;
-        $defaultUrlPrefix = $_ENV['SETTINGS']->get('entry.defaultType.url_prefix') ?? self::_DEFAULT_URL_PREFIX;
+        $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle') ?? static::_DEFAULT_HANDLE;
+        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title') ?? static::_DEFAULT_TITLE;
+        $defaultUrlPrefix = $_ENV['SETTINGS']->get('entry.defaultType.url_prefix') ?? static::_DEFAULT_URL_PREFIX;
 
         $instance = new static();
         $entryType = $instance->getByHandle($defaultHandle);
@@ -102,7 +103,7 @@ class EntryType extends BaseModel
         $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
 
         if (!$entryType) {
-            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $collectionName));
+            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $collectionName));
         }
 
         return $entryType;
@@ -110,7 +111,9 @@ class EntryType extends BaseModel
 
     /**
      *
-     * @param $handle
+     * Get an entry model instance by entry type handle
+     *
+     * @param  string  $handle
      * @return Entry
      * @throws DatabaseException
      * @throws EntryException
@@ -121,7 +124,7 @@ class EntryType extends BaseModel
         $entryType = (new static())->getByHandle($handle);
 
         if (!$entryType) {
-            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
+            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
         return $entryType->getEntryModel();
@@ -212,7 +215,7 @@ class EntryType extends BaseModel
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
         if (!$entryType) {
-            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
+            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
         return $this->update($entryType, $data);
@@ -234,12 +237,22 @@ class EntryType extends BaseModel
     {
         $this->hasPermissions();
 
-        // TODO check if there is entry content before deleted it
+        // Cannot delete if it not exists
+        $entryType = $this->findById($entryTypeId)->exec();
+        if (!$entryType) {
+            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryTypeId));
+        }
+
+        // Check if there is entries content
+        $counts = ($entryType->getEntryModel())->countEntries();
+        if ($counts > 0) {
+            throw new EntryException(static::CANNOT_DELETE);
+        }
 
         try {
             $qtyDeleted = $this->deleteById($entryTypeId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
@@ -256,10 +269,10 @@ class EntryType extends BaseModel
     {
         // Data verification
         if ($field === "handle" && empty($value)) {
-            throw new EntryException(self::HANDLE_MISSING);
+            throw new EntryException(static::HANDLE_MISSING);
         }
         if ($field === "title" && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING);
+            throw new EntryException(static::TITLE_MISSING);
         }
 
         return parent::processOnStore($field, $value);
@@ -279,7 +292,7 @@ class EntryType extends BaseModel
     {
         // Check everytime if the handle is already exists
         if ($this->getByHandle($handle) !== null) {
-            throw new EntryException(self::HANDLE_ALREADY_EXISTS);
+            throw new EntryException(static::HANDLE_ALREADY_EXISTS);
         }
         // TODO reserved word
     }
@@ -327,7 +340,7 @@ class EntryType extends BaseModel
                 'entry_type_layout_id' => $entry_type_layout_id
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
         if ($getObject) {
@@ -367,7 +380,7 @@ class EntryType extends BaseModel
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return true;

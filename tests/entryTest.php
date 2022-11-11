@@ -82,7 +82,7 @@ test('Create an entry with the default type', function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+        // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -190,6 +190,20 @@ test('Failed to find the entry by url', function ()
     $entry = Entry::findByURL('test-pages/test-de-test-2', false);
 
     expect($entry)->toBe(null);
+});
+
+test('Failed to delete an entry type with related entries in it', function ()
+{
+    $model = new EntryType();
+    $entryType = $model->getByHandle('test');
+
+    try {
+        $result = $model->hardDelete($entryType->_id);
+        expect($result)->toBe(false);
+    } catch (EntryException $exception) {
+        expect($exception->getMessage())->toBe(EntryType::CANNOT_DELETE);
+        expect(true)->toBe(true);
+    }
 });
 
 test('Hard delete an entry with an entry type', function ()
