@@ -44,7 +44,6 @@ class Asset extends BaseModel
     {
         return [
             '_id',
-            'site_id',
             'filename',
             'title',
             'name',
@@ -258,7 +257,6 @@ class Asset extends BaseModel
 
         // Create entry
         $id = $this->insert([
-            'site_id' => Sail::siteId(),
             'filename' => $path . $timePath . $filename,
             'name' => $the_name,
             'title' => $titles,
