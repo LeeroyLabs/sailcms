@@ -80,6 +80,7 @@ class Sail
      * @throws TwoFactorAuthException
      * @throws ACLException
      * @throws \GraphQL\Error\SyntaxError
+     * @throws Errors\EntryException
      *
      */
     public static function init(string $execPath): void
@@ -125,6 +126,10 @@ class Sail
 
         // Headless CSRF Setup
         static::setupHeadlessCSRF();
+
+        if ($_SERVER['REQUEST_URI'] === '/v3/sitelist') {
+            static::outputAvailableSites();
+        }
 
         if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
             // Run GraphQL
@@ -778,7 +783,41 @@ class Sail
             if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
                 static::$siteID = $name;
                 Locale::setAvailableLocales($config['locales']);
+                break;
             }
         }
+
+        // Let the header 'x-site-id' override the value
+        $headers = getallheaders();
+
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === 'x-site-id') {
+                static::$siteID = $value;
+                Locale::setAvailableLocales($sites[$value]['locales']);
+                break;
+            }
+        }
+    }
+
+    /**
+     *
+     * Output the available site ids
+     *
+     * @return void
+     * @throws JsonException
+     *
+     */
+    private static function outputAvailableSites(): void
+    {
+        $sites = include static::$workingDirectory . '/config/sites.php';
+        $names = [];
+
+        foreach ($sites as $key => $value) {
+            $names[] = $key;
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($names, JSON_THROW_ON_ERROR);
+        exit();
     }
 }

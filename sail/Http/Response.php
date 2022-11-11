@@ -176,9 +176,9 @@ class Response
     public function render(bool $executeMiddleware = true): void
     {
         if ($this->secure) {
-            header('Content-type: text/plain');
+            header('Content-type: text/plain; charset=utf-8');
         } else {
-            header('Content-type: ' . $this->type);
+            header('Content-type: ' . $this->type . '; charset=utf-8');
         }
 
         // Enable compression
