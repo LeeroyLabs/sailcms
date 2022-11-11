@@ -78,6 +78,6 @@ class Config extends BaseModel
             return;
         }
 
-        $instance->updateOne(['name' => $name], ['$set' => $config]);
+        $instance->updateOne(['name' => $name], ['$set' => ['config' => $config]]);
     }
 }
