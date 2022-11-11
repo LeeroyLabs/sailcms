@@ -2,6 +2,7 @@
 
 namespace SailCMS;
 
+use Exception;
 use JsonException;
 use \SailCMS\Models\Queue as QueueModel;
 
@@ -73,15 +74,19 @@ class Queue
                     $instance = new $value->handler();
 
                     if (method_exists($instance, $value->action)) {
-                        $result = $instance->{$value->action}(...$value->settings->unwrap());
+                        try {
+                            $result = $instance->{$value->action}(...$value->settings->unwrap());
 
-                        if (empty($result)) {
-                            $result = 'Executed successfully with no return';
-                        } elseif (!is_string($result) && !is_scalar($result)) {
-                            $result = json_encode($result, JSON_THROW_ON_ERROR);
+                            if (empty($result)) {
+                                $result = 'Executed successfully with no return';
+                            } elseif (!is_string($result) && !is_scalar($result)) {
+                                $result = json_encode($result, JSON_THROW_ON_ERROR);
+                            }
+
+                            $model->closeTask($value->_id, $result);
+                        } catch (Exception $e) {
+                            $model->closeTask($value->_id, "Execution failed: {$e->getMessage()}.", false, $retry_count);
                         }
-
-                        $model->closeTask($value->_id, $result);
                     } else {
                         $model->closeTask($value->_id, "Action '{$value->action}' does not exist, please make sure it exists.", false, $retry_count);
                     }
