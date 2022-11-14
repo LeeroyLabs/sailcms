@@ -410,7 +410,7 @@ class Entry extends Model
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     * TODO handle site_id, alternates
+     * TODO handle alternates
      *
      * @param  bool                $is_homepage
      * @param  string              $locale
@@ -511,8 +511,10 @@ class Entry extends Model
      *
      * @param  string  $url_prefix
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function updateEntriesUrl(string $url_prefix): void
@@ -546,6 +548,7 @@ class Entry extends Model
      * @throws PermissionException
      * @throws SodiumException
      *
+     * 'categories' => new Collection([]),
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
@@ -663,7 +666,9 @@ class Entry extends Model
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser;
-        // TODO implements others fields: parent_id categories content alternates
+        $alternates = new Collection($data->get('alternates', []));
+
+        // TODO implements others fields: parent_id categories content
 
         // Get the validated slug just to be sure
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
@@ -681,6 +686,7 @@ class Entry extends Model
                 'entry_type_id' => (string)$this->entryType->_id,
                 'site_id' => $site_id,
                 'locale' => $locale,
+                'alternates' => $alternates,
                 'status' => $status,
                 'title' => $title,
                 'slug' => $slug,
@@ -689,7 +695,6 @@ class Entry extends Model
                 'dates' => $dates,
                 // TODO
                 'parent_id' => null,
-                'alternates' => new Collection([]),
                 'categories' => new Collection([]),
                 'content' => new Collection([])
             ]);
@@ -700,6 +705,17 @@ class Entry extends Model
         $entry = $this->findById($entryId)->exec();
         // The query has the good entry type
         $entry->entryType = $this->entryType;
+
+        // Must update alternates after save because we need the entry id
+        $alternates->push((object)[
+            'locale' => $locale,
+            'entry' => (string)$entryId
+        ]);
+        $this->update($entry, new Collection([
+            'alternates' => $alternates
+        ]));
+        // Set the attribute manually to avoid another query
+        $entry->alternates = $alternates;
 
         return $entry;
     }
@@ -737,13 +753,12 @@ class Entry extends Model
 
         $data->each(function ($key, $value) use (&$update)
         {
-            if (in_array($key, ['parent_id', 'site_id', 'locale', 'status', 'title', 'categories', 'content'])) {
+            if (in_array($key, ['parent_id', 'site_id', 'locale', 'status', 'title', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
         });
 
         // Automatic attributes
-        // TODO generate alternates
         $update['url'] = static::getRelativeUrl($this->entryType->url_prefix, $slug);
         $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
         $update['dates'] = Dates::updated($entry->dates);
