@@ -6,14 +6,14 @@ use MongoDB\BSON\ObjectId;
 use RuntimeException;
 use SailCMS\ACL;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 use SailCMS\Types\RoleConfig;
 
-class Role extends BaseModel
+class Role extends Model
 {
     public string $name;
     public string $slug;

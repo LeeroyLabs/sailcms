@@ -4,12 +4,12 @@ namespace SailCMS\Models;
 
 use JsonException;
 use League\Flysystem\FilesystemException;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Security;
 use SodiumException;
 
-class Config extends BaseModel
+class Config extends Model
 {
     public string $name;
     public array|object $config;

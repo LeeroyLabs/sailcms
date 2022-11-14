@@ -4,13 +4,13 @@ namespace SailCMS\Models;
 
 use Exception;
 use http\Exception\RuntimeException;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Http\Request;
 use SailCMS\Security;
 use SailCMS\Types\QueryOptions;
 
-class CSRF extends BaseModel
+class CSRF extends Model
 {
     public string $ip;
     public string $token;

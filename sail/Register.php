@@ -2,6 +2,8 @@
 
 namespace SailCMS;
 
+use SailCMS\Contracts\AppContainer;
+use SailCMS\Contracts\AppMiddleware;
 use SailCMS\Contracts\AppModule;
 use SailCMS\Errors\RegisterException;
 use SailCMS\Types\ContainerInformation;
@@ -39,8 +41,17 @@ class Register
     public function registerContainer(ContainerInformation $info, string $className): void
     {
         static::$containers->push((object)[
+            'name' => $info->name,
             'info' => $info,
-            'class' => $className
+            'class' => $className,
+            'routes' => [
+                'post' => [],
+                'get' => [],
+                'put' => [],
+                'any' => [],
+                'delete' => [],
+                'redirect' => []
+            ]
         ]);
     }
 
@@ -65,6 +76,30 @@ class Register
 
     /**
      *
+     * Register a route to the generating container
+     *
+     * @param  string  $method
+     * @param  string  $url
+     * @param  string  $class
+     * @return void
+     *
+     */
+    public static function registerRoute(string $method, string $url, string $class): void
+    {
+        $container = static::$containers->find(fn($c) => $c->class === $class);
+
+        if ($container) {
+            $container->routes[strtolower($method)][] = $url;
+        }
+    }
+
+    public static function registerMiddleware(AppMiddleware $middleware): void
+    {
+        //$middleware->type();
+    }
+
+    /**
+     *
      * Get a loaded module
      *
      * @param  string  $name
@@ -72,9 +107,9 @@ class Register
      * @throws RegisterException
      *
      */
-    public static function getModule(string $name): AppModule
+    public static function module(string $name): AppModule
     {
-        $module = static::$modules->find(fn($n) => $n['name'] === $name);
+        $module = static::$modules->find(fn($k, $n) => $n['name'] === $name);
 
         if (!empty($module)) {
             return $module->instance;
@@ -83,13 +118,47 @@ class Register
         throw new RegisterException("Module {$name} does not exist in the register. Please make sure you have the right name.", 0404);
     }
 
-    public function getContainersList(): Collection
+    /**
+     *
+     * Get a loaded container
+     *
+     * @param  string  $name
+     * @return AppContainer
+     * @throws RegisterException
+     *
+     */
+    public static function container(string $name): AppContainer
     {
-        $list = new Collection([]);
-        $fs = Filesystem::manager();
+        $container = static::$containers->find(fn($k, $n) => $n['name'] === $name);
 
-        $files = $fs->listContents('root://containers', true);
+        if (!empty($container)) {
+            return $container->class();
+        }
 
-        print_r($files);
+        throw new RegisterException("Container {$name} does not exist in the register. Please make sure you have the right name.", 0404);
+    }
+
+    /**
+     *
+     * Get all loaded modules
+     *
+     * @return Collection
+     *
+     */
+    public static function getModules(): Collection
+    {
+        return static::$modules;
+    }
+
+    /**
+     *
+     * Get all loaded containers
+     *
+     * @return Collection
+     *
+     */
+    public static function getContainerList(): Collection
+    {
+        return static::$containers;
     }
 }

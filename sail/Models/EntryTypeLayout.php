@@ -3,10 +3,10 @@
 namespace SailCMS\Models;
 
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 
-class EntryTypeLayout extends BaseModel
+class EntryTypeLayout extends Model
 {
     public string $title;
     public Collection $content;

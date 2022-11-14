@@ -4,14 +4,14 @@ namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 
-class EntryType extends BaseModel
+class EntryType extends Model
 {
     /* errors */
     const HANDLE_MISSING = "You must set the entry type handle in your data";

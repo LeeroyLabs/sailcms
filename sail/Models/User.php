@@ -8,7 +8,7 @@ use MongoDB\BSON\Regex;
 use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\EmailException;
@@ -27,7 +27,7 @@ use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 
-class User extends BaseModel
+class User extends Model
 {
     public const EVENT_DELETE = 'event_delete_user';
     public const EVENT_CREATE = 'event_create_user';
@@ -221,6 +221,8 @@ class User extends BaseModel
      * @return string
      * @throws DatabaseException
      * @throws FileException
+     * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function createRegularUser(Username $name, string $email, string $password, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
@@ -445,7 +447,7 @@ class User extends BaseModel
      * @throws PermissionException
      *
      */
-    public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = BaseModel::SORT_ASC): Listing
+    public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = Model::SORT_ASC): Listing
     {
         $this->hasPermissions(true);
 

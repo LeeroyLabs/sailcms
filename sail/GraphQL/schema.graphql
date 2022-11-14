@@ -87,6 +87,7 @@ type User {
     avatar: String!
     permissions: [String!]
     meta: UserMeta!
+    auth_token: String
 }
 
 type UserListing {

@@ -5,6 +5,7 @@ namespace SailCMS\Routing;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Contracts\AppContainer;
 use SailCMS\Contracts\AppController;
 use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
@@ -18,6 +19,7 @@ use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
+use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -401,6 +403,15 @@ class Router
 
     private function addRoute(string $method, string $url, string $locale, AppController|string $controller, string $callback, string $name = ''): void
     {
+        // Trace the registerer of the route
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
+        $class = $trace[2]['class'];
+
+        if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
+            // Illegal call, this should only be called from the routes method in a container
+            throw new \RuntimeException('Cannot add routes from anything other than a AppContainer using the routes method.', 0403);
+        }
+
         if (is_string($controller)) {
             $controller = new $controller();
         }
@@ -409,6 +420,8 @@ class Router
         if (empty($name)) {
             $name = str_replace('/', '_', $url);
         }
+
+        Register::registerRoute($method, $url, $class);
 
         $route = new Route($name, $url, $locale, $controller, $callback, $method);
         static::$routes->get(strtolower($method))->push($route);

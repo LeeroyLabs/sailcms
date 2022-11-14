@@ -7,7 +7,7 @@ use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -20,7 +20,7 @@ use SailCMS\Types\Dates;
 use SailCMS\Types\EntryStatus;
 use SodiumException;
 
-class Entry extends BaseModel
+class Entry extends Model
 {
     /* Homepage config */
     const HOMEPAGE_CONFIG_HANDLE = 'homepage';

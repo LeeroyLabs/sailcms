@@ -19,7 +19,7 @@ use \MongoDB\BSON\UTCDateTime;
 use \MongoDB\Collection;
 use stdClass;
 
-abstract class BaseModel
+abstract class Model
 {
     public const SORT_ASC = 1;
     public const SORT_DESC = -1;
@@ -133,7 +133,7 @@ abstract class BaseModel
      * @throws DatabaseException
      *
      */
-    protected function exec(bool $fetchAllFields = false): BaseModel|array|null
+    protected function exec(bool $fetchAllFields = false): Model|array|null
     {
         $qt = Debug::startQuery();
         $options = [];
@@ -230,7 +230,7 @@ abstract class BaseModel
      * @return $this
      *
      */
-    protected function populate(string $field, string $target, string $model): BaseModel
+    protected function populate(string $field, string $target, string $model): Model
     {
         $this->currentPopulation[] = [
             'field' => $field,
@@ -250,7 +250,7 @@ abstract class BaseModel
      * @return $this
      *
      */
-    protected function findById(string|ObjectId $id, QueryOptions|null $options = null): BaseModel
+    protected function findById(string|ObjectId $id, QueryOptions|null $options = null): Model
     {
         $_id = $this->ensureObjectId($id);
 
@@ -275,7 +275,7 @@ abstract class BaseModel
      * @return $this
      *
      */
-    protected function find(array $query, QueryOptions|null $options = null): BaseModel
+    protected function find(array $query, QueryOptions|null $options = null): Model
     {
         if (!$options) {
             $options = QueryOptions::init();
@@ -299,7 +299,7 @@ abstract class BaseModel
      * @param  QueryOptions|null  $options
      * @return $this
      */
-    protected function findOne(array $query, QueryOptions|null $options = null): BaseModel
+    protected function findOne(array $query, QueryOptions|null $options = null): Model
     {
         if (!$options) {
             $options = QueryOptions::init();
@@ -324,7 +324,7 @@ abstract class BaseModel
      * @return $this
      *
      */
-    protected function distinct(string $field, array $query, QueryOptions|null $options = null): BaseModel
+    protected function distinct(string $field, array $query, QueryOptions|null $options = null): Model
     {
         if (!$options) {
             $options = QueryOptions::init();

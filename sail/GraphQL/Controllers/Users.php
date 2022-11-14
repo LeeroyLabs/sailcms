@@ -5,7 +5,7 @@ namespace SailCMS\GraphQL\Controllers;
 use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -71,10 +71,10 @@ class Users
      */
     public function users(mixed $obj, Collection $args, Context $context): Listing
     {
-        $order = BaseModel::SORT_ASC;
+        $order = Model::SORT_ASC;
 
         if ($args->get('order') !== null && strtolower($args->get('order')) !== 'asc') {
-            $order = BaseModel::SORT_DESC;
+            $order = Model::SORT_DESC;
         }
 
         return (new User())->getList(

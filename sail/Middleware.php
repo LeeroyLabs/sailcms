@@ -19,6 +19,11 @@ class Middleware
      */
     public static function register(MW $middleware): void
     {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
+
+        //print_r($trace);
+
+        Register::registerMiddleware($middleware);
         static::$middlewares[$middleware->type()->value][] = $middleware;
     }
 
@@ -34,7 +39,7 @@ class Middleware
     public static function execute(MiddlewareType $type, Data $data): Data
     {
         $mws = static::$middlewares[$type->value] ?? [];
-        
+
         foreach ($mws as $mw) {
             $data = $mw->process($data);
         }

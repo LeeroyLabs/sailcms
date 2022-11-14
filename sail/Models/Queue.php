@@ -4,12 +4,12 @@ namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Queue\Task;
 use SailCMS\Types\QueryOptions;
 
-class Queue extends BaseModel
+class Queue extends Model
 {
     public string $name;
     public int $scheduled_at;
@@ -57,7 +57,7 @@ class Queue extends BaseModel
     public static function add(Task $task): void
     {
         $instance = new static();
-        
+
         $instance->insert([
             'name' => $task->name,
             'handler' => $task->handler,

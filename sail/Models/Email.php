@@ -5,7 +5,7 @@ namespace SailCMS\Models;
 use MongoDB\BSON\ObjectId;
 use SailCMS\ACL;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -13,7 +13,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 
-class Email extends BaseModel
+class Email extends Model
 {
     public string $name;
     public string $slug;

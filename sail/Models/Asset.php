@@ -11,7 +11,7 @@ use SailCMS\Assets\Optimizer;
 use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -24,7 +24,7 @@ use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 
-class Asset extends BaseModel
+class Asset extends Model
 {
     public string $filename;
     public string $site_id;
@@ -123,7 +123,7 @@ class Asset extends BaseModel
      * @throws PermissionException
      *
      */
-    public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = BaseModel::SORT_ASC): Listing
+    public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = Model::SORT_ASC): Listing
     {
         $this->hasPermissions(true);
 

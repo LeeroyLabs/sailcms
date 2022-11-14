@@ -4,13 +4,13 @@ namespace SailCMS\Models;
 
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Security;
 use SodiumException;
 use Ramsey\Uuid\Uuid;
 
-class Tfa extends BaseModel
+class Tfa extends Model
 {
     public string $user_id = '';
     public string $secret = '';

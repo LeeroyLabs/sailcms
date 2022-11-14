@@ -2,10 +2,10 @@
 
 namespace SailCMS\Models;
 
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 
-class Log extends BaseModel
+class Log extends Model
 {
     public string $message;
     public int $date;

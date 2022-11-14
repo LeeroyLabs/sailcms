@@ -1,10 +1,10 @@
 <?php
 
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 
 include_once __DIR__ . '/mock/db.php';
 
-class DbTest extends BaseModel
+class DbTest extends Model
 {
     public function __construct()
     {

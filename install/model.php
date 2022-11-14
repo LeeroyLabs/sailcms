@@ -2,7 +2,7 @@
 
 namespace [LOCATION]\Models;
 
-use SailCMS\Database\BaseModel;
+use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 
 class [NAME] extends BaseModel
