@@ -54,7 +54,7 @@ class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a query from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -79,7 +79,7 @@ class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a mutation from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -104,7 +104,7 @@ class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a resolver from anything other than the graphql method in an AppContainer.', 0403);
         }
 
