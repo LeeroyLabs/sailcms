@@ -280,6 +280,11 @@ class Sail
         $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
         $dotenv->load();
 
+        // Create debug variable if it's not set
+        if (!isset($_ENV['DEBUG'])) {
+            $_ENV['DEBUG'] = 'off';
+        }
+
         // Setup Clockwork for debugging info
         if ($_ENV['DEBUG'] === 'on') {
             $path = static::$workingDirectory . '/storage/debug';
@@ -626,7 +631,7 @@ class Sail
      */
     public static function siteId(): string
     {
-        return static::$siteID ?? 'default';
+        return static::$siteID ?? 'main';
     }
 
     /**
@@ -779,31 +784,36 @@ class Sail
      */
     private static function loadAndDetectSites(): void
     {
-        $sites = include static::$workingDirectory . '/config/sites.php';
+        if (file_exists(static::$workingDirectory . '/config/sites.php')) {
+            $sites = include static::$workingDirectory . '/config/sites.php';
 
-        foreach ($sites as $name => $config) {
-            if (isset($_SERVER['HTTP_HOST'])) {
-                $host = explode(':', $_SERVER['HTTP_HOST'])[0];
-            } else {
-                $host = explode(':', $_ENV['SITE_URL'])[0];
+            foreach ($sites as $name => $config) {
+                if (isset($_SERVER['HTTP_HOST'])) {
+                    $host = explode(':', $_SERVER['HTTP_HOST'])[0];
+                } else {
+                    $host = explode(':', $_ENV['SITE_URL'])[0];
+                }
+
+                if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
+                    static::$siteID = $name;
+                    Locale::setAvailableLocales($config['locales']);
+                    break;
+                }
             }
 
-            if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
-                static::$siteID = $name;
-                Locale::setAvailableLocales($config['locales']);
-                break;
-            }
-        }
+            // Let the header 'x-site-id' override the value
+            $headers = getallheaders();
 
-        // Let the header 'x-site-id' override the value
-        $headers = getallheaders();
-
-        foreach ($headers as $key => $value) {
-            if (strtolower($key) === 'x-site-id') {
-                static::$siteID = $value;
-                Locale::setAvailableLocales($sites[$value]['locales']);
-                break;
+            foreach ($headers as $key => $value) {
+                if (strtolower($key) === 'x-site-id') {
+                    static::$siteID = $value;
+                    Locale::setAvailableLocales($sites[$value]['locales']);
+                    break;
+                }
             }
+        } else {
+            static::$siteID = 'main';
+            Locale::setAvailableLocales(['en']);
         }
     }
 
