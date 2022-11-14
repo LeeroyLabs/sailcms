@@ -56,14 +56,18 @@ class EntryType extends BaseModel
      *
      * Get a list of all available types
      *
+     * @param  bool  $api
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
-    public static function getAll(): Collection
+    public static function getAll(bool $api = false): Collection
     {
-        (new static())->hasPermissions(true);
+        if ($api) {
+            (new static())->hasPermissions(true);
+        }
 
         $instance = new static();
         return new Collection($instance->find([])->exec());
@@ -153,8 +157,10 @@ class EntryType extends BaseModel
      * Shortcut to get entry model and make queries
      *
      * @return Entry
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function getEntryModel(): Entry
@@ -340,7 +346,7 @@ class EntryType extends BaseModel
      * @param  string                $title
      * @param  string                $url_prefix
      * @param  string|ObjectId|null  $entry_type_layout_id
-     * @param  bool                  $getObject
+     * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
      * @throws EntryException
      * @throws DatabaseException
