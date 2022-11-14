@@ -49,12 +49,12 @@ class Tools
         }
 
         if ($fs->visibility('local://') !== 'public') {
-            $path = '/storage/fs/' . Sail::currentApp();
+            $path = '/storage/fs/' . Sail::siteId();
             static::outputError("SailCMS is not allowed to write in the '{$path}' directory", true);
         }
 
         if ($fs->visibility('cache://') !== 'public') {
-            $path = '/storage/cache/' . Sail::currentApp();
+            $path = '/storage/cache/' . Sail::siteId();
             static::outputError("SailCMS is not allowed to write in the '{$path}' directory", true);
         }
     }

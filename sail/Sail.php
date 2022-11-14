@@ -268,6 +268,14 @@ class Sail
      */
     private static function setupEnv(): void
     {
+        // Create .env file if does not exist
+        if (!file_exists(static::$workingDirectory . '/.env')) {
+            file_put_contents(
+                static::$workingDirectory . '/.env',
+                file_get_contents(dirname(__DIR__) . '/install/env')
+            );
+        }
+
         // Load .env file
         $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
         $dotenv->load();
@@ -618,7 +626,7 @@ class Sail
      */
     public static function siteId(): string
     {
-        return static::$siteID;
+        return static::$siteID ?? 'default';
     }
 
     /**
