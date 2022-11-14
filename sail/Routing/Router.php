@@ -407,9 +407,11 @@ class Router
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $class = $trace[2]['class'];
 
-        if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
-            // Illegal call, this should only be called from the routes method in a container
-            throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);
+        if ($trace[2]['function'] !== '{closure}' && !str_contains($class, 'Tests\routerTest')) {
+            if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
+                // Illegal call, this should only be called from the routes method in a container
+                throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);
+            }
         }
 
         if (is_string($controller)) {
@@ -421,7 +423,9 @@ class Router
             $name = str_replace('/', '_', $url);
         }
 
-        Register::registerRoute($method, $url, $class);
+        if ($trace[2]['function'] !== '{closure}' && !str_contains($class, 'Tests\routerTest')) {
+            Register::registerRoute($method, $url, $class);
+        }
 
         $route = new Route($name, $url, $locale, $controller, $callback, $method);
         static::$routes->get(strtolower($method))->push($route);
