@@ -30,6 +30,7 @@ class Entry extends Model
 
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
+    const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
     const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Fields */
@@ -609,6 +610,26 @@ class Entry extends Model
 
     /**
      *
+     * Validate that status is not thrash
+     *  because the only to set it to trash is in the delete method
+     *
+     * @param  EntryStatus|string  $status
+     * @return void
+     * @throws EntryException
+     *
+     */
+    private static function validateStatus(EntryStatus|string $status)
+    {
+        if ($status instanceof EntryStatus) {
+            $status = $status->value;
+        }
+        if ($status === EntryStatus::TRASH->value) {
+            throw new EntryException(static::STATUS_CANNOT_BE_TRASH);
+        }
+    }
+
+    /**
+     *
      * Set the current entry has homepage
      *
      * @return void
@@ -670,6 +691,8 @@ class Entry extends Model
 
         // TODO implements others fields: categories content
 
+        // VALIDATION
+        static::validateStatus($status);
         // Get the validated slug just to be sure
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
@@ -749,6 +772,9 @@ class Entry extends Model
         if (in_array('slug', $data->keys()->unwrap())) {
             $slug = $data->get('slug');
             $update['slug'] = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
+        }
+        if (in_array('status', $data->keys()->unwrap())) {
+            static::validateStatus($data->get('status'));
         }
 
         $data->each(function ($key, $value) use (&$update)
