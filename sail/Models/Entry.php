@@ -54,8 +54,12 @@ class Entry extends BaseModel
      *
      *  Get the model according to the collection
      *
+     * @param  string  $collection
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
+     *
      */
     public function __construct(string $collection = '')
     {
@@ -118,8 +122,10 @@ class Entry extends BaseModel
      * Get all entries of all types
      *
      * @return Collection
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public static function getAll(): Collection
@@ -148,10 +154,12 @@ class Entry extends BaseModel
      *
      * @param  bool  $getEntry
      * @return array|object|null
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws FilesystemException
      * @throws JsonException
+     * @throws PermissionException
      * @throws SodiumException
      *
      */
@@ -180,8 +188,10 @@ class Entry extends BaseModel
      * @param  string  $url
      * @param  bool    $fromRequest
      * @return Entry|null
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public static function findByURL(string $url, bool $fromRequest = true): ?Entry
@@ -246,8 +256,10 @@ class Entry extends BaseModel
      * @param  string|null      $currentId
      * @param  Collection|null  $availableTypes
      * @return string
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public static function getValidatedSlug(string $url_prefix, string $slug, string $site_id, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
@@ -356,8 +368,8 @@ class Entry extends BaseModel
      * @param  int|null         $limit
      * @param  int|null         $offset
      * @return Collection
-     *
      * @throws DatabaseException
+     *
      */
     public function all(?Collection $filters = null, ?int $limit = 0, ?int $offset = 0): Collection
     {
@@ -367,6 +379,7 @@ class Entry extends BaseModel
     }
 
     /**
+     *
      * Count entries for the current entry type
      *  (according to the __construct method)
      *
@@ -458,6 +471,7 @@ class Entry extends BaseModel
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
+     *
      */
     public function updateById(Entry|string $entry, array|Collection $data): bool
     {
@@ -635,8 +649,10 @@ class Entry extends BaseModel
      *
      * @param  Collection  $data
      * @return array|Entry|null
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function create(Collection $data): array|Entry|null
@@ -695,8 +711,10 @@ class Entry extends BaseModel
      * @param  Entry       $entry
      * @param  Collection  $data
      * @return bool
-     * @throws EntryException
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function update(Entry $entry, Collection $data): bool
