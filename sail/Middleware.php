@@ -29,7 +29,7 @@ class Middleware
             throw new \RuntimeException('Cannot register middlewares from anything other than a AppContainer using the middleware method.', 0403);
         }
 
-        Register::registerMiddleware($middleware);
+        Register::registerMiddleware($middleware, $class);
         static::$middlewares[$middleware->type()->value][] = $middleware;
     }
 
