@@ -64,7 +64,8 @@ test('Create an entry with the default type', function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-        // print_r($exception->getMessage());
+        print_r($exception->getMessage());
+        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
 });

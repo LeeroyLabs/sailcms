@@ -2,6 +2,7 @@
 
 namespace SailCMS\Types;
 
+use JetBrains\PhpStorm\Pure;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Models\User;
 
@@ -24,7 +25,7 @@ class Authors implements DatabaseType
      * @return array
      *
      */
-    static public function init(User $author, bool $published): array
+    #[Pure] static public function init(User $author, bool $published): array
     {
         $publisherId = null;
         if ($published) {

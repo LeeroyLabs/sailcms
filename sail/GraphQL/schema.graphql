@@ -65,8 +65,8 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: String!, entry_type_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: String, entry_type_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent_id: ID, site_id: ID, alternates: [String]): Entry
-    updateEntry(entry_type_handle: String, id: ID!,  locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent_id: ID, site_id: ID, alternates: [String]): Boolean
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Entry
+    updateEntry(entry_type_handle: String, id: ID!,  locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean!): Boolean
     #{CUSTOM_MUTATIONS}#
 }
@@ -174,7 +174,7 @@ type AssetListing {
 type Entry {
     _id: ID!
     entry_type_id: ID!
-    parent_id: ID
+    parent: Parent
     site_id: String!
     locale: String!
     alternates: [String]!
@@ -214,6 +214,16 @@ type Dates {
     updated: Float
     published: Float
     deleted: Float
+}
+
+type Parent {
+    handle: String!
+    parent_id: ID!
+}
+
+input ParenInput {
+    handle: String!
+    parent_id: ID!
 }
 
 type LocaleField {

@@ -2,21 +2,21 @@
 
 namespace SailCMS\Database;
 
+use Carbon\Carbon;
 use JsonException;
+use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use MongoDB\Model\BSONArray;
 use SailCMS\ACL;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\User;
 use SailCMS\Text;
-use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\QueryOptions;
-use \Carbon\Carbon;
-use \MongoDB\BSON\ObjectId;
-use \MongoDB\BSON\UTCDateTime;
-use \MongoDB\Collection;
 use stdClass;
 
 abstract class Model
@@ -748,12 +748,13 @@ abstract class Model
      */
     protected function hasPermissions(bool $read = false): void
     {
+        $errorMsg = 'Permission Denied (' . get_class($this) . ')';
         if ($read) {
             if (!ACL::hasPermission(User::$currentUser, ACL::read($this->_permissionGroup))) {
-                throw new PermissionException('Permission Denied', 0403);
+                throw new PermissionException($errorMsg, 0403);
             }
         } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->_permissionGroup))) {
-            throw new PermissionException('Permission Denied', 0403);
+            throw new PermissionException($errorMsg, 0403);
         }
     }
 
