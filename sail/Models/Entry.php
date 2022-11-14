@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use JetBrains\PhpStorm\Pure;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
@@ -140,6 +141,7 @@ class Entry extends BaseModel
         return $entries;
     }
 
+
     /**
      *
      * Get homepage
@@ -151,10 +153,11 @@ class Entry extends BaseModel
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
+     *
      */
     public static function getHomepage(bool $getEntry = false): array|object|null
     {
-        $homepageConfig = Config::getByName(self::HOMEPAGE_CONFIG_HANDLE);
+        $homepageConfig = Config::getByName(static::HOMEPAGE_CONFIG_HANDLE);
 
         if ($getEntry) {
             $currentSiteHomepage = $homepageConfig->config->{Sail::siteId()} ?? null;
@@ -162,10 +165,10 @@ class Entry extends BaseModel
                 // TODO log !
                 return null;
             }
-            print_r($currentSiteHomepage);
-            $entryModel = EntryType::getEntryModelByHandle($currentSiteHomepage->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
 
-            return $entryModel->findById($currentSiteHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY})->exec();
+            $entryModel = EntryType::getEntryModelByHandle($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
+
+            return $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec();
         }
         return $homepageConfig->config;
     }
@@ -253,7 +256,7 @@ class Entry extends BaseModel
         $slug = Text::slugify($slug, $locale);
 
         // Form the url to find if it already exists
-        $url = self::getRelativeUrl($url_prefix, $slug);
+        $url = static::getRelativeUrl($url_prefix, $slug);
         $found = 0;
 
         // Set the filters for the query
@@ -277,8 +280,8 @@ class Entry extends BaseModel
         });
 
         if ($found > 0) {
-            $slug = self::incrementSlug($slug);
-            return self::getValidatedSlug($url_prefix, $slug, $site_id, $locale, $currentId, $availableTypes);
+            $slug = static::incrementSlug($slug);
+            return static::getValidatedSlug($url_prefix, $slug, $site_id, $locale, $currentId, $availableTypes);
         }
         return $slug;
     }
@@ -364,6 +367,28 @@ class Entry extends BaseModel
     }
 
     /**
+     * Count entries for the current entry type
+     *  (according to the __construct method)
+     *
+     * @param  EntryStatus|string|null  $status
+     * @return int
+     *
+     */
+    public function countEntries(EntryStatus|string|null $status = null): int
+    {
+        $filters = [];
+        if ($status) {
+            if ($status instanceof EntryStatus) {
+                $status = $status->value;
+            }
+
+            $filters = ['status' => $status];
+        }
+
+        return $this->count($filters);
+    }
+
+    /**
      *
      * Create an entry
      *  The extra data can contains:
@@ -413,7 +438,6 @@ class Entry extends BaseModel
         $entry = $this->create($data);
 
         if ($is_homepage) {
-            print_r($entry->title . " - " . $entry->entryType->handle);
             $entry->setAsHomepage();
         }
 
@@ -454,10 +478,10 @@ class Entry extends BaseModel
             $currentHomepages = Entry::getHomepage();
             $currentHomepage = $currentHomepages->{Sail::siteId()} ?? false;
             if ($currentHomepage) {
-                if ($is_homepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
+                if ($is_homepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
                     $entry->setAsHomepage();
                 } else {
-                    if ($is_homepage === false && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
+                    if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
                         $this->emptyHomepage($currentHomepages);
                     }
                 }
@@ -465,6 +489,32 @@ class Entry extends BaseModel
         }
 
         return $updateResult;
+    }
+
+    /**
+     *
+     * Update entries url according to an url prefix (normally comes from entry type)
+     *
+     * @param  string  $url_prefix
+     * @return void
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function updateEntriesUrl(string $url_prefix): void
+    {
+        $entries = $this->all();
+
+        // TODO can we do that in batches...
+        $entries->each(function ($key, $value) use ($url_prefix)
+        {
+            /**
+             * @var Entry $value
+             */
+            $this->update($value, new Collection([
+                'url' => Entry::getRelativeUrl($url_prefix, $value->slug)
+            ]));
+        });
     }
 
     /**
@@ -498,7 +548,7 @@ class Entry extends BaseModel
         if ($result) {
             $currentHomepages = Entry::getHomepage();
             $currentHomepage = $currentHomepages->{Sail::siteId()} ?? false;
-            if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
+            if ($currentHomepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
                 $this->emptyHomepage($currentHomepages);
             }
         }
@@ -515,7 +565,7 @@ class Entry extends BaseModel
      * @return mixed
      *
      */
-    protected function processOnFetch(string $field, mixed $value): mixed
+    #[Pure] protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
             "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
@@ -535,7 +585,7 @@ class Entry extends BaseModel
     {
         // Data verification
         if ($field == "title" && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING);
+            throw new EntryException(static::TITLE_MISSING);
         }
 
         return parent::processOnStore($field, $value);
@@ -554,10 +604,10 @@ class Entry extends BaseModel
      */
     private function setAsHomepage(): void
     {
-        Config::setByName(self::HOMEPAGE_CONFIG_HANDLE, [
+        Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, [
             Sail::siteId() => [
-                self::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
-                self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
+                static::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
+                static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
             ]
         ]);
     }
@@ -566,18 +616,17 @@ class Entry extends BaseModel
      *
      * Empty the homepage for the current site
      *
-     * @param  array  $currentConfig
+     * @param  object|array  $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     *
      */
     private function emptyHomepage(object|array $currentConfig): void
     {
         $currentConfig->{Sail::siteId()} = null;
-        Config::setByName(self::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
+        Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
     }
 
     /**
@@ -601,7 +650,7 @@ class Entry extends BaseModel
         // TODO implements others fields: parent_id categories content alternates
 
         // Get the validated slug just to be sure
-        $slug = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
+        $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
         $published = false;
         if ($status == EntryStatus::LIVE->value) {
@@ -619,7 +668,7 @@ class Entry extends BaseModel
                 'status' => $status,
                 'title' => $title,
                 'slug' => $slug,
-                'url' => self::getRelativeUrl($this->entryType->url_prefix, $slug),
+                'url' => static::getRelativeUrl($this->entryType->url_prefix, $slug),
                 'authors' => $authors,
                 'dates' => $dates,
                 // TODO
@@ -629,7 +678,7 @@ class Entry extends BaseModel
                 'content' => new Collection([])
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
         $entry = $this->findById($entryId)->exec();
@@ -665,7 +714,7 @@ class Entry extends BaseModel
         }
         if (in_array('slug', $data->keys()->unwrap())) {
             $slug = $data->get('slug');
-            $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
+            $update['slug'] = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
 
         $data->each(function ($key, $value) use (&$update)
@@ -677,7 +726,7 @@ class Entry extends BaseModel
 
         // Automatic attributes
         // TODO generate alternates
-        $update['url'] = self::getRelativeUrl($this->entryType->url_prefix, $slug);
+        $update['url'] = static::getRelativeUrl($this->entryType->url_prefix, $slug);
         $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
         $update['dates'] = Dates::updated($entry->dates);
 
@@ -686,7 +735,7 @@ class Entry extends BaseModel
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -715,7 +764,7 @@ class Entry extends BaseModel
                 ]
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -733,7 +782,7 @@ class Entry extends BaseModel
         try {
             $qtyDeleted = $this->deleteById((string)$entryTypeId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(static::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
