@@ -334,7 +334,7 @@ class Sail
 
                     // Register the container
                     Register::instance()->registerContainer($info, $className);
-                    
+
                     // Install the routes
                     $instance->routes();
 

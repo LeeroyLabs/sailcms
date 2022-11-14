@@ -9,6 +9,8 @@ use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
 use SailCMS\CLI\Controller;
 use SailCMS\CLI\Install;
+use SailCMS\CLI\Migrate;
+use SailCMS\CLI\Migrations;
 use SailCMS\CLI\Model;
 use SailCMS\CLI\Schema;
 use SailCMS\CLI\Version;
@@ -71,6 +73,8 @@ class CLI
         $application->add(new Queue());
         $application->add(new Cache());
         $application->add(new Schema());
+        $application->add(new Migrate());
+        $application->add(new Migrations());
 
         // Custom commands
         if (!isset(static::$registeredCommands)) {
