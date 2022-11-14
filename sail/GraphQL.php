@@ -12,11 +12,14 @@ use GraphQL\Utils\AST;
 use GraphQL\Utils\BuildSchema;
 use JsonException;
 use League\Flysystem\FilesystemException;
+use SailCMS\Contracts\AppContainer;
+use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
 use SailCMS\Middleware\Data;
@@ -42,9 +45,20 @@ class GraphQL
      * @param  string  $className
      * @param  string  $method
      * @return void
+     * @throws GraphqlException
+     *
      */
     public static function addQueryResolver(string $operationName, string $className, string $method): void
     {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
+        $class = $trace[1]['class'];
+        $func = $trace[1]['function'];
+
+        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+            throw new GraphqlException('Cannot add a query from anything other than the graphql method in an AppContainer.', 0403);
+        }
+
+        Register::registerGraphQLQuery($operationName, $className, $method, $class);
         static::$queries[$operationName] = (object)['class' => $className, 'method' => $method];
     }
 
@@ -56,9 +70,20 @@ class GraphQL
      * @param  string  $className
      * @param  string  $method
      * @return void
+     * @throws GraphqlException
+     *
      */
     public static function addMutationResolver(string $operationName, string $className, string $method): void
     {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
+        $class = $trace[1]['class'];
+        $func = $trace[1]['function'];
+
+        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+            throw new GraphqlException('Cannot add a mutation from anything other than the graphql method in an AppContainer.', 0403);
+        }
+
+        Register::registerGraphQLMutation($operationName, $className, $method, $class);
         static::$mutations[$operationName] = (object)['class' => $className, 'method' => $method];
     }
 
@@ -70,23 +95,57 @@ class GraphQL
      * @param  string  $className
      * @param  string  $method
      * @return void
+     * @throws GraphqlException
      *
      */
     public static function addResolver(string $type, string $className, string $method): void
     {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
+        $class = $trace[1]['class'];
+        $func = $trace[1]['function'];
+
+        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+            throw new GraphqlException('Cannot add a resolver from anything other than the graphql method in an AppContainer.', 0403);
+        }
+
+        Register::registerGraphQLResolver($type, $className, $method, $class);
         static::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
+    /**
+     *
+     * Add parts of the schema for queries
+     *
+     * @param  string  $content
+     * @return void
+     *
+     */
     public static function addQuerySchema(string $content): void
     {
         static::$querySchemaParts[] = $content;
     }
 
+    /**
+     *
+     * Add parts of the schema for mutation
+     *
+     * @param  string  $content
+     * @return void
+     *
+     */
     public static function addMutationSchema(string $content): void
     {
         static::$mutationSchemaParts[] = $content;
     }
 
+    /**
+     *
+     * Add parts of the schema for custom types
+     *
+     * @param  string  $content
+     * @return void
+     *
+     */
     public static function addTypeSchema(string $content): void
     {
         static::$typeSchemaParts[] = $content;
@@ -265,6 +324,9 @@ class GraphQL
         static::addMutationResolver('createEntry', Entries::class, 'createEntry');
         static::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
         static::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
+
+        # Register
+        static::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

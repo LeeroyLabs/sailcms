@@ -13,9 +13,8 @@ class Register
 {
     private static Collection $containers;
     private static Collection $modules;
-    private static Collection $middlewares;
     private static Register $instance;
-
+    
     public static function instance(): Register
     {
         if (empty(static::$instance)) {
@@ -23,7 +22,6 @@ class Register
 
             static::$containers = new Collection([]);
             static::$modules = new Collection([]);
-            static::$middlewares = new Collection([]);
         }
 
         return static::$instance;
@@ -44,6 +42,12 @@ class Register
             'name' => $info->name,
             'info' => $info,
             'class' => $className,
+            'middlewares' => [],
+            'graphql' => [
+                'queries' => [],
+                'mutations' => [],
+                'resolvers' => []
+            ],
             'routes' => [
                 'post' => [],
                 'get' => [],
@@ -70,6 +74,8 @@ class Register
         static::$modules->push((object)[
             'info' => $info,
             'instance' => $instance,
+            'class' => get_class($instance),
+            'middlewares' => [],
             'name' => $moduleName
         ]);
     }
@@ -86,16 +92,114 @@ class Register
      */
     public static function registerRoute(string $method, string $url, string $class): void
     {
-        $container = static::$containers->find(fn($c) => $c->class === $class);
+        $container = static::$containers->find(fn($k, $c) => $c->class === $class);
 
         if ($container) {
             $container->routes[strtolower($method)][] = $url;
         }
     }
 
-    public static function registerMiddleware(AppMiddleware $middleware): void
+    /**
+     *
+     * Register a middleware to the generating container or module
+     *
+     * @param  AppMiddleware  $middleware
+     * @param  string         $containerOrModule
+     * @return void
+     *
+     */
+    public static function registerMiddleware(AppMiddleware $middleware, string $containerOrModule): void
     {
-        //$middleware->type();
+        $type = $middleware->type();
+        $containerObj = static::$containers->find(fn($k, $c) => $c->class === $containerOrModule);
+
+        if ($containerObj && is_subclass_of($containerObj->class, AppContainer::class)) {
+            $containerObj->middlewares[] = (object)[
+                'type' => $type,
+                'name' => get_class($middleware)
+            ];
+        } else {
+            $module = static::$modules->find(fn($k, $c) => $c->class === $containerOrModule);
+
+            if ($module) {
+                $module->middlewares[] = (object)[
+                    'type' => $type,
+                    'name' => get_class($middleware)
+                ];
+            }
+        }
+    }
+
+    /**
+     *
+     * Register a graphQL Query
+     *
+     * @param  string  $name
+     * @param  string  $handler
+     * @param  string  $method
+     * @param  string  $container
+     * @return void
+     *
+     */
+    public static function registerGraphQLQuery(string $name, string $handler, string $method, string $container): void
+    {
+        $container = static::$containers->find(fn($k, $c) => $c->class === $container);
+
+        if ($container) {
+            $container->graphql['queries'][] = (object)[
+                'operation' => $name,
+                'handler' => $handler,
+                'method' => $method
+            ];
+        }
+    }
+
+    /**
+     *
+     * Register a GraphQL Mutation
+     *
+     * @param  string  $name
+     * @param  string  $handler
+     * @param  string  $method
+     * @param  string  $container
+     * @return void
+     *
+     */
+    public static function registerGraphQLMutation(string $name, string $handler, string $method, string $container): void
+    {
+        $container = static::$containers->find(fn($k, $c) => $c->class === $container);
+
+        if ($container) {
+            $container->graphql['mutations'][] = (object)[
+                'operation' => $name,
+                'handler' => $handler,
+                'method' => $method
+            ];
+        }
+    }
+
+    /**
+     *
+     * Register a GraphQL Resolver
+     *
+     * @param  string  $name
+     * @param  string  $handler
+     * @param  string  $method
+     * @param  string  $container
+     * @return void
+     *
+     */
+    public static function registerGraphQLResolver(string $name, string $handler, string $method, string $container): void
+    {
+        $container = static::$containers->find(fn($k, $c) => $c->class === $container);
+
+        if ($container) {
+            $container->graphql['resolvers'][] = (object)[
+                'operation' => $name,
+                'handler' => $handler,
+                'method' => $method
+            ];
+        }
     }
 
     /**
@@ -109,7 +213,7 @@ class Register
      */
     public static function module(string $name): AppModule
     {
-        $module = static::$modules->find(fn($k, $n) => $n['name'] === $name);
+        $module = static::$modules->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($module)) {
             return $module->instance;
@@ -129,7 +233,7 @@ class Register
      */
     public static function container(string $name): AppContainer
     {
-        $container = static::$containers->find(fn($k, $n) => $n['name'] === $name);
+        $container = static::$containers->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($container)) {
             return $container->class();

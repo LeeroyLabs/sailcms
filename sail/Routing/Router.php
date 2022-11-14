@@ -409,7 +409,7 @@ class Router
 
         if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
             // Illegal call, this should only be called from the routes method in a container
-            throw new \RuntimeException('Cannot add routes from anything other than a AppContainer using the routes method.', 0403);
+            throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);
         }
 
         if (is_string($controller)) {

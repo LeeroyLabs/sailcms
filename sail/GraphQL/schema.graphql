@@ -29,6 +29,9 @@ type Query {
     entryType(id: ID, handle: String): EntryType
     entries: [Entry!]!
     entry(id: ID!, entry_type_handle: String): Entry
+
+    # Registers
+    registeredExtensions: RegisteredExtensions!
     #{CUSTOM_QUERIES}#
 }
 
@@ -266,6 +269,60 @@ input EmailInput {
 type PasswordChangeResult {
     passwordCheck: Boolean!
     codeCheck: Boolean!
+}
+
+type RegisteredExtensions {
+    modules: [Module!]!
+    containers: [Container!]!
+}
+
+type Module {
+    name: String!
+    info: ModuleInfo!
+    class: String!
+    middlewares: [Middleware!]!
+}
+
+type Container {
+    name: String!
+    info: ContainerInfo!
+    class: String!
+    middlewares: [Middleware!]!
+    graphql: [GraphQLInfo!]!
+    routes: Routes!
+}
+
+type ContainerInfo {
+    name: String!
+    description: String!
+    version: Float!
+    semver: String!
+}
+
+type ModuleInfo {
+    name: String!
+    description: String!
+    version: Float!
+    semver: String!
+}
+
+type Middleware {
+    type: String!
+    name: String!
+}
+
+type GraphQLInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type Routes {
+    post: [String!]!
+    get: [String!]!
+    put: [String!]!
+    delete: [String!]!
+    redirect: [String!]!
 }
 
 #{CUSTOM_TYPES}#

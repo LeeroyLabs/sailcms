@@ -32,7 +32,10 @@ class System
 
             // Emails
             new ACL('Emails', ACLType::READ_WRITE),
-            new ACL('Emails', ACLType::READ)
+            new ACL('Emails', ACLType::READ),
+
+            // Register
+            new ACL('Register', ACLType::READ)
         ]);
     }
 }
