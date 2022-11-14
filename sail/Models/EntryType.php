@@ -77,6 +77,7 @@ class EntryType extends Model
      *
      * Use the settings to create the default type
      *
+     * @param  bool  $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -84,10 +85,12 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public static function getDefaultType(): EntryType
+    public static function getDefaultType(bool $api = false): EntryType
     {
         $instance = new static();
-        $instance->hasPermissions(true);
+        if ($api) {
+            $instance->hasPermissions(true);
+        }
 
         // Get default values for default type
         $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle') ?? static::_DEFAULT_HANDLE;
@@ -114,10 +117,12 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public static function getByCollectionName(string $collectionName): EntryType
+    public static function getByCollectionName(string $collectionName, bool $api = false): EntryType
     {
         $instance = new static();
-        $instance->hasPermissions(true);
+        if ($api) {
+            $instance->hasPermissions(true);
+        }
 
         $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
         if (!$entryType) {

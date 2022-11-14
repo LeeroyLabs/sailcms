@@ -23,13 +23,15 @@ class Entries
      * @param  Collection  $args
      * @param  Context     $context
      * @return Collection
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function entryTypes(mixed $obj, Collection $args, Context $context): Collection
     {
         // TODO add pagination
-        return EntryType::getAll();
+        return EntryType::getAll(true);
     }
 
     /**
@@ -39,8 +41,10 @@ class Entries
      * @param  Collection  $args
      * @param  Context     $context
      * @return EntryType|null
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function entryType(mixed $obj, Collection $args, Context $context): ?EntryType
@@ -139,8 +143,10 @@ class Entries
      * @param  Collection  $args
      * @param  Context     $context
      * @return Collection
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function entries(mixed $obj, Collection $args, Context $context): Collection
@@ -158,8 +164,10 @@ class Entries
      * @param  Collection  $args
      * @param  Context     $context
      * @return Entry|null
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function entry(mixed $obj, Collection $args, Context $context): ?Entry
@@ -274,8 +282,10 @@ class Entries
      *
      * @param  ?string  $entry_type_handle
      * @return Entry
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function getEntryModelByHandle(?string $entry_type_handle): Entry
