@@ -110,6 +110,7 @@ class EntryType extends Model
      * Get an entry type by his collection name
      *
      * @param  string  $collectionName
+     * @param  bool    $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -137,6 +138,7 @@ class EntryType extends Model
      * Get an entry model instance by entry type handle
      *
      * @param  string  $handle
+     * @param  bool    $api
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -144,10 +146,12 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public static function getEntryModelByHandle(string $handle): Entry
+    public static function getEntryModelByHandle(string $handle, bool $api = false): Entry
     {
         $instance = new static();
-        $instance->hasPermissions(true);
+        if ($api) {
+            $instance->hasPermissions(true);
+        }
 
         $entryType = $instance->getByHandle($handle);
         if (!$entryType) {
