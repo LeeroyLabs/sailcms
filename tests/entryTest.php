@@ -64,7 +64,8 @@ test('Create an entry with the default type', function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-        // print_r($exception->getMessage());
+        print_r($exception->getMessage());
+        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
 });
@@ -148,6 +149,19 @@ test('Create an entry with an entry type with an existing url', function ()
     }
 });
 
+test('Fail to create an entry that is trashed', function ()
+{
+    $entryModel = EntryType::getEntryModelByHandle('test');
+
+    try {
+        $entry = $entryModel->createOne(false, 'fr', EntryStatus::TRASH, 'Test 2', 'test-de-test', []);
+        expect(true)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+        expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
+    }
+});
+
 test('Get a validated slug for an existing slug', function ()
 {
     $newSlug = Entry::getValidatedSlug('test-pages', 'test-de-test', Sail::siteId(), 'fr');
@@ -175,6 +189,24 @@ test('Update an entry with the default type', function ()
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
+    }
+});
+
+test('Fail to update an entry to trash', function ()
+{
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home page'
+    ]);
+
+    try {
+        $result = $entry->updateById($entry, [
+            'status' => EntryStatus::TRASH,
+        ]);
+        expect(true)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+        expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
 });
 

@@ -183,6 +183,7 @@ class Entries
     /**
      *
      * Create an entry and return it
+     *   TODO support site_id ?
      *
      * @param  mixed       $obj
      * @param  Collection  $args
@@ -199,22 +200,22 @@ class Entries
      */
     public function createEntry(mixed $obj, Collection $args, Context $context): ?Entry
     {
-        $entry_type_handle = $args->get('entry_type_handle');
-        $locale = $args->get('locale');
         $is_homepage = $args->get('is_homepage');
+        $entry_type_handle = $args->get('entry_type_handle');
+        $parent = $args->get('parent');
+        $locale = $args->get('locale');
+        $alternates = $args->get('alternates');
         $status = $args->get('status');
         $title = $args->get('title');
         $slug = $args->get('slug');
         $categories = $args->get('categories');
         $content = $args->get('content');
-        // TODO support these fields
-        $parent_id = $args->get('parent_id');
-        $site_id = $args->get('site_id');
-        $alternates = $args->get('alternates');
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
-
+        
         return $entryModel->createOne($is_homepage, $locale, $status, $title, $slug, [
+            'parent' => $parent,
+            'alternates' => $alternates,
             'categories' => $categories,
             'content' => $content
         ]);

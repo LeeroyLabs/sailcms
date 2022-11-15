@@ -17,6 +17,7 @@ use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
+use SailCMS\Types\EntryParent;
 use SailCMS\Types\EntryStatus;
 use SodiumException;
 
@@ -29,11 +30,12 @@ class Entry extends Model
 
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
+    const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
     const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Fields */
     public string $entry_type_id;
-    public ?string $parent_id;
+    public ?EntryParent $parent;
     public ?string $site_id;
     public string $locale;
     public Collection $alternates; // Array of object "locale" -> "lang_code", "entry" -> "entry_id"
@@ -102,7 +104,7 @@ class Entry extends Model
         return [
             '_id',
             'entry_type_id',
-            'parent_id',
+            'parent',
             'site_id',
             'locale',
             'alternates',
@@ -170,7 +172,6 @@ class Entry extends Model
         if ($getEntry) {
             $currentSiteHomepage = $homepageConfig->config->{Sail::siteId()} ?? null;
             if (!$currentSiteHomepage) {
-                // TODO log !
                 return null;
             }
 
@@ -405,12 +406,11 @@ class Entry extends Model
      *
      * Create an entry
      *  The extra data can contains:
-     *      - parent_id default null
+     *      - parent default null
      *      - authors default User::currentUser
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     * TODO handle alternates
      *
      * @param  bool                $is_homepage
      * @param  string              $locale
@@ -548,7 +548,6 @@ class Entry extends Model
      * @throws PermissionException
      * @throws SodiumException
      *
-     * 'categories' => new Collection([]),
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
@@ -587,6 +586,7 @@ class Entry extends Model
         return match ($field) {
             "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
+            "parent" => $value ? new EntryParent($value->handle, $value->parent_id) : null,
             default => $value,
         };
     }
@@ -606,6 +606,26 @@ class Entry extends Model
         }
 
         return parent::processOnStore($field, $value);
+    }
+
+    /**
+     *
+     * Validate that status is not thrash
+     *  because the only to set it to trash is in the delete method
+     *
+     * @param  EntryStatus|string  $status
+     * @return void
+     * @throws EntryException
+     *
+     */
+    private static function validateStatus(EntryStatus|string $status)
+    {
+        if ($status instanceof EntryStatus) {
+            $status = $status->value;
+        }
+        if ($status === EntryStatus::TRASH->value) {
+            throw new EntryException(static::STATUS_CANNOT_BE_TRASH);
+        }
     }
 
     /**
@@ -667,9 +687,12 @@ class Entry extends Model
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser;
         $alternates = new Collection($data->get('alternates', []));
+        $parent = $data->get('parent');
 
-        // TODO implements others fields: parent_id categories content
+        // TODO implements others fields: categories content
 
+        // VALIDATION
+        static::validateStatus($status);
         // Get the validated slug just to be sure
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
@@ -684,6 +707,7 @@ class Entry extends Model
         try {
             $entryId = $this->insert([
                 'entry_type_id' => (string)$this->entryType->_id,
+                'parent' => $parent,
                 'site_id' => $site_id,
                 'locale' => $locale,
                 'alternates' => $alternates,
@@ -694,7 +718,6 @@ class Entry extends Model
                 'authors' => $authors,
                 'dates' => $dates,
                 // TODO
-                'parent_id' => null,
                 'categories' => new Collection([]),
                 'content' => new Collection([])
             ]);
@@ -750,10 +773,13 @@ class Entry extends Model
             $slug = $data->get('slug');
             $update['slug'] = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
+        if (in_array('status', $data->keys()->unwrap())) {
+            static::validateStatus($data->get('status'));
+        }
 
         $data->each(function ($key, $value) use (&$update)
         {
-            if (in_array($key, ['parent_id', 'site_id', 'locale', 'status', 'title', 'categories', 'content', 'alternates'])) {
+            if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
         });
