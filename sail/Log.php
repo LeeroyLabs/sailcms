@@ -11,13 +11,13 @@ class Log
 
     public static function init()
     {
-        $handlers = $_ENV['SETTINGS']->get('logging.adapters');
+        $handlers = setting('logging.adapters');
 
-        static::$logger = new Logger($_ENV['SETTINGS']->get('logging.loggerName'));
+        static::$logger = new Logger(setting('logging.loggerName', 'sailcms'));
 
         foreach ($handlers as $handler) {
             static::$logger->pushHandler(
-                new $handler($_ENV['SETTINGS']->get('logging.minLevel'), $_ENV['SETTINGS']->get('logging.bubble'))
+                new $handler(setting('logging.minLevel', \Monolog\Level::Debug), setting('logging.bubble', true))
             );
         }
     }

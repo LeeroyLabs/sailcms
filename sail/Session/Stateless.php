@@ -33,14 +33,14 @@ class Stateless implements AppSession
         $this->builder = new Builder(new JoseEncoder(), ChainedFormatter::default());
         $now = new \DateTimeImmutable();
 
-        $mins = ($_ENV['SETTINGS']->get('session.ttl') / 60);
+        $mins = (setting('session.ttl', 21_600) / 60);
 
         $this->builder
-            ->issuedBy($_ENV['SETTINGS']->get('session.jwt.issuer'))
+            ->issuedBy(setting('session.jwt.issuer', 'SailCMS'))
             ->identifiedBy(bin2hex(random_bytes(12)))
             ->canOnlyBeUsedAfter($now)
             ->expiresAt($now->modify('+ ' . $mins . ' minutes'))
-            ->permittedFor($_ENV['SETTINGS']->get('session.jwt.domain'));
+            ->permittedFor(setting('session.jwt.domain', 'localhost'));
     }
 
     /**
@@ -94,8 +94,8 @@ class Stateless implements AppSession
         $token = $this->builder->getToken($algo, $genkey)->toString();
 
         // Set cookie for token
-        $expire = time() + $_ENV['SETTINGS']->get('session.ttl');
-        $domain = $_ENV['SETTINGS']->get('session.jwt.domain');
+        $expire = time() + setting('session.ttl', 21_600);
+        $domain = setting('session,jwt.domain', 'localhost');
 
         setcookie('sc_jwt', $token, [
             'expires' => $expire,
@@ -135,7 +135,7 @@ class Stateless implements AppSession
             '',
             time() - 1,
             '/',
-            $_ENV['SETTINGS']->get('session.jtw.domain'),
+            setting('session.jtw.domain', 'localhost'),
             true,
             true
         );
@@ -197,7 +197,7 @@ class Stateless implements AppSession
         $thekey = Filesystem::manager()->read('local://vault/.security_key');
         $genkey = InMemory::plainText($thekey);
 
-        if (!$validator->validate($token, new IssuedBy($_ENV['SETTINGS']->get('session.jwt.issuer')))) {
+        if (!$validator->validate($token, new IssuedBy(setting('session.jwt.issuer', 'SailCMS')))) {
             return false;
         }
 
@@ -205,7 +205,7 @@ class Stateless implements AppSession
             return false;
         }
 
-        if (!$validator->validate($token, new PermittedFor($_ENV['SETTINGS']->get('session.jwt.domain')))) {
+        if (!$validator->validate($token, new PermittedFor(setting('session.jwt.domain', 'localhost')))) {
             return false;
         }
 

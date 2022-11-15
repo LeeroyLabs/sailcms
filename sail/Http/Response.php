@@ -38,7 +38,7 @@ class Response
     public function __construct(string $type = 'text/html')
     {
         if (in_array($type, $this->validTypes, true)) {
-            $this->compress = $_ENV['USE_COMPRESSION'] ?? false;
+            $this->compress = env('use_compression', false);
 
             $this->type = $type;
             $this->data = new \stdClass;
@@ -182,7 +182,7 @@ class Response
         }
 
         // Enable compression
-        if ($_ENV['USE_COMPRESSION'] === 'true') {
+        if (env('use_compression', false)) {
             ob_start('ob_gzhandler');
         }
 
@@ -199,7 +199,7 @@ class Response
                 break;
 
             case 'application/json':
-                if ($_ENV['SETTINGS']->get('devMode')) {
+                if (setting('devMode', false)) {
                     $json = json_encode($this->data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
                 } else {
                     $json = json_encode($this->data, JSON_THROW_ON_ERROR);
@@ -243,7 +243,7 @@ class Response
                 break;
         }
 
-        if ($_ENV['USE_COMPRESSION'] === 'true') {
+        if (env('use_compression', false)) {
             ob_end_flush();
         }
     }

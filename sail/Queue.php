@@ -43,7 +43,7 @@ class Queue
      */
     public function process(): void
     {
-        $maxProcess = $_ENV['QUEUE_MAX_PROCESS_PER_RUN'] ?? 'all';
+        $maxProcess = env('queue_max_process_per_run', 'all');
 
         if ($maxProcess !== 'all') {
             $maxProcess = (int)$maxProcess;
@@ -59,7 +59,7 @@ class Queue
             $locked = $model->checkLockStatus($value->_id);
             $retry_count = 0;
 
-            if ($value->retry_count === $_ENV['QUEUE_MAX_RETRY']) {
+            if ($value->retry_count === env('queue_max_retry', 3)) {
                 $model->closeTask($value->_id, 'Too many retries', false);
             }
 

@@ -173,11 +173,11 @@ class Asset extends Model
         $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
 
         // Options
-        $adapter = $_ENV['SETTINGS']->get('assets.adapter');
-        $maxSize = $_ENV['SETTINGS']->get('assets.maxUploadSize');
-        $optimize = $_ENV['SETTINGS']->get('assets.optimizeOnUpload');
-        $transforms = $_ENV['SETTINGS']->get('assets.onUploadTransforms');
-        $quality = $_ENV['SETTINGS']->get('assets.transformQuality');
+        $adapter = setting('assets.adapter', 'local://');
+        $maxSize = setting('assets.maxUploadSize', 5);
+        $optimize = setting('assets.optimizeOnUpload', true);
+        $transforms = setting('assets.onUploadTransforms', []);
+        $quality = setting('assets.transformQuality', 92);
 
         // Size of image
         $sizeBytes = strlen(bin2hex($data));
@@ -283,7 +283,7 @@ class Asset extends Model
 
         // Return the URL for the asset
         if ($adapter === 'local') {
-            return $_ENV['SITE_URL'] . $fs->publicUrl($basePath . $timePath . $filename);
+            return env('site_url', 'http://localhost') . $fs->publicUrl($basePath . $timePath . $filename);
         }
 
         return $fs->publicUrl($basePath . $timePath . $filename);
@@ -311,7 +311,7 @@ class Asset extends Model
 
         if ($this->is_image) {
             $fs = Filesystem::manager();
-            $format = $_ENV['SETTINGS']->get('assets.transformOutputFormat');
+            $format = setting('assets.transformOutputFormat', 'webp');
             $info = explode('.', $this->filename);
             $ext = end($info);
             array_pop($info);
@@ -337,7 +337,7 @@ class Asset extends Model
                 // Hit!
                 if ($cache !== null) {
                     if (str_starts_with($transformFilename, 'local://')) {
-                        return $_ENV['SITE_URL'] . $cache->url;
+                        return env('site_url', 'http://localhost') . $cache->url;
                     }
 
                     return $cache->url;
@@ -369,7 +369,7 @@ class Asset extends Model
 
                 // For local only
                 if (str_starts_with($transformFilename, 'local://')) {
-                    return $_ENV['SITE_URL'] . $fs->publicUrl($fileURL);
+                    return env('site_url', 'http://localhost') . $fs->publicUrl($fileURL);
                 }
 
                 return $fs->publicUrl($fileURL);

@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use MongoDB\BSON\ObjectId;
 use SailCMS\Contracts\AppSession;
+use SailCMS\Session\Stateless;
 
 class Session
 {
@@ -24,7 +25,7 @@ class Session
     public static function manager(): Session
     {
         if (!isset(static::$adapter)) {
-            $adapter = $_ENV['SETTINGS']->get('session.mode');
+            $adapter = setting('session.mode', Stateless::class);
 
             static::$adapter = new $adapter();
             static::$adapterType = strtolower(static::$adapter->type());

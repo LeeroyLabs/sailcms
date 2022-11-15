@@ -30,7 +30,7 @@ class Engine
         $loader = new FilesystemLoader([Sail::getTemplateDirectory(), dirname(__DIR__, 2) . '/cms']);
 
         // Use template caching or not
-        if ($_ENV['SETTINGS']->get('templating.cache')) {
+        if (setting('templating.cache', false)) {
             $this->twig = new Environment($loader, [
                 'cache' => Sail::getCacheDirectory(),
             ]);
@@ -39,7 +39,7 @@ class Engine
         }
 
         // Set tags to enable twig and vue side by side
-        if ($_ENV['SETTINGS']->get('templating.vueCompat')) {
+        if (setting('templating.vueCompat', false)) {
             $lexer = new Lexer($this->twig, [
                 'tag_comment' => $settings['syntax']['comment'] ?? ['[*', '*]'],
                 'tag_block' => $settings['syntax']['block'] ?? ['[%', '%]'],

@@ -263,7 +263,7 @@ class User extends Model
             'reset_code' => ''
         ]);
 
-        if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
+        if (!empty($id) && setting('emails.sendNewAccount', false)) {
             // Send a nice email to greet
             try {
                 $mail = new Mail();
@@ -347,11 +347,11 @@ class User extends Model
             'reset_code' => ''
         ]);
 
-        if (!empty($id) && $_ENV['SETTINGS']->get('emails.sendNewAccount', false)) {
+        if (!empty($id) && setting('emails.sendNewAccount', false)) {
             // Send a nice email to greet
             try {
                 // Overwrite the cta url for the admin one
-                $url = $_ENV['SETTINGS']->get('adminTrigger', 'admin') . '/validate/' . $code;
+                $url = setting('adminTrigger', 'admin') . '/validate/' . $code;
 
                 $mail = new Mail();
                 $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $url, 'name' => $name->first])->send();

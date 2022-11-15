@@ -28,13 +28,13 @@ class Datadog extends AbstractProcessingHandler
 
         parent::__construct($level, $bubble);
 
-        $varname = $_ENV['SETTINGS']->get('logging.datadog.api_key_identifier') ?? 'DD_DEFAULT_KEY';
-        $this->key = $_ENV[$varname];
+        $varname = setting('logging.datadog.api_key_identifier', 'DD_DEFAULT_KEY');
+        $this->key = setting($varname, '');
     }
 
     protected function write(LogRecord $record): void
     {
-        $defaultChannel = $_ENV['SETTINGS']->get('logging.datadog.defaultChannel') ?? 'app';
+        $defaultChannel = setting('logging.datadog.defaultChannel', 'app');
         $channel = $record->context['channel'] ?? $defaultChannel;
 
         $this->send($record, $channel);
@@ -53,7 +53,7 @@ class Datadog extends AbstractProcessingHandler
 
         $data = [
             'ddsource' => $channel,
-            'ddtags' => $_ENV['ENVIRONMENT'] . ',php:' . PHP_VERSION,
+            'ddtags' => env('environment', 'dev') . ',php:' . PHP_VERSION,
             'hostname' => Sail::currentApp(),
             'message' => $record->formatted,
             'service' => 'sailcms'

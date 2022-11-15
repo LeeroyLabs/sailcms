@@ -31,9 +31,9 @@ class Standard implements AppSession
 
         static::$instance = new Session();
         static::$instance->start([
-            'cookie_httponly' => $_ENV['SETTINGS']->get('session.httpOnly'),
-            'cookie_lifetime' => $_ENV['SETTINGS']->get('session.ttl'),
-            'cookie_samesite' => $_ENV['SETTINGS']->get('session.samesite'),
+            'cookie_httponly' => setting('session.httpOnly', true),
+            'cookie_lifetime' => setting('session.ttl', 21_600),
+            'cookie_samesite' => setting('session.samesite', true),
             'cookie_secure' => true
         ]);
     }

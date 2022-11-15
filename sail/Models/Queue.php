@@ -149,7 +149,7 @@ class Queue extends Model
         if ($retryCount > -1) {
             $update['$set']['retry_count'] = $retryCount;
 
-            if ($retryCount < $_ENV['QUEUE_MAX_RETRY']) {
+            if ($retryCount < env('queue_max_retry', 3)) {
                 $update['$set']['executed'] = false;
             } else {
                 $update['$set']['executed'] = true;

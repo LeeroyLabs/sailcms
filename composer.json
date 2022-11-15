@@ -59,7 +59,8 @@
         "symfony/twig-bridge": "^6.1",
         "symfony/security-csrf": "^6.1",
         "intervention/image": "^2.7",
-        "leeroy/clockwork": "^5.1"
+        "leeroy/clockwork": "^5.1",
+        "predis/predis": "^2.0"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

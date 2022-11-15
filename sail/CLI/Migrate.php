@@ -21,14 +21,18 @@ class Migrate extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $opt = $input->getArgument('option');
+        $v = $opt[1] ?? -1;
 
         if ($opt[0] === 'rollback') {
-            return $this->rundDown($opts[1] ?? -1);
-        } elseif ($opt[0] === 'seed') {
-            return $this->runUp(true);
-        } else {
-            return $this->runUp(false);
+            return $this->runDown((int)$v);
         }
+
+        if ($opt[0] === 'seed') {
+            $this->runDown(0, true);
+            return $this->runUp(true);
+        }
+
+        return $this->runUp(false);
     }
 
     protected function configure(): void
@@ -71,7 +75,7 @@ class Migrate extends Command
      * @throws SodiumException
      *
      */
-    private function writeCurrentVerison(int $version): void
+    private function writeCurrentVersion(int $version): void
     {
         Config::setByName('migration', ['version' => $version], false);
     }
@@ -115,7 +119,7 @@ class Migrate extends Command
             return Command::SUCCESS;
         }
 
-        Tools::outputInfo('found', "Codebase is {$diff} versions behind, starting...");
+        Tools::outputInfo('found', "Database is {$diff} versions behind, starting...");
 
         foreach ($executedFiles as $file) {
             include_once $file;
@@ -127,24 +131,85 @@ class Migrate extends Command
             $instance->up();
         }
 
-        $this->writeCurrentVerison($last);
+        $this->writeCurrentVersion($last);
         Tools::outputInfo('status', "Current version is {$last}", 'bg-green-500');
         Tools::outputInfo('done', "Database is up to date! 💪", 'bg-green-500');
         return Command::SUCCESS;
     }
 
-    private function runDown(int $version = -1): int
+    /**
+     *
+     * Rollback
+     *
+     * @param  int   $version
+     * @param  bool  $skipEnd
+     * @return int
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     *
+     */
+    private function runDown(int $version = -1, bool $skipEnd = false): int
     {
         $currentVersion = $this->getCurrentVersion();
 
         if ($currentVersion > 0) {
-            $version = $currentVersion - 1;
+            if ($version === -1) {
+                $version = $currentVersion - 1;
+            }
         } else {
-            Tools::outputInfo('error', "Cannot rollback, version is at 0" . 'bg-red-500');
+            Tools::outputInfo('error', "Cannot rollback, version is at 0", 'bg-red-500');
             return Command::FAILURE;
         }
 
-        Tools::outputInfo('running', "Rolling back on migrations to version {$version}");
+        $files = glob(Sail::getWorkingDirectory() . '/migrations/Migration_*.php');
+        $executedFiles = [];
+        $last = 0;
+
+        foreach ($files as $file) {
+            $parts = explode('_', $file);
+            $v = (int)str_replace('.php', '', $parts[count($parts) - 1]);
+
+            if ($v > $version) {
+                $executedFiles[] = $file;
+                $last = $v;
+            }
+        }
+
+        natsort($executedFiles);
+        $diff = $currentVersion - $last;
+
+        if ($diff < 0) {
+            Tools::outputInfo('done', "Database is up to date");
+            return Command::SUCCESS;
+        }
+
+        // Set the behind value if 0, set to 1
+        $behind = $diff;
+        if ($diff === 0) {
+            $behind = 1;
+        }
+
+        Tools::outputInfo('found', "Database will be reverted to version {$last} ({$behind} behind current), starting...");
+
+        foreach ($executedFiles as $file) {
+            include_once $file;
+
+            $class = str_replace('.php', '', basename($file));
+            $instance = new $class();
+
+            Tools::outputInfo('migrate', "Reverting migration from [b]{$class}[/b]");
+            $instance->down();
+        }
+
+        $this->writeCurrentVersion($diff);
+
+        if (!$skipEnd) {
+            Tools::outputInfo('status', "Current version is {$diff}", 'bg-green-500');
+            Tools::outputInfo('done', "Database has been rolled back! 😌", 'bg-green-500');
+        }
+        
         return Command::SUCCESS;
     }
 }

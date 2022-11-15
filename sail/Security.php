@@ -190,7 +190,7 @@ class Security
      */
     public static function verifyCSRF(): void
     {
-        $use = $_ENV['SETTINGS']->get('CSRF.use');
+        $use = setting('CSRF.use', true);
 
         if ($use && !empty($_POST['_csrf_'])) {
             $_ENV['CSRF_VALID'] = (new CSRF())->validate($_POST['_csrf_']);
@@ -217,27 +217,28 @@ class Security
      */
     public static function validatePassword(string $password): bool
     {
-        $min = $_ENV['SETTINGS']->get('passwords.minLength');
-        $max = $_ENV['SETTINGS']->get('passwords.maxLength');
-        $alphanum = $_ENV['SETTINGS']->get('passwords.enforceAlphanum');
-        $mixcase = $_ENV['SETTINGS']->get('passwords.enforceUpperLower');
+        $min = setting('passwords.minLength', 8);
+        $max = setting('passwords.minLength', 64);
+        $alphanum = setting('passwords.enforceAlphanum', true);
+        $mixcase = setting('passwords.enforceUpperLower', true);
+        $special = setting('passwords.enforceSpecialChars', false);
 
-        if ($alphanum && $mixcase) {
-            $rule = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{' . $min . ',' . $max . '}$/';
-            return (preg_match($rule, $password));
-        }
+        $reRule = '';
 
-        if ($mixcase) {
-            $rule = '/^(?=.*[a-z\d])(?=.*[A-Z\d]).{' . $min . ',' . $max . '}$/';
-            return (preg_match($rule, $password));
+        if ($special) {
+            $reRule = '(?=.*[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\])';
         }
 
         if ($alphanum) {
-            $rule = '/^(?=.*\d)(?=.*[a-zA-Z]).{' . $min . ',' . $max . '}$/';
-            return (preg_match($rule, $password));
+            $reRule .= '(?=.*\d)(?=.*[a-zA-Z])';
         }
 
-        return true;
+        if ($mixcase) {
+            $reRule .= '(?=.*[a-z\d])(?=.*[A-Z\d])';
+        }
+
+        $rule = '/^' . $reRule . '.{' . $min . ',' . $max . '}$/';
+        return (preg_match($rule, $password));
     }
 
     public static function generateVerificationCode(): string

@@ -165,7 +165,7 @@ class Bundled extends AbstractExtension
      */
     public function csrf(): string
     {
-        $use = $_ENV['SETTINGS']->get('CSRF.use');
+        $use = setting('CSRF.use', true);
 
         if ($use) {
             $token = Security::csrf();
