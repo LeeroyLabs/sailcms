@@ -218,7 +218,7 @@ class Mail
      */
     public function send(): bool
     {
-        $mailer = new Mailer(Transport::fromDsn($_ENV['MAIL_DSN']));
+        $mailer = new Mailer(Transport::fromDsn(env('mail_dsn', '')));
         $loader = new FilesystemLoader(Sail::getTemplateDirectory());
         $twigEnv = new Environment($loader);
 
@@ -251,7 +251,7 @@ class Mail
         $template = Email::getBySlug($slug);
 
         if ($template) {
-            $settings = $_ENV['SETTINGS']->get('emails');
+            $settings = setting('emails', []);
 
             if (is_array($context)) {
                 $context = new Collection($context);
@@ -268,7 +268,7 @@ class Mail
             $superContext = $providedContent->merge($context);
 
             // Fetch the global scoped context
-            $globalContext = $_ENV['SETTINGS']->get('emails.globalContext');
+            $globalContext = setting('emails.globalContext', ['locales' => ['fr' => [], 'en' => []]]);
             $locales = $globalContext->get('locales.' . $locale);
             $gc = $globalContext->unwrap();
             unset($gc['locales']); // don't add twice

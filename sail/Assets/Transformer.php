@@ -203,7 +203,7 @@ class Transformer
         $image = $this->image->getCore();
         $fs = Filesystem::manager();
 
-        $quality = $_ENV['SETTINGS']->get('assets.transformQuality');
+        $quality = setting('assets.transformQuality', 92);
 
         $imagick = new \Imagick();
         $imagick->readImageBlob($image);

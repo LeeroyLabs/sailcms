@@ -26,11 +26,11 @@ class TwoFactorAuthentication
     {
         if (empty(static::$auth)) {
             static::$auth = new TwoFactorAuth(
-                $_ENV['SETTINGS']->get('tfa.issuer'),
-                $_ENV['SETTINGS']->get('tfa.length'),
-                $_ENV['SETTINGS']->get('tfa.expire'),
+                setting('tfa.issuer', 'sailcms'),
+                setting('tfa.length', 6),
+                setting('tfa.expire', 30),
                 'sha1',
-                new BaconQrCodeProvider(4, '#ffffff', '#000000', $_ENV['SETTINGS']->get('tfa.format')),
+                new BaconQrCodeProvider(4, '#ffffff', '#000000', setting('tfa.format', 'svg')),
                 new OpenSSLRNGProvider(),
                 new HttpTimeProvider()
             );

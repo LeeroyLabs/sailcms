@@ -168,7 +168,7 @@ class GraphQL
         try {
             $pathAST = 'cache://graphql.ast';
 
-            if ($_ENV['ENVIRONMENT'] === 'dev') {
+            if (env('environment', 'dev') === 'dev') {
                 // Load all files for the schema
                 $queries = [];
                 $mutations = [];
@@ -226,7 +226,7 @@ class GraphQL
             $schema = BuildSchema::build($document);
 
             $rawInput = file_get_contents('php://input');
-            $input = json_decode($rawInput, true, $_ENV['SETTINGS']->get('graphql.depthLimit'), JSON_THROW_ON_ERROR); // N+1 protection
+            $input = json_decode($rawInput, true, setting('graphql.depthLimit', 5), JSON_THROW_ON_ERROR); // N+1 protection
             $query = $input['query'] ?? $input['mutation'] ?? '';
             $variableValues = $input['variables'] ?? null;
 

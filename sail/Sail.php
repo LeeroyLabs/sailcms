@@ -2,6 +2,8 @@
 
 namespace SailCMS;
 
+include_once dirname(__DIR__) . '/Globals.php';
+
 use Clockwork\Support\Vanilla\Clockwork;
 use Dotenv\Dotenv;
 use Exception;
@@ -131,12 +133,12 @@ class Sail
             static::outputAvailableSites();
         }
 
-        if ($_SERVER['REQUEST_URI'] === '/' . $_ENV['SETTINGS']->get('graphql.trigger') && $_ENV['SETTINGS']->get('graphql.active')) {
+        if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
             // Run GraphQL
             static::$isGraphQL = true;
             $data = GraphQL::init();
 
-            if ($_ENV['DEBUG'] === 'on') {
+            if (env('debug', 'off') === 'on') {
                 static::$clockwork->requestProcessed();
             }
 
@@ -148,7 +150,7 @@ class Sail
         // Run before dispatch
         Middleware::execute(MiddlewareType::HTTP, new Data(Http::BeforeRoute, data: null));
 
-        if ($_ENV['DEBUG'] === 'on') {
+        if (env('debug', 'off') === 'on') {
             Router::addClockworkSupport();
         }
 
@@ -216,9 +218,9 @@ class Sail
 
         $settings = new Collection($config);
 
-        $_ENV['SETTINGS'] = $settings->get($_ENV['ENVIRONMENT'] ?? 'dev');
+        $_ENV['SETTINGS'] = $settings->get(env('environment', 'dev'));
 
-        if ($_ENV['SETTINGS']->get('devMode')) {
+        if (setting('devMode', false)) {
             ini_set('display_errors', true);
             error_reporting(E_ALL);
         }
@@ -282,13 +284,8 @@ class Sail
         $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
         $dotenv->load();
 
-        // Create debug variable if it's not set
-        if (!isset($_ENV['DEBUG'])) {
-            $_ENV['DEBUG'] = 'off';
-        }
-
         // Setup Clockwork for debugging info
-        if ($_ENV['DEBUG'] === 'on') {
+        if (env('debug', 'off') === 'on') {
             $path = static::$workingDirectory . '/storage/debug';
 
             if (static::$isServerless) {
@@ -661,7 +658,7 @@ class Sail
      */
     public static function getClockWork(): ?Clockwork
     {
-        if ($_ENV['DEBUG'] === 'on') {
+        if (env('debug', 'off') === 'on') {
             return static::$clockwork;
         }
 
@@ -677,19 +674,20 @@ class Sail
      */
     private static function setupCORS(): void
     {
-        $cors = $_ENV['SETTINGS']->get('cors');
+        $cors = setting('cors', ['use' => false, 'origins' => '*', 'allowCredentials' => false]);
 
-        if ($cors->get('use')) {
-            $origins = implode(',', $cors->get('origins')->unwrap());
-            $creds = ($cors->get('allowCredentials')) ? 'true' : 'false';
+        if (setting('cors.use', false)) {
+            $origins = implode(',', setting('cors.origins', new Collection([]))->unwrap());
+            $creds = (setting('cors.allowCredentials', false)) ? 'true' : 'false';
+            $maxAge = setting('cors.maxAge', 86_400);
 
             header("Access-Control-Allow-Origin: {$origins}");
             header("Access-Control-Allow-Credentials: {$creds}");
-            header("Access-Control-Max-Age: {$cors->get('maxAge')}");
+            header("Access-Control-Max-Age: {$maxAge}");
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-                $methods = implode(",", $cors->get('methods')->unwrap());
-                $headers = implode(",", $cors->get('headers')->unwrap());
+                $methods = implode(",", setting('cors.methods', new Collection(['get']))->unwrap());
+                $headers = implode(",", setting('cors.headers', new Collection([]))->unwrap());
 
                 header("Access-Control-Allow-Methods: {$methods}");
                 header("Access-Control-Allow-Headers: {$headers}");
@@ -734,7 +732,7 @@ class Sail
                 exit();
             }
 
-            $whitelist = explode(',', $_ENV['SETTINGS']->get('tfa.whitelist'));
+            $whitelist = explode(',', setting('tfa.whitelist', new Collection([]))->unwrap());
             $url = parse_url($_SERVER['HTTP_REFERER']);
 
             if (in_array($url['host'], $whitelist, true)) {
@@ -793,7 +791,7 @@ class Sail
                 if (isset($_SERVER['HTTP_HOST'])) {
                     $host = explode(':', $_SERVER['HTTP_HOST'])[0];
                 } else {
-                    $host = explode(':', $_ENV['SITE_URL'])[0];
+                    $host = explode(':', env('site_url', 'http://localhost'))[0];
                 }
 
                 if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {

@@ -28,17 +28,12 @@ class Database
             $dsn = ($dbIndex > 0) ? "DATABASE_DSN_{$dbIndex}" : 'DATABASE_DSN';
             Debug::eventStart('Connect to MongoDB');
 
-            if (isset($_ENV[$dsn]) && $_ENV[$dsn] !== '') {
-                if (str_starts_with($_ENV[$dsn], 'mongodb+srv')) {
+            if (env($dsn, '') !== '') {
+                if (str_starts_with(env($dsn, ''), 'mongodb+srv')) {
                     $api = new ServerApi(ServerApi::V1);
-
-                    try {
-                        self::$clients[$dbIndex] = new Client($_ENV[$dsn], [], ['serverApi' => $api]);
-                    } catch (\Exception $e) {
-                        print_r($e->getMessage());
-                    }
+                    self::$clients[$dbIndex] = new Client(env($dsn, ''), [], ['serverApi' => $api]);
                 } else {
-                    self::$clients[$dbIndex] = new Client($_ENV[$dsn], []);
+                    self::$clients[$dbIndex] = new Client(env($dsn, ''), []);
                 }
             } else {
                 throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500);

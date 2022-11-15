@@ -44,8 +44,8 @@ class TwoFactorAuthenticationController
 
         $url = parse_url($_SERVER['HTTP_HOST']);
 
-        $this->response->set('overrideColor', $_ENV['SETTINGS']->get('tfa.main_color'));
-        $this->response->set('overrideHoverColor', $_ENV['SETTINGS']->get('tfa.hover_color'));
+        $this->response->set('overrideColor', setting('tfa.main_color', ''));
+        $this->response->set('overrideHoverColor', setting('tfa.hover_color', ''));
         $this->response->set('uid', $uid);
         $this->response->set('qr', $tfa->getQRCode($code));
         $this->response->set('host', $url['host']);

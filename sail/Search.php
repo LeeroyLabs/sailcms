@@ -13,7 +13,7 @@ class Search
 
     public function __construct()
     {
-        $engine = $_ENV['SEARCH_ENGINE'] ?? 'database';
+        $engine = env('search_engine', 'database');
 
         if (empty(static::$adapter)) {
             if (!empty(static::$registeredAdapters[$engine])) {
@@ -42,9 +42,9 @@ class Search
      *
      * Launch search
      *
-     * @param string $search
-     * @param array $meta
-     * @param string $dataIndex
+     * @param  string  $search
+     * @param  array   $meta
+     * @param  string  $dataIndex
      * @return SearchResults
      *
      */
@@ -57,8 +57,8 @@ class Search
      *
      * Try to execute the give method on the adapter. if not available, null is returned
      *
-     * @param string $method
-     * @param array $arguments
+     * @param  string  $method
+     * @param  array   $arguments
      * @return mixed
      *
      */
@@ -75,8 +75,8 @@ class Search
      *
      * Register a search adapter
      *
-     * @param string $name
-     * @param string $className
+     * @param  string  $name
+     * @param  string  $className
      * @return void
      *
      */

@@ -20,7 +20,7 @@ class Tools
      */
     public static function executeComposerRefresh(): void
     {
-        exec($_ENV['COMPOSER_LOCATION'] . ' dump-autoload -a');
+        exec(env('composer_location', '/usr/local/bin/composer') . ' dump-autoload -a');
     }
 
     /**
@@ -34,7 +34,7 @@ class Tools
      */
     public static function testFlight(bool $skipFolders = false): void
     {
-        if (empty($_ENV['COMPOSER_LOCATION'])) {
+        if (env('composer_location', '') !== '') {
             static::outputError("Composer location not found in environment file, please make sure it's set", true);
         }
 

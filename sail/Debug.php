@@ -20,7 +20,7 @@ class Debug
      */
     public static function log(mixed ...$messages): void
     {
-        if ($_ENV['DEBUG'] === 'on') {
+        if (env('debug', 'off') === 'on') {
             Clockwork::instance(...$messages);
         }
     }
@@ -101,7 +101,7 @@ class Debug
      */
     public static function endQuery(array $config): void
     {
-        if ($_ENV['DEBUG'] === 'on') {
+        if (env('debug', 'off') === 'on') {
             $dbg = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3)[2];
 
             $file = basename($dbg['file']);
@@ -266,7 +266,7 @@ class Debug
         }
 
 
-        if ($_ENV['SETTINGS']->get('logging.useRay')) {
+        if (setting('logging.useRay', false)) {
             ray(...$variables)->color($levelColor);
         }
     }
@@ -297,7 +297,7 @@ class Debug
         $name = basename($caller['file']);
         $line = $caller['line'];
 
-        if ($_ENV['SETTINGS']->get('logging.useRay')) {
+        if (setting('logging.useRay', false)) {
             ray(...$variables);
         }
 

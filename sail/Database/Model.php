@@ -51,7 +51,7 @@ abstract class Model
         $collection = (empty($collection)) ? Text::snakeCase(Text::inflector()->pluralize($name)[0]) : $collection;
         $client = Database::instance($dbIndex);
 
-        $this->collection = $client->selectCollection($_ENV['DATABASE_DB'], $collection);
+        $this->collection = $client->selectCollection(env('database_db', 'sailcms'), $collection);
 
         $this->init();
     }

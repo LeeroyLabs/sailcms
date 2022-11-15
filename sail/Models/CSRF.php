@@ -40,7 +40,7 @@ class CSRF extends Model
     {
         $token = Security::hash(microtime() . uniqid('', true), true);
         $ip = (new Request())->ipAddress();
-        $expiration = $_ENV['SETTINGS']->get('CSRF.expiration') ?? 120;
+        $expiration = setting('CSRF.expiration', 120);
 
         // 60sec minimum
         if ($overrideExpiration >= 60) {
@@ -74,7 +74,7 @@ class CSRF extends Model
     {
         $ip = (new Request())->ipAddress();
         $token = $this->findOne(['ip' => $ip], QueryOptions::initWithSort(['expire_at' => -1]))->exec();
-        $leeway = $_ENV['SETTINGS']->get('CSRF.leeway') ?? 5;
+        $leeway = setting('CSRF.leeway', 5);
         $now = time() + $leeway;
 
         if ($token !== null && $receivedToken === $token->token && $token->expire_at >= $now) {
