@@ -33,7 +33,7 @@ class EntryType extends Model
     public string $title;
     public string $handle;
     public string $url_prefix;
-    public ?string $entry_type_layout_id; // TODO implement layout!
+    public ?string $entry_layout_id; // TODO implement layout!
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -43,7 +43,7 @@ class EntryType extends Model
             'handle',
             'collection_name',
             'url_prefix',
-            'entry_type_layout_id'
+            'entry_layout_id'
         ];
     }
 
@@ -216,7 +216,7 @@ class EntryType extends Model
      * @param  string                $handle
      * @param  string                $title
      * @param  string                $url_prefix
-     * @param  string|ObjectId|null  $entry_type_layout_id
+     * @param  string|ObjectId|null  $entry_layout_id
      * @param  bool                  $getObject
      * @return array|EntryType|string|null
      * @throws ACLException
@@ -225,11 +225,11 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public function createOne(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    public function createOne(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->hasPermissions();
 
-        return $this->create($handle, $title, $url_prefix, $entry_type_layout_id);
+        return $this->create($handle, $title, $url_prefix, $entry_layout_id);
     }
 
     /**
@@ -354,14 +354,14 @@ class EntryType extends Model
      * @param  string                $handle
      * @param  string                $title
      * @param  string                $url_prefix
-     * @param  string|ObjectId|null  $entry_type_layout_id
+     * @param  string|ObjectId|null  $entry_layout_id
      * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
      * @throws EntryException
      * @throws DatabaseException
      *
      */
-    private function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    private function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->checkHandle($handle);
 
@@ -374,7 +374,7 @@ class EntryType extends Model
                 'handle' => $handle,
                 'title' => $title,
                 'url_prefix' => $url_prefix,
-                'entry_type_layout_id' => $entry_type_layout_id
+                'entry_layout_id' => $entry_layout_id
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -394,15 +394,17 @@ class EntryType extends Model
      * @param  EntryType   $entryType
      * @param  Collection  $data
      * @return bool
-     * @throws EntryException
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function update(EntryType $entryType, Collection $data): bool
     {
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');
-        // TODO entry type layout id
+        // TODO entry layout id
         $update = [];
 
         if ($title) {

@@ -362,6 +362,19 @@ class Entry extends Model
 
     /**
      *
+     * Get the count according to given filters
+     *
+     * @param  array  $filters
+     * @return int
+     *
+     */
+    public function getCount(array $filters): int
+    {
+        return $this->count($filters);
+    }
+
+    /**
+     *
      * Get all entries of the current type
      *  with filtering and pagination
      *
@@ -618,7 +631,7 @@ class Entry extends Model
      * @throws EntryException
      *
      */
-    private static function validateStatus(EntryStatus|string $status)
+    private static function validateStatus(EntryStatus|string $status): void
     {
         if ($status instanceof EntryStatus) {
             $status = $status->value;
@@ -626,6 +639,14 @@ class Entry extends Model
         if ($status === EntryStatus::TRASH->value) {
             throw new EntryException(static::STATUS_CANNOT_BE_TRASH);
         }
+    }
+
+    private static function validateContent(?Collection &$content): Collection
+    {
+        // Validate content
+
+        // Return errors
+        return new Collection();
     }
 
     /**
@@ -688,11 +709,14 @@ class Entry extends Model
         $author = User::$currentUser;
         $alternates = new Collection($data->get('alternates', []));
         $parent = $data->get('parent');
+        $content = $data->get('content');
 
         // TODO implements others fields: categories content
 
         // VALIDATION
         static::validateStatus($status);
+        $errors = static::validateContent($content);
+
         // Get the validated slug just to be sure
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
