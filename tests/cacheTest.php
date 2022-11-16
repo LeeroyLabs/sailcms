@@ -51,18 +51,18 @@ test('Delete many keys', function ()
     expect($value1)->toBeNull()->and($value2)->toBeNull();
 });
 
-test('Add many keys, delete all keys that start with "keypref_"', function ()
+test('Add many keys, delete all keys in namespace "keypref"', function ()
 {
-    Cache::set('keypref_testkey1', 'hello world!');
-    Cache::set('keypref_testkey2', 'hello world!');
-    Cache::set('keypref_testkey3', 'hello world!');
+    Cache::set('keypref:testkey1', 'hello world!');
+    Cache::set('keypref:testkey2', 'hello world!');
+    Cache::set('keypref:testkey3', 'hello world!');
     Cache::set('testkey', 'hello world!');
-    Cache::set('keypref_testkey4', 'hello world!');
-    Cache::set('keypref_testkey5', 'hello world!');
+    Cache::set('keypref:testkey4', 'hello world!');
+    Cache::set('keypref:testkey5', 'hello world!');
 
-    Cache::removeUsingPrefix('keypref_');
+    Cache::removeUsingPrefix('keypref');
 
-    $value1 = Cache::get('keypref_testkey5');
+    $value1 = Cache::get('keypref:testkey5');
     $value2 = Cache::get('testkey');
 
     expect($value1)->toBeNull()->and($value2)->not->toBeNull();

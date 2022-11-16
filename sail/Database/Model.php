@@ -21,7 +21,7 @@ use SailCMS\Text;
 use SailCMS\Types\QueryOptions;
 use stdClass;
 
-abstract class Model
+abstract class Model implements \JsonSerializable
 {
     public const SORT_ASC = 1;
     public const SORT_DESC = -1;
@@ -739,20 +739,43 @@ abstract class Model
         foreach ($fields as $field) {
             if ($field === '_id') {
                 $doc[$field] = (string)$this->{$field};
+            } elseif (is_object($this->{$field}) || is_array($this->{$field})) {
+                $doc[$field] = $this->simplifyEntity($this->{$field});
             } else {
-                if (is_object($this->{$field}) || is_array($this->{$field})) {
-                    $doc[$field] = $this->simplifyEntity($this->{$field});
-                } else {
-                    $doc[$field] = $this->{$field};
-                }
+                $doc[$field] = $this->{$field};
             }
         }
 
         try {
-            return json_encode($doc, JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT | JSON_PRETTY_PRINT);
+            return json_encode($doc, JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT);
         } catch (JsonException $e) {
             return "{}";
         }
+    }
+
+    /**
+     *
+     * Support for json_encode triggering
+     *
+     * @return array
+     *
+     */
+    public function jsonSerialize(): array
+    {
+        $fields = $this->fields();
+        $doc = [];
+
+        foreach ($fields as $field) {
+            if ($field === '_id') {
+                $doc[$field] = (string)$this->{$field};
+            } elseif (is_object($this->{$field}) || is_array($this->{$field})) {
+                $doc[$field] = $this->simplifyEntity($this->{$field});
+            } else {
+                $doc[$field] = $this->{$field};
+            }
+        }
+
+        return $doc;
     }
 
     /**

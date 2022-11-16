@@ -22,9 +22,23 @@ class Category extends Model
     public int $order;
     public string $parent_id;
 
+    public function __construct()
+    {
+        parent::__construct('categories', 0);
+    }
+
     public function fields(bool $fetchAllFields = false): array
     {
         return ['_id', 'name', 'site_id', 'slug', 'parent_id', 'order'];
+    }
+
+    protected function processOnFetch(string $field, mixed $value): mixed
+    {
+        if ($field === 'name') {
+            return new LocaleField($value);
+        }
+
+        return $value;
     }
 
     /**
@@ -32,13 +46,11 @@ class Category extends Model
      * Create a category
      *
      * @param  LocaleField  $name
-     * @param  string       $site_id
      * @param  string       $parent_id
      * @return bool
-     * @throws DatabaseException
      * @throws ACLException
+     * @throws DatabaseException
      * @throws PermissionException
-     *
      */
     public function create(LocaleField $name, string $parent_id = ''): bool
     {
@@ -180,6 +192,15 @@ class Category extends Model
         $this->bulkWrite($writes);
     }
 
+    /**
+     *
+     * Get tree list of categories
+     *
+     * @param  string  $parent
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
     public function getList(string $parent = ''): Collection
     {
         $query = [];
@@ -188,11 +209,84 @@ class Category extends Model
             $query = ['parent_id' => $parent];
         }
 
-        $list = $this->find($query, QueryOptions::initWithSort(['parent_id' => 1, 'order' => 1]))->exec();
-        $categories = Collection::init();
+        $opts = QueryOptions::initWithSort(['parent_id' => 1, 'order' => 1]);
+        $list = $this->find($query, $opts)->exec();
+        $basicTree = [];
 
+        foreach ($list as $num => $item) {
+            $id = (string)$item->_id;
 
-        #foreach ($list as $cat) {
-        #}
+            // Might have been created already
+            if (!isset($final[$id])) {
+                $basicTree[$id] = [];
+            }
+
+            if ($item->parent_id !== '') {
+                // Create if it does not exist
+                if (!isset($basicTree[$item->parent_id])) {
+                    $basicTree[$item->parent_id] = [];
+                }
+
+                $basicTree[$item->parent_id][] = $id;
+            }
+        }
+
+        $structured = [];
+        $listCollection = new Collection($list);
+
+        foreach ($basicTree as $id => $children) {
+            $childrenList = $this->parseChildrenList($listCollection, $basicTree, $id);
+
+            $item = $listCollection->find(function ($key, $cat) use ($id)
+            {
+                return ((string)$cat->_id === $id);
+            });
+
+            $item->children = $childrenList;
+            $structured[] = $item;
+        }
+
+        // Remove indexes where the id is not at top level
+        $final = [];
+
+        foreach ($structured as $num => $tree) {
+            $item = $listCollection->find(function ($key, $cat) use ($tree)
+            {
+                return ((string)$cat->_id === (string)$tree->_id);
+            });
+
+            if ($item && $item->parent_id === $parent) {
+                $final[] = $tree;
+            }
+        }
+
+        return new Collection($final);
+    }
+
+    /**
+     *
+     * Parse the tree of children
+     *
+     * @param  Collection  $categories
+     * @param  array       $tree
+     * @param  string      $id
+     * @return array
+     *
+     */
+    private function parseChildrenList(Collection $categories, array $tree, string $id = ''): array
+    {
+        $children = [];
+
+        foreach ($tree[$id] as $_id) {
+            $item = $categories->find(function ($key, $cat) use ($_id)
+            {
+                return ((string)$cat->_id === $_id);
+            });
+
+            $item->children = (count($tree[$_id]) === 0) ? [] : $this->parseChildrenList($categories, $tree, $_id);
+            $children[] = $item;
+        }
+
+        return $children;
     }
 }
