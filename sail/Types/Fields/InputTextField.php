@@ -36,7 +36,7 @@ class InputTextField extends Field
 
     public function validate(mixed $content): Collection
     {
-        $errors = new Collection([]);
+        $errors = Collection::init();
         if ($this->required && !$content) {
             $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
         }

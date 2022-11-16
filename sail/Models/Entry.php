@@ -133,7 +133,7 @@ class Entry extends Model
     public static function getAll(): Collection
     {
         $entryTypes = EntryType::getAll();
-        $entries = new Collection([]);
+        $entries = Collection::init();
 
         $entryTypes->each(function ($key, $value) use (&$entries)
         {
@@ -742,8 +742,8 @@ class Entry extends Model
                 'authors' => $authors,
                 'dates' => $dates,
                 // TODO
-                'categories' => new Collection([]),
-                'content' => new Collection([])
+                'categories' => Collection::init(),
+                'content' => Collection::init()
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
