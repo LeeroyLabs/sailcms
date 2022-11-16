@@ -19,7 +19,7 @@ class Collection implements \JsonSerializable, \Iterator
 
     public static function init(): Collection
     {
-        return Collection::init();
+        return new static([]);
     }
 
     /**
