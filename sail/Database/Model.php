@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use JsonException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
+use MongoDB\BulkWriteResult;
 use MongoDB\Collection;
 use MongoDB\Model\BSONArray;
 use SailCMS\ACL;
@@ -238,7 +239,7 @@ abstract class Model
                 $results = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
             }
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
 
         foreach ($results as $result) {
@@ -420,7 +421,7 @@ abstract class Model
             $this->debugCall('aggregate', $qt, ['pipeline' => $pipeline]);
             return $docs;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -445,7 +446,7 @@ abstract class Model
             $this->debugCall('insert', $qt);
             return $id;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -473,7 +474,31 @@ abstract class Model
             $this->debugCall('insertMany', $qt);
             return $ids;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
+        }
+    }
+
+    /**
+     *
+     * Bulk write to database
+     *
+     * @param  array  $writes
+     * @return BulkWriteResult
+     * @throws DatabaseException
+     *
+     */
+    protected function bulkWrite(array $writes): BulkWriteResult
+    {
+        $qt = Debug::startQuery();
+
+        try {
+            $res = $this->collection->bulkWrite($writes);
+
+            $this->clearCacheForModel();
+            $this->debugCall('bulkWrite', $qt);
+            return $res;
+        } catch (\Exception $e) {
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -503,7 +528,7 @@ abstract class Model
             $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -532,7 +557,7 @@ abstract class Model
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -557,7 +582,7 @@ abstract class Model
             $this->debugCall('deleteOne', $qt, ['query' => $query]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -581,7 +606,7 @@ abstract class Model
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -610,7 +635,7 @@ abstract class Model
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -645,7 +670,7 @@ abstract class Model
         try {
             $this->collection->createIndex($index, $options);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -663,7 +688,7 @@ abstract class Model
         try {
             $this->collection->createIndexes($indexes, $options);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -680,7 +705,7 @@ abstract class Model
         try {
             $this->collection->dropIndex($index);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -697,7 +722,7 @@ abstract class Model
         try {
             $this->collection->dropIndexes($indexes);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -1030,6 +1055,6 @@ abstract class Model
      */
     private function clearCacheForModel(): void
     {
-        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)) . ':');
+        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
     }
 }

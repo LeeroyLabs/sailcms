@@ -172,7 +172,7 @@ class Cache
             return false;
         }
 
-        $keys = static::$client->keys("{$prefix}*");
+        $keys = static::$client->keys("{$prefix}:*");
 
         if (count($keys) === 0) {
             return false;

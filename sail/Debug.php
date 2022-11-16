@@ -118,9 +118,12 @@ class Debug
                 'line' => $line
             ];
 
-            if ($config['operation'] !== 'aggregate') {
+            if ($config['operation'] !== 'aggregate' && $config['operation'] !== 'bulkWrite') {
                 $parsedQuery = DbParser::parseQuery($config);
                 $config['query'] = [];
+            } elseif ($config['operation'] === 'bulkWrite') {
+                $parsedQuery = $config['operation'];
+                $config['query'] = 'Multiple unparsed queries';
             } else {
                 $parsedQuery = $config['operation'];
                 $config['query'] = $config['pipeline'];

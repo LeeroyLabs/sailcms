@@ -160,7 +160,7 @@ class User extends Model
         }
 
         $roleModel = new Role();
-        $permissions = new Collection([]);
+        $permissions = Collection::init();
 
         foreach ($this->roles->unwrap() as $roleSlug) {
             $role = $roleModel->getByName($roleSlug);

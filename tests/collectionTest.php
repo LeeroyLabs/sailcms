@@ -170,7 +170,7 @@ test('JSON serialization', function ()
 
 test('Run Each loop on collection', function ()
 {
-    $data = new Collection([]);
+    $data = Collection::init();
     $length = 0;
 
     $this->collection->each(function ($key, $value) use ($data)
@@ -226,7 +226,7 @@ test('Sort array by object key', function ()
 
 test('Empty collection', function ()
 {
-    $col = new Collection([]);
+    $col = Collection::init();
     expect($col->empty)->toBe(true);
 });
 

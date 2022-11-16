@@ -11,7 +11,7 @@ class LocaleField implements DatabaseType
 
     public function __construct(array|\stdClass $combinations)
     {
-        $this->combinations = new Collection([]);
+        $this->combinations = Collection::init();
 
         if (!empty($combinations)) {
             foreach ($combinations as $key => $value) {

@@ -15,7 +15,7 @@ class Module implements AppModule
 
     public function cli(): Collection
     {
-        return new Collection([]);
+        return Collection::init();
     }
 
     public function middleware(): void

@@ -98,7 +98,7 @@ class Standard implements AppSession
             return new Collection(static::$instance->all());
         }
 
-        return new Collection([]);
+        return Collection::init();
     }
 
     /**

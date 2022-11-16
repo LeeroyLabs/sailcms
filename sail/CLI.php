@@ -78,7 +78,7 @@ class CLI
 
         // Custom commands
         if (!isset(static::$registeredCommands)) {
-            static::$registeredCommands = new Collection([]);
+            static::$registeredCommands = Collection::init();
         }
 
         foreach (static::$registeredCommands->unwrap() as $commands) {

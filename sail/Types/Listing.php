@@ -10,6 +10,6 @@ class Listing
 
     public static function empty(): Listing
     {
-        return new Listing(new Pagination(), new Collection([]));
+        return new Listing(new Pagination(), Collection::init());
     }
 }

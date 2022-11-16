@@ -5,7 +5,7 @@ namespace [LOCATION]\Models;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 
-class [NAME] extends BaseModel
+class [NAME] extends Model
 {
     public function fields(bool $fetchAllFields = false): array
     {
