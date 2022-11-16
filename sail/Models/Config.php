@@ -4,6 +4,7 @@ namespace SailCMS\Models;
 
 use JsonException;
 use League\Flysystem\FilesystemException;
+use SailCMS\Cache;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Security;
@@ -35,7 +36,7 @@ class Config extends Model
     public static function getByName(string $name): ?static
     {
         $instance = new static();
-        $item = $instance->findOne(['name' => $name])->exec();
+        $item = $instance->findOne(['name' => $name])->exec($name, Cache::TTL_MONTH);
 
         if ($item && $item->flag) {
             $item->config = json_decode(Security::decrypt($item->config), false, 512, JSON_THROW_ON_ERROR);
