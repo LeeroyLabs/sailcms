@@ -13,6 +13,7 @@ use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
@@ -166,6 +167,7 @@ class Sail
      * @throws FileException
      * @throws SiteException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
@@ -188,11 +190,6 @@ class Sail
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
-
-        // Load cms ACLs
-        ACL::loadCmsACL();
-
-        // Load fields TODO 
 
         // Load Sites
         static::loadAndDetectSites();
@@ -224,6 +221,11 @@ class Sail
             ini_set('display_errors', true);
             error_reporting(E_ALL);
         }
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
+
+        // Load fields TODO
 
         // Initialize the logger
         Log::init();
