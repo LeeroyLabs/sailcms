@@ -16,9 +16,27 @@ class InputTextField extends Field
     ) {
     }
 
+    public static function defaultSettings(): Collection
+    {
+        return new Collection([
+            'required' => false,
+            'maxLength' => 0,
+            'minLength' => 0
+        ]);
+    }
+
+    public static function availableProperties(): Collection
+    {
+        return new Collection([
+            new Input('required', Input::INPUT_TYPE_CHECKBOX),
+            new Input('maxLength', Input::INPUT_TYPE_NUMBER),
+            new Input('minLength', Input::INPUT_TYPE_NUMBER),
+        ]);
+    }
+
     public function validate(mixed $content): Collection
     {
-        $errors = new Collection([]);
+        $errors = Collection::init();
         if ($this->required && !$content) {
             $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
         }
@@ -27,7 +45,7 @@ class InputTextField extends Field
             $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->maxLength . ').');
         }
 
-        if ($this->minLength > 0 && strlen($content) > $this->minLength) {
+        if ($this->minLength > 0 && strlen($content) < $this->minLength) {
             $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->minLength . ').');
         }
 

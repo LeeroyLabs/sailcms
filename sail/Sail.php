@@ -225,8 +225,6 @@ class Sail
         // Load cms ACLs
         ACL::loadCmsACL();
 
-        // Load fields TODO
-
         // Initialize the logger
         Log::init();
 
@@ -350,6 +348,8 @@ class Sail
 
                     // Run the ACL registration
                     $acls = $instance->permissions();
+
+                    // load custom fields
 
                     ACL::loadCustom($acls);
 

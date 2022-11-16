@@ -25,5 +25,12 @@ abstract class Field implements DatabaseType
         ];
     }
 
+    // Must defined default settings
+    abstract public static function defaultSettings(): Collection;
+
+    // Name + type + possible values (choices)
+    abstract public static function availableProperties(): Collection;
+
+    // To validate the field, return an error collection
     abstract public function validate(mixed $content): Collection;
 }

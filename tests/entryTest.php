@@ -17,7 +17,7 @@ beforeAll(function ()
 
     $authorModel = new User();
     $username = new Username('Test', 'Entry', 'Test Entry');
-    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', new Collection([]));
+    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', Collection::init());
     User::$currentUser = $authorModel->getById($userId);
 });
 

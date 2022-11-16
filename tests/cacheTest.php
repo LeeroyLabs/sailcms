@@ -1,7 +1,6 @@
 <?php
 
 use SailCMS\Cache;
-use SailCMS\Models\Config;
 
 include_once __DIR__ . '/mock/db.php';
 
