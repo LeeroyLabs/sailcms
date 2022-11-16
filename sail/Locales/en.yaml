@@ -11,3 +11,8 @@ system_2fa:
   invalid_code: Invalid Code
   activated_success: Two-Factor Authentication is Active!
   rescue_codes: Keep these rescue codes somewhere safe. They will help you to access your account if you lose your mobile device.
+fields:
+  errors:
+    is_required: is required
+    max_length: is too long
+    min_length: is too short

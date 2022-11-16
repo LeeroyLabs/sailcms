@@ -192,6 +192,8 @@ class Sail
         // Load cms ACLs
         ACL::loadCmsACL();
 
+        // Load fields TODO 
+
         // Load Sites
         static::loadAndDetectSites();
 
