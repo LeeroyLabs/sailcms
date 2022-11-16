@@ -218,7 +218,7 @@ class Security
     public static function validatePassword(string $password): bool
     {
         $min = setting('passwords.minLength', 8);
-        $max = setting('passwords.minLength', 64);
+        $max = setting('passwords.maxLength', 64);
         $alphanum = setting('passwords.enforceAlphanum', true);
         $mixcase = setting('passwords.enforceUpperLower', true);
         $special = setting('passwords.enforceSpecialChars', false);

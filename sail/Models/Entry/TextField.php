@@ -4,21 +4,19 @@ namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
 use SailCMS\Types\Fields\InputTextField;
-use SailCMS\Types\LocaleField;
 
 class TextField extends Field
 {
-    protected function defineLabels(): void
+    public function defaultSettings(): Collection
     {
-        $this->labels = new LocaleField([
-            'en' => 'Text',
-            'fr' => 'Texte'
+        return new Collection([
+            InputTextField::defaultSettings()
         ]);
     }
 
-    protected function defineSchema(): void
+    protected function defineBaseSchema(): void
     {
-        $this->schema = new Collection([
+        $this->baseSchema = new Collection([
             InputTextField::class
         ]);
     }
