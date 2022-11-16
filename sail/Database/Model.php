@@ -6,9 +6,11 @@ use Carbon\Carbon;
 use JsonException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
+use MongoDB\BulkWriteResult;
 use MongoDB\Collection;
 use MongoDB\Model\BSONArray;
 use SailCMS\ACL;
+use SailCMS\Cache;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
@@ -31,6 +33,7 @@ abstract class Model
     private string $_permissionGroup = '';
 
     // Query operation Data
+    private bool $currentShowAll = false;
     private string $currentOp = '';
     private array $currentQuery = [];
     private array $currentSort = [];
@@ -45,6 +48,9 @@ abstract class Model
 
     public function __construct(string $collection = '', int $dbIndex = 0)
     {
+        // Just in case
+        Cache::init();
+
         // Manual name or detected by class name (plural)
         $name = array_reverse(explode('\\', get_class($this)))[0];
 
@@ -124,20 +130,54 @@ abstract class Model
         return $output;
     }
 
+    public function allFields(): static
+    {
+        $this->currentShowAll = true;
+        return $this;
+    }
+
     /**
      *
      * Execute a query call (cannot be run with a mutation type method)
      *
-     * @param  bool  $fetchAllFields
+     * @param  string  $cacheKey
+     * @param  int     $cacheTTL
      * @return array|$this|null
      * @throws DatabaseException
      *
      */
-    protected function exec(bool $fetchAllFields = false): Model|array|null
+    protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): Model|array|null
     {
         $qt = Debug::startQuery();
         $options = [];
         $docs = [];
+
+        $cached = null;
+        $usedCacheKey = '';
+
+        if ($cacheKey !== '') {
+            $usedCacheKey = $this->assembleCacheKey($cacheKey);
+
+            try {
+                $cached = Cache::get($usedCacheKey);
+
+                if (is_array($cached)) {
+                    // Array, CastBack every item
+                    foreach ($cached as $num => $cache) {
+                        $cached[$num] = $this->transformDocToModel($cache, false);
+                    }
+                } elseif (is_object($cached)) {
+                    // CastBack
+                    $cached = $this->transformDocToModel($cached, false);
+                }
+            } catch (JsonException $e) {
+                // already null
+            }
+        }
+
+        if (!empty($cached)) {
+            return $cached;
+        }
 
         if (count($this->currentSort) > 0) {
             $options['sort'] = $this->currentSort;
@@ -152,7 +192,7 @@ abstract class Model
             $result = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
 
             if ($result) {
-                $doc = $this->transformDocToModel($result, $fetchAllFields);
+                $doc = $this->transformDocToModel($result, $this->currentShowAll);
 
                 // Run all population requests
                 foreach ($this->currentPopulation as $populate) {
@@ -163,6 +203,15 @@ abstract class Model
 
                 $this->debugCall('', $qt);
                 $this->clearOps();
+
+                if ($usedCacheKey !== '') {
+                    try {
+                        Cache::set($usedCacheKey, $doc, $cacheTTL);
+                    } catch (JsonException $e) {
+                        // Do nothing about it
+                    }
+                }
+
                 return $doc;
             }
 
@@ -190,11 +239,11 @@ abstract class Model
                 $results = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
             }
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
 
         foreach ($results as $result) {
-            $doc = $this->transformDocToModel($result, $fetchAllFields);
+            $doc = $this->transformDocToModel($result, $this->currentShowAll);
 
             // Run all population requests
             foreach ($this->currentPopulation as $populate) {
@@ -212,6 +261,14 @@ abstract class Model
             }
 
             $docs[] = $doc;
+        }
+
+        if ($usedCacheKey !== '') {
+            try {
+                Cache::set($usedCacheKey, $docs, $cacheTTL);
+            } catch (JsonException $e) {
+                // Do nothing about it
+            }
         }
 
         $this->debugCall('', $qt);
@@ -364,7 +421,7 @@ abstract class Model
             $this->debugCall('aggregate', $qt, ['pipeline' => $pipeline]);
             return $docs;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -385,10 +442,11 @@ abstract class Model
             $doc = $this->prepareForWrite($doc);
             $id = $this->collection->insertOne($doc)->getInsertedId();
 
+            $this->clearCacheForModel();
             $this->debugCall('insert', $qt);
             return $id;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -412,10 +470,35 @@ abstract class Model
 
             $ids = $this->collection->insertMany($docs)->getInsertedIds();
 
+            $this->clearCacheForModel();
             $this->debugCall('insertMany', $qt);
             return $ids;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
+        }
+    }
+
+    /**
+     *
+     * Bulk write to database
+     *
+     * @param  array  $writes
+     * @return BulkWriteResult
+     * @throws DatabaseException
+     *
+     */
+    protected function bulkWrite(array $writes): BulkWriteResult
+    {
+        $qt = Debug::startQuery();
+
+        try {
+            $res = $this->collection->bulkWrite($writes);
+
+            $this->clearCacheForModel();
+            $this->debugCall('bulkWrite', $qt);
+            return $res;
+        } catch (\Exception $e) {
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -440,11 +523,12 @@ abstract class Model
 
             $count = $this->collection->updateOne($query, $update)->getModifiedCount();
 
+            $this->clearCacheForModel();
             $this->currentLimit = 1;
             $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -469,10 +553,11 @@ abstract class Model
 
             $count = $this->collection->updateMany($query, $update)->getModifiedCount();
 
+            $this->clearCacheForModel();
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -492,11 +577,12 @@ abstract class Model
         try {
             $count = $this->collection->deleteOne($query)->getDeletedCount();
 
+            $this->clearCacheForModel();
             $this->currentLimit = 1;
             $this->debugCall('deleteOne', $qt, ['query' => $query]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -516,10 +602,11 @@ abstract class Model
         try {
             $count = $this->collection->deleteMany($query)->getDeletedCount();
 
+            $this->clearCacheForModel();
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -544,10 +631,11 @@ abstract class Model
         try {
             $count = $this->collection->deleteOne(['_id' => $_id])->getDeletedCount();
 
+            $this->clearCacheForModel();
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
             return $count;
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -582,7 +670,7 @@ abstract class Model
         try {
             $this->collection->createIndex($index, $options);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -600,7 +688,7 @@ abstract class Model
         try {
             $this->collection->createIndexes($indexes, $options);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -617,7 +705,7 @@ abstract class Model
         try {
             $this->collection->dropIndex($index);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -634,7 +722,7 @@ abstract class Model
         try {
             $this->collection->dropIndexes($indexes);
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 0500);
         }
     }
 
@@ -702,7 +790,7 @@ abstract class Model
      * @return UTCDateTime
      *
      */
-    protected function timeToDate(int|float $time)
+    protected function timeToDate(int|float $time): UTCDateTime
     {
         return new UTCDateTime($time * 1000);
     }
@@ -773,6 +861,7 @@ abstract class Model
         $this->currentField = '';
         $this->currentSkip = 0;
         $this->currentLimit = 10_000;
+        $this->currentShowAll = false;
     }
 
     /**
@@ -867,7 +956,7 @@ abstract class Model
 
             $impl = class_implements($entity);
 
-            if (is_object($entity) && isset($impl[DatabaseType::class])) {
+            if (isset($impl[DatabaseType::class])) {
                 return $entity->toDBObject();
             }
 
@@ -942,5 +1031,30 @@ abstract class Model
         ];
 
         Debug::endQuery($debugQuery);
+    }
+
+    /**
+     *
+     * Build a cache key with the given name
+     *
+     * @param  string  $key
+     * @return string
+     *
+     */
+    private function assembleCacheKey(string $key): string
+    {
+        return Text::snakeCase(get_class($this)) . ':' . $key;
+    }
+
+    /**
+     *
+     * Clear all cache keys for the model
+     *
+     * @return void
+     *
+     */
+    private function clearCacheForModel(): void
+    {
+        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
     }
 }

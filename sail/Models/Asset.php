@@ -6,7 +6,6 @@ use ImagickException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
-use SailCMS\ACL;
 use SailCMS\Assets\Optimizer;
 use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;

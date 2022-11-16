@@ -34,6 +34,9 @@ class System
             new ACL('Emails', ACLType::READ_WRITE),
             new ACL('Emails', ACLType::READ),
 
+            // Categories
+            new ACL('Categories', ACLType::READ_WRITE),
+
             // Register
             new ACL('Register', ACLType::READ)
         ]);

@@ -14,14 +14,14 @@ class Register
     private static Collection $containers;
     private static Collection $modules;
     private static Register $instance;
-    
+
     public static function instance(): Register
     {
         if (empty(static::$instance)) {
             static::$instance = new self();
 
-            static::$containers = new Collection([]);
-            static::$modules = new Collection([]);
+            static::$containers = Collection::init();
+            static::$modules = Collection::init();
         }
 
         return static::$instance;

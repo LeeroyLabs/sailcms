@@ -46,11 +46,11 @@ class Container extends AppContainer
 
     public function cli(): Collection
     {
-        return new Collection([]);
+        return Collection::init();
     }
 
     public function permissions(): Collection
     {
-        return new Collection([]);
+        return Collection::init();
     }
 }

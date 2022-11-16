@@ -25,7 +25,7 @@ class ACL
     public static function init(): void
     {
         if (!isset(static::$loadedACL)) {
-            static::$loadedACL = new Collection([]);
+            static::$loadedACL = Collection::init();
 
             // Load all system ACL
             static::$loadedACL->pushSpread(...System::getAll()->unwrap());
@@ -261,7 +261,7 @@ class ACL
      */
     public static function getList(): Collection
     {
-        $list = new Collection([]);
+        $list = Collection::init();
 
         static::$loadedACL->each(function ($key, $value) use (&$list)
         {
@@ -292,13 +292,14 @@ class ACL
      * Load CMS ACL from entry type
      *
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws Errors\PermissionException
      *
      */
     public static function loadCmsACL(): void
     {
-        $entryACL = new Collection([]);
-
+        $entryACL = Collection::init();
         $entryTypes = EntryType::getAll();
 
         $entryTypes->each(function ($key, $value) use ($entryACL)

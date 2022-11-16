@@ -34,14 +34,14 @@ class Router
     public static function init(): void
     {
         static::$routes = new Collection([
-            'get' => new Collection([]),
-            'post' => new Collection([]),
-            'put' => new Collection([]),
-            'delete' => new Collection([]),
-            'any' => new Collection([])
+            'get' => Collection::init(),
+            'post' => Collection::init(),
+            'put' => Collection::init(),
+            'delete' => Collection::init(),
+            'any' => Collection::init()
         ]);
 
-        static::$redirects = new Collection([]);
+        static::$redirects = Collection::init();
     }
 
     /**
@@ -281,7 +281,7 @@ class Router
      */
     public function alternate(Route $route): Collection
     {
-        $alternateRoutes = new Collection([]);
+        $alternateRoutes = Collection::init();
         $method = $route->getHTTPMethod();
 
         static::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $method, $route)
@@ -365,7 +365,7 @@ class Router
      */
     public function routesByName(string $name): Collection
     {
-        $routes = new Collection([]);
+        $routes = Collection::init();
         $methods = ['get', 'post', 'delete', 'put', 'any'];
 
         foreach ($methods as $method) {

@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use Exception;
+use JsonException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
 use Ramsey\Uuid\Uuid;
@@ -159,7 +160,7 @@ class User extends Model
         }
 
         $roleModel = new Role();
-        $permissions = new Collection([]);
+        $permissions = Collection::init();
 
         foreach ($this->roles->unwrap() as $roleSlug) {
             $role = $roleModel->getByName($roleSlug);
@@ -557,7 +558,7 @@ class User extends Model
      */
     public function verifyUserPass(string $email, string $password): LoginResult
     {
-        $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
+        $user = $this->findOne(['email' => $email, 'validated' => true])->allFields()->exec();
 
         $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password, 'allowed' => false]);
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
@@ -626,6 +627,7 @@ class User extends Model
      * @param  string  $password
      * @return bool
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public function login(string $email, string $password): bool
@@ -633,7 +635,7 @@ class User extends Model
         $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password, 'allowed' => false]);
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
 
-        $user = $this->findOne(['email' => $email, 'validated' => true])->exec(true);
+        $user = $this->findOne(['email' => $email, 'validated' => true])->allFields()->exec('', 0);
         $pass = false;
 
         if (!$mwResult->data['allowed']) {

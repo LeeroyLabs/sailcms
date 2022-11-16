@@ -212,35 +212,63 @@ class Security
      * Validate password against configured level of security
      *
      * @param  string  $password
+     * @param  bool    $enforceAll
      * @return bool
      *
      */
-    public static function validatePassword(string $password): bool
+    public static function validatePassword(string $password, bool $enforceAll = false): bool
     {
-        $min = setting('passwords.minLength', 8);
-        $max = setting('passwords.maxLength', 64);
-        $alphanum = setting('passwords.enforceAlphanum', true);
-        $mixcase = setting('passwords.enforceUpperLower', true);
-        $special = setting('passwords.enforceSpecialChars', false);
-
-        $reRule = '';
-
-        if ($special) {
-            $reRule = '(?=.*[#$%^&*()+=\-\[\]\';,.\/{}|":<>?~\\\\])';
+        if (!$enforceAll) {
+            $min = setting('passwords.minLength', 8);
+            $max = setting('passwords.maxLength', 64);
+            $alphanum = setting('passwords.enforceAlphanum', true);
+            $mixcase = setting('passwords.enforceUpperLower', true);
+            $special = setting('passwords.enforceSpecialChars', false);
+        } else {
+            // Most secure required
+            $min = 8;
+            $max = 64;
+            $alphanum = true;
+            $mixcase = true;
+            $special = true;
         }
 
-        if ($alphanum) {
-            $reRule .= '(?=.*\d)(?=.*[a-zA-Z])';
+        $uppercase = preg_match('@[A-Z]@', $password);
+        $lowercase = preg_match('@[a-z]@', $password);
+        $an = preg_match('@[a-zA-Z0-9]@', $password);
+        $specialChars = preg_match('@[^\w]@', $password);
+
+        // Must have not word characters
+        if ($special && !$specialChars) {
+            return false;
         }
 
-        if ($mixcase) {
-            $reRule .= '(?=.*[a-z\d])(?=.*[A-Z\d])';
+        // If missing mix of alpha and numbers, FAIL!
+        if ($alphanum && !$an) {
+            return false;
         }
 
-        $rule = '/^' . $reRule . '.{' . $min . ',' . $max . '}$/';
-        return (preg_match($rule, $password));
+        // If upper or lower is missing, FAIL!
+        if ($mixcase && (!$uppercase || !$lowercase)) {
+            return false;
+        }
+
+        // Length check
+        if (strlen($password) < $min || strlen($password) > $max) {
+            return false;
+        }
+
+        // Survived!
+        return true;
     }
 
+    /**
+     *
+     * Generate a verification code safe enough for this task
+     *
+     * @return string
+     *
+     */
     public static function generateVerificationCode(): string
     {
         return hash('sha256', uniqid(microtime(), true));

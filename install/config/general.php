@@ -7,6 +7,18 @@ $config = [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'cache' => [
+            'use' => (bool)env('cache_use', 'false'),
+            'host' => env('cache_host', 'localhost'),
+            'user' => env('cache_user', ''),
+            'password' => env('cache_password', ''),
+            'port' => 6379,
+            'database' => 10,
+            'ssl' => [
+                'verify' => true,
+                'cafile' => '/path/to/file'
+            ]
+        ],
         'emails' => [
             'from' => 'no-reply@leeroy.ca',
             'sendNewAccount' => false,
@@ -36,7 +48,8 @@ $config = [
             'minLength' => 8,
             'maxLength' => 64,
             'enforceAlphanum' => true,
-            'enforceUpperLower' => true
+            'enforceUpperLower' => true,
+            'enforceSpecialChars' => true
         ],
         'CSRF' => [
             'use' => true,
@@ -113,6 +126,18 @@ $config = [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'cache' => [
+            'use' => (bool)env('cache_use', 'false'),
+            'host' => env('cache_host', 'localhost'),
+            'user' => env('cache_user', ''),
+            'password' => env('cache_password', ''),
+            'port' => 6379,
+            'database' => 10,
+            'ssl' => [
+                'verify' => true,
+                'cafile' => '/path/to/file'
+            ]
+        ],
         'emails' => [
             'from' => 'no-reply@sailcms.io',
             'sendNewAccount' => false,
@@ -127,6 +152,18 @@ $config = [
                     ]
                 ]
             ]
+        ],
+        'passwords' => [
+            'minLength' => 8,
+            'maxLength' => 64,
+            'enforceAlphanum' => true,
+            'enforceUpperLower' => true,
+            'enforceSpecialChars' => true
+        ],
+        'CSRF' => [
+            'use' => true,
+            'leeway' => 5,
+            'expiration' => 120
         ],
         'graphql' => [
             'active' => true,
@@ -183,6 +220,18 @@ $config = [
         'devMode' => false,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'cache' => [
+            'use' => (bool)env('cache_use', 'false'),
+            'host' => env('cache_host', 'localhost'),
+            'user' => env('cache_user', ''),
+            'password' => env('cache_password', ''),
+            'port' => 6379,
+            'database' => 10,
+            'ssl' => [
+                'verify' => true,
+                'cafile' => '/path/to/file'
+            ]
+        ],
         'emails' => [
             'from' => 'no-reply@sailcms.io',
             'sendNewAccount' => false,
@@ -197,6 +246,18 @@ $config = [
                     ]
                 ]
             ]
+        ],
+        'passwords' => [
+            'minLength' => 8,
+            'maxLength' => 64,
+            'enforceAlphanum' => true,
+            'enforceUpperLower' => true,
+            'enforceSpecialChars' => true
+        ],
+        'CSRF' => [
+            'use' => true,
+            'leeway' => 5,
+            'expiration' => 120
         ],
         'graphql' => [
             'active' => true,

@@ -13,6 +13,7 @@ use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
@@ -166,6 +167,7 @@ class Sail
      * @throws FileException
      * @throws SiteException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
@@ -188,9 +190,6 @@ class Sail
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['HTTP_USER_AGENT'] = 'Chrome';
         }
-
-        // Load cms ACLs
-        ACL::loadCmsACL();
 
         // Load Sites
         static::loadAndDetectSites();
@@ -222,6 +221,9 @@ class Sail
             ini_set('display_errors', true);
             error_reporting(E_ALL);
         }
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
 
         // Initialize the logger
         Log::init();
@@ -355,7 +357,7 @@ class Sail
                     $commands = $instance->cli()->unwrap();
 
                     if (empty(CLI::$registeredCommands)) {
-                        CLI::$registeredCommands = new Collection([]);
+                        CLI::$registeredCommands = Collection::init();
                     }
 
                     CLI::$registeredCommands->pushSpread($commands);
@@ -398,7 +400,7 @@ class Sail
                     $commands = $instance->cli();
 
                     if (empty(CLI::$registeredCommands)) {
-                        CLI::$registeredCommands = new Collection([]);
+                        CLI::$registeredCommands = Collection::init();
                     }
 
                     CLI::$registeredCommands->pushSpread($commands);
@@ -677,7 +679,7 @@ class Sail
         $cors = setting('cors', ['use' => false, 'origins' => '*', 'allowCredentials' => false]);
 
         if (setting('cors.use', false)) {
-            $origins = implode(',', setting('cors.origins', new Collection([]))->unwrap());
+            $origins = implode(',', setting('cors.origins', Collection::init())->unwrap());
             $creds = (setting('cors.allowCredentials', false)) ? 'true' : 'false';
             $maxAge = setting('cors.maxAge', 86_400);
 
@@ -687,7 +689,7 @@ class Sail
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
                 $methods = implode(",", setting('cors.methods', new Collection(['get']))->unwrap());
-                $headers = implode(",", setting('cors.headers', new Collection([]))->unwrap());
+                $headers = implode(",", setting('cors.headers', Collection::init())->unwrap());
 
                 header("Access-Control-Allow-Methods: {$methods}");
                 header("Access-Control-Allow-Headers: {$headers}");
@@ -732,7 +734,7 @@ class Sail
                 exit();
             }
 
-            $whitelist = explode(',', setting('tfa.whitelist', new Collection([]))->unwrap());
+            $whitelist = explode(',', setting('tfa.whitelist', Collection::init())->unwrap());
             $url = parse_url($_SERVER['HTTP_REFERER']);
 
             if (in_array($url['host'], $whitelist, true)) {

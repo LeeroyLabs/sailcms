@@ -42,8 +42,8 @@ class Response
 
             $this->type = $type;
             $this->data = new \stdClass;
-            $this->columns = new Collection([]);
-            $this->csvData = new Collection([]);
+            $this->columns = Collection::init();
+            $this->csvData = Collection::init();
         } else {
             throw new ResponseTypeException("Type {$type} is not a valid response type. Valid response types are: text/html, application/json or text/csv");
         }

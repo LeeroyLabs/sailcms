@@ -117,7 +117,7 @@ class Stateless implements AppSession
      */
     public function all(): Collection
     {
-        return new Collection([]);
+        return Collection::init();
     }
 
     /**

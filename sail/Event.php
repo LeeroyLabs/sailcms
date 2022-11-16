@@ -19,7 +19,7 @@ class Event
     public static function register(string $event, string $class, string $method): void
     {
         if (!isset(static::$registered)) {
-            static::$registered = new Collection([]);
+            static::$registered = Collection::init();
         }
 
         static::$registered->{$event} = new Collection(['class' => new $class(), 'method' => $method]);
