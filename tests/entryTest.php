@@ -45,16 +45,11 @@ test('Create an entry layout', function ()
 {
     $model = new EntryLayout();
 
-    $titles = new LocaleField([
-        'fr' => 'Test de disposition',
-        'en' => 'Layout Test'
-    ]);
+    $textField = new Entry\TextField();
     $labels = new LocaleField([
         'fr' => 'Titre',
         'en' => 'Title'
     ]);
-
-    $textField = new Entry\TextField();
     $textField->instantiateSchema($labels, [
         ['required' => 1,],
     ]);
@@ -64,12 +59,38 @@ test('Create an entry layout', function ()
     ]));
 
     try {
+        $titles = new LocaleField([
+            'fr' => 'Test de disposition',
+            'en' => 'Layout Test'
+        ]);
         $id = $model->createOne($titles, $schema);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
 });
+
+//test('Update an entry layout', function ()
+//{
+//    $model = new EntryLayout();
+//    $entryLayout = $model->one([
+//        'titles.fr' => 'Test de disposition'
+//    ]);
+//
+//    $entryLayout->schema->each(function ($fieldKey, &$settings)
+//    {
+//        $fieldSchema = new Collection((array)$settings->schema->get("0"));
+//        $fieldSchema->pushKeyValue('max_length', 255);
+//        $settings->schema = $fieldSchema;
+//    });
+//
+//    try {
+//        $result = $model->updateById($entryLayout->_id, null, $entryLayout->schema);
+//        expect($result)->not->toBe(true);
+//    } catch (Exception $exception) {
+//        expect(true)->toBe(false);
+//    }
+//});
 
 test('Failed to create an entry type because the handle is already in use', function ()
 {

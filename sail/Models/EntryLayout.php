@@ -90,20 +90,31 @@ class EntryLayout extends Model
         return $this->create($titles, $schema);
     }
 
-    public function updateById(Entry|string $entryOrId, LocaleField $titles, Collection $schema): bool
+    public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
     {
         $this->hasPermissions();
 
         if (is_string($entryOrId)) {
-            $entry = $this->findById($entryOrId);
+            $entry = $this->findById($entryOrId)->exec();
         } else {
             $entry = $entryOrId;
         }
 
-        // TODO Validate schema
-        // TODO Validate titles
+        $data = Collection::init();
+        if ($titles) {
+            // TODO Validate titles
+            $data->pushKeyValue('titles', $titles);
+        }
+        if ($schema) {
+            // TODO Validate schema
+            $data->pushKeyValue('schema', $schema);
+        }
+        print_r($data);
 
-        return $this->update($entry, $titles, $schema);
+        if ($data->length > 0) {
+            return $this->update($entry, $data);
+        }
+        return false;
     }
 
     public function delete(string|ObjectId $entryLayoutId, bool $soft = true): bool
@@ -168,23 +179,31 @@ class EntryLayout extends Model
      * Update an entry layout
      *
      * @param  EntryLayout  $entryLayout
-     * @param  LocaleField  $titles
-     * @param  Collection   $schema
+     * @param  Collection   $data
      * @return bool
      * @throws EntryException
      *
      */
-    private function update(EntryLayout $entryLayout, LocaleField $titles, Collection $schema): bool
+    private function update(EntryLayout $entryLayout, Collection $data): bool
     {
-        $dates = Dates::updated($entryLayout->dates);
-        $authors = Authors::updated($entryLayout->authors, User::$currentUser->_id);
+        $update = [
+            'dates' => Dates::updated($entryLayout->dates),
+            'authors' => Authors::updated($entryLayout->authors, User::$currentUser->_id)
+        ];
+
+        $titles = $data->get('titles');
+        if ($titles) {
+            $update['titles'] = $titles;
+        }
+
+        $schema = $data->get('schema');
+        if ($schema) {
+            $update['schema'] = $schema;
+        }
 
         try {
             $qtyUpdated = $this->updateOne(['_id' => $entryLayout->_id], [
-                'authors' => $authors,
-                'dates' => $dates,
-                'title' => $titles,
-                'schema' => $schema
+                '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
