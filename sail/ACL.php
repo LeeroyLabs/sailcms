@@ -19,7 +19,6 @@ class ACL
      * Initialize the ACLs
      *
      * @return void
-     * @throws DatabaseException
      *
      */
     public static function init(): void
@@ -149,6 +148,7 @@ class ACL
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws Errors\PermissionException
      *
      */
     public static function hasRole(string|User|null $user, string $role): bool
@@ -176,6 +176,7 @@ class ACL
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws Errors\PermissionException
      *
      */
     public static function hasPermission(string|User|null $user, ?Types\ACL ...$permissions): bool
@@ -221,6 +222,7 @@ class ACL
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws Errors\PermissionException
      *
      */
     public static function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool

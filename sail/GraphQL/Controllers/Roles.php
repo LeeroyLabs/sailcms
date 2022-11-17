@@ -3,11 +3,14 @@
 namespace SailCMS\GraphQL\Controllers;
 
 use RuntimeException;
+use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Role;
+use SailCMS\Models\User;
 use SailCMS\Types\RoleConfig;
 
 class Roles
@@ -22,6 +25,7 @@ class Roles
      * @return RoleConfig|null
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function role(mixed $obj, Collection $args, Context $context): ?RoleConfig
@@ -39,11 +43,34 @@ class Roles
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function roles(mixed $obj, Collection $args, Context $context): Collection
     {
         return (new Role())->list();
+    }
+
+    /**
+     *
+     * Get list of available ACLs
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function acls(mixed $obj, Collection $args, Context $context): Collection
+    {
+        if (ACL::hasPermission(User::$currentUser, ACL::readwrite('role'))) {
+            return ACL::getList();
+        }
+
+        return Collection::init();
     }
 
     /**
@@ -57,6 +84,7 @@ class Roles
      * @throws ACLException
      * @throws DatabaseException
      * @throws RuntimeException
+     * @throws PermissionException
      *
      */
     public function create(mixed $obj, Collection $args, Context $context): bool
@@ -78,6 +106,7 @@ class Roles
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function update(mixed $obj, Collection $args, Context $context): bool
@@ -101,6 +130,7 @@ class Roles
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function delete(mixed $obj, Collection $args, Context $context): bool

@@ -214,6 +214,7 @@ class Users
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function updateUser(mixed $obj, Collection $args, Context $context): bool
@@ -256,6 +257,7 @@ class Users
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function deleteUser(mixed $obj, Collection $args, Context $context): bool

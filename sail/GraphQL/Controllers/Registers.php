@@ -6,6 +6,7 @@ use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\User;
 use SailCMS\Register;
@@ -22,6 +23,7 @@ class Registers
      * @return object
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function registeredExtensions(mixed $obj, Collection $args, Context $context): object

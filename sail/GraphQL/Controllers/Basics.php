@@ -2,10 +2,12 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use SailCMS\Sail;
+
 class Basics
 {
     public function version(): string
     {
-        return '3.0.0-next.1';
+        return Sail::SAIL_VERSION;
     }
 }

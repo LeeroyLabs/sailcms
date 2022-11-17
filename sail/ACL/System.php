@@ -8,7 +8,16 @@ use SailCMS\Types\ACLType;
 
 class System
 {
-    public const RESERVED = ['role', 'user', 'entry_type', 'entry_type_layout', 'asset'];
+    public const RESERVED = [
+        'role',
+        'user',
+        'entry_type',
+        'entry_type_layout',
+        'asset',
+        'emails',
+        'categories',
+        'register'
+    ];
 
     public static function getAll(): Collection
     {

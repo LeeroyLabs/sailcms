@@ -27,6 +27,11 @@ class Category extends Model
         parent::__construct('categories', 0);
     }
 
+    public function init(): void
+    {
+        $this->setPermissionGroup('categories');
+    }
+
     public function fields(bool $fetchAllFields = false): array
     {
         return ['_id', 'name', 'site_id', 'slug', 'parent_id', 'order'];

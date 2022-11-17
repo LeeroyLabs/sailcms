@@ -6,6 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Email;
 
@@ -37,6 +38,7 @@ class Emails
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function emails(mixed $obj, Collection $args, Context $context): Collection
@@ -55,6 +57,7 @@ class Emails
      * @throws ACLException
      * @throws DatabaseException
      * @throws EmailException
+     * @throws PermissionException
      *
      */
     public function createEmail(mixed $obj, Collection $args, Context $context): bool
@@ -80,6 +83,7 @@ class Emails
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function updateEmail(mixed $obj, Collection $args, Context $context): bool
@@ -106,6 +110,7 @@ class Emails
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function deleteEmail(mixed $obj, Collection $args, Context $context): bool
@@ -123,6 +128,7 @@ class Emails
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function deleteEmailBySlug(mixed $obj, Collection $args, Context $context): bool

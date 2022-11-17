@@ -88,7 +88,7 @@ class Asset extends Model
     public static function getById(string|ObjectId $id): ?Asset
     {
         $instance = new static();
-        return $instance->findById($id)->exec();
+        return $instance->findById($id)->exec((string)$id);
     }
 
     /**
@@ -103,7 +103,7 @@ class Asset extends Model
     public static function getByName(string $name): ?Asset
     {
         $instance = new static();
-        return $instance->findOne(['name' => $name])->exec();
+        return $instance->findOne(['name' => $name])->exec($name);
     }
 
     /**
@@ -141,7 +141,7 @@ class Asset extends Model
         $results = $this
             ->find($query, $options)
             ->populate('uploader_id', 'uploader', User::class)
-            ->exec();
+            ->exec("list_{$page}_{$limit}");
 
         $count = $this->count([]);
         $total = ceil($count / $limit);
@@ -326,7 +326,7 @@ class Asset extends Model
                 // Check to see if already processed
                 $cache = null;
 
-                $transforms = $this->transforms->find(function ($key, $value) use (&$cache, $name)
+                $this->transforms->each(function ($key, $value) use (&$cache, $name)
                 {
                     if ($value->transform === $name) {
                         $cache = $value;
@@ -441,7 +441,7 @@ class Asset extends Model
     public static function updateById(ObjectId|string $id, string $locale, string $title): bool
     {
         $instance = new static();
-        $asset = $instance->findById($id)->exec();
+        $asset = $instance->findById($id)->exec((string)$id);
 
         if ($asset) {
             return $asset->update($locale, $title);
@@ -481,7 +481,7 @@ class Asset extends Model
     public static function removeById(ObjectId|string $id): bool
     {
         $instance = new static();
-        $asset = $instance->findById($id)->exec();
+        $asset = $instance->findById($id)->exec((string)$id);
 
         if ($asset) {
             return $asset->remove();

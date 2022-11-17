@@ -10,6 +10,7 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Asset;
 use SailCMS\Types\Listing;
@@ -42,6 +43,7 @@ class Assets
      * @return Listing
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function assets(mixed $obj, Collection $args, Context $context): Listing
@@ -96,6 +98,7 @@ class Assets
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function updateAssetTitle(mixed $obj, Collection $args, Context $context): bool

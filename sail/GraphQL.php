@@ -302,6 +302,7 @@ class GraphQL
         // Roles & ACL
         static::addQueryResolver('role', Roles::class, 'role');
         static::addQueryResolver('roles', Roles::class, 'roles');
+        static::addQueryResolver('acls', Roles::class, 'acls');
         static::addMutationResolver('deleteRole', Roles::class, 'delete');
 
         // Assets
