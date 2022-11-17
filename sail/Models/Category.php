@@ -66,14 +66,15 @@ class Category extends Model
      * Get a category by slug (and site id)
      *
      * @param  string  $slug
+     * @param  string  $site_id
      * @return Category|null
      * @throws DatabaseException
      *
      */
-    public static function getBySlug(string $slug): ?Category
+    public static function getBySlug(string $slug, string $site_id): ?Category
     {
         $instance = new static();
-        return $instance->findOne(['slug' => $slug, 'site_id' => Sail::siteId()])->exec($slug);
+        return $instance->findOne(['slug' => $slug, 'site_id' => $site_id])->exec("{$site_id}_{$slug}");
     }
 
     /**
@@ -118,21 +119,23 @@ class Category extends Model
      *
      * @param  LocaleField  $name
      * @param  string       $parent_id
+     * @param  string       $site_id
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
-    public function create(LocaleField $name, string $parent_id = ''): bool
+    public function create(LocaleField $name, string $parent_id = '', string $site_id = 'main'): bool
     {
         $this->hasPermissions();
 
         // Count the total categories based on parent_id being present or not
-        $count = $this->count(['site_id' => Sail::siteId(), 'parent_id' => $parent_id]);
+        $count = $this->count(['site_id' => $site_id, 'parent_id' => $parent_id]);
         $slug = Text::slugify($name->en);
 
         // Check that it does not exist for the site already
-        $exists = $this->count(['slug' => $slug, 'site_id' => Sail::siteId()]);
+        $exists = $this->count(['slug' => $slug, 'site_id' => $site_id]);
 
         if ($exists > 0) {
             // Oops!
@@ -144,7 +147,7 @@ class Category extends Model
 
         $this->insert([
             'name' => $name,
-            'site_id' => Sail::siteId(),
+            'site_id' => $site_id,
             'slug' => $slug,
             'order' => $count,
             'parent_id' => $parent_id
@@ -170,7 +173,7 @@ class Category extends Model
     {
         $this->hasPermissions();
 
-        $record = $this->findById($id)->exec();
+        $record = $this->findById($id)->exec((string)$id);
 
         $id = $this->ensureObjectId($id);
 
@@ -178,12 +181,7 @@ class Category extends Model
             $count = $record->order;
 
             if ($record->parent_id !== $parent_id) {
-                if ($parent_id !== '') {
-                    $count = $this->count(['site_id' => $record->site_id, 'parent_id' => $parent_id]);
-                } else {
-                    $count = $this->count(['site_id' => $record->site_id]);
-                }
-
+                $count = $this->count(['site_id' => $record->site_id, 'parent_id' => $parent_id]);
                 $count++;
             }
 
@@ -233,17 +231,18 @@ class Category extends Model
      * Delete a category by slug
      *
      * @param  string  $slug
+     * @param  string  $site_id
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public static function deleteBySlug(string $slug): bool
+    public static function deleteBySlug(string $slug, string $site_id): bool
     {
         $instance = new static();
         $instance->hasPermissions();
-        $record = $instance->findOne(['slug' => $slug, 'site_id' => Sail::siteId()])->exec();
+        $record = $instance->findOne(['slug' => $slug, 'site_id' => $site_id])->exec();
 
         if ($record) {
             $instance->deleteById($record->_id);
@@ -260,17 +259,18 @@ class Category extends Model
      * Update order for all sub categories
      *
      * @param  string  $parent
+     * @param  string  $site_id
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = ''): bool
+    public function updateOrder(string $parent = '', string $site_id = 'main'): bool
     {
         $this->hasPermissions();
 
-        $docs = $this->find(['parent_id' => $parent], QueryOptions::initWithSort(['order' => 1]))->exec();
+        $docs = $this->find(['parent_id' => $parent, 'site_id' => $site_id], QueryOptions::initWithSort(['order' => 1]))->exec();
         $writes = [];
 
         foreach ($docs as $num => $doc) {
@@ -292,20 +292,22 @@ class Category extends Model
      * Get tree list of categories
      *
      * @param  string  $parent
+     * @param  string  $site_id
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function getList(string $parent = ''): Collection
+    public function getList(string $parent = '', string $site_id = 'main'): Collection
     {
-        $query = [];
+        $query = ['site_id' => $site_id];
 
         if ($parent !== '') {
-            $query = ['parent_id' => $parent];
+            $query['parent_id'] = $parent;
         }
 
         $opts = QueryOptions::initWithSort(['parent_id' => 1, 'order' => 1]);
-        $list = $this->find($query, $opts)->exec(($parent === '') ? 'all' : $parent);
+        $key = ($parent === '') ? "{$site_id}_all" : $site_id . '_' . $parent;
+        $list = $this->find($query, $opts)->exec($key);
         $basicTree = [];
 
         foreach ($list as $num => $item) {

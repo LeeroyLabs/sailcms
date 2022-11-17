@@ -39,7 +39,7 @@ class Categories
      */
     public function categoryBySlug(mixed $obj, Collection $args, Context $context): ?Category
     {
-        return Category::getBySlug($args->get('slug'));
+        return Category::getBySlug($args->get('slug'), $args->get('site_id'));
     }
 
     /**
@@ -55,7 +55,7 @@ class Categories
      */
     public function categoryFullTree(mixed $obj, Collection $args, Context $context): Collection
     {
-        return (new Category())->getList($args->get('parent_id'));
+        return (new Category())->getList($args->get('parent_id'), $args->get('site_id'));
     }
 
     /**
@@ -73,7 +73,7 @@ class Categories
      */
     public function createCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->create($args->get('name'), $args->get('parent_id'));
+        return (new Category())->create($args->get('name'), $args->get('parent_id'), $args->get('site_id'));
     }
 
     /**
@@ -109,7 +109,7 @@ class Categories
      */
     public function updateCategoryOrders(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->updateOrder($args->get('parent_id'));
+        return (new Category())->updateOrder($args->get('parent_id'), $args->get('site_id'));
     }
 
     /**
@@ -145,6 +145,6 @@ class Categories
      */
     public function deleteCategoryBySlug(mixed $obj, Collection $args, Context $context): bool
     {
-        return Category::deleteBySlug($args->get('slug'));
+        return Category::deleteBySlug($args->get('slug'), $args->get('site_id'));
     }
 }

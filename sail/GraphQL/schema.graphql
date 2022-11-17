@@ -35,8 +35,8 @@ type Query {
 
     # Categories
     category(id: ID): Category
-    categoryBySlug(slug: String!): Category
-    categoryFullTree(parent_id: ID!): [Category!]!
+    categoryBySlug(slug: String!, site_id: String!): Category
+    categoryFullTree(parent_id: ID!, site_id: String!): [Category!]!
 
     #{CUSTOM_QUERIES}#
 }
@@ -76,11 +76,11 @@ type Mutation {
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean!): Boolean
 
     # Categories
-    createCategory(name: LocaleFieldInput!, parent_id: String!): Boolean!
+    createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
     updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: String!): Boolean!
-    updateCategoryOrders(parent_id: ID!, order: [String!]!): Boolean!
+    updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
-    deleteCategoryBySlug(slug: String!): Boolean!
+    deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
