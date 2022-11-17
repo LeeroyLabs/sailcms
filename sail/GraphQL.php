@@ -334,10 +334,10 @@ class GraphQL
         static::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
         static::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
-        # Register
+        // Register
         static::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
 
-        # Categories
+        // Categories
         static::addQueryResolver('category', Categories::class, 'category');
         static::addQueryResolver('categoryBySlug', Categories::class, 'categoryBySlug');
         static::addQueryResolver('categoryFullTree', Categories::class, 'categoryFullTree');
@@ -346,6 +346,9 @@ class GraphQL
         static::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
         static::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
         static::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
+
+        // Misc calls
+        // TODO: GET LOGS (from file or db)
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');
