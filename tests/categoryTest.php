@@ -25,7 +25,7 @@ test('Create a category', function ()
 {
     $category = new Category();
     $category->create(new LocaleField(['en' => 'Unit Test', 'fr' => 'Test Unitaire']), '');
-    $cat = Category::getBySlug('unit-test');
+    $cat = Category::getBySlug('unit-test', 'main');
 
     expect($cat)->not->toBeNull();
 });
@@ -33,7 +33,7 @@ test('Create a category', function ()
 test('Update a category', function ()
 {
     $category = new Category();
-    $cat = Category::getBySlug('unit-test');
+    $cat = Category::getBySlug('unit-test', 'main');
 
     expect($cat)->not->toBeNull();
 
@@ -45,6 +45,6 @@ test('Update a category', function ()
 
 test('Delete a category', function ()
 {
-    $ret = Category::deleteBySlug('unit-test');
+    $ret = Category::deleteBySlug('unit-test', 'main');
     expect($ret)->toBeTrue();
 });
