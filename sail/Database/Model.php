@@ -916,6 +916,8 @@ abstract class Model implements \JsonSerializable
                     }
                 } elseif (is_array($v)) {
                     $instance->{$k} = new \SailCMS\Collection($this->processOnFetch($k, $v));
+                } elseif ($k === '_id' && is_string($v)) {
+                    $instance->{$k} = new ObjectId($v);
                 } else {
                     $instance->{$k} = $this->processOnFetch($k, $v);
                 }

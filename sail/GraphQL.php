@@ -17,6 +17,7 @@ use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
 use SailCMS\GraphQL\Controllers\Registers;
@@ -270,6 +271,13 @@ class GraphQL
         }
     }
 
+    /**
+     *
+     * Setup all system graphQL calls
+     *
+     * @throws GraphqlException
+     *
+     */
     private static function initSystem(): void
     {
         // General
@@ -327,6 +335,16 @@ class GraphQL
 
         # Register
         static::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
+
+        # Categories
+        static::addQueryResolver('category', Categories::class, 'category');
+        static::addQueryResolver('categoryBySlug', Categories::class, 'categoryBySlug');
+        static::addQueryResolver('categoryFullTree', Categories::class, 'categoryFullTree');
+        static::addMutationResolver('createCategory', Categories::class, 'createCategory');
+        static::addMutationResolver('updateCategory', Categories::class, 'updateCategory');
+        static::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
+        static::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
+        static::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
 
         // Types and Resolvers
         static::addResolver('User', Users::class, 'resolver');

@@ -43,6 +43,72 @@ class Category extends Model
 
     /**
      *
+     * Get a category by id
+     *
+     * @param  ObjectId|string  $id
+     * @return Category|null
+     * @throws DatabaseException
+     *
+     */
+    public static function getById(ObjectId|string $id): ?Category
+    {
+        $instance = new static();
+        return $instance->findById($id)->exec((string)$id);
+    }
+
+    /**
+     *
+     * Get a category by slug (and site id)
+     *
+     * @param  string  $slug
+     * @return Category|null
+     * @throws DatabaseException
+     *
+     */
+    public static function getBySlug(string $slug): ?Category
+    {
+        $instance = new static();
+        return $instance->findOne(['slug' => $slug, 'site_id' => Sail::siteId()])->exec($slug);
+    }
+
+    /**
+     *
+     * Get all entries that are in the given category id
+     *
+     * @param  ObjectId|string  $id
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public static function getEntriesById(ObjectId|string $id): Collection
+    {
+        $instance = new static();
+        $record = $instance->findById($id)->exec((string)$id);
+
+        if ($record) {
+            // TODO: Call method in Entry to load from the given category slug and site_id
+        }
+
+        return Collection::init();
+    }
+
+    /**
+     *
+     * Alias for Entry's method for that
+     *
+     * @param  string  $slug
+     * @return Collection
+     *
+     */
+    public static function getEntriesBySlug(string $slug): Collection
+    {
+        // TODO: Call method in Entry to load from the given category slug and site_id
+
+        return Collection::init();
+    }
+
+    /**
+     *
      * Create a category
      *
      * @param  LocaleField  $name
@@ -57,12 +123,7 @@ class Category extends Model
         $this->hasPermissions();
 
         // Count the total categories based on parent_id being present or not
-        if ($parent_id !== '') {
-            $count = $this->count(['site_id' => Sail::siteId(), 'parent_id' => $parent_id]);
-        } else {
-            $count = $this->count(['site_id' => Sail::siteId()]);
-        }
-
+        $count = $this->count(['site_id' => Sail::siteId(), 'parent_id' => $parent_id]);
         $slug = Text::slugify($name->en);
 
         // Check that it does not exist for the site already
@@ -81,7 +142,7 @@ class Category extends Model
             'site_id' => Sail::siteId(),
             'slug' => $slug,
             'order' => $count,
-            'parent_id' => ($parent_id !== '') ? $parent_id : null
+            'parent_id' => $parent_id
         ]);
 
         return true;
@@ -105,6 +166,8 @@ class Category extends Model
         $this->hasPermissions();
 
         $record = $this->findById($id)->exec();
+
+        $id = $this->ensureObjectId($id);
 
         if ($record) {
             $count = $record->order;
@@ -148,7 +211,6 @@ class Category extends Model
     public function delete(ObjectId|string $id): bool
     {
         $this->hasPermissions();
-
         $record = $this->findById($id)->exec();
 
         if ($record) {
@@ -163,16 +225,43 @@ class Category extends Model
 
     /**
      *
-     * Update order for all sub categories
+     * Delete a category by slug
      *
-     * @param  string  $parent
-     * @return void
+     * @param  string  $slug
+     * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = ''): void
+    public static function deleteBySlug(string $slug): bool
+    {
+        $instance = new static();
+        $instance->hasPermissions();
+        $record = $instance->findOne(['slug' => $slug, 'site_id' => Sail::siteId()])->exec();
+
+        if ($record) {
+            $instance->deleteById($record->_id);
+            $instance->updateMany(['parent_id' => (string)$record->_id], ['$set' => ['parent_id' => '']]);
+            $instance->updateOrder('');
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Update order for all sub categories
+     *
+     * @param  string  $parent
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function updateOrder(string $parent = ''): bool
     {
         $this->hasPermissions();
 
@@ -182,14 +271,15 @@ class Category extends Model
         foreach ($docs as $num => $doc) {
             $writes[] = [
                 'updateOne' => [
-                    'filter' => ['_id' => $doc->_id],
-                    'update' => ['$set' => ['order' => ($num + 1)]]
+                    ['_id' => $doc->_id],
+                    ['$set' => ['order' => ($num + 1)]]
                 ]
             ];
         }
 
         // Bulk write everything, performance++
         $this->bulkWrite($writes);
+        return true;
     }
 
     /**
@@ -210,7 +300,7 @@ class Category extends Model
         }
 
         $opts = QueryOptions::initWithSort(['parent_id' => 1, 'order' => 1]);
-        $list = $this->find($query, $opts)->exec();
+        $list = $this->find($query, $opts)->exec(($parent === '') ? 'all' : $parent);
         $basicTree = [];
 
         foreach ($list as $num => $item) {
