@@ -34,7 +34,7 @@ class Tools
      */
     public static function testFlight(bool $skipFolders = false): void
     {
-        if (env('composer_location', '') !== '') {
+        if (env('composer_location', '') === '') {
             static::outputError("Composer location not found in environment file, please make sure it's set", true);
         }
 
