@@ -23,6 +23,8 @@ use SodiumException;
 
 class Entry extends Model
 {
+    // TODO Add caching
+
     /* Homepage config */
     const HOMEPAGE_CONFIG_HANDLE = 'homepage';
     const HOMEPAGE_CONFIG_ENTRY_TYPE_KEY = 'entry_type_handle';
@@ -680,6 +682,7 @@ class Entry extends Model
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
+     *
      */
     private function emptyHomepage(object|array $currentConfig): void
     {

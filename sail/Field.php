@@ -3,7 +3,9 @@
 namespace SailCMS;
 
 /**
- * FIELDS
+ * Field utilities
+ *
+ * LIST of potential FIELDS
  *
  * TextField // option uppercase
  * NumberField
@@ -11,6 +13,7 @@ namespace SailCMS;
  * DateTimeField
  * EmailField
  * HtmlField
+ * UrlField
  *
  * ChoiceField // option radio / check
  * SelectField // search...
@@ -26,4 +29,11 @@ namespace SailCMS;
 class Field
 {
     // static get available fields
+    public static function getAvailableFields(): Collection
+    {
+        $fieldList = Collection::init();
+        $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
+        // TODO store fields...
+        return Collection::init();
+    }
 }

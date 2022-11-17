@@ -26,6 +26,11 @@ abstract class Field
         $this->defineBaseSchema();
     }
 
+    public function generateKey(): string
+    {
+        return $this->handle . '_' . uniqid();
+    }
+
     /**
      *
      * Update schema attribute before save with settings
@@ -45,8 +50,10 @@ abstract class Field
         $this->baseSchema->each(function ($key, $fieldTypeClass) use ($labels, $settings)
         {
             $currentSetting = $settings->get($key);
+            $currentSetting = $fieldTypeClass::validateSettings($currentSetting);
 
-            $this->schema->push(new $fieldTypeClass($labels, ...$currentSetting));
+            $fieldInput = new $fieldTypeClass($labels, ...$currentSetting);
+            $this->schema->push($fieldInput->toDBObject());
         });
     }
 

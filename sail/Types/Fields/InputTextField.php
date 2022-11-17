@@ -9,7 +9,7 @@ use SailCMS\Types\LocaleField;
 class InputTextField extends Field
 {
     public function __construct(
-        public readonly LocaleField $label,
+        public readonly LocaleField $labels,
         public readonly bool $required = false,
         public readonly int $maxLength = 0,
         public readonly int $minLength = 0
@@ -38,15 +38,15 @@ class InputTextField extends Field
     {
         $errors = Collection::init();
         if ($this->required && !$content) {
-            $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
         }
 
         if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
-            $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->maxLength . ').');
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->maxLength . ').');
         }
 
         if ($this->minLength > 0 && strlen($content) < $this->minLength) {
-            $errors->push($this->label->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->minLength . ').');
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->minLength . ').');
         }
 
         return $errors;
@@ -55,7 +55,7 @@ class InputTextField extends Field
     public function toDBObject(): array
     {
         return [
-            'label' => $this->label->toDBObject(),
+            'label' => $this->labels->toDBObject(),
             'required' => $this->required,
             'max_length' => $this->maxLength,
             'min_length' => $this->minLength

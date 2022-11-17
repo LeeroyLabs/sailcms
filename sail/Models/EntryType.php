@@ -33,7 +33,7 @@ class EntryType extends Model
     public string $title;
     public string $handle;
     public string $url_prefix;
-    public ?string $entry_layout_id; // TODO implement layout!
+    public ?string $entry_layout_id;
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -262,15 +262,14 @@ class EntryType extends Model
      *
      * Real deletion on the entry types
      *
-     * @param  string  $entryTypeId
+     * @param  string|ObjectId  $entryTypeId
      * @return bool
      * @throws ACLException
-     * @throws EntryException
      * @throws DatabaseException
+     * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public function hardDelete(string $entryTypeId): bool
+    public function hardDelete(string|ObjectId $entryTypeId): bool
     {
         $this->hasPermissions();
 
@@ -404,14 +403,19 @@ class EntryType extends Model
     {
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');
-        // TODO entry layout id
+        $entry_layout_id = $data->get('entry_layout_id');
+
         $update = [];
 
+        // Check if field has been sent
         if ($title) {
             $update['title'] = $title;
         }
         if ($url_prefix !== null) {
             $update['url_prefix'] = $url_prefix;
+        }
+        if ($entry_layout_id) {
+            $update['entry_layout_id'] = $entry_layout_id;
         }
 
         try {

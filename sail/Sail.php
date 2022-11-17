@@ -349,9 +349,9 @@ class Sail
                     // Run the ACL registration
                     $acls = $instance->permissions();
 
-                    // load custom fields
-
                     ACL::loadCustom($acls);
+                    
+                    // load custom fields
 
                     // Run the command registration
                     $commands = $instance->cli()->unwrap();

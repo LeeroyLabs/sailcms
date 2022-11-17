@@ -3,11 +3,13 @@
 use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
+use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
 beforeAll(function ()
@@ -33,6 +35,36 @@ test('Create an entry type', function ()
 
     try {
         $id = $model->createOne('test', 'Test', 'test', null, false);
+        expect($id)->not->toBe('');
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Create an entry layout', function ()
+{
+    $model = new EntryLayout();
+
+    $titles = new LocaleField([
+        'fr' => 'Test de disposition',
+        'en' => 'Layout Test'
+    ]);
+    $labels = new LocaleField([
+        'fr' => 'Titre',
+        'en' => 'Title'
+    ]);
+
+    $textField = new Entry\TextField();
+    $textField->instantiateSchema($labels, [
+        ['required' => 1,],
+    ]);
+
+    $schema = EntryLayout::generateLayoutSchema(new Collection([
+        $textField
+    ]));
+
+    try {
+        $id = $model->createOne($titles, $schema);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -317,6 +349,21 @@ test('Delete an entry type', function ()
     }
     $entryType = $model->getByHandle('test');
     expect($entryType)->toBe(null);
+});
+
+test('Hard delete an entry layout', function ()
+{
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $result = $model->delete($entryLayout->_id, false);
+        expect($result)->toBe(true);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
 });
 
 test('Fail to get homepage entry', function ()
