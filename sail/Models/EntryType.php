@@ -100,7 +100,7 @@ class EntryType extends Model
         $entryType = $instance->getByHandle($defaultHandle);
 
         if (!$entryType) {
-            $entryType = $instance->create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
+            $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix);
         }
         return $entryType;
     }
@@ -225,11 +225,11 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public function createOne(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    public function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->hasPermissions();
 
-        return $this->create($handle, $title, $url_prefix, $entry_layout_id);
+        return $this->createWithoutPermission($handle, $title, $url_prefix, $entry_layout_id);
     }
 
     /**
@@ -255,7 +255,7 @@ class EntryType extends Model
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
-        return $this->update($entryType, $data);
+        return $this->updateWithoutPermission($entryType, $data);
     }
 
     /**
@@ -360,7 +360,7 @@ class EntryType extends Model
      * @throws DatabaseException
      *
      */
-    private function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    private function createWithoutPermission(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->checkHandle($handle);
 
@@ -399,7 +399,7 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    private function update(EntryType $entryType, Collection $data): bool
+    private function updateWithoutPermission(EntryType $entryType, Collection $data): bool
     {
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');

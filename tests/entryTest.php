@@ -3,6 +3,7 @@
 use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
+use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
@@ -34,7 +35,7 @@ test('Create an entry type', function ()
     $model = new EntryType();
 
     try {
-        $id = $model->createOne('test', 'Test', 'test', null, false);
+        $id = $model->create('test', 'Test', 'test', null, false);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -45,12 +46,11 @@ test('Create an entry layout', function ()
 {
     $model = new EntryLayout();
 
-    $textField = new Entry\TextField();
     $labels = new LocaleField([
         'fr' => 'Titre',
         'en' => 'Title'
     ]);
-    $textField->instantiateSchema($labels, [
+    $textField = new TextField($labels, [
         ['required' => 1,],
     ]);
 
@@ -63,7 +63,7 @@ test('Create an entry layout', function ()
             'fr' => 'Test de disposition',
             'en' => 'Layout Test'
         ]);
-        $id = $model->createOne($titles, $schema);
+        $id = $model->create($titles, $schema);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -76,7 +76,7 @@ test('Create an entry layout', function ()
 //    $entryLayout = $model->one([
 //        'titles.fr' => 'Test de disposition'
 //    ]);
-//
+//    print_r($entryLayout->schema);
 //    $entryLayout->schema->each(function ($fieldKey, &$settings)
 //    {
 //        $fieldSchema = new Collection((array)$settings->schema->get("0"));
@@ -97,7 +97,7 @@ test('Failed to create an entry type because the handle is already in use', func
     $model = new EntryType();
 
     try {
-        $model->createOne('test', 'Test', 'test', null, false);
+        $model->create('test', 'Test', 'test', null, false);
         expect(true)->not->toBe(false);
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::HANDLE_ALREADY_EXISTS);
@@ -111,7 +111,7 @@ test('Create an entry with the default type', function ()
     $model = new Entry();
 
     try {
-        $entry = $model->createOne(true, 'fr', EntryStatus::LIVE, 'Home', null, []);
+        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', null, []);
         expect($entry->title)->toBe('Home');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -128,7 +128,7 @@ test('Create an entry with an entry type', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne(true, 'fr', EntryStatus::LIVE, 'Test', 'test', []);
+        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test', []);
         expect($entry->title)->toBe('Test');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -191,7 +191,7 @@ test('Create an entry with an entry type with an existing url', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', []);
+        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', []);
         expect($entry->title)->toBe('Test 2');
         expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -207,7 +207,7 @@ test('Fail to create an entry that is trashed', function ()
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->createOne(false, 'fr', EntryStatus::TRASH, 'Test 2', 'test-de-test', []);
+        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 2', 'test-de-test', []);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
         expect(true)->toBe(true);

@@ -12,6 +12,7 @@ use SailCMS\Models\Entry\Field as FieldEntry;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\LocaleField;
+use stdClass;
 
 class EntryLayout extends Model
 {
@@ -62,7 +63,7 @@ class EntryLayout extends Model
                 throw new FieldException(static::SCHEMA_MUST_CONTAIN_FIELDS);
             }
 
-            $schema->pushKeyValue($field->generateKey(), new Collection(['handle' => $field->handle, 'schema' => $field->schema]));
+            $schema->pushKeyValue($field->generateKey(), $field->toLayoutField());
         });
 
         return $schema;
@@ -80,14 +81,14 @@ class EntryLayout extends Model
         return $this->findOne($filters)->exec();
     }
 
-    public function createOne(LocaleField $titles, Collection $schema): EntryLayout
+    public function create(LocaleField $titles, Collection $schema): EntryLayout
     {
         $this->hasPermissions();
 
         // TODO Validate schema
         // TODO Validate titles
 
-        return $this->create($titles, $schema);
+        return $this->createWithoutPermission($titles, $schema);
     }
 
     public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
@@ -109,10 +110,9 @@ class EntryLayout extends Model
             // TODO Validate schema
             $data->pushKeyValue('schema', $schema);
         }
-        print_r($data);
 
         if ($data->length > 0) {
-            return $this->update($entry, $data);
+            return $this->updateWithoutPermission($entry, $data);
         }
         return false;
     }
@@ -137,11 +137,64 @@ class EntryLayout extends Model
     {
         return match ($field) {
             'titles' => new LocaleField($value),
-            'schema' => new Collection((array)$value),
+            'schema' => $this->processSchemaOnFetch($value),
             'authors' => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
             'dates' => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
         };
+    }
+
+    protected function processOnStore(string $field, mixed $value): mixed
+    {
+        return match ($field) {
+            'schema' => $this->processSchemaOnStore($value),
+            default => $value,
+        };
+    }
+
+    /**
+     *
+     * Process schema on fetch
+     *
+     * @param  stdClass|array|null  $value
+     * @return Collection
+     */
+    private function processSchemaOnFetch(stdClass|array|null $value): Collection
+    {
+        if (!$value) {
+            return Collection::init();
+        }
+
+//        $schema = new Collection((array)$value);
+//
+//        $schema->each(function ($key, &$value)
+//        {
+//            $value = FieldEntry::fromLayoutField($value);
+//        });
+
+        return new Collection((array)$value);
+    }
+
+    private function processSchemaOnStore(Collection &$data): Collection
+    {
+//        print_r($data);
+//        $data->each(function ($fieldId, &$fieldConfigs)
+//        {
+//            /**
+//             * @var Collection $fieldConfigs
+//             */
+//            $fieldConfigs->each(function ($key, $inputField) use ($fieldConfigs)
+//            {
+//                /**
+//                 * @var FieldInput $inputField
+//                 */
+//                $inputFieldForDb = $inputField->toDBObject();
+//                $fieldConfigs->pushKeyValue($key, $inputFieldForDb);
+//            });
+//        });
+
+        print_r($data);
+        return $data;
     }
 
     /**
@@ -155,7 +208,7 @@ class EntryLayout extends Model
      * @throws EntryException
      *
      */
-    private function create(LocaleField $titles, Collection $schema): EntryLayout
+    private function createWithoutPermission(LocaleField $titles, Collection $schema): EntryLayout
     {
         $dates = Dates::init();
         $authors = Authors::init(User::$currentUser, false);
@@ -184,7 +237,7 @@ class EntryLayout extends Model
      * @throws EntryException
      *
      */
-    private function update(EntryLayout $entryLayout, Collection $data): bool
+    private function updateWithoutPermission(EntryLayout $entryLayout, Collection $data): bool
     {
         $update = [
             'dates' => Dates::updated($entryLayout->dates),

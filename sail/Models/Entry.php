@@ -443,7 +443,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function createOne(bool $is_homepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function create(bool $is_homepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         $this->hasPermissions();
 
@@ -463,7 +463,7 @@ class Entry extends Model
             $data->merge(new Collection($optionalData));
         }
 
-        $entry = $this->create($data);
+        $entry = $this->createWithoutPermission($data);
 
         if ($is_homepage) {
             $entry->setAsHomepage();
@@ -499,7 +499,7 @@ class Entry extends Model
             $data = new Collection($data);
         }
 
-        $updateResult = $this->update($entry, $data);
+        $updateResult = $this->updateWithoutPermission($entry, $data);
 
         // Update homepage if needed
         if ($updateResult) {
@@ -542,7 +542,7 @@ class Entry extends Model
             /**
              * @var Entry $value
              */
-            $this->update($value, new Collection([
+            $this->updateWithoutPermission($value, new Collection([
                 'url' => Entry::getRelativeUrl($url_prefix, $value->slug)
             ]));
         });
@@ -702,7 +702,7 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    private function create(Collection $data): array|Entry|null
+    private function createWithoutPermission(Collection $data): array|Entry|null
     {
         $locale = $data->get('locale');
         $status = $data->get('status', EntryStatus::INACTIVE->value);
@@ -761,7 +761,7 @@ class Entry extends Model
             'locale' => $locale,
             'entry' => (string)$entryId
         ]);
-        $this->update($entry, new Collection([
+        $this->updateWithoutPermission($entry, new Collection([
             'alternates' => $alternates
         ]));
         // Set the attribute manually to avoid another query
@@ -783,7 +783,7 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    private function update(Entry $entry, Collection $data): bool
+    private function updateWithoutPermission(Entry $entry, Collection $data): bool
     {
         $update = [];
         $slug = $entry->slug;

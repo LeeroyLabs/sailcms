@@ -14,9 +14,9 @@ class TextField extends Field
         ]);
     }
 
-    protected function defineBaseSchema(): void
+    protected function defineBaseConfigs(): void
     {
-        $this->baseSchema = new Collection([
+        $this->baseConfigs = new Collection([
             InputTextField::class
         ]);
     }
