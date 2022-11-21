@@ -58,12 +58,7 @@ abstract class Model implements JsonSerializable
 
         // Manual name or detected by class name (plural)
         $name = array_reverse(explode('\\', get_class($this)))[0];
-
-        if (empty($collection)) {
-            $preformatted = explode(' ', str_replace('_', ' ', Text::snakeCase($name)));
-            $preformatted[count($preformatted) - 1] = Text::inflector()->pluralize($preformatted[count($preformatted) - 1])[0];
-            $name = implode('_', $preformatted);
-        }
+        $name = Text::snakeCase(Text::pluralize($name));
 
         $collection = ($collection === '') ? $name : $collection;
         $client = Database::instance($dbIndex);

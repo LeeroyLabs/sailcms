@@ -30,9 +30,9 @@
         "ext-imagick": "*",
         "ext-exif": "*",
         "ext-mbstring": "*",
+        "ext-intl": "*",
         "vlucas/phpdotenv": "^5.4",
         "myclabs/php-enum": "^1.8",
-        "symfony/string": "^6.0",
         "symfony/translation-contracts": "^3.0",
         "filp/whoops": "^2.14",
         "nesbot/carbon": "^2.58",
@@ -60,7 +60,8 @@
         "symfony/security-csrf": "^6.1",
         "intervention/image": "^2.7",
         "leeroy/clockwork": "^5.1",
-        "predis/predis": "^2.0"
+        "predis/predis": "^2.0",
+        "leeroy/php-inflector": "^1.0.1"
     },
     "require-dev": {
         "pestphp/pest": "^1.21"

@@ -22,11 +22,6 @@ class Category extends Model
     public int $order;
     public string $parent_id;
 
-    public function __construct()
-    {
-        parent::__construct('categories', 0);
-    }
-
     public function init(): void
     {
         $this->setPermissionGroup('categories');
