@@ -48,6 +48,9 @@ abstract class Model implements JsonSerializable
 
     abstract public function fields(bool $fetchAllFields = false): array;
 
+    /**
+     * @throws DatabaseException
+     */
     public function __construct(string $collection = '', int $dbIndex = 0)
     {
         // Just in case
@@ -56,7 +59,13 @@ abstract class Model implements JsonSerializable
         // Manual name or detected by class name (plural)
         $name = array_reverse(explode('\\', get_class($this)))[0];
 
-        $collection = (empty($collection)) ? Text::snakeCase(Text::inflector()->pluralize($name)[0]) : $collection;
+        if (empty($collection)) {
+            $preformatted = explode(' ', str_replace('_', ' ', Text::snakeCase($name)));
+            $preformatted[count($preformatted) - 1] = Text::inflector()->pluralize($preformatted[count($preformatted) - 1])[0];
+            $name = implode('_', $preformatted);
+        }
+
+        $collection = ($collection === '') ? $name : $collection;
         $client = Database::instance($dbIndex);
 
         $this->collection = $client->selectCollection(env('database_db', 'sailcms'), $collection);
@@ -162,7 +171,7 @@ abstract class Model implements JsonSerializable
 
             try {
                 $cached = Cache::get($usedCacheKey);
-                
+
                 if (is_array($cached)) {
                     // Array, CastBack every item
                     foreach ($cached as $num => $cache) {
