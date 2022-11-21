@@ -17,7 +17,7 @@ class EntryField extends Field
 
     protected function defineSchema(): void
     {
-        $this->schema = new Collection([
+        $this->configs = new Collection([
             'entry_id' => static::TYPE_STRING,
             'entry_type_handle' => static::TYPE_STRING
         ]);

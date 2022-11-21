@@ -33,7 +33,7 @@ class EntryType extends Model
     public string $title;
     public string $handle;
     public string $url_prefix;
-    public ?string $entry_layout_id; // TODO implement layout!
+    public ?string $entry_layout_id;
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -100,7 +100,7 @@ class EntryType extends Model
         $entryType = $instance->getByHandle($defaultHandle);
 
         if (!$entryType) {
-            $entryType = $instance->create($defaultHandle, $defaultTitle, $defaultUrlPrefix);
+            $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix);
         }
         return $entryType;
     }
@@ -225,11 +225,11 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public function createOne(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    public function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->hasPermissions();
 
-        return $this->create($handle, $title, $url_prefix, $entry_layout_id);
+        return $this->createWithoutPermission($handle, $title, $url_prefix, $entry_layout_id);
     }
 
     /**
@@ -255,22 +255,21 @@ class EntryType extends Model
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
-        return $this->update($entryType, $data);
+        return $this->updateWithoutPermission($entryType, $data);
     }
 
     /**
      *
      * Real deletion on the entry types
      *
-     * @param  string  $entryTypeId
+     * @param  string|ObjectId  $entryTypeId
      * @return bool
      * @throws ACLException
-     * @throws EntryException
      * @throws DatabaseException
+     * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public function hardDelete(string $entryTypeId): bool
+    public function hardDelete(string|ObjectId $entryTypeId): bool
     {
         $this->hasPermissions();
 
@@ -361,7 +360,7 @@ class EntryType extends Model
      * @throws DatabaseException
      *
      */
-    private function create(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    private function createWithoutPermission(string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->checkHandle($handle);
 
@@ -400,18 +399,23 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    private function update(EntryType $entryType, Collection $data): bool
+    private function updateWithoutPermission(EntryType $entryType, Collection $data): bool
     {
         $title = $data->get('title');
         $url_prefix = $data->get('url_prefix');
-        // TODO entry layout id
+        $entry_layout_id = $data->get('entry_layout_id');
+
         $update = [];
 
+        // Check if field has been sent
         if ($title) {
             $update['title'] = $title;
         }
         if ($url_prefix !== null) {
             $update['url_prefix'] = $url_prefix;
+        }
+        if ($entry_layout_id) {
+            $update['entry_layout_id'] = $entry_layout_id;
         }
 
         try {

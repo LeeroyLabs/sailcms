@@ -90,7 +90,7 @@ class Entries
         $url_prefix = $args->get('url_prefix');
         $entry_type_layout_id = $args->get('entry_type_layout_id');
 
-        return (new EntryType())->createOne($handle, $title, $url_prefix, $entry_type_layout_id);
+        return (new EntryType())->create($handle, $title, $url_prefix, $entry_type_layout_id);
     }
 
     /**
@@ -212,8 +212,8 @@ class Entries
         $content = $args->get('content');
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
-        
-        return $entryModel->createOne($is_homepage, $locale, $status, $title, $slug, [
+
+        return $entryModel->create($is_homepage, $locale, $status, $title, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
