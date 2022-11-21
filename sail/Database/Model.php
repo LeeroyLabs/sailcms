@@ -162,7 +162,7 @@ abstract class Model implements JsonSerializable
 
             try {
                 $cached = Cache::get($usedCacheKey);
-
+                
                 if (is_array($cached)) {
                     // Array, CastBack every item
                     foreach ($cached as $num => $cache) {
