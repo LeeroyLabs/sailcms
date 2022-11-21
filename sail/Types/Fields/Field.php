@@ -5,6 +5,7 @@ namespace SailCMS\Types\Fields;
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Types\LocaleField;
+use stdClass;
 
 abstract class Field implements DatabaseType
 {
@@ -18,20 +19,22 @@ abstract class Field implements DatabaseType
     }
 
     /**
-     * @return array
+     * @return stdClass
      */
-    public function toDBObject(): array
+    public function toDBObject(): stdClass
     {
-        return [
-            'label' => $this->labels->toDBObject(),
-            'required' => $this->required
+        return (object)[
+            'labels' => $this->labels->toDBObject(),
+            'configs' => [
+                'required' => $this->required
+            ]
         ];
     }
 
     public static function validateSettings(Collection|array|null $settings): Collection
     {
         $validSettings = Collection::init();
-
+        
         static::availableProperties()->each(function ($key, $inputType) use ($settings, $validSettings)
         {
             /**

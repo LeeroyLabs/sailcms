@@ -16,6 +16,7 @@ abstract class Field
     /* ERRORS */
     const SCHEMA_MUST_CONTENT_FIELD_TYPE = 'The %s schema must contains only SailCMS/Types/Fields/Field type';
 
+    public LocaleField $labels;
     public string $handle;
     public Collection $baseConfigs;
     public Collection $configs;
@@ -24,6 +25,7 @@ abstract class Field
     {
         $name = array_reverse(explode('\\', get_class($this)))[0];
         $this->handle = Text::snakeCase($name);
+        $this->labels = $labels;
 
         $this->defineBaseConfigs();
         $this->instantiateConfigs($labels, $settings);
@@ -100,12 +102,24 @@ abstract class Field
      */
     public function toLayoutField(): LayoutField
     {
-        return new LayoutField($this->handle, $this->configs);
+        return new LayoutField($this->labels, $this->handle, $this->configs);
     }
 
     public static function fromLayoutField(array|stdClass $data): Field
     {
-        print_r($data);
+        $settings = [];
+        $configsData = new Collection($data->configs);
+
+        $configsData->each(function ($key, $config) use (&$settings)
+        {
+            $settings[$key] = (array)$config->configs;
+        });
+
+        $className = static::getClassFromHandle($data->handle);
+
+        $labels = new LocaleField($data->labels ?? []);
+        
+        return new $className($labels, $settings);
     }
 
     // Must define default settings
@@ -116,6 +130,18 @@ abstract class Field
 
     // Throw exception when content is not valid
     abstract protected function validate(Collection $content): ?Collection;
+
+    private static function getClassFromHandle(string $handle): string
+    {
+        $handle = explode('_', $handle);
+        $className = __NAMESPACE__ . '\\';
+
+        foreach ($handle as $key => $value) {
+            $className .= ucfirst($value);
+        }
+
+        return $className;
+    }
 
     // TODO graphql type
 }

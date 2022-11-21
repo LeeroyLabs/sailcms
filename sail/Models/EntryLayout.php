@@ -11,6 +11,7 @@ use SailCMS\Errors\FieldException;
 use SailCMS\Models\Entry\Field as FieldEntry;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
+use SailCMS\Types\Fields\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
@@ -87,6 +88,7 @@ class EntryLayout extends Model
 
         // TODO Validate schema
         // TODO Validate titles
+        $schema = $this->processSchemaOnStore($schema);
 
         return $this->createWithoutPermission($titles, $schema);
     }
@@ -144,14 +146,6 @@ class EntryLayout extends Model
         };
     }
 
-    protected function processOnStore(string $field, mixed $value): mixed
-    {
-        return match ($field) {
-            'schema' => $this->processSchemaOnStore($value),
-            default => $value,
-        };
-    }
-
     /**
      *
      * Process schema on fetch
@@ -165,36 +159,30 @@ class EntryLayout extends Model
             return Collection::init();
         }
 
-//        $schema = new Collection((array)$value);
-//
-//        $schema->each(function ($key, &$value)
-//        {
-//            $value = FieldEntry::fromLayoutField($value);
-//        });
+        $schema = Collection::init();
+        $schemaFromDb = new Collection((array)$value);
 
-        return new Collection((array)$value);
+        $schemaFromDb->each(function ($key, $value) use ($schema)
+        {
+            $valueParsed = FieldEntry::fromLayoutField($value);
+            $schema->pushKeyValue($key, $valueParsed);
+        });
+
+        return $schema;
     }
 
-    private function processSchemaOnStore(Collection &$data): Collection
+    private function processSchemaOnStore(Collection &$schema): Collection
     {
-//        print_r($data);
-//        $data->each(function ($fieldId, &$fieldConfigs)
-//        {
-//            /**
-//             * @var Collection $fieldConfigs
-//             */
-//            $fieldConfigs->each(function ($key, $inputField) use ($fieldConfigs)
-//            {
-//                /**
-//                 * @var FieldInput $inputField
-//                 */
-//                $inputFieldForDb = $inputField->toDBObject();
-//                $fieldConfigs->pushKeyValue($key, $inputFieldForDb);
-//            });
-//        });
-
-        print_r($data);
-        return $data;
+        $schemaForDb = Collection::init();
+        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb)
+        {
+            /**
+             * @var LayoutField $layoutField
+             */
+            $layoutField = $layoutField->toDBObject();
+            $schemaForDb->pushKeyValue($fieldId, $layoutField);
+        });
+        return $schemaForDb;
     }
 
     /**

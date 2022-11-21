@@ -5,6 +5,7 @@ namespace SailCMS\Types\Fields;
 use SailCMS\Collection;
 use SailCMS\Locale;
 use SailCMS\Types\LocaleField;
+use stdClass;
 
 class InputTextField extends Field
 {
@@ -52,13 +53,15 @@ class InputTextField extends Field
         return $errors;
     }
 
-    public function toDBObject(): array
+    public function toDBObject(): stdClass
     {
-        return [
-            'label' => $this->labels->toDBObject(),
-            'required' => $this->required,
-            'max_length' => $this->maxLength,
-            'min_length' => $this->minLength
+        return (object)[
+            'labels' => $this->labels->toDBObject(),
+            'configs' => [
+                'required' => $this->required,
+                'max_length' => $this->maxLength,
+                'min_length' => $this->minLength
+            ]
         ];
     }
 }

@@ -51,7 +51,7 @@ test('Create an entry layout', function ()
         'en' => 'Title'
     ]);
     $textField = new TextField($labels, [
-        ['required' => 1,],
+        ['required' => true,],
     ]);
 
     $schema = EntryLayout::generateLayoutSchema(new Collection([
@@ -63,9 +63,10 @@ test('Create an entry layout', function ()
             'fr' => 'Test de disposition',
             'en' => 'Layout Test'
         ]);
-        $id = $model->create($titles, $schema);
-        expect($id)->not->toBe('');
+        $entryLayout = $model->create($titles, $schema);
+        expect($entryLayout->_id)->not->toBe('');
     } catch (Exception $exception) {
+//        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
 });
@@ -76,20 +77,25 @@ test('Create an entry layout', function ()
 //    $entryLayout = $model->one([
 //        'titles.fr' => 'Test de disposition'
 //    ]);
-//    print_r($entryLayout->schema);
-//    $entryLayout->schema->each(function ($fieldKey, &$settings)
+//
+//    $entryLayout->schema->each(function ($fieldKey, &$field)
 //    {
-//        $fieldSchema = new Collection((array)$settings->schema->get("0"));
-//        $fieldSchema->pushKeyValue('max_length', 255);
-//        $settings->schema = $fieldSchema;
+//        $currentInput = $field->configs->get('0');
+//        $inputClass = $field->configs->get('0')::class;
+//
+//        $currentInput->availableProperties();
+//        $input = new $inputClass($currentInput->labels, );
+//        $field->configs->pushKeyValue('0', $input);
 //    });
 //
-//    try {
-//        $result = $model->updateById($entryLayout->_id, null, $entryLayout->schema);
-//        expect($result)->not->toBe(true);
-//    } catch (Exception $exception) {
-//        expect(true)->toBe(false);
-//    }
+////    print_r($entryLayout->schema);
+//
+////    try {
+////        $result = $model->updateById($entryLayout->_id, null, $entryLayout->schema);
+////        expect($result)->not->toBe(true);
+////    } catch (Exception $exception) {
+////        expect(true)->toBe(false);
+////    }
 //});
 
 test('Failed to create an entry type because the handle is already in use', function ()
@@ -117,8 +123,8 @@ test('Create an entry with the default type', function ()
         expect($entry->locale)->toBe('fr');
         expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
-        print_r($exception->getTrace());
+//        print_r($exception->getMessage());
+//        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
 });
