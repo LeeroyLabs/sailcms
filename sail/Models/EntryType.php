@@ -56,7 +56,7 @@ class EntryType extends Model
      *
      * Get a list of all available types
      *
-     * @param  bool  $api
+     * @param bool $api
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -77,7 +77,7 @@ class EntryType extends Model
      *
      * Use the settings to create the default type
      *
-     * @param  bool  $api
+     * @param bool $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -109,8 +109,8 @@ class EntryType extends Model
      *
      * Get an entry type by his collection name
      *
-     * @param  string  $collectionName
-     * @param  bool    $api
+     * @param string $collectionName
+     * @param bool $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -137,8 +137,8 @@ class EntryType extends Model
      *
      * Get an entry model instance by entry type handle
      *
-     * @param  string  $handle
-     * @param  bool    $api
+     * @param string $handle
+     * @param bool $api
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -181,7 +181,7 @@ class EntryType extends Model
      *
      * Get an entryType by id
      *
-     * @param  string  $id
+     * @param string $id
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
@@ -199,7 +199,7 @@ class EntryType extends Model
      *
      * Get an entryType by handle
      *
-     * @param  string  $handle
+     * @param string $handle
      * @return EntryType|null
      * @throws DatabaseException
      *
@@ -213,11 +213,11 @@ class EntryType extends Model
      *
      * Wrapper to handle permission for entry creation
      *
-     * @param  string                $handle
-     * @param  string                $title
-     * @param  string                $url_prefix
-     * @param  string|ObjectId|null  $entry_layout_id
-     * @param  bool                  $getObject
+     * @param string $handle
+     * @param string $title
+     * @param string $url_prefix
+     * @param string|ObjectId|null $entry_layout_id
+     * @param bool $getObject
      * @return array|EntryType|string|null
      * @throws ACLException
      * @throws DatabaseException
@@ -236,8 +236,8 @@ class EntryType extends Model
      *
      * Wrapper to handle permission for entry modification by handle
      *
-     * @param  string      $handle
-     * @param  Collection  $data
+     * @param string $handle
+     * @param Collection $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -262,7 +262,7 @@ class EntryType extends Model
      *
      * Real deletion on the entry types
      *
-     * @param  string|ObjectId  $entryTypeId
+     * @param string|ObjectId $entryTypeId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -318,7 +318,7 @@ class EntryType extends Model
      *
      * Check if handle is available
      *
-     * @param  string  $handle
+     * @param string $handle
      * @return void
      * @throws DatabaseException
      * @throws EntryException
@@ -337,24 +337,24 @@ class EntryType extends Model
      *
      * Get collection name with handle
      *
-     * @param  string  $handle
+     * @param string $handle
      * @return string
      *
      */
     private function getCollectionName(string $handle): string
     {
-        return Text::snakeCase(Text::deburr(Text::inflector()->pluralize($handle)[0]));
+        return Text::snakeCase(Text::deburr(Text::pluralize($handle)[0]));
     }
 
     /**
      *
      * Create an entry type
      *
-     * @param  string                $handle
-     * @param  string                $title
-     * @param  string                $url_prefix
-     * @param  string|ObjectId|null  $entry_layout_id
-     * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
+     * @param string $handle
+     * @param string $title
+     * @param string $url_prefix
+     * @param string|ObjectId|null $entry_layout_id
+     * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
      * @throws EntryException
      * @throws DatabaseException
@@ -390,8 +390,8 @@ class EntryType extends Model
      *
      * Update the entry type
      *
-     * @param  EntryType   $entryType
-     * @param  Collection  $data
+     * @param EntryType $entryType
+     * @param Collection $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException

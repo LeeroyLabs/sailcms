@@ -12,16 +12,17 @@ class InputTextField extends Field
     public function __construct(
         public readonly LocaleField $labels,
         public readonly bool $required = false,
-        public readonly int $maxLength = 0,
-        public readonly int $minLength = 0
-    ) {
+        public readonly int $max_length = 0,
+        public readonly int $min_length = 0
+    )
+    {
     }
 
     public static function defaultSettings(): Collection
     {
         return new Collection([
             'required' => false,
-            'maxLength' => 0,
+            'max_length' => 0,
             'minLength' => 0
         ]);
     }
@@ -30,8 +31,8 @@ class InputTextField extends Field
     {
         return new Collection([
             new Input('required', Input::INPUT_TYPE_CHECKBOX),
-            new Input('maxLength', Input::INPUT_TYPE_NUMBER),
-            new Input('minLength', Input::INPUT_TYPE_NUMBER),
+            new Input('max_length', Input::INPUT_TYPE_NUMBER),
+            new Input('min_length', Input::INPUT_TYPE_NUMBER),
         ]);
     }
 
@@ -59,8 +60,8 @@ class InputTextField extends Field
             'labels' => $this->labels->toDBObject(),
             'configs' => [
                 'required' => $this->required,
-                'max_length' => $this->maxLength,
-                'min_length' => $this->minLength
+                'max_length' => $this->max_length,
+                'min_length' => $this->min_length
             ]
         ];
     }
