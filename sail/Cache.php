@@ -4,7 +4,6 @@ namespace SailCMS;
 
 use JsonException;
 use Predis\Client;
-use SailCMS\Database\Model;
 
 class Cache
 {

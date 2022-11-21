@@ -3,7 +3,9 @@
 namespace SailCMS\Database;
 
 use Carbon\Carbon;
+use Exception;
 use JsonException;
+use JsonSerializable;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\BulkWriteResult;
@@ -21,7 +23,7 @@ use SailCMS\Text;
 use SailCMS\Types\QueryOptions;
 use stdClass;
 
-abstract class Model implements \JsonSerializable
+abstract class Model implements JsonSerializable
 {
     public const SORT_ASC = 1;
     public const SORT_DESC = -1;
@@ -238,7 +240,7 @@ abstract class Model implements \JsonSerializable
             } else {
                 $results = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
 
@@ -420,7 +422,7 @@ abstract class Model implements \JsonSerializable
 
             $this->debugCall('aggregate', $qt, ['pipeline' => $pipeline]);
             return $docs;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -445,7 +447,7 @@ abstract class Model implements \JsonSerializable
             $this->clearCacheForModel();
             $this->debugCall('insert', $qt);
             return $id;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -473,7 +475,7 @@ abstract class Model implements \JsonSerializable
             $this->clearCacheForModel();
             $this->debugCall('insertMany', $qt);
             return $ids;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -497,7 +499,7 @@ abstract class Model implements \JsonSerializable
             $this->clearCacheForModel();
             $this->debugCall('bulkWrite', $qt);
             return $res;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -527,7 +529,7 @@ abstract class Model implements \JsonSerializable
             $this->currentLimit = 1;
             $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
             return $count;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -556,7 +558,7 @@ abstract class Model implements \JsonSerializable
             $this->clearCacheForModel();
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
             return $count;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -581,7 +583,7 @@ abstract class Model implements \JsonSerializable
             $this->currentLimit = 1;
             $this->debugCall('deleteOne', $qt, ['query' => $query]);
             return $count;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -605,7 +607,7 @@ abstract class Model implements \JsonSerializable
             $this->clearCacheForModel();
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
             return $count;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -634,7 +636,7 @@ abstract class Model implements \JsonSerializable
             $this->clearCacheForModel();
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
             return $count;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -669,7 +671,7 @@ abstract class Model implements \JsonSerializable
     {
         try {
             $this->collection->createIndex($index, $options);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -687,7 +689,7 @@ abstract class Model implements \JsonSerializable
     {
         try {
             $this->collection->createIndexes($indexes, $options);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -704,7 +706,7 @@ abstract class Model implements \JsonSerializable
     {
         try {
             $this->collection->dropIndex($index);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -721,7 +723,7 @@ abstract class Model implements \JsonSerializable
     {
         try {
             $this->collection->dropIndexes($indexes);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException($e->getMessage(), 0500);
         }
     }
@@ -785,7 +787,7 @@ abstract class Model implements \JsonSerializable
      * @return stdClass
      *
      */
-    public function toPHPObject(): \stdClass
+    public function toPHPObject(): stdClass
     {
         $fields = $this->fields();
         $doc = [];
