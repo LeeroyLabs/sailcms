@@ -590,6 +590,8 @@ class Sail
             static::$templateDirectory = static::$workingDirectory . '/templates';
             static::$cacheDirectory = static::$workingDirectory . '/storage/cache';
 
+            static::setupEnv();
+
             $config = [];
             include dirname(__DIR__) . '/install/config/general.php';
 

@@ -4,7 +4,6 @@ namespace SailCMS;
 
 use Clockwork\Support\Vanilla\Clockwork;
 use SailCMS\Debug\DbParser;
-use SailCMS\Types\QueryOptions;
 
 class Debug
 {
@@ -240,10 +239,14 @@ class Debug
     public static function ray(mixed ...$variables): void
     {
         $level = 'debug';
+        $list = ['debug', 'log', 'warning', 'warn', 'success', 'critical', 'error'];
 
         if (count($variables) > 1) {
             $level = $variables[count($variables) - 1];
-            unset($variables[count($variables) - 1]);
+
+            if (in_array($level, $list, true)) {
+                unset($variables[count($variables) - 1]);
+            }
         }
 
         switch ($level) {

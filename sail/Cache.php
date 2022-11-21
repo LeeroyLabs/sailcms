@@ -4,7 +4,6 @@ namespace SailCMS;
 
 use JsonException;
 use Predis\Client;
-use SailCMS\Database\Model;
 
 class Cache
 {
@@ -22,7 +21,7 @@ class Cache
             return;
         }
 
-        if (setting('cache.use', false)) {
+        if (setting('cache.use', 'false') === 'true') {
             $host = setting('cache.host', 'tcp://localhost');
 
             $opts = [
@@ -100,7 +99,7 @@ class Cache
             [$marker, $type] = explode(':', $enc);
 
             if ($type === 'array') {
-                return json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+                return json_decode($json, false, 512, JSON_THROW_ON_ERROR);
             }
 
             return json_decode($json, false, 512, JSON_THROW_ON_ERROR);
