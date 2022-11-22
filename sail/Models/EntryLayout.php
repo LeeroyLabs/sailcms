@@ -25,6 +25,7 @@ class EntryLayout extends Model
 
     const ACL_HANDLE = "entrylayout";
 
+    /* Properties */
     public LocaleField $titles;
     public Collection $schema;
     public Authors $authors;
@@ -52,7 +53,7 @@ class EntryLayout extends Model
      */
     public function fields(bool $fetchAllFields = false): array
     {
-        return ['_id', 'titles', 'schema', 'authors', 'dates'];
+        return ['_id', 'titles', 'schema', 'authors', 'dates', 'is_trashed'];
     }
 
     /**
@@ -80,7 +81,7 @@ class EntryLayout extends Model
 
     /**
      *
-     * Get all entry layout
+     * Get all entry layout TODO
      *
      * @return void
      * @throws DatabaseException
@@ -88,18 +89,41 @@ class EntryLayout extends Model
      * @throws PermissionException
      *
      */
-    public function getAll()
+    public function getAll(): void
     {
         $this->hasPermissions(true);
     }
 
-    public function one(array $filters)
+    /**
+     *
+     * Find one user with filters
+     *
+     * @param array $filters
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     */
+    public function one(array $filters): ?EntryLayout
     {
         $this->hasPermissions(true);
 
         return $this->findOne($filters)->exec();
     }
 
+    /**
+     *
+     * Create an entry layout with
+     *
+     * @param LocaleField $titles
+     * @param Collection $schema
+     * @return EntryLayout
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function create(LocaleField $titles, Collection $schema): EntryLayout
     {
         $this->hasPermissions();
@@ -111,6 +135,20 @@ class EntryLayout extends Model
         return $this->createWithoutPermission($titles, $schema);
     }
 
+    /**
+     *
+     * Update the current schema with a field key, an array of keys and values and a field index
+     * > The field key is generated at the entry layout creation with the Models\Entry\Field->generateKey method
+     * > The to update array keys must be property of the Input type of the field index, if not there will be an error
+     * > The field index is the index according to the baseConfigs of a Models\Entry\Field class,
+     *      ¬ normally the Field class has only one element, but more complex can have many field
+     *
+     * @param string $fieldKey
+     * @param array $toUpdate
+     * @param string $fieldIndex
+     * @return void
+     *
+     */
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, string $fieldIndex = "0"): void
     {
         $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex) {
@@ -128,6 +166,19 @@ class EntryLayout extends Model
         });
     }
 
+    /**
+     *
+     * Update an entry layout for a given id or entryLayout instance
+     *
+     * @param Entry|string $entryOrId
+     * @param LocaleField|null $titles
+     * @param Collection|null $schema
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     */
     public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
     {
         $this->hasPermissions();
@@ -156,6 +207,19 @@ class EntryLayout extends Model
         return false;
     }
 
+    /**
+     *
+     * Delete an entry layout with soft or hard mode
+     *
+     * @param string|ObjectId $entryLayoutId
+     * @param bool $soft
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function delete(string|ObjectId $entryLayoutId, bool $soft = true): bool
     {
         $this->hasPermissions();
@@ -163,7 +227,7 @@ class EntryLayout extends Model
         // TODO check if there is and entry type is using the layout (and it have related entries?)
 
         if ($soft) {
-            $entryLayout = $this->findById($entryLayoutId);
+            $entryLayout = $this->findById($entryLayoutId)->exec();
             $result = $this->softDelete($entryLayout);
         } else {
             $result = $this->hardDelete($entryLayoutId);
@@ -172,6 +236,15 @@ class EntryLayout extends Model
         return $result;
     }
 
+    /**
+     *
+     * Fields process for fetching
+     *
+     * @param string $field
+     * @param mixed $value
+     * @return mixed
+     *
+     */
     protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
@@ -189,6 +262,7 @@ class EntryLayout extends Model
      *
      * @param stdClass|array|null $value
      * @return Collection
+     *
      */
     private function processSchemaOnFetch(stdClass|array|null $value): Collection
     {
@@ -207,6 +281,14 @@ class EntryLayout extends Model
         return $schema;
     }
 
+    /**
+     *
+     * Process schema on store AKA convert all type to db object
+     *
+     * @param Collection $schema
+     * @return Collection
+     *
+     */
     private function processSchemaOnStore(Collection &$schema): Collection
     {
         $schemaForDb = Collection::init();
@@ -241,7 +323,8 @@ class EntryLayout extends Model
                 'titles' => $titles,
                 'schema' => $schema,
                 'authors' => $authors,
-                'dates' => $dates
+                'dates' => $dates,
+                'is_trashed' => false
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());

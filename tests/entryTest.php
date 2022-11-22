@@ -357,6 +357,24 @@ test('Delete an entry type', function () {
     expect($entryType)->toBe(null);
 });
 
+test('Soft delete an entry layout', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $result = $model->delete($entryLayout->_id);
+        $deletedEntryLayout = $model->one([
+            'titles.fr' => 'Test de disposition'
+        ]);
+        expect($result)->toBe(true);
+        expect($deletedEntryLayout->is_trashed)->toBe(true);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
 test('Hard delete an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([

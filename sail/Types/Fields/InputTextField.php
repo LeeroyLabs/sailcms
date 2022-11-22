@@ -9,15 +9,32 @@ use stdClass;
 
 class InputTextField extends Field
 {
+    /**
+     *
+     * Input text field from html input:text attributes
+     *
+     * @param LocaleField $labels
+     * @param bool $required
+     * @param int $max_length
+     * @param int $min_length
+     *
+     */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool $required = false,
-        public readonly int $max_length = 0,
-        public readonly int $min_length = 0
+        public readonly bool        $required = false,
+        public readonly int         $max_length = 0,
+        public readonly int         $min_length = 0
     )
     {
     }
 
+    /**
+     *
+     * Define default settings for a Input Text Field
+     *
+     * @return Collection
+     *
+     */
     public static function defaultSettings(): Collection
     {
         return new Collection([
@@ -27,6 +44,13 @@ class InputTextField extends Field
         ]);
     }
 
+    /**
+     *
+     * Available properties of the settings
+     *
+     * @return Collection
+     *
+     */
     public static function availableProperties(): Collection
     {
         return new Collection([
@@ -36,6 +60,14 @@ class InputTextField extends Field
         ]);
     }
 
+    /**
+     *
+     * Input text field validation
+     *
+     * @param mixed $content
+     * @return Collection
+     *
+     */
     public function validate(mixed $content): Collection
     {
         $errors = Collection::init();
@@ -54,6 +86,13 @@ class InputTextField extends Field
         return $errors;
     }
 
+    /**
+     *
+     * When stored in the database
+     *
+     * @return stdClass
+     *
+     */
     public function toDBObject(): stdClass
     {
         return (object)[
