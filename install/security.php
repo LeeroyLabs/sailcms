@@ -16,6 +16,12 @@ $securitySettings = [
         'MEILI_INDEX',
         'MEILI_MASTER_KEY',
         'SETTINGS',
-        'DD_DEFAULT_KEY'
+        'DD_DEFAULT_KEY',
+        'FS3_API_KEY',
+        'FS3_API_SECRET',
+        'FS3_REGION',
+        'CACHE_HOST',
+        'CACHE_USER',
+        'CACHE_PASSWORD'
     ]
 ];
