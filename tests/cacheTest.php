@@ -6,7 +6,7 @@ include_once __DIR__ . '/mock/db.php';
 
 beforeEach(function ()
 {
-    Cache::init();
+    Cache::init(true);
 });
 
 test('Cache a scalar value', function ()
@@ -30,7 +30,7 @@ test('Cache an array value', function ()
     Cache::set('arraykey', ['firstKey' => 'hello world!']);
     $value = Cache::get('arraykey');
 
-    expect($value)->toBeArray();
+    expect($value)->toBeObject();
 });
 
 test('Delete one key', function ()

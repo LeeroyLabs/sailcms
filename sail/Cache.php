@@ -15,13 +15,13 @@ class Cache
     public const TTL_WEEK = 604_800;
     public const TTL_MONTH = 2_592_000;
 
-    public static function init()
+    public static function init(bool $forceUse = false)
     {
         if (static::$isConnected) {
             return;
         }
 
-        if (setting('cache.use', 'false') === 'true') {
+        if (setting('cache.use', 'false') === 'true' || $forceUse) {
             $host = setting('cache.host', 'tcp://localhost');
 
             $opts = [
