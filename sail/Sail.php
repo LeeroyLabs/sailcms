@@ -13,6 +13,7 @@ use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\GraphqlException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Http\Request;
@@ -84,6 +85,8 @@ class Sail
      * @throws ACLException
      * @throws \GraphQL\Error\SyntaxError
      * @throws Errors\EntryException
+     * @throws PermissionException
+     * @throws GraphqlException
      *
      */
     public static function init(string $execPath): void
@@ -135,6 +138,10 @@ class Sail
         }
 
         if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new GraphqlException('Cannot access GraphQL using anything else than the POST request method.', 0400);
+            }
+
             // Run GraphQL
             static::$isGraphQL = true;
             $data = GraphQL::init();
@@ -350,7 +357,7 @@ class Sail
                     $acls = $instance->permissions();
 
                     ACL::loadCustom($acls);
-                    
+
                     // load custom fields
 
                     // Run the command registration
