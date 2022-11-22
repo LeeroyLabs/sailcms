@@ -148,10 +148,15 @@ test('Get homepage entry', function () {
 test('Update an entry type', function () {
     $model = new EntryType();
 
+    $entryLayout = (new EntryLayout())->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
     try {
         $result = $model->updateByHandle('test', new Collection([
             'title' => 'Test Pages',
-            'url_prefix' => 'test-pages'
+            'url_prefix' => 'test-pages',
+            'entry_layout_id' => $entryLayout->_id
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
@@ -340,6 +345,21 @@ test('Hard Delete an entry with the default type', function () {
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
+    }
+});
+
+test('Fail to delete an entry layout because it is used', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $result = $model->delete($entryLayout->_id);
+        expect($result)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+        expect($exception->getMessage())->toBe(EntryLayout::SCHEMA_IS_USED);
     }
 });
 

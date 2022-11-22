@@ -22,6 +22,7 @@ class EntryLayout extends Model
     /* Errors */
     const DATABASE_ERROR = 'Exception when %s an entry';
     const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances';
+    const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types';
 
     const ACL_HANDLE = "entrylayout";
 
@@ -224,7 +225,11 @@ class EntryLayout extends Model
     {
         $this->hasPermissions();
 
-        // TODO check if there is and entry type is using the layout (and it have related entries?)
+        // Check if there is and entry type is using the layout
+        // TODO (and it have related entries?)
+        if ($this->hasEntryTypes($entryLayoutId)) {
+            throw new EntryException(static::SCHEMA_IS_USED);
+        }
 
         if ($soft) {
             $entryLayout = $this->findById($entryLayoutId)->exec();
@@ -300,6 +305,21 @@ class EntryLayout extends Model
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
+    }
+
+    /**
+     *
+     * Check if an entry layout have a related entry type
+     *
+     * @param string|ObjectId $entryLayoutId
+     * @return bool
+     *
+     */
+    public static function hasEntryTypes(string|ObjectId $entryLayoutId): bool
+    {
+        $entryTypeCount = (new EntryType())->count(['entry_layout_id' => (string)$entryLayoutId]);
+
+        return $entryTypeCount > 0;
     }
 
     /**
