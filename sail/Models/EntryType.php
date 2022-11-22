@@ -343,7 +343,7 @@ class EntryType extends Model
      */
     private function getCollectionName(string $handle): string
     {
-        return Text::snakeCase(Text::deburr(Text::pluralize($handle)[0]));
+        return Text::snakeCase(Text::deburr(Text::pluralize($handle)));
     }
 
     /**
