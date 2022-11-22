@@ -5,9 +5,11 @@ namespace SailCMS\Models;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Models\Entry\Field as FieldEntry;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
@@ -41,6 +43,13 @@ class EntryLayout extends Model
         $this->setPermissionGroup(static::ACL_HANDLE);
     }
 
+    /**
+     *
+     * Layout available fields
+     *
+     * @param bool $fetchAllFields
+     * @return string[]
+     */
     public function fields(bool $fetchAllFields = false): array
     {
         return ['_id', 'titles', 'schema', 'authors', 'dates'];
@@ -50,7 +59,7 @@ class EntryLayout extends Model
      *
      * Generate a schema for a layout for list of given fields
      *
-     * @param  Collection  $fields
+     * @param Collection $fields
      * @return Collection
      * @throws FieldException
      *
@@ -58,8 +67,7 @@ class EntryLayout extends Model
     public static function generateLayoutSchema(Collection $fields): Collection
     {
         $schema = Collection::init();
-        $fields->each(function ($key, $field) use ($schema)
-        {
+        $fields->each(function ($key, $field) use ($schema) {
             if (!$field instanceof FieldEntry) {
                 throw new FieldException(static::SCHEMA_MUST_CONTAIN_FIELDS);
             }
@@ -70,6 +78,16 @@ class EntryLayout extends Model
         return $schema;
     }
 
+    /**
+     *
+     * Get all entry layout
+     *
+     * @return void
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
     public function getAll()
     {
         $this->hasPermissions(true);
@@ -93,6 +111,23 @@ class EntryLayout extends Model
         return $this->createWithoutPermission($titles, $schema);
     }
 
+    public function updateSchemaConfig(string $fieldKey, array $toUpdate, string $fieldIndex = "0"): void
+    {
+        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex) {
+            if ($currentFieldKey === $fieldKey) {
+                $currentInput = $field->configs->get($fieldIndex)->toDbObject();
+                $inputClass = $field->configs->get($fieldIndex)::class;
+
+                foreach ($toUpdate as $key => $value) {
+                    $currentInput->configs[$key] = $value;
+                }
+
+                $input = new $inputClass(new LocaleField($currentInput->labels), ...$currentInput->configs);
+                $field->configs->pushKeyValue('0', $input);
+            }
+        });
+    }
+
     public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
     {
         $this->hasPermissions();
@@ -110,6 +145,8 @@ class EntryLayout extends Model
         }
         if ($schema) {
             // TODO Validate schema
+
+            $schema = $this->processSchemaOnStore($schema);
             $data->pushKeyValue('schema', $schema);
         }
 
@@ -150,7 +187,7 @@ class EntryLayout extends Model
      *
      * Process schema on fetch
      *
-     * @param  stdClass|array|null  $value
+     * @param stdClass|array|null $value
      * @return Collection
      */
     private function processSchemaOnFetch(stdClass|array|null $value): Collection
@@ -162,10 +199,9 @@ class EntryLayout extends Model
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
 
-        $schemaFromDb->each(function ($key, $value) use ($schema)
-        {
+        $schemaFromDb->each(function ($key, $value) use ($schema) {
             $valueParsed = FieldEntry::fromLayoutField($value);
-            $schema->pushKeyValue($key, $valueParsed);
+            $schema->pushKeyValue($key, $valueParsed->toLayoutField());
         });
 
         return $schema;
@@ -174,8 +210,7 @@ class EntryLayout extends Model
     private function processSchemaOnStore(Collection &$schema): Collection
     {
         $schemaForDb = Collection::init();
-        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb)
-        {
+        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb) {
             /**
              * @var LayoutField $layoutField
              */
@@ -189,8 +224,8 @@ class EntryLayout extends Model
      *
      * Create an entry layout
      *
-     * @param  LocaleField  $titles
-     * @param  Collection   $schema
+     * @param LocaleField $titles
+     * @param Collection $schema
      * @return EntryLayout
      * @throws DatabaseException
      * @throws EntryException
@@ -219,8 +254,8 @@ class EntryLayout extends Model
      *
      * Update an entry layout
      *
-     * @param  EntryLayout  $entryLayout
-     * @param  Collection   $data
+     * @param EntryLayout $entryLayout
+     * @param Collection $data
      * @return bool
      * @throws EntryException
      *
@@ -257,7 +292,7 @@ class EntryLayout extends Model
      *
      * Delete an entry layout to the trash
      *
-     * @param  EntryLayout  $entryLayout
+     * @param EntryLayout $entryLayout
      * @return bool
      * @throws EntryException
      *
@@ -286,7 +321,7 @@ class EntryLayout extends Model
      *
      * Delete an entry layout forever
      *
-     * @param  string|ObjectId  $entryLayoutId
+     * @param string|ObjectId $entryLayoutId
      * @return bool
      * @throws EntryException
      *

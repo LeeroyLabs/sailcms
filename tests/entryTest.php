@@ -73,24 +73,27 @@ test('Update an entry layout', function () {
         'titles.fr' => 'Test de disposition'
     ]);
 
-    $entryLayout->schema->each(function ($fieldKey, &$field) {
-        $currentInput = $field->configs->get('0')->toDbObject();
-        $inputClass = $field->configs->get('0')::class;
+    // key the first key
+    $fieldKey = $entryLayout->schema->keys()->unwrap()[0];
 
-        $currentInput->configs['max_length'] = 255;
+    $entryLayout->updateSchemaConfig($fieldKey, [
+        'max_length' => 255,
+        'min_length' => 10
+    ]);
 
-        $input = new $inputClass(new LocaleField($currentInput->labels), ...$currentInput->configs);
-        $field->configs->pushKeyValue('0', $input);
-    });
-
-//    try {
-//        $result = $model->updateById($entryLayout->_id, null, $entryLayout->schema);
-//        expect($result)->not->toBe(true);
-//    } catch (Exception $exception) {
+    try {
+        $result = $model->updateById($entryLayout->_id, null, $entryLayout->schema);
+        $updatedEntryLayout = $model->one([
+            '_id' => $entryLayout->_id
+        ]);
+        expect($result)->toBe(true);
+        expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.max_length"))->toBe(255);
+        expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.min_length"))->toBe(10);
+    } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
-//        expect(true)->toBe(false);
-//    }
+        expect(true)->toBe(false);
+    }
 });
 
 test('Failed to create an entry type because the handle is already in use', function () {

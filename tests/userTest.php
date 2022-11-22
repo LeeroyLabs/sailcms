@@ -5,14 +5,12 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Username;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     $_ENV['SITE_URL'] = 'http://localhost:8888';
     Sail::setAppState(Sail::STATE_CLI);
 });
 
-test('Create a user', function ()
-{
+test('Create a user', function () {
     $model = new User();
 
     $name = new Username('John', 'Doe', 'John Doe');
@@ -23,13 +21,12 @@ test('Create a user', function ()
         $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
         expect($id)->not->toBeEmpty();
     } catch (Exception $e) {
-        print_r($e->getMessage());
+//        print_r($e->getMessage());
         expect(true)->toBeFalse();
     }
 });
 
-test('Fail at creating a user with email already in use', function ()
-{
+test('Fail at creating a user with email already in use', function () {
     $model = new User();
 
     $name = new Username('John', 'Doe', 'John Doe');
@@ -44,8 +41,7 @@ test('Fail at creating a user with email already in use', function ()
     }
 });
 
-test('Fail at creating a user with an invalid email', function ()
-{
+test('Fail at creating a user with an invalid email', function () {
     $model = new User();
 
     $name = new Username('John', 'Doe', 'John Doe');
@@ -60,8 +56,7 @@ test('Fail at creating a user with an invalid email', function ()
     }
 });
 
-test('Fail at creating a user with an unsecure password', function ()
-{
+test('Fail at creating a user with an unsecure password', function () {
     $model = new User();
 
     $name = new Username('John', 'Doe', 'John Doe');
@@ -76,8 +71,7 @@ test('Fail at creating a user with an unsecure password', function ()
     }
 });
 
-test('Update user johndoe@leeroy.ca', function ()
-{
+test('Update user johndoe@leeroy.ca', function () {
     $model = new User();
     $user = $model->getByEmail('johndoe@leeroy.ca');
     $name = new Username('John', 'DoeDoe', 'John DoeDoe');
@@ -90,23 +84,20 @@ test('Update user johndoe@leeroy.ca', function ()
     }
 });
 
-test('Fetch a user by email', function ()
-{
+test('Fetch a user by email', function () {
     $model = new User();
     $user = $model->getByEmail('johndoe@leeroy.ca');
     expect($user)->not->toBe(null);
 });
 
-test('Fetch a user by email and his permissions', function ()
-{
+test('Fetch a user by email and his permissions', function () {
     $model = new User();
     $user = $model->getByEmail('johndoe@leeroy.ca');
 
     expect($user)->not->toBe(null)->and($user->permissions()->length)->not->toBe(0);
 });
 
-test('Check if user has flag "use2fa"', function ()
-{
+test('Check if user has flag "use2fa"', function () {
     $model = new User();
     $user = $model->getByEmail('johndoe@leeroy.ca');
 
@@ -115,8 +106,7 @@ test('Check if user has flag "use2fa"', function ()
     }
 });
 
-test('Set the flag "us2fa" to true', function ()
-{
+test('Set the flag "us2fa" to true', function () {
     $model = new User();
     $user = $model->getByEmail('johndoe@leeroy.ca');
 
@@ -126,20 +116,17 @@ test('Set the flag "us2fa" to true', function ()
     }
 })->group('db');
 
-test('Get list of user with flag "use2fa"', function ()
-{
+test('Get list of user with flag "use2fa"', function () {
     $users = User::flagged('use2fa');
     expect($users->length)->toBeGreaterThanOrEqual(1);
 });
 
-test('Get list of user without flag "use2fa"', function ()
-{
+test('Get list of user without flag "use2fa"', function () {
     $users = User::notFlagged('use2fa');
     expect($users->length)->toBeGreaterThanOrEqual(0);
 });
 
-test('Delete a user', function ()
-{
+test('Delete a user', function () {
     $model = new User();
 
     try {
@@ -150,8 +137,7 @@ test('Delete a user', function ()
     }
 });
 
-test('Create a user and delete it by the instance', function ()
-{
+test('Create a user and delete it by the instance', function () {
     $model = new User();
 
     $name = new Username('John', 'Doe', 'John Doe');
