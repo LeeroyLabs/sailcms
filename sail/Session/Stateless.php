@@ -96,7 +96,7 @@ class Stateless implements AppSession
 
         // Set cookie for token
         $expire = time() + setting('session.ttl', 21_600);
-        $domain = setting('session,jwt.domain', 'localhost');
+        $domain = setting('session.jwt.domain', 'localhost');
 
         setcookie('sc_jwt', $token, [
             'expires' => $expire,

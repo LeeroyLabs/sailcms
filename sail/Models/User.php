@@ -624,7 +624,6 @@ class User extends Model
      * @param  string  $password
      * @return bool
      * @throws DatabaseException
-     * @throws JsonException
      *
      */
     public function login(string $email, string $password): bool
