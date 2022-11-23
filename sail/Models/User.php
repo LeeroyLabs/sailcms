@@ -250,7 +250,7 @@ class User extends Model
             'name' => $name,
             'email' => $email,
             'status' => true,
-            'roles' => [],
+            'roles' => ['general-user'],
             'avatar' => $avatar,
             'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),

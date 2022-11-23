@@ -357,7 +357,7 @@ class Sail
                     $acls = $instance->permissions();
 
                     ACL::loadCustom($acls);
-
+                    
                     // load custom fields
 
                     // Run the command registration
@@ -444,6 +444,7 @@ class Sail
      * @throws DatabaseException
      * @throws FileException
      * @throws ACLException
+     * @throws PermissionException
      *
      */
     public static function initForCron(string $execPath): void
