@@ -11,8 +11,8 @@ class System
     public const RESERVED = [
         'role',
         'user',
-        'entry_type',
-        'entry_type_layout',
+        'entrytype',
+        'entrylayout',
         'asset',
         'emails',
         'categories',
@@ -33,8 +33,8 @@ class System
             // Entry
             new ACL('EntryType', ACLType::READ_WRITE),
             new ACL('EntryType', ACLType::READ),
-            new ACL('EntryTypeLayout', ACLType::READ_WRITE),
-            new ACL('EntryTypeLayout', ACLType::READ),
+            new ACL('EntryLayout', ACLType::READ_WRITE),
+            new ACL('EntryLayout', ACLType::READ),
 
             // Assets
             new ACL('Asset', ACLType::READ_WRITE),

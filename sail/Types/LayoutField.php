@@ -1,10 +1,9 @@
 <?php
 
-namespace SailCMS\Types\Fields;
+namespace SailCMS\Types;
 
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
-use SailCMS\Types\LocaleField;
 use stdClass;
 
 class LayoutField implements DatabaseType

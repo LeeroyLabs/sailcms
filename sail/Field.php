@@ -33,7 +33,7 @@ class Field
     {
         $fieldList = Collection::init();
         $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
-        // TODO store fields...
+        // TODO put fields in a collection
         return Collection::init();
     }
 }

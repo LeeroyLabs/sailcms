@@ -6,7 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Errors\FieldException;
 use SailCMS\Text;
 use SailCMS\Types\Fields\Field as FieldType;
-use SailCMS\Types\Fields\LayoutField;
+use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
