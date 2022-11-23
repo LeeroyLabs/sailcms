@@ -866,6 +866,7 @@ abstract class Model implements JsonSerializable
     protected function hasPermissions(bool $read = false): void
     {
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
+        
         if ($read) {
             if (!ACL::hasPermission(User::$currentUser, ACL::read($this->_permissionGroup))) {
                 throw new PermissionException($errorMsg, 0403);

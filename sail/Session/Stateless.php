@@ -22,6 +22,7 @@ use Lcobucci\JWT\Validation\Validator;
 class Stateless implements AppSession
 {
     private Builder $builder;
+    private string $token = '';
 
     /**
      *
@@ -154,14 +155,18 @@ class Stateless implements AppSession
         $isValid = $this->validate();
 
         if ($isValid) {
-            $cookie = $_COOKIE['sc_jwt'] ?? '';
+            $token = $_COOKIE['sc_jwt'] ?? '';
 
-            if (empty($cookie)) {
+            if (empty($token)) {
+                $token = $this->token;
+            }
+
+            if (empty($token)) {
                 return '';
             }
 
             $parser = new Parser(new JoseEncoder());
-            $token = $parser->parse($cookie);
+            $token = $parser->parse($token);
 
             return $token->claims()->get('sub') ?? '';
         }
@@ -184,6 +189,7 @@ class Stateless implements AppSession
         // Cookie is empty, check header instead
         if (empty($cookie)) {
             $cookie = getallheaders()['x-access-token'] ?? '';
+            $this->token = $cookie;
         }
 
         if (empty($cookie)) {
