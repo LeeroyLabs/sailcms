@@ -140,7 +140,7 @@ test('Create an entry with an entry type', function () {
 });
 
 test('Get homepage entry', function () {
-    $entry = Entry::getHomepage(true);
+    $entry = Entry::getHomepage(Sail::siteId(), true);
 
     expect($entry->title)->toBe('Test');
 });
@@ -148,10 +148,15 @@ test('Get homepage entry', function () {
 test('Update an entry type', function () {
     $model = new EntryType();
 
+    $entryLayout = (new EntryLayout())->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
     try {
         $result = $model->updateByHandle('test', new Collection([
             'title' => 'Test Pages',
-            'url_prefix' => 'test-pages'
+            'url_prefix' => 'test-pages',
+            'entry_layout_id' => $entryLayout->_id
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
@@ -288,7 +293,7 @@ test('Hard delete an entry with an entry type', function () {
     ]);
 
     try {
-        $result = $entryModel->delete($entry->_id, false);
+        $result = $entryModel->delete($entry->_id, Sail::siteId(), false);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
         // print_r($exception->getMessage());
@@ -303,7 +308,7 @@ test('Hard delete an entry with an entry type 2', function () {
     ]);
 
     try {
-        $result = $entryModel->delete($entry->_id, false);
+        $result = $entryModel->delete($entry->_id, Sail::siteId(), false);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
@@ -336,10 +341,25 @@ test('Hard Delete an entry with the default type', function () {
     ]);
 
     try {
-        $result = $entry->delete($entry->_id, false);
+        $result = $entry->delete($entry->_id, Sail::siteId(), false);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
+    }
+});
+
+test('Fail to delete an entry layout because it is used', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $result = $model->delete($entryLayout->_id);
+        expect($result)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+        expect($exception->getMessage())->toBe(EntryLayout::SCHEMA_IS_USED);
     }
 });
 
@@ -357,6 +377,24 @@ test('Delete an entry type', function () {
     expect($entryType)->toBe(null);
 });
 
+test('Soft delete an entry layout', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $result = $model->delete($entryLayout->_id);
+        $deletedEntryLayout = $model->one([
+            'titles.fr' => 'Test de disposition'
+        ]);
+        expect($result)->toBe(true);
+        expect($deletedEntryLayout->is_trashed)->toBe(true);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
 test('Hard delete an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
@@ -372,7 +410,7 @@ test('Hard delete an entry layout', function () {
 });
 
 test('Fail to get homepage entry', function () {
-    $entry = Entry::getHomepage(true);
+    $entry = Entry::getHomepage(Sail::siteId(), true);
 
     expect($entry)->toBe(null);
 });

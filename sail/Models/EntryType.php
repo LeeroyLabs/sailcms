@@ -343,7 +343,7 @@ class EntryType extends Model
      */
     private function getCollectionName(string $handle): string
     {
-        return Text::snakeCase(Text::deburr(Text::pluralize($handle)[0]));
+        return Text::snakeCase(Text::deburr(Text::pluralize($handle)));
     }
 
     /**
@@ -373,7 +373,7 @@ class EntryType extends Model
                 'handle' => $handle,
                 'title' => $title,
                 'url_prefix' => $url_prefix,
-                'entry_layout_id' => $entry_layout_id
+                'entry_layout_id' => $entry_layout_id ? (string)$entry_layout_id : null
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -415,7 +415,7 @@ class EntryType extends Model
             $update['url_prefix'] = $url_prefix;
         }
         if ($entry_layout_id) {
-            $update['entry_layout_id'] = $entry_layout_id;
+            $update['entry_layout_id'] = (string)$entry_layout_id;
         }
 
         try {

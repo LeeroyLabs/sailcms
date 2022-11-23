@@ -58,7 +58,7 @@ class Entry extends Model
      *
      *  Get the model according to the collection
      *
-     * @param  string  $collection
+     * @param string $collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -97,7 +97,7 @@ class Entry extends Model
      *
      * Fields for entry
      *
-     * @param  bool  $fetchAllFields
+     * @param bool $fetchAllFields
      * @return string[]
      *
      */
@@ -137,8 +137,7 @@ class Entry extends Model
         $entryTypes = EntryType::getAll();
         $entries = Collection::init();
 
-        $entryTypes->each(function ($key, $value) use (&$entries)
-        {
+        $entryTypes->each(function ($key, $value) use (&$entries) {
             /**
              * @var EntryType $value
              */
@@ -156,7 +155,7 @@ class Entry extends Model
      *
      * Get homepage
      *
-     * @param  bool  $getEntry
+     * @param bool $getEntry
      * @return array|object|null
      * @throws ACLException
      * @throws DatabaseException
@@ -167,12 +166,14 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public static function getHomepage(bool $getEntry = false): array|object|null
+    public static function getHomepage(string $siteId = null, bool $getEntry = false): array|object|null
     {
+        $siteId = $siteId ?? Sail::siteId();
+
         $homepageConfig = Config::getByName(static::HOMEPAGE_CONFIG_HANDLE);
 
         if ($getEntry) {
-            $currentSiteHomepage = $homepageConfig->config->{Sail::siteId()} ?? null;
+            $currentSiteHomepage = $homepageConfig->config->{$siteId} ?? null;
             if (!$currentSiteHomepage) {
                 return null;
             }
@@ -188,8 +189,8 @@ class Entry extends Model
      *
      * Find a content by the url
      *
-     * @param  string  $url
-     * @param  bool    $fromRequest
+     * @param string $url
+     * @param bool $fromRequest
      * @return Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -204,8 +205,7 @@ class Entry extends Model
         $request = $fromRequest ? new Request() : null;
         $content = null;
 
-        $availableTypes->each(function ($key, $value) use ($url, $request, &$content)
-        {
+        $availableTypes->each(function ($key, $value) use ($url, $request, &$content) {
             // We already have it, stop!
             if ($content !== null) {
                 return;
@@ -252,12 +252,12 @@ class Entry extends Model
      *
      * Get a validated slug that is not already existing in the db
      *
-     * @param  string           $url_prefix
-     * @param  string           $slug
-     * @param  string           $site_id
-     * @param  string           $locale
-     * @param  string|null      $currentId
-     * @param  Collection|null  $availableTypes
+     * @param string $url_prefix
+     * @param string $slug
+     * @param string $site_id
+     * @param string $locale
+     * @param string|null $currentId
+     * @param Collection|null $availableTypes
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -284,8 +284,7 @@ class Entry extends Model
         if (!$availableTypes) {
             $availableTypes = EntryType::getAll();
         }
-        $availableTypes->each(function ($key, $value) use ($filters, &$found)
-        {
+        $availableTypes->each(function ($key, $value) use ($filters, &$found) {
             // We already find one no need to continue the search
             if ($found > 0) {
                 return;
@@ -348,7 +347,7 @@ class Entry extends Model
      *
      * Get an entry with filters
      *
-     * @param  array  $filters
+     * @param array $filters
      * @return Entry|null
      * @throws DatabaseException
      *
@@ -366,7 +365,7 @@ class Entry extends Model
      *
      * Get the count according to given filters
      *
-     * @param  array  $filters
+     * @param array $filters
      * @return int
      *
      */
@@ -380,9 +379,9 @@ class Entry extends Model
      * Get all entries of the current type
      *  with filtering and pagination
      *
-     * @param  Collection|null  $filters
-     * @param  int|null         $limit
-     * @param  int|null         $offset
+     * @param Collection|null $filters
+     * @param int|null $limit
+     * @param int|null $offset
      * @return Collection
      * @throws DatabaseException
      *
@@ -399,7 +398,7 @@ class Entry extends Model
      * Count entries for the current entry type
      *  (according to the __construct method)
      *
-     * @param  EntryStatus|string|null  $status
+     * @param EntryStatus|string|null $status
      * @return int
      *
      */
@@ -427,12 +426,12 @@ class Entry extends Model
      *      - content default empty Collection
      *
      *
-     * @param  bool                $is_homepage
-     * @param  string              $locale
-     * @param  EntryStatus|string  $status
-     * @param  string              $title
-     * @param  string|null         $slug
-     * @param  array|Collection    $optionalData
+     * @param bool $is_homepage
+     * @param string $locale
+     * @param EntryStatus|string $status
+     * @param string $title
+     * @param string|null $slug
+     * @param array|Collection $optionalData
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -463,10 +462,12 @@ class Entry extends Model
             $data->merge(new Collection($optionalData));
         }
 
+        $siteId = $data->get('site_id', Sail::siteId());
+
         $entry = $this->createWithoutPermission($data);
 
         if ($is_homepage) {
-            $entry->setAsHomepage();
+            $entry->setAsHomepage($siteId);
         }
 
         return $entry;
@@ -476,8 +477,8 @@ class Entry extends Model
      *
      * Update an entry with a given entry id or entry instance
      *
-     * @param  Entry|string      $entry
-     * @param  array|Collection  $data
+     * @param Entry|string $entry
+     * @param array|Collection $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -498,20 +499,21 @@ class Entry extends Model
         if (is_array($data)) {
             $data = new Collection($data);
         }
+        $siteId = $data->get('site_id', Sail::siteId());
 
         $updateResult = $this->updateWithoutPermission($entry, $data);
 
         // Update homepage if needed
         if ($updateResult) {
             $is_homepage = $data->get('homepage');
-            $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages->{Sail::siteId()} ?? false;
+            $currentHomepages = Entry::getHomepage($siteId);
+            $currentHomepage = $currentHomepages->{$siteId} ?? false;
             if ($currentHomepage) {
                 if ($is_homepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
-                    $entry->setAsHomepage();
+                    $entry->setAsHomepage($siteId);
                 } else {
                     if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
-                        $this->emptyHomepage($currentHomepages);
+                        $this->emptyHomepage($currentHomepages, $siteId);
                     }
                 }
             }
@@ -524,7 +526,7 @@ class Entry extends Model
      *
      * Update entries url according to an url prefix (normally comes from entry type)
      *
-     * @param  string  $url_prefix
+     * @param string $url_prefix
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -537,8 +539,7 @@ class Entry extends Model
         $entries = $this->all();
 
         // TODO can we do that in batches...
-        $entries->each(function ($key, $value) use ($url_prefix)
-        {
+        $entries->each(function ($key, $value) use ($url_prefix) {
             /**
              * @var Entry $value
              */
@@ -552,8 +553,8 @@ class Entry extends Model
      *
      * Delete an entry in soft mode or definitively
      *
-     * @param  string|ObjectId  $entryId
-     * @param  bool             $soft
+     * @param string|ObjectId $entryId
+     * @param bool $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -564,9 +565,10 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function delete(string|ObjectId $entryId, bool $soft = true): bool
+    public function delete(string|ObjectId $entryId, string $siteId = null, bool $soft = true): bool
     {
         $this->hasPermissions();
+
 
         if ($soft) {
             $entry = $this->findById($entryId);
@@ -576,11 +578,12 @@ class Entry extends Model
         }
 
         // Update homepage if needed
+        $siteId = $siteId ?? Sail::siteId();
         if ($result) {
             $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages->{Sail::siteId()} ?? false;
+            $currentHomepage = $currentHomepages->{$siteId} ?? false;
             if ($currentHomepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
-                $this->emptyHomepage($currentHomepages);
+                $this->emptyHomepage($currentHomepages, $siteId);
             }
         }
 
@@ -591,8 +594,8 @@ class Entry extends Model
      *
      * Process authors and dates fields
      *
-     * @param  string  $field
-     * @param  mixed   $value
+     * @param string $field
+     * @param mixed $value
      * @return mixed
      *
      */
@@ -628,7 +631,7 @@ class Entry extends Model
      * Validate that status is not thrash
      *  because the only to set it to trash is in the delete method
      *
-     * @param  EntryStatus|string  $status
+     * @param EntryStatus|string $status
      * @return void
      * @throws EntryException
      *
@@ -655,6 +658,7 @@ class Entry extends Model
      *
      * Set the current entry has homepage
      *
+     * @param string|null $siteId
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -662,10 +666,12 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    private function setAsHomepage(): void
+    private function setAsHomepage(string $siteId = null): void
     {
+        $siteId = $siteId ?? Sail::siteId();
+
         Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, [
-            Sail::siteId() => [
+            $siteId => [
                 static::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
                 static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
             ]
@@ -676,7 +682,8 @@ class Entry extends Model
      *
      * Empty the homepage for the current site
      *
-     * @param  object|array  $currentConfig
+     * @param object|array $currentConfig
+     * @param string|null $siteId
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -684,9 +691,11 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    private function emptyHomepage(object|array $currentConfig): void
+    private function emptyHomepage(object|array $currentConfig, string $siteId = null): void
     {
-        $currentConfig->{Sail::siteId()} = null;
+        $siteId = $siteId ?? Sail::siteId();
+
+        $currentConfig->{$siteId} = null;
         Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
     }
 
@@ -694,7 +703,7 @@ class Entry extends Model
      *
      * Create an entry
      *
-     * @param  Collection  $data
+     * @param Collection $data
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -774,8 +783,8 @@ class Entry extends Model
      *
      * Update an entry
      *
-     * @param  Entry       $entry
-     * @param  Collection  $data
+     * @param Entry $entry
+     * @param Collection $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -804,8 +813,7 @@ class Entry extends Model
             static::validateStatus($data->get('status'));
         }
 
-        $data->each(function ($key, $value) use (&$update)
-        {
+        $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
@@ -831,7 +839,7 @@ class Entry extends Model
      *
      * Put an entry in the trash
      *
-     * @param  Entry  $entry
+     * @param Entry $entry
      * @return bool
      * @throws EntryException
      *

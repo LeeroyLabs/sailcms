@@ -9,17 +9,31 @@ use stdClass;
 
 abstract class Field implements DatabaseType
 {
-    /* ERRORS */
+    /* Errors */
     const INVALID_VALUE_FOR_TYPE = 'Invalid value %s for %s';
 
+    /**
+     *
+     * Structure to replicate an html input
+     *
+     * @param LocaleField $labels
+     * @param bool $required
+     *
+     */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool $required = false
-    ) {
+        public readonly bool        $required = false
+    )
+    {
     }
 
     /**
+     *
+     * For storing in the database
+     *  > IMPORTANT : the settings must be regrouped in a configs array
+     *
      * @return stdClass
+     *
      */
     public function toDBObject(): stdClass
     {
@@ -31,12 +45,19 @@ abstract class Field implements DatabaseType
         ];
     }
 
+    /**
+     *
+     * Validate settings before the schema creation in an entry layout
+     *
+     * @param Collection|array|null $settings
+     * @return Collection
+     *
+     */
     public static function validateSettings(Collection|array|null $settings): Collection
     {
         $validSettings = Collection::init();
-        
-        static::availableProperties()->each(function ($key, $inputType) use ($settings, $validSettings)
-        {
+
+        static::availableProperties()->each(function ($key, $inputType) use ($settings, $validSettings) {
             /**
              * @var Input $inputType
              */
@@ -53,21 +74,42 @@ abstract class Field implements DatabaseType
         return $validSettings;
     }
 
-    // Must defined default settings
+    /**
+     *
+     * Must defined default settings
+     *
+     * @return Collection
+     *
+     */
     abstract public static function defaultSettings(): Collection;
 
-    // Name + type + possible values (choices)
+    /**
+     *
+     * Must define the available properties
+     *
+     * @return Collection
+     *
+     */
     abstract public static function availableProperties(): Collection;
 
     // To validate the field, return an error collection
+
+    /**
+     *
+     * Validate the input from a given content
+     *
+     * @param mixed $content
+     * @return Collection
+     *
+     */
     abstract public function validate(mixed $content): Collection;
 
     /**
      *
      * Valid a value by Field types
      *
-     * @param  string  $type
-     * @param  mixed   $value
+     * @param string $type
+     * @param mixed $value
      * @return bool
      *
      */

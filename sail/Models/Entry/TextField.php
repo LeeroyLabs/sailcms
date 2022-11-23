@@ -7,6 +7,13 @@ use SailCMS\Types\Fields\InputTextField;
 
 class TextField extends Field
 {
+    /**
+     *
+     * Sets the default settings from the input text field
+     *
+     * @return Collection
+     *
+     */
     public function defaultSettings(): Collection
     {
         return new Collection([
@@ -14,6 +21,12 @@ class TextField extends Field
         ]);
     }
 
+    /**
+     *
+     * The text field contain only an input text field
+     *
+     * @return void
+     */
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
@@ -21,6 +34,14 @@ class TextField extends Field
         ]);
     }
 
+    /**
+     *
+     * There is nothing extra to validate for the text field
+     *
+     * @param Collection $content
+     * @return Collection|null
+     *
+     */
     protected function validate(Collection $content): ?Collection
     {
         // Nothing to implement

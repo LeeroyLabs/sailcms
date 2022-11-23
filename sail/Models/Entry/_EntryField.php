@@ -10,9 +10,10 @@ use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\EntryType;
 
+// TODO make the entry field
 class EntryField extends Field
 {
-    /* ERRORS */
+    /* Error */
     const ENTRY_DOES_NOT_EXISTS = 'Entry of %s type does not exists.';
 
     protected function defineSchema(): void
@@ -32,14 +33,16 @@ class EntryField extends Field
      *
      *
      *
-     * @return void
+     * @param Collection $content
+     * @return Collection|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException|FieldException
+     * @throws FieldException
+     * @throws PermissionException
      *
      */
-    protected function validate(): void
+    protected function validate(Collection $content): ?Collection
     {
         $entryId = $this->content->get('entry_id');
         $entryTypeHandle = $this->content->get('entry_type_handle');
@@ -48,5 +51,15 @@ class EntryField extends Field
         if ($entryModel->getCount(['_id' => $entryId]) != 1) {
             throw new FieldException(sprintf(static::ENTRY_DOES_NOT_EXISTS, $entryTypeHandle));
         }
+    }
+
+    public function defaultSettings(): Collection
+    {
+        // TODO: Implement defaultSettings() method.
+    }
+
+    protected function defineBaseConfigs(): void
+    {
+        // TODO: Implement defineBaseConfigs() method.
     }
 }
