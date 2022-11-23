@@ -252,7 +252,7 @@ class Mail
 
         if ($template) {
             $settings = setting('emails', []);
-
+            
             if (is_array($context)) {
                 $context = new Collection($context);
             }
@@ -277,10 +277,10 @@ class Mail
 
             // cta_link is present and verification_code. Replace {code} in link for code
             if ($context->get('verification_code', null) !== null) {
-                $superContext['cta_link'] = str_replace(
+                $superContext->cta_link = str_replace(
                     '{code}',
                     $context->get('verification_code', ''),
-                    $superContext['cta_link']
+                    $superContext->get('cta_link')
                 );
             }
 

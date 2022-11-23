@@ -43,8 +43,8 @@ type Query {
 
 type Mutation {
     # Users
-    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!): Boolean!
-    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!): Boolean!
+    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String): Boolean!
+    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): Boolean!
     updateUser(id: ID!, name: UserMetaInput, email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput): Boolean!
     deleteUser(id: ID!): Boolean!
     validateAccount(code: String!): Boolean!
