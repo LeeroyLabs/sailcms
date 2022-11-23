@@ -40,7 +40,7 @@ class InputTextField extends Field
         return new Collection([
             'required' => false,
             'max_length' => 0,
-            'minLength' => 0
+            'min_length' => 0
         ]);
     }
 
