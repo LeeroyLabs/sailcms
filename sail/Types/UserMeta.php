@@ -29,7 +29,11 @@ class UserMeta implements DatabaseType
 
     public function __construct(object $object)
     {
-        foreach ($object->unwrap() as $key => $value) {
+        if (get_class($object) === Collection::class) {
+            $object = $object->unwrap();
+        }
+
+        foreach ($object as $key => $value) {
             if (is_array($value)) {
                 $this->{$key} = (object)$value;
             } else {
