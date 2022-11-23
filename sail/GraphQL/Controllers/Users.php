@@ -152,20 +152,22 @@ class Users
      * @param  Collection  $args
      * @param  Context     $context
      * @return bool
+     * @throws ACLException
      * @throws DatabaseException
-     * @throws FileException
+     * @throws PermissionException
      *
      */
     public function createUser(mixed $obj, Collection $args, Context $context): bool
     {
         $user = new User();
-
         $name = Username::initWith($args->get('name'));
-        $meta = ($args->get('meta')) ? new UserMeta($args->get('meta')) : null;
+        $meta = ($args->get('meta')) ? new UserMeta($args->get('meta', Collection::init())) : null;
+
         $id = $user->createRegularUser(
             $name,
             $args->get('email'),
             $args->get('password'),
+            $args->get('locale', 'en'),
             $args->get('avatar', ''),
             $meta
         );
@@ -197,6 +199,7 @@ class Users
             $args->get('email'),
             '', // no password for admins
             $args->get('roles', []),
+            $args->get('locale', 'en'),
             $args->get('avatar', ''),
             $meta
         );

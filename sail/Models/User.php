@@ -10,6 +10,7 @@ use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\EmailException;
@@ -199,13 +200,10 @@ class User extends Model
      * @param  string  $email
      * @return User|null
      * @throws DatabaseException
-     * @throws PermissionException
-     * @throws ACLException
      *
      */
     public function getByEmail(string $email): ?User
     {
-        $this->hasPermissions(true);
         return $this->findOne(['email' => $email])->exec();
     }
 
@@ -221,7 +219,6 @@ class User extends Model
      * @param  UserMeta|null  $meta
      * @return string
      * @throws DatabaseException
-     * @throws FileException
      * @throws ACLException
      * @throws PermissionException
      *
