@@ -129,8 +129,8 @@ class EntryLayout extends Model
     {
         $this->hasPermissions();
 
-        // TODO Validate schema
-        // TODO Validate titles
+        // Schema preparation
+        static::validateSchema($schema);
         $schema = $this->processSchemaOnStore($schema);
 
         return $this->createWithoutPermission($titles, $schema);
@@ -142,15 +142,15 @@ class EntryLayout extends Model
      * > The field key is generated at the entry layout creation with the Models\Entry\Field->generateKey method
      * > The to update array keys must be property of the Input type of the field index, if not there will be an error
      * > The field index is the index according to the baseConfigs of a Models\Entry\Field class,
-     *      ¬ normally the Field class has only one element, but more complex can have many field
+     *      ¬ normally the Field class has only one element, but more complex ones can have many fields
      *
      * @param string $fieldKey
      * @param array $toUpdate
-     * @param string $fieldIndex
+     * @param int $fieldIndex
      * @return void
      *
      */
-    public function updateSchemaConfig(string $fieldKey, array $toUpdate, string $fieldIndex = "0"): void
+    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0): void
     {
         $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex) {
             if ($currentFieldKey === $fieldKey) {
@@ -191,13 +191,13 @@ class EntryLayout extends Model
         }
 
         $data = Collection::init();
+
         if ($titles) {
-            // TODO Validate titles
             $data->pushKeyValue('titles', $titles);
         }
-        if ($schema) {
-            // TODO Validate schema
 
+        if ($schema) {
+            static::validateSchema($schema);
             $schema = $this->processSchemaOnStore($schema);
             $data->pushKeyValue('schema', $schema);
         }
@@ -259,6 +259,15 @@ class EntryLayout extends Model
             'dates' => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
         };
+    }
+
+    private static function validateSchema(Collection $schema)
+    {
+        $schema->each(function ($key, $value) {
+            if (!$value instanceof LayoutField) {
+                throw new EntryException('TODO');
+            }
+        });
     }
 
     /**
