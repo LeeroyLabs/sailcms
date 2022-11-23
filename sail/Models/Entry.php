@@ -155,6 +155,7 @@ class Entry extends Model
      *
      * Get homepage
      *
+     * @param string|null $siteId
      * @param bool $getEntry
      * @return array|object|null
      * @throws ACLException
@@ -379,18 +380,18 @@ class Entry extends Model
      * Get all entries of the current type
      *  with filtering and pagination
      *
-     * @param Collection|null $filters
+     * @param ?array $filters
      * @param int|null $limit
      * @param int|null $offset
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function all(?Collection $filters = null, ?int $limit = 0, ?int $offset = 0): Collection
+    public function all(?array $filters = [], ?int $limit = 0, ?int $offset = 0): Collection
     {
         // Filters available date, author, category, status
 
-        return new Collection($this->find([])->exec());
+        return new Collection($this->find($filters)->exec());
     }
 
     /**
@@ -554,6 +555,7 @@ class Entry extends Model
      * Delete an entry in soft mode or definitively
      *
      * @param string|ObjectId $entryId
+     * @param string|null $siteId
      * @param bool $soft
      * @return bool
      * @throws ACLException

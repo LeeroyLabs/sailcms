@@ -19,9 +19,9 @@ class Entries
     /**
      * Get all entry types
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -37,9 +37,9 @@ class Entries
     /**
      * Get an entry type by id or by his handle
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
@@ -72,9 +72,9 @@ class Entries
      *
      * Create entry type
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return EntryType
      * @throws DatabaseException
      * @throws EntryException
@@ -97,9 +97,9 @@ class Entries
      *
      * Update an entry type by handle
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -116,11 +116,11 @@ class Entries
 
     /**
      *
+     * Delete an entry type
      *
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -139,9 +139,9 @@ class Entries
      *
      * Get all entries of all types
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -160,9 +160,9 @@ class Entries
      *
      * Get an entry by id (MUST TESTS)
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -183,11 +183,10 @@ class Entries
     /**
      *
      * Create an entry and return it
-     *   TODO support site_id ?
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -210,6 +209,7 @@ class Entries
         $slug = $args->get('slug');
         $categories = $args->get('categories');
         $content = $args->get('content');
+        $site_id = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
@@ -217,7 +217,8 @@ class Entries
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
-            'content' => $content
+            'content' => $content,
+            'site_id' => $site_id
         ]);
     }
 
@@ -225,9 +226,9 @@ class Entries
      *
      * Update an entry
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -252,9 +253,9 @@ class Entries
      *
      * Delete an entry
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -270,10 +271,11 @@ class Entries
         $id = $args->get('id');
         $entry_type_handle = $args->get('entry_type_handle');
         $soft = $args->get('soft', true);
+        $site_id = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
-        return $entryModel->delete($id, $soft);
+        return $entryModel->delete($id, $site_id, $soft);
     }
 
     /**
@@ -281,7 +283,7 @@ class Entries
      * According to the given entry type handle return the Entry Model
      *  - if entry type handle is null, return the default entry type
      *
-     * @param  ?string  $entry_type_handle
+     * @param  ?string $entry_type_handle
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException

@@ -13,15 +13,22 @@ use SailCMS\Text;
 
 class EntryType extends Model
 {
-    /* errors */
+    /* Errors */
     const HANDLE_MISSING = "You must set the entry type handle in your data";
     const HANDLE_ALREADY_EXISTS = "Handle already exists";
+    const HANDLE_USE_RESERVED_WORD = "The %s word is reserved to create an entry type";
     const TITLE_MISSING = "You must set the entry type title in your data";
     const CANNOT_DELETE = "You must emptied all related entries before deleting an entry type";
     const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = "Exception when %s an entry type";
 
     const ACL_HANDLE = "entrytype";
+
+    const RESERVED_WORDS_FOR_HANDLE = [
+        'entry', 'entries', 'entry_type', 'entry_types', 'entry_layout', 'entry_layouts', 'user', 'users', 'category',
+        'categories', 'asset', 'assets', 'config', 'configs', 'log', 'logs', 'tfa_data', 'role', 'roles', 'email',
+        'emails', 'csrf'
+    ];
 
     /* default entry type */
     private const _DEFAULT_HANDLE = "page";
@@ -326,11 +333,15 @@ class EntryType extends Model
      */
     private function checkHandle(string $handle): void
     {
+        // Check in reserved word for handle
+        if (in_array($handle, static::RESERVED_WORDS_FOR_HANDLE)) {
+            throw new EntryException(sprintf(static::HANDLE_USE_RESERVED_WORD, $handle));
+        }
+
         // Check everytime if the handle is already exists
         if ($this->getByHandle($handle) !== null) {
             throw new EntryException(static::HANDLE_ALREADY_EXISTS);
         }
-        // TODO reserved word
     }
 
     /**
