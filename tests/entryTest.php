@@ -39,6 +39,18 @@ test('Create an entry type', function () {
     }
 });
 
+test('Fail to create an entry type because the handle use a reserved word', function () {
+    $model = new EntryType();
+
+    try {
+        $id = $model->create('entry', 'Entry', 'entry', null, false);
+        expect(true)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+        expect($exception->getMessage())->toBe(sprintf(EntryType::HANDLE_USE_RESERVED_WORD, 'entry'));
+    }
+});
+
 test('Create an entry layout', function () {
     $model = new EntryLayout();
 
