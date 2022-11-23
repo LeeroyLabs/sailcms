@@ -191,7 +191,7 @@ type Entry {
     parent: Parent
     site_id: String!
     locale: String!
-    alternates: [String]!
+    alternates: [Alternates]!
     is_homepage: Boolean
     status: EntryStatus
     title: String!
@@ -214,6 +214,11 @@ enum EntryStatus {
     live
     inactive
     trash
+}
+
+type Alternates {
+    locale: String!
+    entry: ID!
 }
 
 type Authors {

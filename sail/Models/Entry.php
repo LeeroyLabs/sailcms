@@ -6,6 +6,7 @@ use JetBrains\PhpStorm\Pure;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
+use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
@@ -23,7 +24,7 @@ use SodiumException;
 
 class Entry extends Model
 {
-    // TODO Add caching
+    // TODO Add caching for queries with filters
 
     /* Homepage config */
     const HOMEPAGE_CONFIG_HANDLE = 'homepage';
@@ -129,7 +130,7 @@ class Entry extends Model
 
     /**
      *
-     * Get all entries of all types // NO!!!!!!
+     * Get all entries of all types // NO!!!!!! todo by entry type handle
      *
      * @return Collection
      * @throws ACLException
@@ -159,7 +160,7 @@ class Entry extends Model
 
     /**
      *
-     * Get homepage
+     * Get homepage // TODO make it by site then locale too
      *
      * @param string|null $siteId
      * @param bool $getEntry
@@ -187,7 +188,7 @@ class Entry extends Model
 
             $entryModel = EntryType::getEntryModelByHandle($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
 
-            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl');
+            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
             return $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
         }
         return $homepageConfig->config;
@@ -225,7 +226,7 @@ class Entry extends Model
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl');
+                $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
                 $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(static::FIND_BY_URL_CACHE . $url, $cache_ttl);
 
                 $preview = false;
@@ -364,7 +365,7 @@ class Entry extends Model
     public function one(array $filters): Entry|null
     {
         if (isset($filters['_id'])) {
-            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl');
+            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
             return $this->findById($filters['_id'])->exec(static::ONE_CACHE_BY_ID . $filters['_id'], $cache_ttl);
         }
 
@@ -400,12 +401,12 @@ class Entry extends Model
     {
         // TODO Filters available date, author, category, status
 
-        
+
         $cache_key = null;
         $cache_ttl = null;
         if (count($filters) === 0) {
             $cache_key = static::ENTRY_BY_HANDLE_ALL . $this->entryType->handle;
-            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl');
+            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
         }
 
         $result = $this->find($filters)->exec($cache_key, $cache_ttl);
