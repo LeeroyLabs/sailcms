@@ -147,7 +147,7 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
-     * Push a new element at the end of the static
+     * Push a new element at the end of the collection
      *
      * @param  mixed  $element
      * @return $this
@@ -211,7 +211,7 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
-     * Add an element to the beginning of the static
+     * Add an element to the beginning of the collection
      *
      * @param  mixed  $element
      * @return $this
@@ -224,7 +224,7 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
-     * Add an element to associative static with given key
+     * Add an element to associative collection with given key
      *
      * @param  string  $key
      * @param  mixed   $element
@@ -252,7 +252,7 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
-     * Get a slice of the static
+     * Get a slice of the collection
      *
      * @param  int  $start
      * @param  int  $end
@@ -375,7 +375,7 @@ class Collection implements \JsonSerializable, \Iterator
 
     /**
      *
-     * Remove part of a collection or replace it with something else
+     * Remove part of a collection
      *
      * @param  int       $offset
      * @param  int|null  $length
@@ -386,6 +386,7 @@ class Collection implements \JsonSerializable, \Iterator
     {
         $copy = $this->_internal;
         $new = array_splice($copy, $offset, $length);
+        $this->_internal = $copy;
 
         return new Collection($new);
     }
@@ -517,10 +518,11 @@ class Collection implements \JsonSerializable, \Iterator
      * Reduce the static to a single value
      *
      * @param  callable  $callback
+     * @param  mixed     $initial
      * @return int
      *
      */
-    public function reduce(callable $callback): int
+    public function reduce(callable $callback, mixed $initial): int
     {
         return array_reduce($this->_internal, $callback);
     }

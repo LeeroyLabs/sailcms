@@ -693,7 +693,6 @@ class Sail
             $maxAge = setting('cors.maxAge', 86_400);
 
             header("Access-Control-Allow-Origin: {$origins}");
-            header("Access-Control-Allow-Credentials: {$creds}");
             header("Access-Control-Max-Age: {$maxAge}");
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
