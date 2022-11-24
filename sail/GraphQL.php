@@ -251,18 +251,18 @@ class GraphQL
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterMutation, data: $serializableResult));
             }
 
-//            if ($errors) {
-//                foreach ($errors as $error) {
-//                    $mresult->data->errors = [
-//                        'message' => $error->getMessage(),
-//                        'extensions' => ['category' => 'internal'],
-//                        'locations' => [['line' => $error->getLine(), 'column' => 1]],
-//                        'file' => $error->getFile(),
-//                        'stack' => debug_backtrace(),
-//                        'path' => ['']
-//                    ];
-//                }
-//            }
+            if ($errors) {
+                foreach ($errors as $error) {
+                    $mresult->data->errors[] = [
+                        'message' => $error->getMessage(),
+                        'extensions' => ['category' => 'internal'],
+                        'locations' => [['line' => $error->getLine(), 'column' => 1]],
+                        'file' => $error->getFile(),
+                        'stack' => debug_backtrace(),
+                        'path' => ['']
+                    ];
+                }
+            }
 
             return $mresult->data;
         } catch (InvariantViolation $e) {
