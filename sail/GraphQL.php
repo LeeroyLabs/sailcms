@@ -252,14 +252,18 @@ class GraphQL
             }
 
             if ($errors) {
+                $mresult->data->errors = [];
+
                 foreach ($errors as $error) {
                     $mresult->data->errors = [
-                        'message' => $error->getMessage(),
-                        'extensions' => ['category' => 'internal'],
-                        'locations' => [['line' => $error->getLine(), 'column' => 1]],
-                        'file' => $error->getFile(),
-                        'stack' => debug_backtrace(),
-                        'path' => ['']
+                        [
+                            'message' => $error->getMessage(),
+                            'extensions' => ['category' => 'internal'],
+                            'locations' => [['line' => $error->getLine(), 'column' => 1]],
+                            'file' => $error->getFile(),
+                            'stack' => debug_backtrace(),
+                            'path' => ['']
+                        ]
                     ];
                 }
             }
