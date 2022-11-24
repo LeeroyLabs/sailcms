@@ -2,6 +2,7 @@
 
 namespace SailCMS;
 
+use Exception;
 use League\Flysystem\FilesystemException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
@@ -214,6 +215,7 @@ class Mail
      * Send the email
      *
      * @return bool
+     * @throws EmailException
      *
      */
     public function send(): bool
@@ -222,8 +224,12 @@ class Mail
         $loader = new FilesystemLoader(Sail::getTemplateDirectory());
         $twigEnv = new Environment($loader);
 
-        $twigBodyRenderer = new BodyRenderer($twigEnv);
-        $twigBodyRenderer->render($this->email);
+        try {
+            $twigBodyRenderer = new BodyRenderer($twigEnv);
+            $twigBodyRenderer->render($this->email);
+        } catch (Exception $e) {
+            throw new EmailException($e, 0500);
+        }
 
         try {
             $mailer->send($this->email);
@@ -252,7 +258,7 @@ class Mail
 
         if ($template) {
             $settings = setting('emails', []);
-            
+
             if (is_array($context)) {
                 $context = new Collection($context);
             }
