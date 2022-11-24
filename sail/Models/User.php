@@ -226,12 +226,17 @@ class User extends Model
     public function createRegularUser(Username $name, string $email, string $password, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
         // Make sure full is assigned
-        if ($name->full === '') {
+        if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
         }
 
         if ($meta === null) {
             $meta = new UserMeta((object)[]);
+        }
+
+        // Validate name (basic)
+        if (empty($name->first) || empty($name->last)) {
+            throw new DatabaseException('Name is not valid, please make sure you fill in both first and last name.', 0403);
         }
 
         // Validate email properly
@@ -300,6 +305,11 @@ class User extends Model
 
         if (is_array($roles)) {
             $roles = new Collection($roles);
+        }
+
+        // Validate name (basic)
+        if (empty($name->first) || empty($name->last)) {
+            throw new DatabaseException('Name is not valid, please make sure you fill in both first and last name.', 0403);
         }
 
         // Validate password

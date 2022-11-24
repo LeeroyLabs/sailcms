@@ -188,7 +188,15 @@ class Stateless implements AppSession
 
         // Cookie is empty, check header instead
         if (empty($cookie)) {
-            $cookie = getallheaders()['x-access-token'] ?? '';
+            $headers = getallheaders();
+            $cookie = '';
+
+            if (!empty($headers['X-Access-Token'])) {
+                $cookie = $headers['X-Access-Token'];
+            } elseif (!empty($headers['x-access-token'])) {
+                $cookie = $headers['x-access-token'];
+            }
+
             $this->token = $cookie;
         }
 

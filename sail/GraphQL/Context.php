@@ -17,7 +17,7 @@ class Context
         $headers = getallheaders();
 
         foreach ($headers as $key => $value) {
-            if ($key === 'x-access-token') {
+            if (strtolower($key) === 'x-access-token') {
                 $this->_token = $value;
             }
         }
