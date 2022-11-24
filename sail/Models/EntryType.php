@@ -31,9 +31,9 @@ class EntryType extends Model
     ];
 
     /* default entry type */
-    private const _DEFAULT_HANDLE = "page";
-    private const _DEFAULT_TITLE = "Page";
-    private const _DEFAULT_URL_PREFIX = "";
+    private const DEFAULT_HANDLE = "page";
+    private const DEFAULT_TITLE = "Page";
+    private const DEFAULT_URL_PREFIX = "";
 
     /* fields */
     public string $collection_name;
@@ -100,9 +100,9 @@ class EntryType extends Model
         }
 
         // Get default values for default type
-        $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle') ?? static::_DEFAULT_HANDLE;
-        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title') ?? static::_DEFAULT_TITLE;
-        $defaultUrlPrefix = $_ENV['SETTINGS']->get('entry.defaultType.url_prefix') ?? static::_DEFAULT_URL_PREFIX;
+        $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle', static::DEFAULT_HANDLE);
+        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title', static::DEFAULT_TITLE);
+        $defaultUrlPrefix = $_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', static::DEFAULT_URL_PREFIX);
 
         $entryType = $instance->getByHandle($defaultHandle);
 

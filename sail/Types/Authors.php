@@ -9,19 +9,20 @@ use SailCMS\Models\User;
 class Authors implements DatabaseType
 {
     public function __construct(
-        public readonly ?string $createdBy,
-        public readonly ?string $updatedBy,
-        public readonly ?string $publishedBy,
-        public readonly ?string $deletedBy
-    ) {
+        public readonly ?string $created_by,
+        public readonly ?string $updated_by,
+        public readonly ?string $published_by,
+        public readonly ?string $deleted_by
+    )
+    {
     }
 
     /**
      *
      * Init an authors type with now
      *
-     * @param  User  $author
-     * @param  bool  $published
+     * @param User $author
+     * @param bool $published
      * @return array
      *
      */
@@ -40,13 +41,13 @@ class Authors implements DatabaseType
      *
      * Update the updateBy attribute of a given Authors object
      *
-     * @param  Authors  $authors
-     * @param  string   $updateAuthorId
+     * @param Authors $authors
+     * @param string $updateAuthorId
      * @return array
      */
     static public function updated(Authors $authors, string $updateAuthorId)
     {
-        $newAuthors = new Authors($authors->createdBy, $updateAuthorId, $authors->publishedBy, $authors->deletedBy);
+        $newAuthors = new Authors($authors->created_by, $updateAuthorId, $authors->published_by, $authors->deleted_by);
 
         return $newAuthors->toDBObject();
     }
@@ -55,14 +56,14 @@ class Authors implements DatabaseType
      *
      * Update the deletedBy attribute of a given Authors object
      *
-     * @param  Authors  $authors
-     * @param  string   $deleteAuthorId
+     * @param Authors $authors
+     * @param string $deleteAuthorId
      * @return array
      *
      */
     static public function deleted(Authors $authors, string $deleteAuthorId): array
     {
-        $newAuthors = new Authors($authors->createdBy, $authors->updatedBy, $authors->publishedBy, $deleteAuthorId);
+        $newAuthors = new Authors($authors->created_by, $authors->updated_by, $authors->published_by, $deleteAuthorId);
 
         return $newAuthors->toDBObject();
     }
@@ -77,10 +78,10 @@ class Authors implements DatabaseType
     public function toDBObject(): array
     {
         return [
-            'created_by' => $this->createdBy,
-            'updated_by' => $this->updatedBy,
-            'published_by' => $this->publishedBy,
-            'deleted_by' => $this->deletedBy,
+            'created_by' => $this->created_by,
+            'updated_by' => $this->updated_by,
+            'published_by' => $this->published_by,
+            'deleted_by' => $this->deleted_by,
         ];
     }
 }

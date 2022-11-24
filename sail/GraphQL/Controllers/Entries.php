@@ -12,6 +12,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryType;
+use SailCMS\Sail;
 use SodiumException;
 
 class Entries
@@ -30,7 +31,6 @@ class Entries
      */
     public function entryTypes(mixed $obj, Collection $args, Context $context): Collection
     {
-        // TODO add pagination
         return EntryType::getAll(true);
     }
 
@@ -84,13 +84,12 @@ class Entries
      */
     public function createEntryType(mixed $obj, Collection $args, Context $context): EntryType
     {
-        // string $handle, string $title, string $url_prefix, string|ObjectId|null $entry_type_layout_id = null
         $handle = $args->get('handle');
         $title = $args->get('title');
         $url_prefix = $args->get('url_prefix');
-        $entry_type_layout_id = $args->get('entry_type_layout_id');
+        $entry_layout_id = $args->get('entry_layout_id');
 
-        return (new EntryType())->create($handle, $title, $url_prefix, $entry_type_layout_id);
+        return (new EntryType())->create($handle, $title, $url_prefix, $entry_layout_id);
     }
 
     /**
@@ -146,14 +145,25 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function entries(mixed $obj, Collection $args, Context $context): Collection
     {
         // TODO add pagination + do we class entries by entry types instead ?
         // TODO add performance options with context
-        return Entry::getAll();
+        $site_id = $args->get("site_id", Sail::siteId());
+
+        $homepage = Entry::getHomepage($site_id)->{$site_id};
+
+        $entries = Entry::getAll();
+        $entries->each(function ($key, &$entry) use ($homepage) {
+            $entry->is_homepage = isset($homepage) && $entry->_id === $homepage->_id;
+        });
+        return $entries;
     }
 
     /**

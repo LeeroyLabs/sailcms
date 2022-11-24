@@ -13,7 +13,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Models\Entry\Field as FieldEntry;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
-use SailCMS\Types\Fields\LayoutField;
+use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
@@ -226,7 +226,6 @@ class EntryLayout extends Model
         $this->hasPermissions();
 
         // Check if there is and entry type is using the layout
-        // TODO (and it have related entries?)
         if ($this->hasEntryTypes($entryLayoutId)) {
             throw new EntryException(static::SCHEMA_IS_USED);
         }
