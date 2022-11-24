@@ -80,8 +80,8 @@ class Authors implements DatabaseType
         return [
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
-            'published_by' => $this->published_by,
-            'deleted_by' => $this->deleted_by,
+            'published_by' => $this->published_by ?? '',
+            'deleted_by' => $this->deleted_by ?? '',
         ];
     }
 }

@@ -31,7 +31,15 @@ class Entries
      */
     public function entryTypes(mixed $obj, Collection $args, Context $context): Collection
     {
-        return EntryType::getAll(true);
+        $result = EntryType::getAll(true);
+
+        $result->each(function ($key, &$entryType) {
+            if (!$entryType->entry_layout_id) {
+                $entryType->entry_layout_id = "";
+            }
+        });
+
+        return $result;
     }
 
     /**
@@ -65,6 +73,16 @@ class Entries
             $result = (new EntryType())->getByHandle($handle);
         }
 
+        // Valid and clean data before to send it
+        if (!$result) {
+            $msg = $id ? "id = " . $id : $handle;
+            throw new EntryException(sprintf(EntryType::DOES_NOT_EXISTS, $msg));
+        }
+
+        if (!$result->entry_layout_id) {
+            $result->entry_layout_id = "";
+        }
+
         return $result;
     }
 
@@ -89,7 +107,15 @@ class Entries
         $url_prefix = $args->get('url_prefix');
         $entry_layout_id = $args->get('entry_layout_id');
 
-        return (new EntryType())->create($handle, $title, $url_prefix, $entry_layout_id);
+        $result = (new EntryType())->create($handle, $title, $url_prefix, $entry_layout_id);
+
+        if (!$result->entry_layout_id) {
+            $result->entry_layout_id = "";
+        }
+
+        $result->dates = $result->dates->toDbObject();
+
+        return $result;
     }
 
     /**
@@ -136,7 +162,8 @@ class Entries
 
     /**
      *
-     * Get all entries of all types
+     * Get all entries of a given type (if null it's default type)
+     *  // TODO redo that to have by entry type
      *
      * @param mixed $obj
      * @param Collection $args
@@ -159,11 +186,13 @@ class Entries
 
         $homepage = Entry::getHomepage($site_id)->{$site_id};
 
-        $entries = Entry::getAll();
-        $entries->each(function ($key, &$entry) use ($homepage) {
-            $entry->is_homepage = isset($homepage) && $entry->_id === $homepage->_id;
+        $entries = Entry::getAll(); // By entry type instead
+        $data = Collection::init();
+        $entries->each(function ($key, &$entry) use ($homepage, $data) {
+            $entryArray = $entry->toArray($homepage);
+            $data->push($entryArray);
         });
-        return $entries;
+        return $data;
     }
 
     /**
@@ -177,17 +206,23 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
-    public function entry(mixed $obj, Collection $args, Context $context): ?Entry
+    public function entry(mixed $obj, Collection $args, Context $context): ?array
     {
         $entry_type_handle = $args->get('entry_type_handle');
         $id = $args->get('id');
+        $site_id = $args->get("site_id", Sail::siteId());
+
+        $homepage = Entry::getHomepage($site_id)->{$site_id};
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
-        return $entryModel->one(['_id' => $id]);
+        return $entryModel->one(['_id' => $id])->toArray($homepage);
     }
 
     /**
@@ -207,7 +242,7 @@ class Entries
      * @throws SodiumException
      *
      */
-    public function createEntry(mixed $obj, Collection $args, Context $context): ?Entry
+    public function createEntry(mixed $obj, Collection $args, Context $context): ?array
     {
         $is_homepage = $args->get('is_homepage');
         $entry_type_handle = $args->get('entry_type_handle');
@@ -223,13 +258,17 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entry_type_handle);
 
-        return $entryModel->create($is_homepage, $locale, $status, $title, $slug, [
+        $entry = $entryModel->create($is_homepage, $locale, $status, $title, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
             'content' => $content,
             'site_id' => $site_id
         ]);
+
+        $homepage = Entry::getHomepage($site_id ?? Sail::siteId())->{$site_id ?? Sail::siteId()};
+
+        return $entry->toArray($homepage);
     }
 
     /**

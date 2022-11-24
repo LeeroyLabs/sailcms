@@ -34,6 +34,7 @@ class Entry extends Model
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
     const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
+    const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Cache */
@@ -125,6 +126,34 @@ class Entry extends Model
             'dates',
             'categories',
             'content'
+        ];
+    }
+
+    /**
+     *
+     * Parse the entry into an array for graphql
+     *
+     * @return array
+     *
+     */
+    #[Pure] public function toArray(array|object|null $homepage): array
+    {
+        return [
+            '_id' => $this->_id,
+            'entry_type_id' => $this->entry_type_id,
+            'is_homepage' => isset($homepage) && $this->_id === $homepage->_id,
+            'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
+            'site_id' => $this->site_id,
+            'locale' => $this->locale,
+            'alternates' => $this->alternates,
+            'status' => $this->status,
+            'title' => $this->title,
+            'slug' => $this->slug,
+            'url' => $this->url,
+            'authors' => $this->authors->toDBObject(),
+            'dates' => $this->dates->toDBObject(),
+            'categories' => $this->categories,
+            'content' => $this->content
         ];
     }
 
@@ -497,7 +526,7 @@ class Entry extends Model
      *
      * Update an entry with a given entry id or entry instance
      *
-     * @param Entry|string $entry
+     * @param Entry|string $entry or id
      * @param array|Collection $data
      * @return bool
      * @throws ACLException
@@ -513,19 +542,25 @@ class Entry extends Model
     {
         $this->hasPermissions();
 
+        $entryId = $entry->_id ?? '';
         if (is_string($entry)) {
-            $entry = $this->findById($entry);
+            $entryId = (string)$entry;
+            $entry = $this->findById($entryId)->exec();
         }
         if (is_array($data)) {
             $data = new Collection($data);
         }
         $siteId = $data->get('site_id', Sail::siteId());
 
+        if (!$entry) {
+            throw new EntryException(sprintf(Entry::DOES_NOT_EXISTS, 'id = ' . $entryId));
+        }
+
         $updateResult = $this->updateWithoutPermission($entry, $data);
 
         // Update homepage if needed
         if ($updateResult) {
-            $is_homepage = $data->get('homepage');
+            $is_homepage = $data->get('is_homepage');
             $currentHomepages = Entry::getHomepage($siteId);
             $currentHomepage = $currentHomepages->{$siteId} ?? false;
             if ($currentHomepage) {
@@ -592,7 +627,7 @@ class Entry extends Model
 
 
         if ($soft) {
-            $entry = $this->findById($entryId);
+            $entry = $this->findById($entryId)->exec();
             $result = $this->softDelete($entry);
         } else {
             $result = $this->hardDelete($entryId);

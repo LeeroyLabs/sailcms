@@ -39,7 +39,7 @@ class EntryType extends Model
     public string $collection_name;
     public string $title;
     public string $handle;
-    public string $url_prefix;
+    public string $url_prefix; // TODO locale field for that
     public ?string $entry_layout_id;
 
     public function fields(bool $fetchAllFields = false): array
@@ -208,11 +208,15 @@ class EntryType extends Model
      *
      * @param string $handle
      * @return EntryType|null
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function getByHandle(string $handle): ?EntryType
     {
+        $this->hasPermissions(true);
+
         return $this->findOne(['handle' => $handle])->exec();
     }
 

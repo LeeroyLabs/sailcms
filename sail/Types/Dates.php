@@ -11,14 +11,15 @@ class Dates implements DatabaseType
         public readonly ?float $updated,
         public readonly ?float $published,
         public readonly ?float $deleted
-    ) {
+    )
+    {
     }
 
     /**
      *
      * Get an array of dates when we create an element
      *
-     * @param  bool  $published
+     * @param bool $published
      * @return array
      *
      */
@@ -37,7 +38,7 @@ class Dates implements DatabaseType
      *
      * Update the deleted attribute for a given Dates object
      *
-     * @param  Dates  $dates
+     * @param Dates $dates
      * @return array
      *
      */
@@ -55,7 +56,7 @@ class Dates implements DatabaseType
      *
      * Update the deleted attribute for a given Dates object
      *
-     * @param  Dates  $dates
+     * @param Dates $dates
      * @return array
      *
      */
@@ -79,8 +80,8 @@ class Dates implements DatabaseType
         return [
             'created' => $this->created,
             'updated' => $this->updated,
-            'published' => $this->published,
-            'deleted' => $this->deleted,
+            'published' => $this->published ?? 0,
+            'deleted' => $this->deleted ?? 0,
         ];
     }
 }
