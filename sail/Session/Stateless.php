@@ -198,6 +198,11 @@ class Stateless implements AppSession
             }
 
             $this->token = $cookie;
+
+            if (trim(empty($cookie)) || $cookie === 'null') {
+                $this->token = '';
+                $cookie = '';
+            }
         }
 
         if (empty($cookie)) {

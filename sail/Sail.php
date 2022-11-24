@@ -357,7 +357,7 @@ class Sail
                     $acls = $instance->permissions();
 
                     ACL::loadCustom($acls);
-                    
+
                     // load custom fields
 
                     // Run the command registration
@@ -690,7 +690,6 @@ class Sail
 
         if (setting('cors.use', false)) {
             $origins = implode(',', setting('cors.origins', Collection::init())->unwrap());
-            $creds = (setting('cors.allowCredentials', false)) ? 'true' : 'false';
             $maxAge = setting('cors.maxAge', 86_400);
 
             header("Access-Control-Allow-Origin: {$origins}");
