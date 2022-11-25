@@ -30,16 +30,16 @@ class Tfa extends Model
      *
      * Get the Secret for given user
      *
-     * @param  string  $user_id
+     * @param  string  $userId
      * @return ?Tfa
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
      *
      */
-    public function getForUser(string $user_id): ?Tfa
+    public function getForUser(string $userId): ?Tfa
     {
-        $entry = $this->findOne(['user_id' => $user_id])->exec();
+        $entry = $this->findOne(['user_id' => $userId])->exec();
 
         if (!empty($entry)) {
             $entry->secret = Security::decrypt($entry->secret);
@@ -59,13 +59,13 @@ class Tfa extends Model
      *
      * Set the hash version secret for the user
      *
-     * @param  string  $user_id
+     * @param  string  $userId
      * @param  string  $secret
      * @throws DatabaseException
      * @throws FilesystemException
      *
      */
-    public function setForUser(string $user_id, string $secret): void
+    public function setForUser(string $userId, string $secret): void
     {
         $enc = Security::encrypt($secret);
 
@@ -77,8 +77,8 @@ class Tfa extends Model
             Security::encrypt(Uuid::uuid7())
         ];
 
-        $this->deleteOne(['user_id' => $user_id]);
-        $this->insert(['user_id' => $user_id, 'secret' => $enc, 'codes' => $codes]);
+        $this->deleteOne(['user_id' => $userId]);
+        $this->insert(['user_id' => $userId, 'secret' => $enc, 'codes' => $codes]);
     }
 
     /**
