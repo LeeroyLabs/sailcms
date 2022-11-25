@@ -20,6 +20,9 @@ use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryParent;
 use SailCMS\Types\EntryStatus;
+use SailCMS\Types\Listing;
+use SailCMS\Types\Pagination;
+use SailCMS\Types\QueryOptions;
 use SodiumException;
 
 class Entry extends Model
@@ -160,31 +163,44 @@ class Entry extends Model
 
     /**
      *
-     * Get all entries of all types // NO!!!!!! todo by entry type handle
+     * Get all entries by entry type handle
      *
-     * @return Collection
+     * @param string $entryTypeHandle
+     * @param Collection|null $filters
+     * @param int $page
+     * @param int $limit
+     * @param string $sort
+     * @param int $direction
+     * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
      *
      */
-    public static function getAll(): Collection
+    public static function getList(string $entryTypeHandle, array $filters = null, int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC): Listing
     {
-        $entryTypes = EntryType::getAll();
+        $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
         $entries = Collection::init();
 
-        $entryTypes->each(function ($key, $value) use (&$entries) {
-            /**
-             * @var EntryType $value
-             */
-            $entryModel = $value->getEntryModel();
-            $currentEntries = $entryModel->all();
+        $offset = $page * $limit - $limit;
 
-            $entries->pushSpread(...$currentEntries);
-        });
+        if (!$filters) {
+            $filters = [];
+        }
+        // TODO handle search
+        // $query['field'] = new Regex($search, 'gi');
 
-        return $entries;
+        $options = QueryOptions::initWithPagination($offset, $limit);
+        $options->sort = [$sort => $direction];
+
+        $results = $entryModel->find($filters, $options)->exec();
+
+        $count = $entryModel->count($filters);
+        $total = ceil($count / $limit);
+
+        $pagination = new Pagination($page, $total, $count);
+        return new Listing($pagination, new Collection($results));
     }
 
 

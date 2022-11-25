@@ -13,6 +13,7 @@ use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
+use SailCMS\Types\Listing;
 use SodiumException;
 
 class Entries
@@ -176,21 +177,34 @@ class Entries
      * @throws SodiumException
      *
      */
-    public function entries(mixed $obj, Collection $args, Context $context): Collection
+    public function entries(mixed $obj, Collection $args, Context $context): Listing
     {
-        // TODO add pagination + do we class entries by entry types instead ?
         // TODO add performance options with context
-        $site_id = $args->get("site_id", Sail::siteId());
+        $entry_type_handle = $args->get('entry_type_handle');
+        $page = $args->get('page', 1);
+        $limit = $args->get('limit', 50);
+        $sort = $args->get('sort', 'title');
+        $direction = $args->get('direction', 1);
+
+        // For filtering
+        $site_id = $args->get('site_id', Sail::siteId());
 
         $homepage = Entry::getHomepage($site_id)?->{$site_id};
 
-        $entries = Entry::getAll(); // By entry type instead
+        $filters = [
+            "site_id" => $site_id
+        ];
+
+        $result = Entry::getList($entry_type_handle, $filters, $page, $limit, $sort, $direction); // By entry type instead
         $data = Collection::init();
-        $entries->each(function ($key, &$entry) use ($homepage, $data) {
+
+        // Clean data before returning it.
+        $result->list->each(function ($key, &$entry) use ($homepage, $data) {
             $entryArray = $entry->toArray($homepage);
             $data->push($entryArray);
         });
-        return $data;
+
+        return new Listing($result->pagination, $data);
     }
 
     /**
