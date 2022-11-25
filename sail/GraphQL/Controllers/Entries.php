@@ -113,8 +113,6 @@ class Entries
             $result->entry_layout_id = "";
         }
 
-        $result->dates = $result->dates->toDbObject();
-
         return $result;
     }
 
@@ -184,7 +182,7 @@ class Entries
         // TODO add performance options with context
         $site_id = $args->get("site_id", Sail::siteId());
 
-        $homepage = Entry::getHomepage($site_id)->{$site_id};
+        $homepage = Entry::getHomepage($site_id)?->{$site_id};
 
         $entries = Entry::getAll(); // By entry type instead
         $data = Collection::init();

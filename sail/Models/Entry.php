@@ -133,6 +133,7 @@ class Entry extends Model
      *
      * Parse the entry into an array for graphql
      *
+     * @param array|object|null $homepage
      * @return array
      *
      */
@@ -141,7 +142,7 @@ class Entry extends Model
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
-            'is_homepage' => isset($homepage) && $this->_id === $homepage->_id,
+            'is_homepage' => isset($homepage) && $this->_id == $homepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
@@ -210,7 +211,7 @@ class Entry extends Model
         $homepageConfig = Config::getByName(static::HOMEPAGE_CONFIG_HANDLE);
 
         if ($getEntry) {
-            $currentSiteHomepage = $homepageConfig->config->{$siteId} ?? null;
+            $currentSiteHomepage = $homepageConfig?->config->{$siteId};
             if (!$currentSiteHomepage) {
                 return null;
             }
@@ -220,7 +221,7 @@ class Entry extends Model
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
             return $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
         }
-        return $homepageConfig->config;
+        return $homepageConfig->config ?? null;
     }
 
     /**
@@ -474,7 +475,6 @@ class Entry extends Model
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     *
      * @param bool $is_homepage
      * @param string $locale
      * @param EntryStatus|string $status
@@ -543,7 +543,7 @@ class Entry extends Model
         $this->hasPermissions();
 
         $entryId = $entry->_id ?? '';
-        if (is_string($entry)) {
+        if (!$entry instanceof Entry) {
             $entryId = (string)$entry;
             $entry = $this->findById($entryId)->exec();
         }
@@ -563,13 +563,12 @@ class Entry extends Model
             $is_homepage = $data->get('is_homepage');
             $currentHomepages = Entry::getHomepage($siteId);
             $currentHomepage = $currentHomepages->{$siteId} ?? false;
-            if ($currentHomepage) {
-                if ($is_homepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
-                    $entry->setAsHomepage($siteId);
-                } else {
-                    if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
-                        $this->emptyHomepage($currentHomepages, $siteId);
-                    }
+
+            if ($is_homepage && (!$currentHomepage || $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id)) {
+                $entry->setAsHomepage($siteId);
+            } else {
+                if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
+                    $this->emptyHomepage($currentHomepages, $siteId);
                 }
             }
         }
