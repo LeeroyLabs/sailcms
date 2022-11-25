@@ -189,6 +189,7 @@ test('Update an entry with an entry type', function () {
     try {
         $result = $entryModel->updateById($entry, [
             'slug' => 'test-de-test',
+            'is_homepage' => false
         ]);
         $entry = $entryModel->one([
             'title' => 'Test'
@@ -199,6 +200,12 @@ test('Update an entry with an entry type', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
+});
+
+test('Fail to get homepage entry', function () {
+    $entry = Entry::getHomepage(Sail::siteId(), true);
+
+    expect($entry)->toBe(null);
 });
 
 test('Create an entry with an entry type with an existing url', function () {
@@ -244,6 +251,7 @@ test('Update an entry with the default type', function () {
     try {
         $result = $entry->updateById($entry, [
             'title' => 'Home page',
+            'is_homepage' => true
         ]);
         $entry = $model->one([
             'title' => 'Home page'
@@ -252,8 +260,16 @@ test('Update an entry with the default type', function () {
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
+        print_r($exception->getMessage());
+        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
+});
+
+test('Get homepage entry after update', function () {
+    $entry = Entry::getHomepage(Sail::siteId(), true);
+    print_r($entry->title);
+    expect($entry->title)->toBe('Home page');
 });
 
 test('Fail to update an entry to trash', function () {
@@ -421,7 +437,7 @@ test('Hard delete an entry layout', function () {
     }
 });
 
-test('Fail to get homepage entry', function () {
+test('Fail to get homepage entry after deletion', function () {
     $entry = Entry::getHomepage(Sail::siteId(), true);
 
     expect($entry)->toBe(null);

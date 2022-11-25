@@ -34,6 +34,7 @@ class Entry extends Model
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
     const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
+    const DOES_NOT_EXISTS = "Entry type %s does not exists";
     const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Cache */
@@ -130,6 +131,35 @@ class Entry extends Model
 
     /**
      *
+     * Parse the entry into an array for graphql
+     *
+     * @param array|object|null $homepage
+     * @return array
+     *
+     */
+    #[Pure] public function toArray(array|object|null $homepage): array
+    {
+        return [
+            '_id' => $this->_id,
+            'entry_type_id' => $this->entry_type_id,
+            'is_homepage' => isset($homepage) && $this->_id == $homepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
+            'site_id' => $this->site_id,
+            'locale' => $this->locale,
+            'alternates' => $this->alternates,
+            'status' => $this->status,
+            'title' => $this->title,
+            'slug' => $this->slug,
+            'url' => $this->url,
+            'authors' => $this->authors->toDBObject(),
+            'dates' => $this->dates->toDBObject(),
+            'categories' => $this->categories,
+            'content' => $this->content
+        ];
+    }
+
+    /**
+     *
      * Get all entries of all types // NO!!!!!! todo by entry type handle
      *
      * @return Collection
@@ -181,7 +211,7 @@ class Entry extends Model
         $homepageConfig = Config::getByName(static::HOMEPAGE_CONFIG_HANDLE);
 
         if ($getEntry) {
-            $currentSiteHomepage = $homepageConfig->config->{$siteId} ?? null;
+            $currentSiteHomepage = $homepageConfig?->config->{$siteId};
             if (!$currentSiteHomepage) {
                 return null;
             }
@@ -191,7 +221,7 @@ class Entry extends Model
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
             return $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
         }
-        return $homepageConfig->config;
+        return $homepageConfig->config ?? null;
     }
 
     /**
@@ -445,7 +475,6 @@ class Entry extends Model
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     *
      * @param bool $is_homepage
      * @param string $locale
      * @param EntryStatus|string $status
@@ -497,7 +526,7 @@ class Entry extends Model
      *
      * Update an entry with a given entry id or entry instance
      *
-     * @param Entry|string $entry
+     * @param Entry|string $entry or id
      * @param array|Collection $data
      * @return bool
      * @throws ACLException
@@ -513,28 +542,33 @@ class Entry extends Model
     {
         $this->hasPermissions();
 
-        if (is_string($entry)) {
-            $entry = $this->findById($entry);
+        $entryId = $entry->_id ?? '';
+        if (!$entry instanceof Entry) {
+            $entryId = (string)$entry;
+            $entry = $this->findById($entryId)->exec();
         }
         if (is_array($data)) {
             $data = new Collection($data);
         }
         $siteId = $data->get('site_id', Sail::siteId());
 
+        if (!$entry) {
+            throw new EntryException(sprintf(Entry::DOES_NOT_EXISTS, 'id = ' . $entryId));
+        }
+
         $updateResult = $this->updateWithoutPermission($entry, $data);
 
         // Update homepage if needed
         if ($updateResult) {
-            $is_homepage = $data->get('homepage');
+            $is_homepage = $data->get('is_homepage');
             $currentHomepages = Entry::getHomepage($siteId);
             $currentHomepage = $currentHomepages->{$siteId} ?? false;
-            if ($currentHomepage) {
-                if ($is_homepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
-                    $entry->setAsHomepage($siteId);
-                } else {
-                    if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id) {
-                        $this->emptyHomepage($currentHomepages, $siteId);
-                    }
+
+            if ($is_homepage && (!$currentHomepage || $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id)) {
+                $entry->setAsHomepage($siteId);
+            } else {
+                if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
+                    $this->emptyHomepage($currentHomepages, $siteId);
                 }
             }
         }
@@ -592,7 +626,7 @@ class Entry extends Model
 
 
         if ($soft) {
-            $entry = $this->findById($entryId);
+            $entry = $this->findById($entryId)->exec();
             $result = $this->softDelete($entry);
         } else {
             $result = $this->hardDelete($entryId);
