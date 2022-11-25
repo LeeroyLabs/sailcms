@@ -166,7 +166,7 @@ class Entry extends Model
      * Get all entries by entry type handle
      *
      * @param string $entryTypeHandle
-     * @param Collection|null $filters
+     * @param array|null $filters
      * @param int $page
      * @param int $limit
      * @param string $sort
@@ -176,9 +176,8 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public static function getList(string $entryTypeHandle, array $filters = null, int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC): Listing
+    public static function getList(string $entryTypeHandle, ?array $filters = null, int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC): Listing
     {
         $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
         $entries = Collection::init();
@@ -188,7 +187,7 @@ class Entry extends Model
         if (!$filters) {
             $filters = [];
         }
-        // TODO handle search
+        // TODO handle search and filters
         // $query['field'] = new Regex($search, 'gi');
 
         $options = QueryOptions::initWithPagination($offset, $limit);
