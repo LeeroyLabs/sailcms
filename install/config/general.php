@@ -118,7 +118,10 @@ $config = [
             'defaultType' => [
                 'title' => 'Page',
                 'handle' => 'page',
-                'urlPrefix' => ''
+                'urlPrefix' => [
+                    'en' => '',
+                    'fr' => ''
+                ]
             ],
             'cacheTtl' => \SailCMS\Cache::TTL_WEEK
         ]
@@ -213,7 +216,10 @@ $config = [
             'defaultType' => [
                 'title' => 'Page',
                 'handle' => 'page',
-                'urlPrefix' => ''
+                'urlPrefix' => [
+                    'en' => '',
+                    'fr' => ''
+                ]
             ]
         ],
         'cache_ttl' => \SailCMS\Cache::TTL_WEEK
@@ -309,7 +315,10 @@ $config = [
             'defaultType' => [
                 'title' => 'Page',
                 'handle' => 'page',
-                'urlPrefix' => ''
+                'urlPrefix' => [
+                    'en' => '',
+                    'fr' => ''
+                ]
             ],
             'cache_ttl' => \SailCMS\Cache::TTL_WEEK
         ]

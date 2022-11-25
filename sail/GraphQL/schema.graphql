@@ -68,8 +68,8 @@ type Mutation {
     deleteEmailBySlug(slug: String!): Boolean!
 
     # Entries
-    createEntryType(handle: String!, title: String!, url_prefix: String!, entry_layout_id: ID): EntryType
-    updateEntryType(handle: String!, title: String, url_prefix: String, entry_layout_id: ID): Boolean
+    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
+    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Entry
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Boolean
@@ -207,7 +207,7 @@ type EntryType {
     _id: ID!
     title: String!
     handle: String!
-    url_prefix: String!
+    url_prefix: LocaleField!
     entry_layout_id: ID
 }
 

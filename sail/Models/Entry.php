@@ -21,6 +21,7 @@ use SailCMS\Types\Dates;
 use SailCMS\Types\EntryParent;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Listing;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SodiumException;
@@ -180,7 +181,6 @@ class Entry extends Model
     public static function getList(string $entryTypeHandle, ?array $filters = null, int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC): Listing
     {
         $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
-        $entries = Collection::init();
 
         $offset = $page * $limit - $limit;
 
@@ -307,7 +307,7 @@ class Entry extends Model
      *
      * Get a validated slug that is not already existing in the db
      *
-     * @param string $url_prefix
+     * @param LocaleField $url_prefix
      * @param string $slug
      * @param string $site_id
      * @param string $locale
@@ -320,13 +320,13 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public static function getValidatedSlug(string $url_prefix, string $slug, string $site_id, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
+    public static function getValidatedSlug(LocaleField $url_prefix, string $slug, string $site_id, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
     {
         // Just to be sure that the slug is ok
         $slug = Text::slugify($slug, $locale);
 
         // Form the url to find if it already exists
-        $url = static::getRelativeUrl($url_prefix, $slug);
+        $url = static::getRelativeUrl($url_prefix, $slug, $locale);
         $found = 0;
 
         // Set the filters for the query
@@ -359,17 +359,20 @@ class Entry extends Model
      *
      * Get the relative url of the entry
      *
-     * @param $url_prefix
-     * @param $slug
+     * @param LocaleField $url_prefix
+     * @param string $slug
+     * @param string $locale
      * @return string
      *
      */
-    public static function getRelativeUrl($url_prefix, $slug): string
+    public static function getRelativeUrl(LocaleField $url_prefix, string $slug, string $locale): string
     {
         $relativeUrl = "";
 
-        if ($url_prefix) {
-            $relativeUrl .= $url_prefix . '/';
+        $url_prefix_with_locale = $url_prefix->{$locale} ?? '';
+
+        if ($url_prefix_with_locale) {
+            $relativeUrl .= $url_prefix_with_locale . '/';
         }
         $relativeUrl .= $slug;
 
@@ -436,16 +439,13 @@ class Entry extends Model
      *  with filtering and pagination
      *
      * @param ?array $filters
-     * @param int|null $limit
-     * @param int|null $offset
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function all(?array $filters = [], ?int $limit = 0, ?int $offset = 0): Collection
+    public function all(?array $filters = []): Collection
     {
         // TODO Filters available date, author, category, status
-
 
         $cache_key = null;
         $cache_ttl = null;
@@ -595,7 +595,7 @@ class Entry extends Model
      *
      * Update entries url according to an url prefix (normally comes from entry type)
      *
-     * @param string $url_prefix
+     * @param LocaleField $url_prefix
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -603,7 +603,7 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public function updateEntriesUrl(string $url_prefix): void
+    public function updateEntriesUrl(LocaleField $url_prefix): void
     {
         $entries = $this->all();
 
@@ -613,7 +613,7 @@ class Entry extends Model
              * @var Entry $value
              */
             $this->updateWithoutPermission($value, new Collection([
-                'url' => Entry::getRelativeUrl($url_prefix, $value->slug)
+                'url' => Entry::getRelativeUrl($url_prefix, $value->slug, $value->locale)
             ]));
         });
     }
@@ -820,7 +820,7 @@ class Entry extends Model
                 'status' => $status,
                 'title' => $title,
                 'slug' => $slug,
-                'url' => static::getRelativeUrl($this->entryType->url_prefix, $slug),
+                'url' => static::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
                 'authors' => $authors,
                 'dates' => $dates,
                 // TODO
@@ -890,7 +890,7 @@ class Entry extends Model
         });
 
         // Automatic attributes
-        $update['url'] = static::getRelativeUrl($this->entryType->url_prefix, $slug);
+        $update['url'] = static::getRelativeUrl($this->entryType->url_prefix, $slug, $locale);
         $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
         $update['dates'] = Dates::updated($entry->dates);
 

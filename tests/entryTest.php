@@ -31,8 +31,10 @@ afterAll(function () {
 test('Create an entry type', function () {
     $model = new EntryType();
 
+    $url_prefix = new LocaleField(['fr' => 'test', 'en' => 'test']);
+
     try {
-        $id = $model->create('test', 'Test', 'test', null, false);
+        $id = $model->create('test', 'Test', $url_prefix, null, false);
         expect($id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -42,8 +44,10 @@ test('Create an entry type', function () {
 test('Fail to create an entry type because the handle use a reserved word', function () {
     $model = new EntryType();
 
+    $url_prefix = new LocaleField(['fr' => 'entrée', 'en' => 'entry']);
+
     try {
-        $id = $model->create('entry', 'Entry', 'entry', null, false);
+        $id = $model->create('entry', 'Entry', $url_prefix, null, false);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
         expect(true)->toBe(true);
@@ -110,9 +114,10 @@ test('Update an entry layout', function () {
 
 test('Failed to create an entry type because the handle is already in use', function () {
     $model = new EntryType();
+    $url_prefix = new LocaleField(['fr' => 'test', 'en' => 'test']);
 
     try {
-        $model->create('test', 'Test', 'test', null, false);
+        $model->create('test', 'Test', $url_prefix, null, false);
         expect(true)->not->toBe(false);
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::HANDLE_ALREADY_EXISTS);
@@ -167,13 +172,16 @@ test('Update an entry type', function () {
     try {
         $result = $model->updateByHandle('test', new Collection([
             'title' => 'Test Pages',
-            'url_prefix' => 'test-pages',
+            'url_prefix' => new LocaleField([
+                'en' => 'test-pages',
+                'fr' => 'pages-de-test'
+            ]),
             'entry_layout_id' => $entryLayout->_id
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
         expect($entryType->title)->toBe('Test Pages');
-        expect($entryType->url_prefix)->toBe('test-pages');
+        expect($entryType->url_prefix->en)->toBe('test-pages');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -216,7 +224,7 @@ test('Create an entry with an entry type with an existing url', function () {
         expect($entry->title)->toBe('Test 2');
         expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
         expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('test-pages/test-de-test-2');
+        expect($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -236,7 +244,10 @@ test('Fail to create an entry that is trashed', function () {
 });
 
 test('Get a validated slug for an existing slug', function () {
-    $newSlug = Entry::getValidatedSlug('test-pages', 'test-de-test', Sail::siteId(), 'fr');
+    $newSlug = Entry::getValidatedSlug(new LocaleField([
+        'en' => 'test-pages',
+        'fr' => 'pages-de-test'
+    ]), 'test-de-test', Sail::siteId(), 'fr');
 
     expect($newSlug)->toBe('test-de-test-3');
 });
@@ -290,13 +301,13 @@ test('Fail to update an entry to trash', function () {
 });
 
 test('Find the entry by url', function () {
-    $entry = Entry::findByURL('test-pages/test-de-test', false);
+    $entry = Entry::findByURL('pages-de-test/test-de-test', false);
 
     expect($entry->title)->toBe('Test');
 });
 
 test('Failed to find the entry by url', function () {
-    $entry = Entry::findByURL('test-pages/test-de-test-2', false);
+    $entry = Entry::findByURL('pages-de-test/test-de-test-2', false);
 
     expect($entry)->toBe(null);
 });

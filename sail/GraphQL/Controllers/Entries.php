@@ -161,13 +161,12 @@ class Entries
 
     /**
      *
-     * Get all entries of a given type (if null it's default type)
-     *  // TODO redo that to have by entry type
+     * Get all entries of a given type
      *
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return Collection
+     * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -175,7 +174,6 @@ class Entries
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
-     *
      */
     public function entries(mixed $obj, Collection $args, Context $context): Listing
     {
