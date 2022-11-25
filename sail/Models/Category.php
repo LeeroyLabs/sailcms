@@ -113,24 +113,24 @@ class Category extends Model
      * Create a category
      *
      * @param  LocaleField  $name
-     * @param  string       $parent_id
-     * @param  string       $site_id
+     * @param  string       $parentId
+     * @param  string       $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function create(LocaleField $name, string $parent_id = '', string $site_id = 'main'): bool
+    public function create(LocaleField $name, string $parentId = '', string $siteId = 'main'): bool
     {
         $this->hasPermissions();
 
         // Count the total categories based on parent_id being present or not
-        $count = $this->count(['site_id' => $site_id, 'parent_id' => $parent_id]);
+        $count = $this->count(['site_id' => $siteId, 'parent_id' => $parentId]);
         $slug = Text::slugify($name->en);
 
         // Check that it does not exist for the site already
-        $exists = $this->count(['slug' => $slug, 'site_id' => $site_id]);
+        $exists = $this->count(['slug' => $slug, 'site_id' => $siteId]);
 
         if ($exists > 0) {
             // Oops!
@@ -142,10 +142,10 @@ class Category extends Model
 
         $this->insert([
             'name' => $name,
-            'site_id' => $site_id,
+            'site_id' => $siteId,
             'slug' => $slug,
             'order' => $count,
-            'parent_id' => $parent_id
+            'parent_id' => $parentId
         ]);
 
         return true;
@@ -226,18 +226,18 @@ class Category extends Model
      * Delete a category by slug
      *
      * @param  string  $slug
-     * @param  string  $site_id
+     * @param  string  $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public static function deleteBySlug(string $slug, string $site_id): bool
+    public static function deleteBySlug(string $slug, string $siteId): bool
     {
         $instance = new static();
         $instance->hasPermissions();
-        $record = $instance->findOne(['slug' => $slug, 'site_id' => $site_id])->exec();
+        $record = $instance->findOne(['slug' => $slug, 'site_id' => $siteId])->exec();
 
         if ($record) {
             $instance->deleteById($record->_id);
@@ -254,18 +254,18 @@ class Category extends Model
      * Update order for all sub categories
      *
      * @param  string  $parent
-     * @param  string  $site_id
+     * @param  string  $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = '', string $site_id = 'main'): bool
+    public function updateOrder(string $parent = '', string $siteId = 'main'): bool
     {
         $this->hasPermissions();
 
-        $docs = $this->find(['parent_id' => $parent, 'site_id' => $site_id], QueryOptions::initWithSort(['order' => 1]))->exec();
+        $docs = $this->find(['parent_id' => $parent, 'site_id' => $siteId], QueryOptions::initWithSort(['order' => 1]))->exec();
         $writes = [];
 
         foreach ($docs as $num => $doc) {
@@ -287,21 +287,21 @@ class Category extends Model
      * Get tree list of categories
      *
      * @param  string  $parent
-     * @param  string  $site_id
+     * @param  string  $siteId
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function getList(string $parent = '', string $site_id = 'main'): Collection
+    public function getList(string $parent = '', string $siteId = 'main'): Collection
     {
-        $query = ['site_id' => $site_id];
+        $query = ['site_id' => $siteId];
 
         if ($parent !== '') {
             $query['parent_id'] = $parent;
         }
 
         $opts = QueryOptions::initWithSort(['parent_id' => 1, 'order' => 1]);
-        $key = ($parent === '') ? "{$site_id}_all" : $site_id . '_' . $parent;
+        $key = ($parent === '') ? "{$siteId}_all" : $siteId . '_' . $parent;
         $list = $this->find($query, $opts)->exec($key);
         $basicTree = [];
 

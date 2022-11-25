@@ -309,7 +309,7 @@ class Email extends Model
      * @param  LocaleField|Collection|array|null  $title
      * @param  LocaleField|Collection|array|null  $content
      * @param  LocaleField|Collection|array|null  $cta
-     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  LocaleField|Collection|array|null  $ctaTitle
      * @param  string|null                        $template
      * @return bool
      * @throws ACLException
@@ -324,7 +324,7 @@ class Email extends Model
         LocaleField|Collection|array|null $title = null,
         LocaleField|Collection|array|null $content = null,
         LocaleField|Collection|array|null $cta = null,
-        LocaleField|Collection|array|null $cta_title = null,
+        LocaleField|Collection|array|null $ctaTitle = null,
         string|null $template = null
     ): bool {
         $instance = new static();
@@ -352,8 +352,8 @@ class Email extends Model
             $set['cta'] = $cta;
         }
 
-        if ($cta_title !== null) {
-            $set['cta_title'] = $cta_title;
+        if ($ctaTitle !== null) {
+            $set['cta_title'] = $ctaTitle;
         }
 
         if ($template !== null && $template !== '') {
