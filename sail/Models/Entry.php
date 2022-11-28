@@ -135,7 +135,7 @@ class Entry extends Model
 
     /**
      *
-     * Parse the entry into an array for graphql
+     * Parse the entry into an array for api
      *
      * @param array|object|null $homepage
      * @return array

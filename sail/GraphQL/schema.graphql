@@ -74,6 +74,7 @@ type Mutation {
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Entry
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean!): Boolean
+    createEntryLayout(titles: LocaleFieldInput!, configs: [FieldConfigsInput!]!): EntryLayout
 
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
@@ -209,6 +210,40 @@ type EntryType {
     handle: String!
     url_prefix: LocaleField!
     entry_layout_id: ID
+}
+
+type EntryLayout {
+    _id: ID!
+    titles: LocaleField
+    schema: [LayoutField]!
+}
+
+type LayoutField {
+    key: String!
+    configs: [FieldConfigs]!
+}
+
+type FieldConfigs {
+    labels: LocaleField!
+    handle: String!
+    configs: [[InputSettings]]!
+}
+
+type InputSettings {
+    name: String!
+    value: String
+    choices: [String]
+}
+
+input FieldConfigsInput {
+    labels: LocaleFieldInput
+    handle: String!
+    configs: [[InputSettingsInput]]!
+}
+
+input InputSettingsInput {
+    name: String!
+    value: String!
 }
 
 enum EntryStatus {

@@ -59,6 +59,25 @@ class EntryLayout extends Model
 
     /**
      *
+     * Parse the entry into an array for api
+     *
+     * @return array
+     *
+     */
+    public function toArray(): array
+    {
+        return [
+            '_id' => $this->_id,
+            'title' => $this->titles->toDBObject(),
+            'schema' => $this->processSchemaToApi(),
+            'authors' => $this->authors->toDBObject(),
+            'dates' => $this->dates->toDBObject(),
+            'is_trashed' => $this->is_trashed
+        ];
+    }
+
+    /**
+     *
      * Generate a schema for a layout for list of given fields
      *
      * @param Collection $fields
@@ -109,6 +128,9 @@ class EntryLayout extends Model
     {
         $this->hasPermissions(true);
 
+        if (isset($filters['_id'])) {
+            return $this->findById($filters['_id'])->exec();
+        }
         return $this->findOne($filters)->exec();
     }
 
@@ -313,6 +335,35 @@ class EntryLayout extends Model
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
+    }
+
+    private function processSchemaToApi(): Collection
+    {
+        $apiSchema = Collection::init();
+
+        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
+            $layoutFieldConfigs = Collection::init();
+
+            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs) {
+                $fieldConfigs = Collection::init();
+
+                $configs = new Collection($input->toDBObject()->configs);
+
+                $configs->each(function ($key, $value) use ($fieldConfigs) {
+                    $fieldConfigs->push([
+                        'name' => $key,
+                        'value' => $value,
+                        'choices' => [] // TODO add choices
+                    ]);
+                });
+
+                $layoutFieldConfigs->pushKeyValue($fieldIndex, $fieldConfigs);
+            });
+
+            $apiSchema->pushKeyValue($fieldKey, $layoutFieldConfigs);
+        });
+
+        return $apiSchema;
     }
 
     /**

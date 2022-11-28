@@ -21,9 +21,9 @@ class InputTextField extends Field
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool        $required = false,
-        public readonly int         $max_length = 0,
-        public readonly int         $min_length = 0
+        public readonly bool $required = false,
+        public readonly int $max_length = 0,
+        public readonly int $min_length = 0
     )
     {
     }
@@ -75,11 +75,11 @@ class InputTextField extends Field
             $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
         }
 
-        if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
+        if ($this->max_length > 0 && strlen($content) > $this->max_length) {
             $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->maxLength . ').');
         }
 
-        if ($this->minLength > 0 && strlen($content) < $this->minLength) {
+        if ($this->min_length > 0 && strlen($content) < $this->min_length) {
             $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->minLength . ').');
         }
 

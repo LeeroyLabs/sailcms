@@ -11,9 +11,12 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
+use SailCMS\Models\Entry\Field;
+use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
+use SailCMS\Types\LocaleField;
 use SodiumException;
 
 class Entries
@@ -335,6 +338,65 @@ class Entries
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         return $entryModel->delete($id, $siteId, $soft);
+    }
+
+    public function entryLayout(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $entryLayoutId = $args->get('entry_layout_id');
+
+        $entryLayoutModel = new EntryLayout();
+        $entryLayout = $entryLayoutModel->one([
+            '_id' => $entryLayoutId
+        ]);
+
+        return $entryLayout->toArray();
+    }
+
+    public function entryLayouts(mixed $obj, Collection $args, Context $context): array
+    {
+
+    }
+
+    public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $titles = $args->get('titles');
+        $configs = $args->get('configs');
+
+        $titles = new LocaleField($titles->unwrap());
+        $schema = new Collection();
+        foreach ($configs as $fieldConfigs) {
+            $fieldClass = Field::getClassFromHandle($fieldConfigs->handle);
+            $labels = new LocaleField($fieldConfigs->labels->unwrap());
+
+            $configs = Collection::init();
+            $fieldConfigs->configs->each(function ($index, $fields) use ($configs) {
+                $config = Collection::init();
+                $fields->each(function ($name, $value) use ($config) {
+                    // TODO parse value add type
+                    $config->pushKeyValue($name, $value);
+                });
+                $configs->pushKeyValue($index, $config);
+            });
+
+            $field = new $fieldClass($labels, $configs);
+            $schema->push($field);
+        }
+
+        $parsedSchema = EntryLayout::generateLayoutSchema($schema);
+
+        $entryLayoutModel = new EntryLayout();
+
+        $entryLayout = $entryLayoutModel->create($titles, $parsedSchema);
+
+        return $entryLayout->toArray();
+    }
+
+    public function updateEntryLayout(mixed $obj, Collection $args, Context $context): bool
+    {
+    }
+
+    public function deleteEntryLayout(mixed $obj, Collection $args, Context $context): bool
+    {
     }
 
     /**

@@ -149,6 +149,26 @@ abstract class Field
     }
 
     /**
+     *
+     * Get the class name from the FieldLayout handle
+     *
+     * @param string $handle
+     * @return string
+     *
+     */
+    public static function getClassFromHandle(string $handle): string
+    {
+        $handle = explode('_', $handle);
+        $className = __NAMESPACE__ . '\\';
+
+        foreach ($handle as $key => $value) {
+            $className .= ucfirst($value);
+        }
+
+        return $className;
+    }
+
+    /**
      * Must define default settings of the field
      *
      * @return Collection
@@ -174,26 +194,4 @@ abstract class Field
      *
      */
     abstract protected function validate(Collection $content): ?Collection;
-
-    /**
-     *
-     * Get the class name from the FieldLayout handle
-     *
-     * @param string $handle
-     * @return string
-     *
-     */
-    private static function getClassFromHandle(string $handle): string
-    {
-        $handle = explode('_', $handle);
-        $className = __NAMESPACE__ . '\\';
-
-        foreach ($handle as $key => $value) {
-            $className .= ucfirst($value);
-        }
-
-        return $className;
-    }
-
-    // TODO graphql type
 }
