@@ -105,10 +105,10 @@ class Entries
     {
         $handle = $args->get('handle');
         $title = $args->get('title');
-        $url_prefix = $args->get('url_prefix');
-        $entry_layout_id = $args->get('entry_layout_id');
+        $urlPrefix = $args->get('url_prefix');
+        $entryLayoutId = $args->get('entry_layout_id');
 
-        $result = (new EntryType())->create($handle, $title, $url_prefix, $entry_layout_id);
+        $result = (new EntryType())->create($handle, $title, $urlPrefix, $entryLayoutId);
 
         if (!$result->entry_layout_id) {
             $result->entry_layout_id = "";
@@ -178,22 +178,22 @@ class Entries
     public function entries(mixed $obj, Collection $args, Context $context): Listing
     {
         // TODO add performance options with context
-        $entry_type_handle = $args->get('entry_type_handle');
+        $entryTypeHandle = $args->get('entry_type_handle');
         $page = $args->get('page', 1);
         $limit = $args->get('limit', 50);
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
 
         // For filtering
-        $site_id = $args->get('site_id', Sail::siteId());
+        $siteId = $args->get('site_id', Sail::siteId());
 
-        $homepage = Entry::getHomepage($site_id)?->{$site_id};
+        $homepage = Entry::getHomepage($siteId)?->{$siteId};
 
         $filters = [
-            "site_id" => $site_id
+            "site_id" => $siteId
         ];
 
-        $result = Entry::getList($entry_type_handle, $filters, $page, $limit, $sort, $direction); // By entry type instead
+        $result = Entry::getList($entryTypeHandle, $filters, $page, $limit, $sort, $direction); // By entry type instead
         $data = Collection::init();
 
         // Clean data before returning it.
@@ -224,13 +224,13 @@ class Entries
      */
     public function entry(mixed $obj, Collection $args, Context $context): ?array
     {
-        $entry_type_handle = $args->get('entry_type_handle');
+        $entryTypeHandle = $args->get('entry_type_handle');
         $id = $args->get('id');
-        $site_id = $args->get("site_id", Sail::siteId());
+        $siteId = $args->get("site_id", Sail::siteId());
 
-        $homepage = Entry::getHomepage($site_id)->{$site_id};
+        $homepage = Entry::getHomepage($siteId)?->{$siteId};
 
-        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+        $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         return $entryModel->one(['_id' => $id])->toArray($homepage);
     }
@@ -254,8 +254,8 @@ class Entries
      */
     public function createEntry(mixed $obj, Collection $args, Context $context): ?array
     {
-        $is_homepage = $args->get('is_homepage');
-        $entry_type_handle = $args->get('entry_type_handle');
+        $isHomepage = $args->get('is_homepage');
+        $entryTypeHandle = $args->get('entry_type_handle');
         $parent = $args->get('parent');
         $locale = $args->get('locale');
         $alternates = $args->get('alternates');
@@ -264,19 +264,19 @@ class Entries
         $slug = $args->get('slug');
         $categories = $args->get('categories');
         $content = $args->get('content');
-        $site_id = $args->get('site_id');
+        $siteId = $args->get('site_id');
 
-        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+        $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        $entry = $entryModel->create($is_homepage, $locale, $status, $title, $slug, [
+        $entry = $entryModel->create($isHomepage, $locale, $status, $title, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
             'content' => $content,
-            'site_id' => $site_id
+            'site_id' => $siteId
         ]);
 
-        $homepage = Entry::getHomepage($site_id ?? Sail::siteId())->{$site_id ?? Sail::siteId()};
+        $homepage = Entry::getHomepage($siteId ?? Sail::siteId())->{$siteId ?? Sail::siteId()};
 
         return $entry->toArray($homepage);
     }
@@ -301,9 +301,9 @@ class Entries
     public function updateEntry(mixed $obj, Collection $args, Context $context): bool
     {
         $id = $args->get('id');
-        $entry_type_handle = $args->get('entry_type_handle');
+        $entryTypeHandle = $args->get('entry_type_handle');
 
-        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+        $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         return $entryModel->updateById($id, $args);
     }
@@ -328,13 +328,13 @@ class Entries
     public function deleteEntry(mixed $obj, Collection $args, Context $context): bool
     {
         $id = $args->get('id');
-        $entry_type_handle = $args->get('entry_type_handle');
+        $entryTypeHandle = $args->get('entry_type_handle');
         $soft = $args->get('soft', true);
-        $site_id = $args->get('site_id');
+        $siteId = $args->get('site_id');
 
-        $entryModel = $this->getEntryModelByHandle($entry_type_handle);
+        $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        return $entryModel->delete($id, $site_id, $soft);
+        return $entryModel->delete($id, $siteId, $soft);
     }
 
     /**
@@ -342,7 +342,7 @@ class Entries
      * According to the given entry type handle return the Entry Model
      *  - if entry type handle is null, return the default entry type
      *
-     * @param  ?string $entry_type_handle
+     * @param  ?string $entryTypeHandle
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -350,10 +350,10 @@ class Entries
      * @throws PermissionException
      *
      */
-    private function getEntryModelByHandle(?string $entry_type_handle): Entry
+    private function getEntryModelByHandle(?string $entryTypeHandle): Entry
     {
-        if (isset($entry_type_handle)) {
-            $entryModel = EntryType::getEntryModelByHandle($entry_type_handle);
+        if (isset($entryTypeHandle)) {
+            $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
         } else {
             $entryModel = new Entry();
         }

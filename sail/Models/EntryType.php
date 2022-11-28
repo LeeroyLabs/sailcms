@@ -227,8 +227,8 @@ class EntryType extends Model
      *
      * @param string $handle
      * @param string $title
-     * @param LocaleField $url_prefix
-     * @param string|ObjectId|null $entry_layout_id
+     * @param LocaleField $urlPrefix
+     * @param string|ObjectId|null $entryLayoutId
      * @param bool $getObject
      * @return array|EntryType|string|null
      * @throws ACLException
@@ -237,11 +237,11 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public function create(string $handle, string $title, LocaleField $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    public function create(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->hasPermissions();
 
-        return $this->createWithoutPermission($handle, $title, $url_prefix, $entry_layout_id);
+        return $this->createWithoutPermission($handle, $title, $urlPrefix, $entryLayoutId);
     }
 
     /**
@@ -376,28 +376,28 @@ class EntryType extends Model
      *
      * @param string $handle
      * @param string $title
-     * @param LocaleField $url_prefix
-     * @param string|ObjectId|null $entry_layout_id
+     * @param LocaleField $urlPrefix
+     * @param string|ObjectId|null $entryLayoutId
      * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
      * @throws EntryException
      * @throws DatabaseException
      *
      */
-    private function createWithoutPermission(string $handle, string $title, LocaleField $url_prefix, string|ObjectId|null $entry_layout_id = null, bool $getObject = true): array|EntryType|string|null
+    private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
     {
         $this->checkHandle($handle);
 
-        $collection_name = $this->getCollectionName($handle);
+        $collectionName = $this->getCollectionName($handle);
 
         // Create the entry type
         try {
             $entryTypeId = $this->insert([
-                'collection_name' => $collection_name,
+                'collection_name' => $collectionName,
                 'handle' => $handle,
                 'title' => $title,
-                'url_prefix' => $url_prefix,
-                'entry_layout_id' => $entry_layout_id ? (string)$entry_layout_id : null
+                'url_prefix' => $urlPrefix,
+                'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -426,8 +426,8 @@ class EntryType extends Model
     private function updateWithoutPermission(EntryType $entryType, Collection $data): bool
     {
         $title = $data->get('title');
-        $url_prefix = $data->get('url_prefix');
-        $entry_layout_id = $data->get('entry_layout_id');
+        $urlPrefix = $data->get('url_prefix');
+        $entryLayoutId = $data->get('entry_layout_id');
 
         $update = [];
 
@@ -435,11 +435,11 @@ class EntryType extends Model
         if ($title) {
             $update['title'] = $title;
         }
-        if ($url_prefix !== null) {
-            $update['url_prefix'] = $url_prefix;
+        if ($urlPrefix !== null) {
+            $update['url_prefix'] = $urlPrefix;
         }
-        if ($entry_layout_id) {
-            $update['entry_layout_id'] = (string)$entry_layout_id;
+        if ($entryLayoutId) {
+            $update['entry_layout_id'] = (string)$entryLayoutId;
         }
 
         try {
