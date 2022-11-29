@@ -137,8 +137,8 @@ abstract class Field
         $settings = [];
         $configsData = new Collection($data->configs);
 
-        $configsData->each(function ($key, $config) use (&$settings) {
-            $settings[$key] = (array)$config->configs;
+        $configsData->each(function ($key, $field) use (&$settings) {
+            $settings[$key] = (array)$field->settings;
         });
 
         $className = static::getClassFromHandle($data->handle);

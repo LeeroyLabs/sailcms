@@ -8,10 +8,10 @@ use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
-use SailCMS\Models\Entry\Field;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
@@ -340,64 +340,83 @@ class Entries
         return $entryModel->delete($id, $siteId, $soft);
     }
 
+    /**
+     *
+     * Get an entry layout by id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
     public function entryLayout(mixed $obj, Collection $args, Context $context): ?array
     {
-        $entryLayoutId = $args->get('entry_layout_id');
+        $entryLayoutId = $args->get('id');
 
         $entryLayoutModel = new EntryLayout();
         $entryLayout = $entryLayoutModel->one([
             '_id' => $entryLayoutId
         ]);
 
-        return $entryLayout->toArray();
+        return $entryLayout?->toArray();
     }
 
-    public function entryLayouts(mixed $obj, Collection $args, Context $context): array
+    /**
+     *
+     * Get all entry layouts
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryLayouts(mixed $obj, Collection $args, Context $context): ?array
     {
+        $entryLayouts = Collection::init();
+        $result = (new EntryLayout())->getAll() ?? [];
 
+        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts) {
+            $entryLayouts->push($entryLayout->toArray());
+        });
+
+        return $entryLayouts->unwrap();
     }
 
+    /**
+     *
+     * Create an entry layout
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     * @throws FieldException
+     *
+     */
     public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?array
     {
         $titles = $args->get('titles');
         $configs = $args->get('configs');
 
         $titles = new LocaleField($titles->unwrap());
-        $schema = new Collection();
-        foreach ($configs as $fieldConfigs) {
-            $fieldClass = Field::getClassFromHandle($fieldConfigs->handle);
-            $labels = new LocaleField($fieldConfigs->labels->unwrap());
 
-            $configs = Collection::init();
-            $fieldConfigs->configs->each(function ($index, $fields) use ($configs) {
-                $config = Collection::init();
+        $schema = EntryLayout::processSchemaFromGraphQL($configs);
 
-                $fields->each(function ($key, $setting) use ($config) {
-                    if ($setting->type == "boolean") {
-                        $value = (bool)$setting->value;
-                    } else if ($setting->type == "integer") {
-                        $value = (integer)$setting->value;
-                    } else if ($setting->type == "float") {
-                        $value = (float)$setting->value;
-                    } else {
-                        $value = $setting->value;
-                    }
-                    $config->push([
-                        $setting->name => $value,
-                    ]);
-                });
-
-                $configs->pushKeyValue($index, $config);
-            });
-
-            $field = new $fieldClass($labels, $configs);
-            $schema->push($field);
-        }
-        
         $parsedSchema = EntryLayout::generateLayoutSchema($schema);
 
         $entryLayoutModel = new EntryLayout();
-
         $entryLayout = $entryLayoutModel->create($titles, $parsedSchema);
 
         return $entryLayout->toArray();

@@ -279,7 +279,6 @@ test('Update an entry with the default type', function () {
 
 test('Get homepage entry after update', function () {
     $entry = Entry::getHomepage(Sail::siteId(), true);
-    print_r($entry->title);
     expect($entry->title)->toBe('Home page');
 });
 

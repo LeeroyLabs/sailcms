@@ -21,9 +21,9 @@ class InputTextField extends Field
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool $required = false,
-        public readonly int $max_length = 0,
-        public readonly int $min_length = 0
+        public readonly bool        $required = false,
+        public readonly int         $max_length = 0,
+        public readonly int         $min_length = 0
     )
     {
     }
@@ -97,7 +97,7 @@ class InputTextField extends Field
     {
         return (object)[
             'labels' => $this->labels->toDBObject(),
-            'configs' => [
+            'settings' => [
                 'required' => $this->required,
                 'max_length' => $this->max_length,
                 'min_length' => $this->min_length

@@ -39,7 +39,7 @@ abstract class Field implements DatabaseType
     {
         return (object)[
             'labels' => $this->labels->toDBObject(),
-            'configs' => [
+            'settings' => [
                 'required' => $this->required
             ]
         ];

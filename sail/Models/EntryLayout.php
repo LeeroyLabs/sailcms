@@ -10,6 +10,7 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as FieldEntry;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
@@ -68,8 +69,8 @@ class EntryLayout extends Model
     {
         return [
             '_id' => $this->_id,
-            'title' => $this->titles->toDBObject(),
-            'schema' => $this->processSchemaToApi(),
+            'titles' => $this->titles->toDBObject(),
+            'schema' => $this->processSchemaToGraphQL(),
             'authors' => $this->authors->toDBObject(),
             'dates' => $this->dates->toDBObject(),
             'is_trashed' => $this->is_trashed
@@ -103,15 +104,16 @@ class EntryLayout extends Model
      *
      * Get all entry layout TODO
      *
-     * @return void
-     * @throws DatabaseException
+     * @return array|null
      * @throws ACLException
+     * @throws DatabaseException
      * @throws PermissionException
-     *
      */
-    public function getAll(): void
+    public function getAll(): ?array
     {
         $this->hasPermissions(true);
+
+        return $this->find([])->exec();
     }
 
     /**
@@ -180,10 +182,10 @@ class EntryLayout extends Model
                 $inputClass = $field->configs->get($fieldIndex)::class;
 
                 foreach ($toUpdate as $key => $value) {
-                    $currentInput->configs[$key] = $value;
+                    $currentInput->settings[$key] = $value;
                 }
 
-                $input = new $inputClass(new LocaleField($currentInput->labels), ...$currentInput->configs);
+                $input = new $inputClass(new LocaleField($currentInput->labels), ...$currentInput->settings);
                 $field->configs->pushKeyValue('0', $input);
             }
         });
@@ -264,6 +266,51 @@ class EntryLayout extends Model
 
     /**
      *
+     * Process schema from GraphQL inputs
+     *
+     * @param array|Collection $configs
+     * @return Collection
+     */
+    public static function processSchemaFromGraphQL(array|Collection $configs): Collection
+    {
+        $schema = new Collection();
+
+        if (is_array($configs)) {
+            $configs = new Collection($configs);
+        }
+
+        foreach ($configs as $fieldSettings) {
+            $fieldClass = Field::getClassFromHandle($fieldSettings->handle);
+            $labels = new LocaleField($fieldSettings->labels->unwrap());
+
+            $parsedConfigs = Collection::init();
+            $fieldSettings->inputSettings->each(function ($index, $fields) use ($parsedConfigs) {
+                $settings = Collection::init();
+
+                $fields->each(function ($key, $setting) use ($settings) {
+                    if ($setting->type == "boolean") {
+                        $value = (bool)$setting->value;
+                    } else if ($setting->type == "integer") {
+                        $value = (integer)$setting->value;
+                    } else if ($setting->type == "float") {
+                        $value = (float)$setting->value;
+                    } else {
+                        $value = $setting->value;
+                    }
+                    $settings->pushKeyValue($setting->name, $value);
+                });
+
+                $parsedConfigs->pushKeyValue($index, $settings);
+            });
+
+            $field = new $fieldClass($labels, $parsedConfigs);
+            $schema->push($field);
+        }
+        return $schema;
+    }
+
+    /**
+     *
      * Fields process for fetching
      *
      * @param string $field
@@ -337,30 +384,48 @@ class EntryLayout extends Model
         return $schemaForDb;
     }
 
-    private function processSchemaToApi(): Collection
+    /**
+     *
+     * Process schema to GraphQL inputs
+     *
+     * @return Collection
+     *
+     */
+    private function processSchemaToGraphQL(): Collection
     {
         $apiSchema = Collection::init();
 
         $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
             $layoutFieldConfigs = Collection::init();
+            $layoutFieldSettings = Collection::init();
+            
+            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs, $layoutFieldSettings) {
+                $settings = new Collection($input->toDBObject()->settings);
+                $fieldSettings = Collection::init();
 
-            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs) {
-                $fieldConfigs = Collection::init();
-
-                $configs = new Collection($input->toDBObject()->configs);
-
-                $configs->each(function ($key, $value) use ($fieldConfigs) {
-                    $fieldConfigs->push([
+                $settings->each(function ($key, $value) use ($fieldSettings) {
+                    if (is_bool($value)) {
+                        $value = $value ? 'true' : 'false';
+                    }
+                    $fieldSettings->push([
                         'name' => $key,
-                        'value' => $value,
-                        'choices' => [] // TODO add choices
+                        'value' => (string)$value,
+                        'choices' => []
                     ]);
                 });
 
-                $layoutFieldConfigs->pushKeyValue($fieldIndex, $fieldConfigs);
+                $layoutFieldSettings->push($fieldSettings);
             });
+            $layoutFieldConfigs->push([
+                'handle' => $layoutField->handle,
+                'labels' => $layoutField->labels->toDBObject(),
+                'inputSettings' => $layoutFieldSettings->unwrap()
+            ]);
 
-            $apiSchema->pushKeyValue($fieldKey, $layoutFieldConfigs);
+            $apiSchema->push([
+                'key' => $fieldKey,
+                'fieldConfigs' => $layoutFieldConfigs->unwrap()
+            ]);
         });
 
         return $apiSchema;
