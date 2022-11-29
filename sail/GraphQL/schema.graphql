@@ -244,6 +244,14 @@ input FieldConfigsInput {
 input InputSettingsInput {
     name: String!
     value: String!
+    type: InputType!
+}
+
+enum InputType {
+    integer
+    float
+    string
+    boolean
 }
 
 enum EntryStatus {

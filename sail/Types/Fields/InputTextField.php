@@ -76,11 +76,11 @@ class InputTextField extends Field
         }
 
         if ($this->max_length > 0 && strlen($content) > $this->max_length) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->maxLength . ').');
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->max_length . ').');
         }
 
         if ($this->min_length > 0 && strlen($content) < $this->min_length) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->minLength . ').');
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->max_length . ').');
         }
 
         return $errors;

@@ -371,17 +371,29 @@ class Entries
             $configs = Collection::init();
             $fieldConfigs->configs->each(function ($index, $fields) use ($configs) {
                 $config = Collection::init();
-                $fields->each(function ($name, $value) use ($config) {
-                    // TODO parse value add type
-                    $config->pushKeyValue($name, $value);
+
+                $fields->each(function ($key, $setting) use ($config) {
+                    if ($setting->type == "boolean") {
+                        $value = (bool)$setting->value;
+                    } else if ($setting->type == "integer") {
+                        $value = (integer)$setting->value;
+                    } else if ($setting->type == "float") {
+                        $value = (float)$setting->value;
+                    } else {
+                        $value = $setting->value;
+                    }
+                    $config->push([
+                        $setting->name => $value,
+                    ]);
                 });
+
                 $configs->pushKeyValue($index, $config);
             });
 
             $field = new $fieldClass($labels, $configs);
             $schema->push($field);
         }
-
+        
         $parsedSchema = EntryLayout::generateLayoutSchema($schema);
 
         $entryLayoutModel = new EntryLayout();
