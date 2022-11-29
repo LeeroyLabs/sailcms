@@ -235,6 +235,7 @@ type InputSettings {
     name: String!
     value: String
     choices: [String]
+    type: String!
 }
 
 input FieldConfigsInput {

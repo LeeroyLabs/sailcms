@@ -398,19 +398,34 @@ class EntryLayout extends Model
         $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
             $layoutFieldConfigs = Collection::init();
             $layoutFieldSettings = Collection::init();
-            
+
             $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs, $layoutFieldSettings) {
                 $settings = new Collection($input->toDBObject()->settings);
                 $fieldSettings = Collection::init();
+                $availableProperties = get_class($input)::availableProperties();
 
-                $settings->each(function ($key, $value) use ($fieldSettings) {
+
+                $settings->each(function ($key, $value) use ($fieldSettings, $availableProperties) {
                     if (is_bool($value)) {
                         $value = $value ? 'true' : 'false';
                     }
+                    $type = "string";
+                    // todo PUT THAT INTO TYPE/FIELD!
+                    $availableProperties->filter(function ($setting) use (&$type, $key, $value) {
+                        if ($setting->name === $key) {
+                            $type = match ($setting->type) {
+                                "number" => is_float($value) ? 'float' : 'integer',
+                                "checkbox" => 'boolean',
+                                default => 'string'
+                            };
+                        }
+                    });
+
                     $fieldSettings->push([
                         'name' => $key,
                         'value' => (string)$value,
-                        'choices' => []
+                        'choices' => [],
+                        'type' => $type
                     ]);
                 });
 
