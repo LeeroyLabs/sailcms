@@ -10,6 +10,7 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as FieldEntry;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
@@ -23,6 +24,7 @@ class EntryLayout extends Model
     const DATABASE_ERROR = 'Exception when %s an entry';
     const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances';
     const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types';
+    const DOES_NOT_EXISTS = 'Entry layout %s does not exists';
 
     const ACL_HANDLE = "entrylayout";
 
@@ -59,6 +61,25 @@ class EntryLayout extends Model
 
     /**
      *
+     * Parse the entry into an array for api
+     *
+     * @return array
+     *
+     */
+    public function toArray(): array
+    {
+        return [
+            '_id' => $this->_id,
+            'titles' => $this->titles->toDBObject(),
+            'schema' => $this->processSchemaToGraphQL(),
+            'authors' => $this->authors->toDBObject(),
+            'dates' => $this->dates->toDBObject(),
+            'is_trashed' => $this->is_trashed
+        ];
+    }
+
+    /**
+     *
      * Generate a schema for a layout for list of given fields
      *
      * @param Collection $fields
@@ -84,15 +105,16 @@ class EntryLayout extends Model
      *
      * Get all entry layout TODO
      *
-     * @return void
-     * @throws DatabaseException
+     * @return array|null
      * @throws ACLException
+     * @throws DatabaseException
      * @throws PermissionException
-     *
      */
-    public function getAll(): void
+    public function getAll(): ?array
     {
         $this->hasPermissions(true);
+
+        return $this->find([])->exec();
     }
 
     /**
@@ -109,6 +131,9 @@ class EntryLayout extends Model
     {
         $this->hasPermissions(true);
 
+        if (isset($filters['_id'])) {
+            return $this->findById($filters['_id'])->exec();
+        }
         return $this->findOne($filters)->exec();
     }
 
@@ -147,22 +172,27 @@ class EntryLayout extends Model
      * @param string $fieldKey
      * @param array $toUpdate
      * @param int $fieldIndex
+     * @param LocaleField|null $labels
      * @return void
      *
      */
-    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0): void
+    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex) {
+        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels) {
             if ($currentFieldKey === $fieldKey) {
                 $currentInput = $field->configs->get($fieldIndex)->toDbObject();
                 $inputClass = $field->configs->get($fieldIndex)::class;
 
                 foreach ($toUpdate as $key => $value) {
-                    $currentInput->configs[$key] = $value;
+                    $currentInput->settings[$key] = $value;
                 }
 
-                $input = new $inputClass(new LocaleField($currentInput->labels), ...$currentInput->configs);
+                $newLabels = $labels ?? new LocaleField($currentInput->labels);
+
+                $input = new $inputClass($newLabels, ...$currentInput->settings);
                 $field->configs->pushKeyValue('0', $input);
+
+                $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
             }
         });
     }
@@ -232,12 +262,85 @@ class EntryLayout extends Model
 
         if ($soft) {
             $entryLayout = $this->findById($entryLayoutId)->exec();
+
+            if (!$entryLayout) {
+                throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryLayoutId));
+            }
+
             $result = $this->softDelete($entryLayout);
         } else {
             $result = $this->hardDelete($entryLayoutId);
         }
 
         return $result;
+    }
+
+    /**
+     *
+     * Process schema from GraphQL inputs
+     *
+     * @param array|Collection $configs
+     * @return Collection
+     */
+    public static function processSchemaFromGraphQL(array|Collection $configs): Collection
+    {
+        $schema = new Collection();
+
+        if (is_array($configs)) {
+            $configs = new Collection($configs);
+        }
+
+        foreach ($configs as $fieldSettings) {
+            $fieldClass = Field::getClassFromHandle($fieldSettings->handle);
+            $labels = new LocaleField($fieldSettings->labels->unwrap());
+
+            $parsedConfigs = Collection::init();
+            $fieldSettings->inputSettings->each(function ($index, $fields) use ($parsedConfigs) {
+                $settings = Collection::init();
+
+                $fields->each(function ($key, $setting) use ($settings) {
+                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
+                });
+
+                $parsedConfigs->pushKeyValue($index, $settings);
+            });
+
+            $field = new $fieldClass($labels, $parsedConfigs);
+            $schema->push($field);
+        }
+        return $schema;
+    }
+
+    /**
+     *
+     * Update a schema from graphQL inputs
+     *
+     * @param Collection $schemaUpdate
+     * @param EntryLayout $entryLayout
+     * @return void
+     *
+     */
+    public static function updateSchemaFromGraphQL(Collection $schemaUpdate, EntryLayout $entryLayout)
+    {
+        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout) {
+            if (isset($updateInput->inputSettings)) {
+                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
+                    $settings = [];
+                    $toUpdate->each(function ($k, $setting) use (&$settings) {
+                        $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
+                    });
+
+                    $labels = null;
+                    if (isset($updateInput->labels)) {
+                        $labels = new LocaleField($updateInput->labels->unwrap());
+                    }
+                    $entryLayout->updateSchemaConfig($updateInput->get('key'), $settings, $index, $labels);
+                });
+            } else if (isset($updateInput->labels)) {
+                $labels = new LocaleField($updateInput->labels->unwrap());
+                $entryLayout->updateSchemaConfig($updateInput->get('key'), [], 0, $labels);
+            }
+        });
     }
 
     /**
@@ -260,6 +363,38 @@ class EntryLayout extends Model
         };
     }
 
+    /**
+     *
+     * Parse an input setting value according the given type
+     *
+     * @param string $type
+     * @param string $value
+     * @return string
+     *
+     */
+    private static function parseSettingValue(string $type, string $value): string
+    {
+        if ($type == "boolean") {
+            $result = !($value === "false");
+        } else if ($type == "integer") {
+            $result = (integer)$value;
+        } else if ($type == "float") {
+            $result = (float)$value;
+        } else {
+            $result = $value;
+        }
+        return $result;
+    }
+
+    /**
+     *
+     * Validate the schema before save
+     *
+     * @param Collection $schema
+     * @return void
+     * @throws EntryException
+     *
+     */
     private static function validateSchema(Collection $schema)
     {
         $schema->each(function ($key, $value) {
@@ -313,6 +448,68 @@ class EntryLayout extends Model
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
+    }
+
+    /**
+     *
+     * Process schema to GraphQL inputs
+     *
+     * @return Collection
+     *
+     */
+    private function processSchemaToGraphQL(): Collection
+    {
+        $apiSchema = Collection::init();
+
+        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
+            $layoutFieldConfigs = Collection::init();
+            $layoutFieldSettings = Collection::init();
+
+            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs, $layoutFieldSettings) {
+                $settings = new Collection($input->toDBObject()->settings);
+                $fieldSettings = Collection::init();
+                $availableProperties = get_class($input)::availableProperties();
+
+
+                $settings->each(function ($key, $value) use ($fieldSettings, $availableProperties) {
+                    if (is_bool($value)) {
+                        $value = $value ? 'true' : 'false';
+                    }
+                    $type = "string";
+                    // todo PUT THAT INTO TYPE/FIELD!
+                    $availableProperties->filter(function ($setting) use (&$type, $key, $value) {
+                        if ($setting->name === $key) {
+                            $type = match ($setting->type) {
+                                "number" => is_float($value) ? 'float' : 'integer',
+                                "checkbox" => 'boolean',
+                                default => 'string'
+                            };
+                        }
+                    });
+
+                    $fieldSettings->push([
+                        'name' => $key,
+                        'value' => (string)$value,
+                        'choices' => [],
+                        'type' => $type
+                    ]);
+                });
+
+                $layoutFieldSettings->push($fieldSettings);
+            });
+            $layoutFieldConfigs->push([
+                'handle' => $layoutField->handle,
+                'labels' => $layoutField->labels->toDBObject(),
+                'inputSettings' => $layoutFieldSettings->unwrap()
+            ]);
+
+            $apiSchema->push([
+                'key' => $fieldKey,
+                'fieldConfigs' => $layoutFieldConfigs->unwrap()
+            ]);
+        });
+
+        return $apiSchema;
     }
 
     /**

@@ -29,6 +29,8 @@ type Query {
     entryType(id: ID, handle: String): EntryType
     entries(entry_type_handle: String!, page: Int, limit: Int, sort: String, direction: Int, site_id: String): EntryListing
     entry(id: ID!, entry_type_handle: String): Entry
+    entryLayout(id: ID!): EntryLayout
+    entryLayouts: [EntryLayout]
 
     # Registers
     registeredExtensions: RegisteredExtensions!
@@ -73,7 +75,10 @@ type Mutation {
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Entry
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Boolean
-    deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean!): Boolean
+    deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
+    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
+    updateEntryLayout(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
+    deleteEntryLayout(id: ID!, soft: Boolean): Boolean
 
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
@@ -209,6 +214,58 @@ type EntryType {
     handle: String!
     url_prefix: LocaleField!
     entry_layout_id: ID
+}
+
+type EntryLayout {
+    _id: ID!
+    titles: LocaleField!
+    schema: [LayoutField]!
+    authors: Authors!
+    dates: Dates!
+    is_trashed: Boolean!
+}
+
+type LayoutField {
+    key: String!
+    fieldConfigs: [FieldConfigs]!
+}
+
+type FieldConfigs {
+    labels: LocaleField!
+    handle: String!
+    inputSettings: [[InputSettings]]!
+}
+
+type InputSettings {
+    name: String!
+    value: String
+    choices: [String]
+    type: String!
+}
+
+input FieldConfigsInput {
+    labels: LocaleFieldInput
+    handle: String!
+    inputSettings: [[InputSettingsInput]]!
+}
+
+input SchemaUpdateInput {
+    key: String!
+    labels: LocaleFieldInput
+    inputSettings: [[InputSettingsInput]]
+}
+
+input InputSettingsInput {
+    name: String!
+    value: String!
+    type: InputType!
+}
+
+enum InputType {
+    integer
+    float
+    string
+    boolean
 }
 
 enum EntryStatus {

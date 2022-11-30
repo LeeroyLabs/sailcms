@@ -42,9 +42,9 @@ class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param  string  $operationName
-     * @param  string  $className
-     * @param  string  $method
+     * @param string $operationName
+     * @param string $className
+     * @param string $method
      * @return void
      * @throws GraphqlException
      *
@@ -67,9 +67,9 @@ class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param  string  $operationName
-     * @param  string  $className
-     * @param  string  $method
+     * @param string $operationName
+     * @param string $className
+     * @param string $method
      * @return void
      * @throws GraphqlException
      *
@@ -92,9 +92,9 @@ class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param  string  $type
-     * @param  string  $className
-     * @param  string  $method
+     * @param string $type
+     * @param string $className
+     * @param string $method
      * @return void
      * @throws GraphqlException
      *
@@ -117,7 +117,7 @@ class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param  string  $content
+     * @param string $content
      * @return void
      *
      */
@@ -130,7 +130,7 @@ class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param  string  $content
+     * @param string $content
      * @return void
      *
      */
@@ -143,7 +143,7 @@ class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param  string  $content
+     * @param string $content
      * @return void
      *
      */
@@ -339,6 +339,12 @@ class GraphQL
         static::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
         static::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
+        static::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
+        static::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
+        static::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
+        static::addMutationResolver('updateEntryLayout', Entries::class, 'updateEntryLayout');
+        static::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
+
         // Register
         static::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
 
@@ -364,9 +370,9 @@ class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param  array        $args
+     * @param array $args
      * @param               $contextValue
-     * @param  ResolveInfo  $info
+     * @param ResolveInfo $info
      * @return ArrayAccess|mixed
      *
      */

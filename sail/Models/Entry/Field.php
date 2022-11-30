@@ -137,8 +137,8 @@ abstract class Field
         $settings = [];
         $configsData = new Collection($data->configs);
 
-        $configsData->each(function ($key, $config) use (&$settings) {
-            $settings[$key] = (array)$config->configs;
+        $configsData->each(function ($key, $field) use (&$settings) {
+            $settings[$key] = (array)$field->settings;
         });
 
         $className = static::getClassFromHandle($data->handle);
@@ -146,6 +146,26 @@ abstract class Field
         $labels = new LocaleField($data->labels ?? []);
 
         return new $className($labels, $settings);
+    }
+
+    /**
+     *
+     * Get the class name from the FieldLayout handle
+     *
+     * @param string $handle
+     * @return string
+     *
+     */
+    public static function getClassFromHandle(string $handle): string
+    {
+        $handle = explode('_', $handle);
+        $className = __NAMESPACE__ . '\\';
+
+        foreach ($handle as $key => $value) {
+            $className .= ucfirst($value);
+        }
+
+        return $className;
     }
 
     /**
@@ -174,26 +194,4 @@ abstract class Field
      *
      */
     abstract protected function validate(Collection $content): ?Collection;
-
-    /**
-     *
-     * Get the class name from the FieldLayout handle
-     *
-     * @param string $handle
-     * @return string
-     *
-     */
-    private static function getClassFromHandle(string $handle): string
-    {
-        $handle = explode('_', $handle);
-        $className = __NAMESPACE__ . '\\';
-
-        foreach ($handle as $key => $value) {
-            $className .= ucfirst($value);
-        }
-
-        return $className;
-    }
-
-    // TODO graphql type
 }

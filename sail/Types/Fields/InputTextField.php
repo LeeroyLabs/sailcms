@@ -75,12 +75,12 @@ class InputTextField extends Field
             $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
         }
 
-        if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->maxLength . ').');
+        if ($this->max_length > 0 && strlen($content) > $this->max_length) {
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->max_length . ').');
         }
 
-        if ($this->minLength > 0 && strlen($content) < $this->minLength) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->minLength . ').');
+        if ($this->min_length > 0 && strlen($content) < $this->min_length) {
+            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->max_length . ').');
         }
 
         return $errors;
@@ -97,7 +97,7 @@ class InputTextField extends Field
     {
         return (object)[
             'labels' => $this->labels->toDBObject(),
-            'configs' => [
+            'settings' => [
                 'required' => $this->required,
                 'max_length' => $this->max_length,
                 'min_length' => $this->min_length

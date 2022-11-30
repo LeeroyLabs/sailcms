@@ -38,7 +38,7 @@ class Entry extends Model
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
     const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
-    const DOES_NOT_EXISTS = "Entry type %s does not exists";
+    const DOES_NOT_EXISTS = 'Entry %s does not exists';
     const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Cache */
@@ -135,7 +135,7 @@ class Entry extends Model
 
     /**
      *
-     * Parse the entry into an array for graphql
+     * Parse the entry into an array for api
      *
      * @param array|object|null $homepage
      * @return array
@@ -185,9 +185,12 @@ class Entry extends Model
         $offset = $page * $limit - $limit;
 
         if (!$filters) {
-            $filters = [];
+            $filters = [
+                'status' => ['$ne' => EntryStatus::TRASH]
+            ];
         }
         // TODO handle search and filters
+        // TODO handle any status
         // $query['field'] = new Regex($search, 'gi');
 
         $options = QueryOptions::initWithPagination($offset, $limit);
@@ -307,9 +310,9 @@ class Entry extends Model
      *
      * Get a validated slug that is not already existing in the db
      *
-     * @param LocaleField $url_prefix
+     * @param LocaleField $urlPrefix
      * @param string $slug
-     * @param string $site_id
+     * @param string $siteId
      * @param string $locale
      * @param string|null $currentId
      * @param Collection|null $availableTypes
@@ -320,17 +323,17 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public static function getValidatedSlug(LocaleField $url_prefix, string $slug, string $site_id, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
+    public static function getValidatedSlug(LocaleField $urlPrefix, string $slug, string $siteId, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
     {
         // Just to be sure that the slug is ok
         $slug = Text::slugify($slug, $locale);
 
         // Form the url to find if it already exists
-        $url = static::getRelativeUrl($url_prefix, $slug, $locale);
+        $url = static::getRelativeUrl($urlPrefix, $slug, $locale);
         $found = 0;
 
         // Set the filters for the query
-        $filters = ['url' => $url, 'site_id' => $site_id];
+        $filters = ['url' => $url, 'site_id' => $siteId];
         if ($currentId) {
             $filters['_id'] = ['$ne' => new ObjectId($currentId)];
         }
@@ -350,7 +353,7 @@ class Entry extends Model
 
         if ($found > 0) {
             $slug = static::incrementSlug($slug);
-            return static::getValidatedSlug($url_prefix, $slug, $site_id, $locale, $currentId, $availableTypes);
+            return static::getValidatedSlug($urlPrefix, $slug, $siteId, $locale, $currentId, $availableTypes);
         }
         return $slug;
     }
@@ -359,20 +362,20 @@ class Entry extends Model
      *
      * Get the relative url of the entry
      *
-     * @param LocaleField $url_prefix
+     * @param LocaleField $urlPrefix
      * @param string $slug
      * @param string $locale
      * @return string
      *
      */
-    public static function getRelativeUrl(LocaleField $url_prefix, string $slug, string $locale): string
+    public static function getRelativeUrl(LocaleField $urlPrefix, string $slug, string $locale): string
     {
         $relativeUrl = "";
 
-        $url_prefix_with_locale = $url_prefix->{$locale} ?? '';
+        $urlPrefixWithLocale = $urlPrefix->{$locale} ?? '';
 
-        if ($url_prefix_with_locale) {
-            $relativeUrl .= $url_prefix_with_locale . '/';
+        if ($urlPrefixWithLocale) {
+            $relativeUrl .= $urlPrefixWithLocale . '/';
         }
         $relativeUrl .= $slug;
 
@@ -490,7 +493,7 @@ class Entry extends Model
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     * @param bool $is_homepage
+     * @param bool $isHomepage
      * @param string $locale
      * @param EntryStatus|string $status
      * @param string $title
@@ -506,7 +509,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function create(bool $is_homepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
     {
         $this->hasPermissions();
 
@@ -530,7 +533,7 @@ class Entry extends Model
 
         $entry = $this->createWithoutPermission($data);
 
-        if ($is_homepage) {
+        if ($isHomepage) {
             $entry->setAsHomepage($siteId);
         }
 
@@ -595,7 +598,7 @@ class Entry extends Model
      *
      * Update entries url according to an url prefix (normally comes from entry type)
      *
-     * @param LocaleField $url_prefix
+     * @param LocaleField $urlPrefix
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -603,17 +606,17 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public function updateEntriesUrl(LocaleField $url_prefix): void
+    public function updateEntriesUrl(LocaleField $urlPrefix): void
     {
         $entries = $this->all();
 
         // TODO can we do that in batches...
-        $entries->each(function ($key, $value) use ($url_prefix) {
+        $entries->each(function ($key, $value) use ($urlPrefix) {
             /**
              * @var Entry $value
              */
             $this->updateWithoutPermission($value, new Collection([
-                'url' => Entry::getRelativeUrl($url_prefix, $value->slug, $value->locale)
+                'url' => Entry::getRelativeUrl($urlPrefix, $value->slug, $value->locale)
             ]));
         });
     }
@@ -642,6 +645,11 @@ class Entry extends Model
 
         if ($soft) {
             $entry = $this->findById($entryId)->exec();
+
+            if (!$entry) {
+                throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryId));
+            }
+
             $result = $this->softDelete($entry);
         } else {
             $result = $this->hardDelete($entryId);
