@@ -301,6 +301,7 @@ class GraphQL
         static::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
         static::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
         static::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
+        static::addQueryResolver('userWithToken', Users::class, 'userWithToken');
         static::addMutationResolver('changePassword', Users::class, 'changePassword');
 
         // Roles & ACL

@@ -204,7 +204,7 @@ class Stateless implements AppSession
                 $cookie = '';
             }
         }
-
+        
         if (empty($cookie)) {
             return false;
         }
