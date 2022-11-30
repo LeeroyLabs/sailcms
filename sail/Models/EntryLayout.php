@@ -24,6 +24,7 @@ class EntryLayout extends Model
     const DATABASE_ERROR = 'Exception when %s an entry';
     const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances';
     const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types';
+    const DOES_NOT_EXISTS = 'Entry layout %s does not exists';
 
     const ACL_HANDLE = "entrylayout";
 
@@ -171,12 +172,13 @@ class EntryLayout extends Model
      * @param string $fieldKey
      * @param array $toUpdate
      * @param int $fieldIndex
+     * @param LocaleField|null $labels
      * @return void
      *
      */
-    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0): void
+    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex) {
+        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels) {
             if ($currentFieldKey === $fieldKey) {
                 $currentInput = $field->configs->get($fieldIndex)->toDbObject();
                 $inputClass = $field->configs->get($fieldIndex)::class;
@@ -185,8 +187,12 @@ class EntryLayout extends Model
                     $currentInput->settings[$key] = $value;
                 }
 
-                $input = new $inputClass(new LocaleField($currentInput->labels), ...$currentInput->settings);
+                $newLabels = $labels ?? new LocaleField($currentInput->labels);
+
+                $input = new $inputClass($newLabels, ...$currentInput->settings);
                 $field->configs->pushKeyValue('0', $input);
+
+                $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
             }
         });
     }
@@ -256,6 +262,11 @@ class EntryLayout extends Model
 
         if ($soft) {
             $entryLayout = $this->findById($entryLayoutId)->exec();
+
+            if (!$entryLayout) {
+                throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryLayoutId));
+            }
+
             $result = $this->softDelete($entryLayout);
         } else {
             $result = $this->hardDelete($entryLayoutId);
@@ -288,16 +299,7 @@ class EntryLayout extends Model
                 $settings = Collection::init();
 
                 $fields->each(function ($key, $setting) use ($settings) {
-                    if ($setting->type == "boolean") {
-                        $value = (bool)$setting->value;
-                    } else if ($setting->type == "integer") {
-                        $value = (integer)$setting->value;
-                    } else if ($setting->type == "float") {
-                        $value = (float)$setting->value;
-                    } else {
-                        $value = $setting->value;
-                    }
-                    $settings->pushKeyValue($setting->name, $value);
+                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
                 });
 
                 $parsedConfigs->pushKeyValue($index, $settings);
@@ -307,6 +309,38 @@ class EntryLayout extends Model
             $schema->push($field);
         }
         return $schema;
+    }
+
+    /**
+     *
+     * Update a schema from graphQL inputs
+     *
+     * @param Collection $schemaUpdate
+     * @param EntryLayout $entryLayout
+     * @return void
+     *
+     */
+    public static function updateSchemaFromGraphQL(Collection $schemaUpdate, EntryLayout $entryLayout)
+    {
+        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout) {
+            if (isset($updateInput->inputSettings)) {
+                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
+                    $settings = [];
+                    $toUpdate->each(function ($k, $setting) use (&$settings) {
+                        $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
+                    });
+
+                    $labels = null;
+                    if (isset($updateInput->labels)) {
+                        $labels = new LocaleField($updateInput->labels->unwrap());
+                    }
+                    $entryLayout->updateSchemaConfig($updateInput->get('key'), $settings, $index, $labels);
+                });
+            } else if (isset($updateInput->labels)) {
+                $labels = new LocaleField($updateInput->labels->unwrap());
+                $entryLayout->updateSchemaConfig($updateInput->get('key'), [], 0, $labels);
+            }
+        });
     }
 
     /**
@@ -329,6 +363,38 @@ class EntryLayout extends Model
         };
     }
 
+    /**
+     *
+     * Parse an input setting value according the given type
+     *
+     * @param string $type
+     * @param string $value
+     * @return string
+     *
+     */
+    private static function parseSettingValue(string $type, string $value): string
+    {
+        if ($type == "boolean") {
+            $result = !($value === "false");
+        } else if ($type == "integer") {
+            $result = (integer)$value;
+        } else if ($type == "float") {
+            $result = (float)$value;
+        } else {
+            $result = $value;
+        }
+        return $result;
+    }
+
+    /**
+     *
+     * Validate the schema before save
+     *
+     * @param Collection $schema
+     * @return void
+     * @throws EntryException
+     *
+     */
     private static function validateSchema(Collection $schema)
     {
         $schema->each(function ($key, $value) {

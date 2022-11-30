@@ -38,7 +38,7 @@ class Entry extends Model
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
     const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
-    const DOES_NOT_EXISTS = "Entry type %s does not exists";
+    const DOES_NOT_EXISTS = 'Entry %s does not exists';
     const DATABASE_ERROR = 'Exception when %s an entry';
 
     /* Cache */
@@ -185,9 +185,12 @@ class Entry extends Model
         $offset = $page * $limit - $limit;
 
         if (!$filters) {
-            $filters = [];
+            $filters = [
+                'status' => ['$ne' => EntryStatus::TRASH]
+            ];
         }
         // TODO handle search and filters
+        // TODO handle any status
         // $query['field'] = new Regex($search, 'gi');
 
         $options = QueryOptions::initWithPagination($offset, $limit);
@@ -642,6 +645,11 @@ class Entry extends Model
 
         if ($soft) {
             $entry = $this->findById($entryId)->exec();
+
+            if (!$entry) {
+                throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryId));
+            }
+
             $result = $this->softDelete($entry);
         } else {
             $result = $this->hardDelete($entryId);

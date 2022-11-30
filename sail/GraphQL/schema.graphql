@@ -75,8 +75,10 @@ type Mutation {
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Entry
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [String!], parent: ParenInput, site_id: ID, alternates: [String]): Boolean
-    deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean!): Boolean
-    createEntryLayout(titles: LocaleFieldInput!, configs: [FieldConfigsInput!]!): EntryLayout
+    deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
+    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
+    updateEntryLayout(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
+    deleteEntryLayout(id: ID!, soft: Boolean): Boolean
 
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
@@ -216,8 +218,11 @@ type EntryType {
 
 type EntryLayout {
     _id: ID!
-    titles: LocaleField
+    titles: LocaleField!
     schema: [LayoutField]!
+    authors: Authors!
+    dates: Dates!
+    is_trashed: Boolean!
 }
 
 type LayoutField {
@@ -242,6 +247,12 @@ input FieldConfigsInput {
     labels: LocaleFieldInput
     handle: String!
     inputSettings: [[InputSettingsInput]]!
+}
+
+input SchemaUpdateInput {
+    key: String!
+    labels: LocaleFieldInput
+    inputSettings: [[InputSettingsInput]]
 }
 
 input InputSettingsInput {

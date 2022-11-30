@@ -408,26 +408,73 @@ class Entries
     public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?array
     {
         $titles = $args->get('titles');
-        $configs = $args->get('configs');
+        $graphqlSchema = $args->get('schema');
 
         $titles = new LocaleField($titles->unwrap());
 
-        $schema = EntryLayout::processSchemaFromGraphQL($configs);
-
-        $parsedSchema = EntryLayout::generateLayoutSchema($schema);
+        $schema = EntryLayout::processSchemaFromGraphQL($graphqlSchema);
+        $generatedSchema = EntryLayout::generateLayoutSchema($schema);
 
         $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->create($titles, $parsedSchema);
+        $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
 
         return $entryLayout->toArray();
     }
 
+    /**
+     *
+     * Update an entry layout
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function updateEntryLayout(mixed $obj, Collection $args, Context $context): bool
     {
+        $id = $args->get('id');
+        $titles = $args->get('titles');
+        $schemaUpdate = $args->get('schema_update');
+
+        $entryLayoutModel = new EntryLayout();
+        $entryLayout = $entryLayoutModel->one(['_id' => $id]);
+
+        if (!$entryLayout) {
+            throw new EntryException(sprintf(EntryLayout::DOES_NOT_EXISTS, $id));
+        }
+
+        EntryLayout::updateSchemaFromGraphQL($schemaUpdate, $entryLayout);
+
+        return $entryLayoutModel->updateById($id, $titles, $entryLayout->schema);
     }
 
+    /**
+     *
+     * Delete an entry layout
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function deleteEntryLayout(mixed $obj, Collection $args, Context $context): bool
     {
+        $id = $args->get('id');
+        $soft = $args->get('soft', true);
+
+        $entryLayoutModel = new EntryLayout();
+
+        return $entryLayoutModel->delete($id, $soft);
     }
 
     /**
