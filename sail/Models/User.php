@@ -130,6 +130,10 @@ class User extends Model
         if (!empty($uid)) {
             $instance = new static();
             static::$currentUser = $instance->findById($uid)->exec();
+
+            if (static::$currentUser) {
+                static::$currentUser->auth_token = env('jwt', '');
+            }
         }
     }
 
@@ -281,6 +285,33 @@ class User extends Model
 
         Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
         return $id;
+    }
+
+    /**
+     *
+     * Resend a validation email
+     *
+     * @param  string  $email
+     * @return bool
+     * @return bool
+     *
+     * @throws DatabaseException
+     */
+    public function resendValidationEmail(string $email): bool
+    {
+        $user = $this->findOne(['email' => $email])->exec();
+
+        if ($user) {
+            try {
+                $mail = new Mail();
+                $mail->to($email)->useEmail('new_account', $user->locale, ['verification_code' => $user->validation_code])->send();
+                return true;
+            } catch (Exception $e) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /**
