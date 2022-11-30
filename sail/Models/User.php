@@ -289,6 +289,33 @@ class User extends Model
 
     /**
      *
+     * Resend a validation email
+     *
+     * @param  string  $email
+     * @return bool
+     * @return bool
+     *
+     * @throws DatabaseException
+     */
+    public function resendValidationEmail(string $email): bool
+    {
+        $user = $this->findOne(['email' => $email])->exec();
+
+        if ($user) {
+            try {
+                $mail = new Mail();
+                $mail->to($email)->useEmail('new_account', $user->locale, ['verification_code' => $user->validation_code])->send();
+                return true;
+            } catch (Exception $e) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     *
      * Create a new user
      *
      * @param  Username          $name

@@ -6,6 +6,7 @@ type Query {
     users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
 
     # Authentication
+    resendValidationEmail(email: String!): Boolean!
     authenticate(email: String!, password: String!): LoginResult!
     verifyAuthenticationToken(token: String!): User
     verifyTFA(user_id: ID!, code: String!): Boolean!

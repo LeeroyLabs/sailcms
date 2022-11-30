@@ -56,6 +56,11 @@ class Users
         return User::$currentUser ?? null;
     }
 
+    public function resendValidationEmail(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new User())->resendValidationEmail($args->get('email'));
+    }
+
     /**
      *
      * List users
