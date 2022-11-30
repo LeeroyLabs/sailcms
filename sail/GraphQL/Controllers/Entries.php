@@ -190,7 +190,7 @@ class Entries
         // For filtering
         $siteId = $args->get('site_id', Sail::siteId());
 
-        $homepage = Entry::getHomepage($siteId)?->{$siteId};
+        $homepages = Entry::getHomepage()?->{$siteId};
 
         $filters = [
             "site_id" => $siteId
@@ -200,7 +200,8 @@ class Entries
         $data = Collection::init();
 
         // Clean data before returning it.
-        $result->list->each(function ($key, &$entry) use ($homepage, $data) {
+        $result->list->each(function ($key, &$entry) use ($homepages, $data) {
+            $homepage = $homepages->{$entry->locale} ?? null;
             $entryArray = $entry->toArray($homepage);
             $data->push($entryArray);
         });
@@ -231,11 +232,11 @@ class Entries
         $id = $args->get('id');
         $siteId = $args->get("site_id", Sail::siteId());
 
-        $homepage = Entry::getHomepage($siteId)?->{$siteId};
-
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
+        $entry = $entryModel->one(['_id' => $id]);
 
-        return $entryModel->one(['_id' => $id])->toArray($homepage);
+        $homepage = Entry::getHomepage()?->{$siteId}->{$entry->locale} ?? null;
+        return $entry->toArray($homepage);
     }
 
     /**
@@ -268,7 +269,7 @@ class Entries
         $categories = $args->get('categories');
         $content = $args->get('content');
         $siteId = $args->get('site_id');
-
+        
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         $entry = $entryModel->create($isHomepage, $locale, $status, $title, $slug, [
@@ -279,7 +280,7 @@ class Entries
             'site_id' => $siteId
         ]);
 
-        $homepage = Entry::getHomepage($siteId ?? Sail::siteId())->{$siteId ?? Sail::siteId()};
+        $homepage = Entry::getHomepage()->{$entry->site_id}->{$entry->locale} ?? null;
 
         return $entry->toArray($homepage);
     }
@@ -333,11 +334,10 @@ class Entries
         $id = $args->get('id');
         $entryTypeHandle = $args->get('entry_type_handle');
         $soft = $args->get('soft', true);
-        $siteId = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        return $entryModel->delete($id, $siteId, $soft);
+        return $entryModel->delete($id, $soft);
     }
 
     /**
