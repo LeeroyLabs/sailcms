@@ -199,15 +199,17 @@ class Stateless implements AppSession
 
             $this->token = $cookie;
 
-            if (trim(empty($cookie)) || $cookie === 'null') {
+            if ($cookie === 'null' || trim(empty($cookie))) {
                 $this->token = '';
                 $cookie = '';
             }
         }
-        
+
         if (empty($cookie)) {
             return false;
         }
+
+        $_ENV['JWT'] = $cookie;
 
         $parser = new Parser(new JoseEncoder());
         $token = $parser->parse($cookie);

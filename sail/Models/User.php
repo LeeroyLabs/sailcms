@@ -130,6 +130,10 @@ class User extends Model
         if (!empty($uid)) {
             $instance = new static();
             static::$currentUser = $instance->findById($uid)->exec();
+
+            if (static::$currentUser) {
+                static::$currentUser->auth_token = env('jwt', '');
+            }
         }
     }
 
