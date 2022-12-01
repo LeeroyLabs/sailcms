@@ -22,6 +22,31 @@ use SodiumException;
 class Entries
 {
     /**
+     *
+     * Get the home page entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return Entry|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function homepageEntry(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $locale = $args->get('locale');
+        $siteId = $args->get('site_id');
+
+        return Entry::getHomepage($locale, $siteId, true, true);
+    }
+
+    /**
      * Get all entry types
      *
      * @param mixed $obj
@@ -190,7 +215,7 @@ class Entries
         // For filtering
         $siteId = $args->get('site_id', Sail::siteId());
 
-        $homepages = Entry::getHomepage()?->{$siteId};
+        $currentSiteHomepages = Entry::getHomepage()?->{$siteId};
 
         $filters = [
             "site_id" => $siteId
@@ -200,8 +225,8 @@ class Entries
         $data = Collection::init();
 
         // Clean data before returning it.
-        $result->list->each(function ($key, &$entry) use ($homepages, $data) {
-            $homepage = $homepages->{$entry->locale} ?? null;
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, $data) {
+            $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
             $entryArray = $entry->toArray($homepage);
             $data->push($entryArray);
         });
@@ -235,7 +260,7 @@ class Entries
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
         $entry = $entryModel->one(['_id' => $id]);
 
-        $homepage = Entry::getHomepage()?->{$siteId}->{$entry->locale} ?? null;
+        $homepage = Entry::getHomepage($siteId, $entry->locale);
         return $entry->toArray($homepage);
     }
 
@@ -269,7 +294,7 @@ class Entries
         $categories = $args->get('categories');
         $content = $args->get('content');
         $siteId = $args->get('site_id');
-        
+
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         $entry = $entryModel->create($isHomepage, $locale, $status, $title, $slug, [
@@ -280,7 +305,7 @@ class Entries
             'site_id' => $siteId
         ]);
 
-        $homepage = Entry::getHomepage()->{$entry->site_id}->{$entry->locale} ?? null;
+        $homepage = Entry::getHomepage($entry->site_id, $entry->locale);
 
         return $entry->toArray($homepage);
     }
