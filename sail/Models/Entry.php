@@ -12,8 +12,10 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
+use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
@@ -25,6 +27,7 @@ use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SodiumException;
+use stdClass;
 
 class Entry extends Model
 {
@@ -38,6 +41,9 @@ class Entry extends Model
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
     const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
+    const CANNOT_VALIDATE_CONTENT = 'You cannot validate content without setting an entry layout to the type';
+    const SCHEMA_VALIDATION_ERROR = 'The entry layout schema does not fits with the contents sends';
+    const CONTENT_ERROR = 'The content has theses errors :' . PHP_EOL;
     const DOES_NOT_EXISTS = 'Entry %s does not exists';
     const DATABASE_ERROR = 'Exception when %s an entry';
 
@@ -63,29 +69,34 @@ class Entry extends Model
     public Collection $content;
 
     private EntryType $entryType;
-
-    // TODO: populate CONTENT
+    private EntryLayout $entryLayout;
 
     /**
      *
      *  Get the model according to the collection
      *
      * @param string $collection
+     * @param EntryType|null $entryType
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
      *
      */
-    public function __construct(string $collection = '')
+    public function __construct(string $collection = '', EntryType $entryType = null)
     {
-        // Get or create the default entry type
-        if (!$collection) {
-            $this->entryType = EntryType::getDefaultType();
+        if (!$entryType) {
+            // Get or create the default entry type
+            if (!$collection) {
+                $this->entryType = EntryType::getDefaultType();
+            } else {
+                // Get entry type by collection name
+                $this->entryType = EntryType::getByCollectionName($collection);
+            }
         } else {
-            // Get entry type by collection name
-            $this->entryType = EntryType::getByCollectionName($collection);
+            $this->entryType = $entryType;
         }
+
 
         $this->entry_type_id = $this->entryType->_id;
         $collection = $this->entryType->collection_name;
@@ -131,6 +142,30 @@ class Entry extends Model
             'categories',
             'content'
         ];
+    }
+
+    /**
+     *
+     *
+     *
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getEntryLayout(): ?EntryLayout
+    {
+        if (!isset($this->entryLayout)) {
+            if (!$this->entryType->entry_layout_id) {
+                return null;
+            }
+
+            $this->entryLayout = (new EntryLayout())->one([
+                '_id' => $this->entryType->entry_layout_id
+            ]);
+        }
+        return $this->entryLayout;
     }
 
     /**
@@ -515,7 +550,7 @@ class Entry extends Model
      * @param EntryStatus|string $status
      * @param string $title
      * @param string|null $slug
-     * @param array|Collection $optionalData
+     * @param array|Collection $extraData
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -526,7 +561,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $extraData = []): array|Entry|null
     {
         $this->hasPermissions();
 
@@ -542,8 +577,8 @@ class Entry extends Model
         ]);
 
         // Add the optional data to the creation
-        if (is_array($optionalData)) {
-            $data->merge(new Collection($optionalData));
+        if ($extraData) {
+            $data->pushSpreadKeyValue(...$extraData);
         }
 
         $siteId = $data->get('site_id', Sail::siteId());
@@ -702,12 +737,13 @@ class Entry extends Model
      * @return mixed
      *
      */
-    #[Pure] protected function processOnFetch(string $field, mixed $value): mixed
+    protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
             "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             "parent" => $value ? new EntryParent($value->handle, $value->parent_id) : null,
+            "content" => $value instanceof stdClass ? new Collection((array)$value) : $value,
             default => $value,
         };
     }
@@ -749,12 +785,63 @@ class Entry extends Model
         }
     }
 
-    private static function validateContent(?Collection &$content): Collection
+    /**
+     *
+     * Validate content from the entry type layout schema
+     *
+     * @param Collection $content
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     * @throws FieldException
+     *
+     */
+    private function validateContent(Collection $content): void
     {
-        // Validate content
+        $errors = Collection::init();
 
-        // Return errors
-        return new Collection();
+        $schema = null;
+        if ($this->entryType->entry_layout_id) {
+            $entryLayoutModel = new EntryLayout();
+            $entryLayout = $entryLayoutModel->one(['_id' => $this->entryType->entry_layout_id]);
+            $schema = $entryLayout->schema;
+        }
+
+        if ($content->length > 0 && !$schema) {
+            throw new EntryException(static::CANNOT_VALIDATE_CONTENT);
+        } else if (!$schema) {
+            $schema = Collection::init();
+        }
+
+        // Validate content
+        $schema->each(function ($key, $modelField) use ($content, $errors) {
+            /**
+             * @var ModelField $modelField
+             */
+            $modelFieldContent = $content->get($key);
+            if ($modelField->handle != $modelFieldContent->handle) {
+                throw new EntryException(static::SCHEMA_VALIDATION_ERROR);
+            }
+            $modelFieldErrors = $modelField->validateContent($modelFieldContent->content);
+
+            if ($modelFieldErrors->length > 0) {
+                $errors->pushKeyValue($key, $modelFieldErrors->unwrap());
+            }
+        });
+
+        if ($errors->length > 0) {
+            $errorsArray = $errors->unwrap();
+            $errorsStrings = [];
+            array_walk_recursive($errorsArray, function ($item, $key) use (&$errorsStrings) {
+                $errorsStrings[] = "[" . $key . "] = " . $item;
+            });
+
+            if (count($errorsStrings) > 0) {
+                throw new EntryException(static::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
+            }
+        }
     }
 
     /**
@@ -821,6 +908,7 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws FieldException
      *
      */
     private function createWithoutPermission(Collection $data): array|Entry|null
@@ -835,11 +923,14 @@ class Entry extends Model
         $parent = $data->get('parent');
         $content = $data->get('content');
 
-        // TODO implements others fields: categories content
+        // TODO implements others fields: categories
 
         // VALIDATION
         static::validateStatus($status);
-        $errors = static::validateContent($content);
+        if ($content) {
+            $this->validateContent($content);
+            $content = $content->unwrap();
+        }
 
         // Get the validated slug just to be sure
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
@@ -867,7 +958,7 @@ class Entry extends Model
                 'dates' => $dates,
                 // TODO
                 'categories' => Collection::init(),
-                'content' => Collection::init()
+                'content' => $content ?? []
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -902,6 +993,7 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws FieldException
      *
      */
     private function updateWithoutPermission(Entry $entry, Collection $data): bool
@@ -923,6 +1015,10 @@ class Entry extends Model
         }
         if (in_array('status', $data->keys()->unwrap())) {
             static::validateStatus($data->get('status'));
+        }
+
+        if (in_array('content', $data->keys()->unwrap())) {
+            $this->validateContent($data->get('content'));
         }
 
         $data->each(function ($key, $value) use (&$update) {

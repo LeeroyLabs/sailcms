@@ -162,6 +162,7 @@ class EntryType extends Model
 
     /**
      *
+     * $entryLayout =
      * Get an entry model instance by entry type handle
      *
      * @param string $handle
@@ -185,13 +186,14 @@ class EntryType extends Model
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
-        return $entryType->getEntryModel();
+        return $entryType->getEntryModel($entryType);
     }
 
     /**
      *
      * Shortcut to get entry model and make queries
      *
+     * @param EntryType|null $entryType
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -199,9 +201,9 @@ class EntryType extends Model
      * @throws PermissionException
      *
      */
-    public function getEntryModel(): Entry
+    public function getEntryModel(EntryType $entryType = null): Entry
     {
-        return new Entry($this->collection_name);
+        return new Entry($this->collection_name, $entryType);
     }
 
     /**
@@ -311,7 +313,7 @@ class EntryType extends Model
         }
 
         // Check if there is entries content
-        $counts = ($entryType->getEntryModel())->countEntries();
+        $counts = ($entryType->getEntryModel($entryType))->countEntries();
         if ($counts > 0) {
             throw new EntryException(static::CANNOT_DELETE);
         }

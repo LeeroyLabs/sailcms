@@ -3,6 +3,7 @@
 use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
+use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
@@ -10,6 +11,7 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
+use SailCMS\Types\Fields\Field;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
@@ -26,33 +28,6 @@ beforeAll(function () {
 afterAll(function () {
     $authorModel = new User();
     $authorModel->removeByEmail('testentry@leeroy.ca');
-});
-
-test('Create an entry type', function () {
-    $model = new EntryType();
-
-    $url_prefix = new LocaleField(['fr' => 'test', 'en' => 'test']);
-
-    try {
-        $id = $model->create('test', 'Test', $url_prefix, null, false);
-        expect($id)->not->toBe('');
-    } catch (Exception $exception) {
-        expect(true)->toBe(false);
-    }
-});
-
-test('Fail to create an entry type because the handle use a reserved word', function () {
-    $model = new EntryType();
-
-    $url_prefix = new LocaleField(['fr' => 'entrée', 'en' => 'entry']);
-
-    try {
-        $id = $model->create('entry', 'Entry', $url_prefix, null, false);
-        expect(true)->toBe(false);
-    } catch (Exception $exception) {
-        expect(true)->toBe(true);
-        expect($exception->getMessage())->toBe(sprintf(EntryType::HANDLE_USE_RESERVED_WORD, 'entry'));
-    }
 });
 
 test('Create an entry layout', function () {
@@ -108,12 +83,38 @@ test('Update an entry layout', function () {
         expect($result)->toBe(true);
         expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.max_length"))->toBe(255);
         expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.min_length"))->toBe(10);
-        print_r($updatedEntryLayout->schema->get($fieldKey . ".configs.0.labels.fr"));
         expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());6
         expect(true)->toBe(false);
+    }
+});
+
+test('Create an entry type', function () {
+    $model = new EntryType();
+
+    $url_prefix = new LocaleField(['fr' => 'test', 'en' => 'test']);
+
+    try {
+        $id = $model->create('test', 'Test', $url_prefix, null, false);
+        expect($id)->not->toBe('');
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Fail to create an entry type because the handle use a reserved word', function () {
+    $model = new EntryType();
+
+    $url_prefix = new LocaleField(['fr' => 'entrée', 'en' => 'entry']);
+
+    try {
+        $id = $model->create('entry', 'Entry', $url_prefix, null, false);
+        expect(true)->toBe(false);
+    } catch (Exception $exception) {
+        expect(true)->toBe(true);
+        expect($exception->getMessage())->toBe(sprintf(EntryType::HANDLE_USE_RESERVED_WORD, 'entry'));
     }
 });
 
@@ -131,41 +132,6 @@ test('Failed to create an entry type because the handle is already in use', func
     }
 });
 
-test('Create an entry with the default type', function () {
-    $model = new Entry();
-
-    try {
-        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', null, []);
-        expect($entry->title)->toBe('Home');
-        expect($entry->status)->toBe(EntryStatus::LIVE->value);
-        expect($entry->locale)->toBe('fr');
-        expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
-    } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        print_r($exception->getTrace());
-        expect(true)->toBe(false);
-    }
-});
-
-test('Create an entry with an entry type', function () {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-
-    try {
-        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test', []);
-        expect($entry->title)->toBe('Test');
-        expect($entry->status)->toBe(EntryStatus::LIVE->value);
-        expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('test/test');
-    } catch (Exception $exception) {
-        expect(true)->toBe(false);
-    }
-});
-
-test('Get homepage entry', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
-
-    expect($entry->title)->toBe('Test');
-});
 
 test('Update an entry type', function () {
     $model = new EntryType();
@@ -190,6 +156,42 @@ test('Update an entry type', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
+});
+
+test('Create an entry with the default type', function () {
+    $model = new Entry();
+
+    try {
+        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', null, []);
+        expect($entry->title)->toBe('Home');
+        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->locale)->toBe('fr');
+        expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
+    } catch (Exception $exception) {
+//        print_r($exception->getMessage());
+//        print_r($exception->getTrace());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Create an entry with an entry type', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+
+    try {
+        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test');
+        expect($entry->title)->toBe('Test');
+        expect($entry->status)->toBe(EntryStatus::LIVE->value);
+        expect($entry->locale)->toBe('fr');
+        expect($entry->url)->toBe('pages-de-test/test');
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Get homepage entry', function () {
+    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+
+    expect($entry->title)->toBe('Test');
 });
 
 test('Update an entry with an entry type', function () {
@@ -224,14 +226,40 @@ test('Fail to get homepage entry', function () {
 test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
+    $content = Collection::init();
+    $entryLayout = $entryModel->getEntryLayout();
+
+    // Autofill the content for the layout
+    $entryLayout->schema->each(function ($key, $modelField) use (&$content) {
+
+        /**
+         * @var ModelField $modelField
+         */
+        $modelFieldContent = Collection::init();
+        $modelField->configs->each(function ($index, $field) use (&$modelFieldContent) {
+            /**
+             * @var Field $field
+             */
+            $modelFieldContent->pushKeyValue($index, "Textfield Test");
+        });
+
+        $content->pushKeyValue($key, new Collection([
+            'content' => $modelFieldContent,
+            'handle' => $modelField->handle
+        ]));
+    });
+
     try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', []);
+        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', [
+            'content' => $content
+        ]);
         expect($entry->title)->toBe('Test 2');
         expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
+        print_r($exception->getMessage());
+        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
 });
@@ -414,6 +442,7 @@ test('Delete an entry type', function () {
         $result = $model->hardDelete($entryType->_id);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
     $entryType = $model->getByHandle('test');
