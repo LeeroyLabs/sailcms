@@ -56,6 +56,17 @@ class Users
         return User::$currentUser ?? null;
     }
 
+    /**
+     *
+     * Resend a user' validation email
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
     public function resendValidationEmail(mixed $obj, Collection $args, Context $context): bool
     {
         return (new User())->resendValidationEmail($args->get('email'));
@@ -303,7 +314,7 @@ class Users
      * @throws EmailException
      *
      */
-    public function forgotPassword(mixed $obj, Collection $args, Context $context, ResolveInfo $info): bool
+    public function forgotPassword(mixed $obj, Collection $args, Context $context): bool
     {
         return User::forgotPassword($args->get('email', ''));
     }
@@ -320,7 +331,7 @@ class Users
      * @throws DatabaseException
      *
      */
-    public function changePassword(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    public function changePassword(mixed $obj, Collection $args, Context $context): mixed
     {
         return User::changePassword($args->get('code', ''), $args->get('password', ''));
     }

@@ -69,7 +69,8 @@ class User extends Model
                 'locale',
                 'validation_code',
                 'validated',
-                'reset_code'
+                'reset_code',
+                'created_at'
             ];
         }
 
@@ -85,7 +86,8 @@ class User extends Model
             'locale',
             'validation_code',
             'validated',
-            'reset_code'
+            'reset_code',
+            'created_at'
         ];
     }
 
@@ -267,7 +269,8 @@ class User extends Model
             'locale' => $locale,
             'validation_code' => $code,
             'validated' => false,
-            'reset_code' => ''
+            'reset_code' => '',
+            'created_at' => time()
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
@@ -383,7 +386,8 @@ class User extends Model
             'locale' => $locale,
             'validation_code' => $code,
             'validated' => false,
-            'reset_code' => ''
+            'reset_code' => '',
+            'created_at' => time()
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
