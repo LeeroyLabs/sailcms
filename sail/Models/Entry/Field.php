@@ -5,7 +5,6 @@ namespace SailCMS\Models\Entry;
 use SailCMS\Collection;
 use SailCMS\Errors\FieldException;
 use SailCMS\Text;
-use SailCMS\Types\Fields\Field as FieldType;
 use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
@@ -84,23 +83,16 @@ abstract class Field
      *
      * This is the default content validation for the field
      *
-     * @param Collection $layoutSchema
      * @param Collection $content
      * @return Collection
      * @throws FieldException
      *
      */
-    public function validateContent(Collection $layoutSchema, Collection $content): Collection
+    public function validateContent(Collection $content): Collection
     {
         $errors = new Collection();
-        $layoutSchema->each(function ($key, $value) use ($content, &$errors) {
-            $fieldTypeInstance = new $value();
-            if (!$fieldTypeInstance instanceof FieldType) {
-                $className = array_reverse(explode('\\', get_class($this)))[0];
-                throw new FieldException(sprintf(static::SCHEMA_MUST_CONTENT_FIELD_TYPE, $className));
-            }
-
-            $errors = $fieldTypeInstance->validate($content->get($key));
+        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
+            $errors->push($fieldTypeClass->validate($content->get($index)));
         });
 
         $otherErrors = $this->validate($content);

@@ -22,6 +22,31 @@ use SodiumException;
 class Entries
 {
     /**
+     *
+     * Get the home page entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return Entry|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function homepageEntry(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $locale = $args->get('locale');
+        $siteId = $args->get('site_id');
+
+        return Entry::getHomepage($locale, $siteId, true, true);
+    }
+
+    /**
      * Get all entry types
      *
      * @param mixed $obj
@@ -190,7 +215,7 @@ class Entries
         // For filtering
         $siteId = $args->get('site_id', Sail::siteId());
 
-        $homepage = Entry::getHomepage($siteId)?->{$siteId};
+        $currentSiteHomepages = Entry::getHomepage()?->{$siteId};
 
         $filters = [
             "site_id" => $siteId
@@ -200,7 +225,8 @@ class Entries
         $data = Collection::init();
 
         // Clean data before returning it.
-        $result->list->each(function ($key, &$entry) use ($homepage, $data) {
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, $data) {
+            $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
             $entryArray = $entry->toArray($homepage);
             $data->push($entryArray);
         });
@@ -231,11 +257,11 @@ class Entries
         $id = $args->get('id');
         $siteId = $args->get("site_id", Sail::siteId());
 
-        $homepage = Entry::getHomepage($siteId)?->{$siteId};
-
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
+        $entry = $entryModel->one(['_id' => $id]);
 
-        return $entryModel->one(['_id' => $id])->toArray($homepage);
+        $homepage = Entry::getHomepage($siteId, $entry->locale);
+        return $entry->toArray($homepage);
     }
 
     /**
@@ -279,7 +305,7 @@ class Entries
             'site_id' => $siteId
         ]);
 
-        $homepage = Entry::getHomepage($siteId ?? Sail::siteId())->{$siteId ?? Sail::siteId()};
+        $homepage = Entry::getHomepage($entry->site_id, $entry->locale);
 
         return $entry->toArray($homepage);
     }
@@ -333,11 +359,10 @@ class Entries
         $id = $args->get('id');
         $entryTypeHandle = $args->get('entry_type_handle');
         $soft = $args->get('soft', true);
-        $siteId = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        return $entryModel->delete($id, $siteId, $soft);
+        return $entryModel->delete($id, $soft);
     }
 
     /**

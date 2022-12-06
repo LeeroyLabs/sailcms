@@ -11,7 +11,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\Entry\Field;
-use SailCMS\Models\Entry\Field as FieldEntry;
+use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\LayoutField;
@@ -91,7 +91,7 @@ class EntryLayout extends Model
     {
         $schema = Collection::init();
         $fields->each(function ($key, $field) use ($schema) {
-            if (!$field instanceof FieldEntry) {
+            if (!$field instanceof ModelField) {
                 throw new FieldException(static::SCHEMA_MUST_CONTAIN_FIELDS);
             }
 
@@ -421,9 +421,9 @@ class EntryLayout extends Model
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
 
-        $schemaFromDb->each(function ($key, $value) use ($schema) {
-            $valueParsed = FieldEntry::fromLayoutField($value);
-            $schema->pushKeyValue($key, $valueParsed->toLayoutField());
+        $schemaFromDb->each(function ($key, $value) use (&$schema) {
+            $valueParsed = ModelField::fromLayoutField($value);
+            $schema->pushKeyValue($key, $valueParsed);
         });
 
         return $schema;
@@ -469,8 +469,7 @@ class EntryLayout extends Model
                 $settings = new Collection($input->toDBObject()->settings);
                 $fieldSettings = Collection::init();
                 $availableProperties = get_class($input)::availableProperties();
-
-
+                
                 $settings->each(function ($key, $value) use ($fieldSettings, $availableProperties) {
                     if (is_bool($value)) {
                         $value = $value ? 'true' : 'false';

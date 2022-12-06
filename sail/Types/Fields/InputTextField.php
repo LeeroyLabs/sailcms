@@ -2,6 +2,7 @@
 
 namespace SailCMS\Types\Fields;
 
+use Exception;
 use SailCMS\Collection;
 use SailCMS\Locale;
 use SailCMS\Types\LocaleField;
@@ -21,9 +22,9 @@ class InputTextField extends Field
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool        $required = false,
-        public readonly int         $max_length = 0,
-        public readonly int         $min_length = 0
+        public readonly bool $required = false,
+        public readonly int $max_length = 0,
+        public readonly int $min_length = 0
     )
     {
     }
@@ -71,16 +72,36 @@ class InputTextField extends Field
     public function validate(mixed $content): Collection
     {
         $errors = Collection::init();
+        $currentLocale = Locale::$current ?? 'en';
+
         if ($this->required && !$content) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.is_required') . '.');
+            try {
+                $errorMessage = Locale::translate('fields.errors.is_required');
+            } catch (Exception $exception) {
+                $errorMessage = 'is required';
+            }
+
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '.');
         }
 
         if ($this->max_length > 0 && strlen($content) > $this->max_length) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.max_length') . '(' . $this->max_length . ').');
+            try {
+                $errorMessage = Locale::translate('fields.errors.max_length');
+            } catch (Exception $exception) {
+                $errorMessage = 'is too long';
+            }
+
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '(' . $this->max_length . ').');
         }
 
         if ($this->min_length > 0 && strlen($content) < $this->min_length) {
-            $errors->push($this->labels->{Locale::$current} . ' ' . Locale::translate('fields.errors.min_length') . '(' . $this->max_length . ').');
+            try {
+                $errorMessage = Locale::translate('fields.errors.min_length');
+            } catch (Exception $exception) {
+                $errorMessage = 'is too short';
+            }
+
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '(' . $this->min_length . ').');
         }
 
         return $errors;

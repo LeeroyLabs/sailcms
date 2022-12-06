@@ -12,8 +12,10 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
+use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
@@ -25,6 +27,7 @@ use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SodiumException;
+use stdClass;
 
 class Entry extends Model
 {
@@ -38,6 +41,9 @@ class Entry extends Model
     /* Errors */
     const TITLE_MISSING = 'You must set the entry title in your data';
     const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
+    const CANNOT_VALIDATE_CONTENT = 'You cannot validate content without setting an entry layout to the type';
+    const SCHEMA_VALIDATION_ERROR = 'The entry layout schema does not fits with the contents sends';
+    const CONTENT_ERROR = 'The content has theses errors :' . PHP_EOL;
     const DOES_NOT_EXISTS = 'Entry %s does not exists';
     const DATABASE_ERROR = 'Exception when %s an entry';
 
@@ -63,29 +69,34 @@ class Entry extends Model
     public Collection $content;
 
     private EntryType $entryType;
-
-    // TODO: populate CONTENT
+    private EntryLayout $entryLayout;
 
     /**
      *
      *  Get the model according to the collection
      *
      * @param string $collection
+     * @param EntryType|null $entryType
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
      *
      */
-    public function __construct(string $collection = '')
+    public function __construct(string $collection = '', EntryType $entryType = null)
     {
-        // Get or create the default entry type
-        if (!$collection) {
-            $this->entryType = EntryType::getDefaultType();
+        if (!$entryType) {
+            // Get or create the default entry type
+            if (!$collection) {
+                $this->entryType = EntryType::getDefaultType();
+            } else {
+                // Get entry type by collection name
+                $this->entryType = EntryType::getByCollectionName($collection);
+            }
         } else {
-            // Get entry type by collection name
-            $this->entryType = EntryType::getByCollectionName($collection);
+            $this->entryType = $entryType;
         }
+
 
         $this->entry_type_id = $this->entryType->_id;
         $collection = $this->entryType->collection_name;
@@ -135,18 +146,42 @@ class Entry extends Model
 
     /**
      *
+     *
+     *
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getEntryLayout(): ?EntryLayout
+    {
+        if (!isset($this->entryLayout)) {
+            if (!$this->entryType->entry_layout_id) {
+                return null;
+            }
+
+            $this->entryLayout = (new EntryLayout())->one([
+                '_id' => $this->entryType->entry_layout_id
+            ]);
+        }
+        return $this->entryLayout;
+    }
+
+    /**
+     *
      * Parse the entry into an array for api
      *
-     * @param array|object|null $homepage
+     * @param array|object|null $homepageConfig
      * @return array
      *
      */
-    #[Pure] public function toArray(array|object|null $homepage): array
+    #[Pure] public function toArray(array|object|null $homepageConfig): array
     {
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
-            'is_homepage' => isset($homepage) && $this->_id == $homepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'is_homepage' => isset($homepageConfig) && $this->_id == $homepageConfig->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
@@ -208,10 +243,12 @@ class Entry extends Model
 
     /**
      *
-     * Get homepage // TODO make it by site then locale too
+     * Get homepage configs
      *
+     * @param string|null $locale
      * @param string|null $siteId
      * @param bool $getEntry
+     * @param bool $toArray
      * @return array|object|null
      * @throws ACLException
      * @throws DatabaseException
@@ -222,14 +259,16 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public static function getHomepage(string $siteId = null, bool $getEntry = false): array|object|null
+    public static function getHomepage(string $locale = null, string $siteId = null, bool $getEntry = false, bool $toArray = false): array|object|null
     {
+        (new static())->hasPermissions(true);
+
         $siteId = $siteId ?? Sail::siteId();
 
         $homepageConfig = Config::getByName(static::HOMEPAGE_CONFIG_HANDLE);
 
-        if ($getEntry) {
-            $currentSiteHomepage = $homepageConfig?->config->{$siteId};
+        if ($getEntry && $locale) {
+            $currentSiteHomepage = $homepageConfig?->config?->{$siteId}?->{$locale} ?? null;
             if (!$currentSiteHomepage) {
                 return null;
             }
@@ -237,8 +276,19 @@ class Entry extends Model
             $entryModel = EntryType::getEntryModelByHandle($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
 
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
-            return $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
+            $entry = $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
+
+            if ($toArray) {
+                return $entry->toArray($currentSiteHomepage);
+            }
+            return $entry;
         }
+
+        if (isset($siteId) && isset($locale)) {
+            return $homepageConfig->{$siteId}->{$locale} ?? null;
+        }
+
+        // Return all homepage configs
         return $homepageConfig->config ?? null;
     }
 
@@ -380,6 +430,7 @@ class Entry extends Model
         $relativeUrl .= $slug;
 
         return $relativeUrl;
+
     }
 
     /**
@@ -398,6 +449,7 @@ class Entry extends Model
             $increment = (int)$matches['increment'];
             $newSlug = $matches['base'] . $increment + 1;
         } else {
+
             $newSlug = $slug . "-2";
         }
 
@@ -498,7 +550,7 @@ class Entry extends Model
      * @param EntryStatus|string $status
      * @param string $title
      * @param string|null $slug
-     * @param array|Collection $optionalData
+     * @param array|Collection $extraData
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -509,7 +561,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $optionalData = []): array|Entry|null
+    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $extraData = []): array|Entry|null
     {
         $this->hasPermissions();
 
@@ -525,8 +577,8 @@ class Entry extends Model
         ]);
 
         // Add the optional data to the creation
-        if (is_array($optionalData)) {
-            $data->merge(new Collection($optionalData));
+        if ($extraData) {
+            $data->pushSpreadKeyValue(...$extraData);
         }
 
         $siteId = $data->get('site_id', Sail::siteId());
@@ -534,7 +586,7 @@ class Entry extends Model
         $entry = $this->createWithoutPermission($data);
 
         if ($isHomepage) {
-            $entry->setAsHomepage($siteId);
+            $entry->setAsHomepage($locale, $siteId);
         }
 
         return $entry;
@@ -578,16 +630,27 @@ class Entry extends Model
 
         // Update homepage if needed
         if ($updateResult) {
-            $is_homepage = $data->get('is_homepage');
-            $currentHomepages = Entry::getHomepage($siteId);
-            $currentHomepage = $currentHomepages->{$siteId} ?? false;
+            $locale = $data->get('locale', $entry->locale);
+            $oldLocale = $data->get('locale') ? $entry->locale : null;
 
+            $is_homepage = $data->get('is_homepage');
+            $currentHomepages = Entry::getHomepage();
+            $currentHomepage = $currentHomepages->{$siteId}->{$locale} ?? false;
+            $oldCurrentHomepage = $currentHomepages->{$siteId}->{$oldLocale} ?? false;
+
+            // Update homepage according current value when is_homepage is sent
             if ($is_homepage && (!$currentHomepage || $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id)) {
-                $entry->setAsHomepage($siteId);
-            } else {
-                if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
-                    $this->emptyHomepage($currentHomepages, $siteId);
-                }
+                $entry->setAsHomepage($locale, $siteId, $currentHomepages);
+            } else if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
+                $this->emptyHomepage($currentHomepages, $locale, $siteId);
+            }
+
+            // Update homepage when locale is changed but is_homepage is not sent
+            if ($oldLocale && $oldLocale === $locale && $oldCurrentHomepage && $oldCurrentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
+                $this->emptyHomepage($currentHomepages, $oldLocale, $siteId);
+            }
+            if ($oldLocale && (!$currentHomepage || $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id)) {
+                $entry->setAsHomepage($locale, $siteId, $currentHomepages);
             }
         }
 
@@ -638,30 +701,27 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function delete(string|ObjectId $entryId, string $siteId = null, bool $soft = true): bool
+    public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
         $this->hasPermissions();
 
+        $entry = $this->findById($entryId)->exec();
+        if (!$entry) {
+            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryId));
+        }
 
         if ($soft) {
-            $entry = $this->findById($entryId)->exec();
-
-            if (!$entry) {
-                throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryId));
-            }
-
             $result = $this->softDelete($entry);
         } else {
             $result = $this->hardDelete($entryId);
         }
 
         // Update homepage if needed
-        $siteId = $siteId ?? Sail::siteId();
         if ($result) {
             $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages->{$siteId} ?? false;
+            $currentHomepage = $currentHomepages->{$entry->site_id}->{$entry->locale} ?? false;
             if ($currentHomepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
-                $this->emptyHomepage($currentHomepages, $siteId);
+                $this->emptyHomepage($currentHomepages, $entry->locale, $entry->site_id);
             }
         }
 
@@ -677,12 +737,13 @@ class Entry extends Model
      * @return mixed
      *
      */
-    #[Pure] protected function processOnFetch(string $field, mixed $value): mixed
+    protected function processOnFetch(string $field, mixed $value): mixed
     {
         return match ($field) {
             "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
             "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             "parent" => $value ? new EntryParent($value->handle, $value->parent_id) : null,
+            "content" => $value instanceof stdClass ? new Collection((array)$value) : $value,
             default => $value,
         };
     }
@@ -724,36 +785,96 @@ class Entry extends Model
         }
     }
 
-    private static function validateContent(?Collection &$content): Collection
+    /**
+     *
+     * Validate content from the entry type layout schema
+     *
+     * @param Collection $content
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     * @throws FieldException
+     *
+     */
+    private function validateContent(Collection $content): void
     {
-        // Validate content
+        $errors = Collection::init();
 
-        // Return errors
-        return new Collection();
+        $schema = null;
+        if ($this->entryType->entry_layout_id) {
+            $entryLayoutModel = new EntryLayout();
+            $entryLayout = $entryLayoutModel->one(['_id' => $this->entryType->entry_layout_id]);
+            $schema = $entryLayout->schema;
+        }
+
+        if ($content->length > 0 && !$schema) {
+            throw new EntryException(static::CANNOT_VALIDATE_CONTENT);
+        } else if (!$schema) {
+            $schema = Collection::init();
+        }
+
+        // Validate content
+        $schema->each(function ($key, $modelField) use ($content, $errors) {
+            /**
+             * @var ModelField $modelField
+             */
+            $modelFieldContent = $content->get($key);
+            if ($modelField->handle != $modelFieldContent->handle) {
+                throw new EntryException(static::SCHEMA_VALIDATION_ERROR);
+            }
+            $modelFieldErrors = $modelField->validateContent($modelFieldContent->content);
+
+            if ($modelFieldErrors->length > 0) {
+                $errors->pushKeyValue($key, $modelFieldErrors->unwrap());
+            }
+        });
+
+        if ($errors->length > 0) {
+            $errorsArray = $errors->unwrap();
+            $errorsStrings = [];
+            array_walk_recursive($errorsArray, function ($item, $key) use (&$errorsStrings) {
+                $errorsStrings[] = "[" . $key . "] = " . $item;
+            });
+
+            if (count($errorsStrings) > 0) {
+                throw new EntryException(static::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
+            }
+        }
     }
 
     /**
      *
      * Set the current entry has homepage
      *
+     * @param string $locale
      * @param string|null $siteId
+     * @param object|null $currentConfig
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
      * @throws FilesystemException
      * @throws JsonException
+     * @throws PermissionException
      * @throws SodiumException
      *
      */
-    private function setAsHomepage(string $siteId = null): void
+    private function setAsHomepage(string $locale, string $siteId = null, object $currentConfig = null): void
     {
         $siteId = $siteId ?? Sail::siteId();
 
-        Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, [
-            $siteId => [
-                static::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
-                static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
-            ]
-        ]);
+        if (!isset($currentConfig)) {
+            $currentConfig = static::getHomepage();
+        }
+
+        $currentConfig->{$siteId}->{$locale} = [
+            static::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
+            static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
+        ];
+
+        Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
     }
 
     /**
@@ -761,19 +882,19 @@ class Entry extends Model
      * Empty the homepage for the current site
      *
      * @param object|array $currentConfig
+     * @param string $locale
      * @param string|null $siteId
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     *
      */
-    private function emptyHomepage(object|array $currentConfig, string $siteId = null): void
+    private function emptyHomepage(object|array $currentConfig, string $locale, string $siteId = null): void
     {
         $siteId = $siteId ?? Sail::siteId();
 
-        $currentConfig->{$siteId} = null;
+        $currentConfig->{$siteId}->{$locale} = null;
         Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
     }
 
@@ -787,6 +908,7 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws FieldException
      *
      */
     private function createWithoutPermission(Collection $data): array|Entry|null
@@ -801,11 +923,14 @@ class Entry extends Model
         $parent = $data->get('parent');
         $content = $data->get('content');
 
-        // TODO implements others fields: categories content
+        // TODO implements others fields: categories
 
         // VALIDATION
         static::validateStatus($status);
-        $errors = static::validateContent($content);
+        if ($content) {
+            $this->validateContent($content);
+            $content = $content->unwrap();
+        }
 
         // Get the validated slug just to be sure
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
@@ -833,7 +958,7 @@ class Entry extends Model
                 'dates' => $dates,
                 // TODO
                 'categories' => Collection::init(),
-                'content' => Collection::init()
+                'content' => $content ?? []
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -868,6 +993,7 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws FieldException
      *
      */
     private function updateWithoutPermission(Entry $entry, Collection $data): bool
@@ -889,6 +1015,10 @@ class Entry extends Model
         }
         if (in_array('status', $data->keys()->unwrap())) {
             static::validateStatus($data->get('status'));
+        }
+
+        if (in_array('content', $data->keys()->unwrap())) {
+            $this->validateContent($data->get('content'));
         }
 
         $data->each(function ($key, $value) use (&$update) {
