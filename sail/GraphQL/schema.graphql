@@ -111,6 +111,7 @@ type User {
     permissions: [String!]
     meta: UserMeta!
     auth_token: String
+    created_at: Int!
 }
 
 type UserListing {

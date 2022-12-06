@@ -56,6 +56,17 @@ class Users
         return User::$currentUser ?? null;
     }
 
+    /**
+     *
+     * Resend a user' validation email
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
     public function resendValidationEmail(mixed $obj, Collection $args, Context $context): bool
     {
         return (new User())->resendValidationEmail($args->get('email'));
