@@ -297,7 +297,7 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        $entry = $entryModel->create($isHomepage, $locale, $status, $title, $slug, [
+        $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
@@ -305,9 +305,19 @@ class Entries
             'site_id' => $siteId
         ]);
 
-        $homepage = Entry::getHomepage($entry->site_id, $entry->locale);
+        $homepage = Entry::getHomepage($entryOrErrors->site_id, $entryOrErrors->locale);
 
-        return $entry->toArray($homepage);
+        $result = [
+            'entry' => [],
+            'errors' => []
+        ];
+        if ($entryOrErrors instanceof Entry) {
+            $result['entry'] = $entryOrErrors->toArray($homepage);
+        } else {
+            $result['errors'] = $entryOrErrors;
+        }
+
+        return $result;
     }
 
     /**
@@ -317,7 +327,7 @@ class Entries
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return bool
+     * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -325,9 +335,10 @@ class Entries
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
+     * @throws PermissionException
      *
      */
-    public function updateEntry(mixed $obj, Collection $args, Context $context): bool
+    public function updateEntry(mixed $obj, Collection $args, Context $context): Collection
     {
         $id = $args->get('id');
         $entryTypeHandle = $args->get('entry_type_handle');

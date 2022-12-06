@@ -6,6 +6,7 @@ use Exception;
 use SailCMS\Collection;
 use SailCMS\Locale;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\StoringType;
 use stdClass;
 
 class InputTextField extends Field
@@ -22,9 +23,9 @@ class InputTextField extends Field
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool $required = false,
-        public readonly int $max_length = 0,
-        public readonly int $min_length = 0
+        public readonly bool        $required = false,
+        public readonly int         $max_length = 0,
+        public readonly int         $min_length = 0
     )
     {
     }
@@ -55,9 +56,9 @@ class InputTextField extends Field
     public static function availableProperties(): Collection
     {
         return new Collection([
-            new Input('required', Input::INPUT_TYPE_CHECKBOX),
-            new Input('max_length', Input::INPUT_TYPE_NUMBER),
-            new Input('min_length', Input::INPUT_TYPE_NUMBER),
+            new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
+            new InputSettings('max_length', InputSettings::INPUT_TYPE_NUMBER),
+            new InputSettings('min_length', InputSettings::INPUT_TYPE_NUMBER),
         ]);
     }
 
@@ -124,5 +125,10 @@ class InputTextField extends Field
                 'min_length' => $this->min_length
             ]
         ];
+    }
+
+    public static function storingType(): string
+    {
+        return StoringType::STRING->value;
     }
 }

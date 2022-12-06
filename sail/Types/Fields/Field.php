@@ -59,7 +59,7 @@ abstract class Field implements DatabaseType
 
         static::availableProperties()->each(function ($key, $inputType) use ($settings, $validSettings) {
             /**
-             * @var Input $inputType
+             * @var InputSettings $inputType
              */
             $settingValue = $settings->get($inputType->name);
             $defaultValue = static::defaultSettings()->get($inputType->name);
@@ -92,7 +92,7 @@ abstract class Field implements DatabaseType
      */
     abstract public static function availableProperties(): Collection;
 
-    // To validate the field, return an error collection
+    abstract public static function storingType(): string;
 
     /**
      *
@@ -116,8 +116,8 @@ abstract class Field implements DatabaseType
     protected static function validByType(string $type, mixed $value): bool
     {
         return match ($type) {
-            Input::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
-            Input::INPUT_TYPE_NUMBER => is_integer($value),
+            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
+            InputSettings::INPUT_TYPE_NUMBER => is_integer($value),
             default => false
         };
     }

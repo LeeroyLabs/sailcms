@@ -209,10 +209,11 @@ test('Update an entry with an entry type', function () {
         $entry = $entryModel->one([
             'title' => 'Test'
         ]);
-        expect($result)->toBe(true);
+        expect($result->length)->toBe(0);
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -231,7 +232,6 @@ test('Create an entry with an entry type with an existing url', function () {
 
     // Autofill the content for the layout
     $entryLayout->schema->each(function ($key, $modelField) use (&$content) {
-
         /**
          * @var ModelField $modelField
          */
@@ -240,7 +240,10 @@ test('Create an entry with an entry type with an existing url', function () {
             /**
              * @var Field $field
              */
-            $modelFieldContent->pushKeyValue($index, "Textfield Test");
+            $modelFieldContent->pushKeyValue($index, [
+                'value' => "Textfield Test",
+                'type' => $field->storingType()
+            ]);
         });
 
         $content->pushKeyValue($key, new Collection([
@@ -268,7 +271,7 @@ test('Fail to create an entry that is trashed', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 2', 'test-de-test', []);
+        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 3', 'test-de-test', []);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
         expect(true)->toBe(true);
@@ -283,6 +286,25 @@ test('Get a validated slug for an existing slug', function () {
     ]), 'test-de-test', Sail::siteId(), 'fr');
 
     expect($newSlug)->toBe('test-de-test-3');
+});
+
+test('Failed to update content because a field does not validate', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test 2'
+    ]);
+    $firstKey = $entry->content->keys()->first;
+    $entry->content->get($firstKey)->content[0]['value'] = "TooShort";
+
+    try {
+        $entryModel->updateById($entry->_id, [
+            'content' => $entry->content
+        ]);
+        expect(true)->toBe(false);
+    } catch (EntryException $exception) {
+//        print_r($exception->getMessage());
+        expect($exception->getMessage())->toBe("The content has theses errors :" . PHP_EOL . "Section title is too short(10).");
+    }
 });
 
 test('Update an entry with the default type', function () {
@@ -300,7 +322,7 @@ test('Update an entry with the default type', function () {
         $entry = $model->one([
             'title' => 'Home page'
         ]);
-        expect($result)->toBe(true);
+        expect($result->length)->toBe(0);
         expect($entry)->not->toBe(null);
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
