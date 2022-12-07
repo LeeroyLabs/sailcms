@@ -488,6 +488,7 @@ class User extends Model
      * @param  int                  $direction
      * @param  UserTypeSearch|null  $typeSearch
      * @param  MetaSearch|null      $metaSearch
+     * @param  bool|null            $status
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -501,7 +502,8 @@ class User extends Model
         string $sort = 'name.first',
         int $direction = Model::SORT_ASC,
         UserTypeSearch|null $typeSearch = null,
-        MetaSearch|null $metaSearch = null
+        MetaSearch|null $metaSearch = null,
+        bool|null $status = null
     ): Listing {
         $this->hasPermissions(true);
 
@@ -534,6 +536,10 @@ class User extends Model
         // Meta Search Filter
         if ($metaSearch) {
             $query['meta' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
+        }
+
+        if (isset($status)) {
+            $query['status'] = $status;
         }
 
         // Pagination

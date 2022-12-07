@@ -115,7 +115,8 @@ class Users
             $args->get('sort') ?? 'name.first',
             $order,
             $userTypeSearch ?? null,
-            $metaSearch ?? null
+            $metaSearch ?? null,
+            $args->get('status', null)
         );
     }
 
