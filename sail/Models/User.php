@@ -485,14 +485,22 @@ class User extends Model
      * @param  string  $sort
      * @param  int     $direction
      * @param  string  $user_type
+     * @param  bool    $except_type
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = Model::SORT_ASC, string $user_type = ''): Listing
-    {
+    public function getList(
+        int $page = 0,
+        int $limit = 25,
+        string $search = '',
+        string $sort = 'name.first',
+        int $direction = Model::SORT_ASC,
+        string $user_type = '',
+        bool $except_type = false
+    ): Listing {
         $this->hasPermissions(true);
 
         $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
@@ -514,6 +522,10 @@ class User extends Model
 
         if ($user_type !== '') {
             $query['roles'] = $user_type;
+
+            if ($except_type) {
+                $query['roles'] = ['$ne' => $user_type];
+            }
         }
 
         // Pagination

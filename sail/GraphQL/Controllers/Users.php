@@ -99,7 +99,8 @@ class Users
             $args->get('search') ?? '',
             $args->get('sort') ?? 'name.first',
             $order,
-            $args->get('user_type', '')
+            $args->get('user_type', ''),
+            $args->get('except_type', false)
         );
     }
 
