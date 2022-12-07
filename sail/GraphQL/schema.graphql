@@ -3,7 +3,7 @@ type Query {
 
     # Users
     user(id: ID!): User
-    users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): UserListing
+    users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder, user_type: String): UserListing
 
     # Authentication
     resendValidationEmail(email: String!): Boolean!

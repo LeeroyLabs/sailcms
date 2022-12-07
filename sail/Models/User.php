@@ -484,13 +484,14 @@ class User extends Model
      * @param  string  $search
      * @param  string  $sort
      * @param  int     $direction
+     * @param  string  $user_type
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = Model::SORT_ASC): Listing
+    public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = Model::SORT_ASC, string $user_type = ''): Listing
     {
         $this->hasPermissions(true);
 
@@ -509,6 +510,10 @@ class User extends Model
                     ['email' => $search]
                 ]
             ];
+        }
+
+        if ($user_type !== '') {
+            $query['roles'] = $user_type;
         }
 
         // Pagination
