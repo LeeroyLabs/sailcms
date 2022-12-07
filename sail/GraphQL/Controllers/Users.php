@@ -20,7 +20,7 @@ use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
-use SailCMS\types\UserSorting;
+use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 use SodiumException;
 

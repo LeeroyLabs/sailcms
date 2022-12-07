@@ -3,14 +3,12 @@
 namespace SailCMS\Models;
 
 use Exception;
-use JsonException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
 use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\EmailException;
@@ -29,7 +27,7 @@ use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
-use SailCMS\types\UserSorting;
+use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 
 class User extends Model
