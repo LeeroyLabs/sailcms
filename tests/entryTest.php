@@ -251,6 +251,7 @@ test('Create an entry with an entry type with an existing url', function () {
             'handle' => $modelField->handle
         ]));
     });
+    print_r($content);
 
     try {
         $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', [
@@ -303,7 +304,7 @@ test('Failed to update content because a field does not validate', function () {
         expect(true)->toBe(false);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("The content has theses errors :" . PHP_EOL . "Section title is too short(10).");
+        expect($exception->getMessage())->toBe("The content has theses errors :" . PHP_EOL . "Section title is too short (10).");
     }
 });
 

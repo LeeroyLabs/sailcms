@@ -23,9 +23,9 @@ class InputTextField extends Field
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool        $required = false,
-        public readonly int         $max_length = 0,
-        public readonly int         $min_length = 0
+        public readonly bool $required = false,
+        public readonly int $max_length = 0,
+        public readonly int $min_length = 0
     )
     {
     }
@@ -64,6 +64,17 @@ class InputTextField extends Field
 
     /**
      *
+     * Get the type of how it's store in the database
+     *
+     * @return string
+     */
+    public static function storingType(): string
+    {
+        return StoringType::STRING->value;
+    }
+
+    /**
+     *
      * Input text field validation
      *
      * @param mixed $content
@@ -92,7 +103,7 @@ class InputTextField extends Field
                 $errorMessage = 'is too long';
             }
 
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '(' . $this->max_length . ').');
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->max_length . ').');
         }
 
         if ($this->min_length > 0 && strlen($content) < $this->min_length) {
@@ -102,7 +113,7 @@ class InputTextField extends Field
                 $errorMessage = 'is too short';
             }
 
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '(' . $this->min_length . ').');
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->min_length . ').');
         }
 
         return $errors;
@@ -110,7 +121,7 @@ class InputTextField extends Field
 
     /**
      *
-     * When stored in the database
+     * When it's stored in the database
      *
      * @return stdClass
      *
@@ -125,10 +136,5 @@ class InputTextField extends Field
                 'min_length' => $this->min_length
             ]
         ];
-    }
-
-    public static function storingType(): string
-    {
-        return StoringType::STRING->value;
     }
 }

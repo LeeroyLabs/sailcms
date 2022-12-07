@@ -10,10 +10,10 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
-use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
+use SailCMS\Types\Fields\Field;
 use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
@@ -103,18 +103,25 @@ class EntryLayout extends Model
 
     /**
      *
-     * Get all entry layout TODO
+     * Get all entry layouts
      *
+     * @param bool $ignoreTrashed default true
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
-    public function getAll(): ?array
+    public function getAll(bool $ignoreTrashed = true): ?array
     {
         $this->hasPermissions(true);
 
-        return $this->find([])->exec();
+        $filters = [];
+        if ($ignoreTrashed) {
+            $filters = ['is_trashed' => false];
+        }
+
+        return $this->find($filters)->exec();
     }
 
     /**
@@ -291,7 +298,7 @@ class EntryLayout extends Model
         }
 
         foreach ($configs as $fieldSettings) {
-            $fieldClass = Field::getClassFromHandle($fieldSettings->handle);
+            $fieldClass = ModelField::getClassFromHandle($fieldSettings->handle);
             $labels = new LocaleField($fieldSettings->labels->unwrap());
 
             $parsedConfigs = Collection::init();
@@ -341,6 +348,61 @@ class EntryLayout extends Model
                 $entryLayout->updateSchemaConfig($updateInput->get('key'), [], 0, $labels);
             }
         });
+    }
+
+
+    /**
+     *
+     * Process schema to GraphQL inputs
+     *
+     * @return Collection
+     *
+     */
+    public function processSchemaToGraphQL(): Collection
+    {
+        $apiSchema = Collection::init();
+
+        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
+            $layoutFieldConfigs = Collection::init();
+            $layoutFieldSettings = Collection::init();
+
+            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs, $layoutFieldSettings) {
+                /**
+                 * @var Field $input
+                 */
+                $settings = new Collection($input->toDBObject()->settings);
+                $fieldSettings = Collection::init();
+
+                $settings->each(function ($name, $value) use ($fieldSettings, $input) {
+                    if (is_bool($value)) {
+                        $value = $value ? 'true' : 'false';
+                    }
+
+                    $type = $input->getSettingType($name, $value);
+
+                    $fieldSettings->push([
+                        'name' => $name,
+                        'value' => (string)$value,
+                        'choices' => [],
+                        'type' => $type
+                    ]);
+                });
+
+                $layoutFieldSettings->push($fieldSettings);
+            });
+            $layoutFieldConfigs->push([
+                'handle' => $layoutField->handle,
+                'labels' => $layoutField->labels->toDBObject(),
+                'inputSettings' => $layoutFieldSettings->unwrap()
+            ]);
+
+            $apiSchema->push([
+                'key' => $fieldKey,
+                'fieldConfigs' => $layoutFieldConfigs->unwrap()
+            ]);
+        });
+
+        return $apiSchema;
     }
 
     /**
@@ -448,67 +510,6 @@ class EntryLayout extends Model
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
-    }
-
-    /**
-     *
-     * Process schema to GraphQL inputs
-     *
-     * @return Collection
-     *
-     */
-    private function processSchemaToGraphQL(): Collection
-    {
-        $apiSchema = Collection::init();
-
-        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
-            $layoutFieldConfigs = Collection::init();
-            $layoutFieldSettings = Collection::init();
-
-            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs, $layoutFieldSettings) {
-                $settings = new Collection($input->toDBObject()->settings);
-                $fieldSettings = Collection::init();
-                $availableProperties = get_class($input)::availableProperties();
-                
-                $settings->each(function ($key, $value) use ($fieldSettings, $availableProperties) {
-                    if (is_bool($value)) {
-                        $value = $value ? 'true' : 'false';
-                    }
-                    $type = "string";
-                    // todo PUT THAT INTO TYPE/FIELD!
-                    $availableProperties->filter(function ($setting) use (&$type, $key, $value) {
-                        if ($setting->name === $key) {
-                            $type = match ($setting->type) {
-                                "number" => is_float($value) ? 'float' : 'integer',
-                                "checkbox" => 'boolean',
-                                default => 'string'
-                            };
-                        }
-                    });
-
-                    $fieldSettings->push([
-                        'name' => $key,
-                        'value' => (string)$value,
-                        'choices' => [],
-                        'type' => $type
-                    ]);
-                });
-
-                $layoutFieldSettings->push($fieldSettings);
-            });
-            $layoutFieldConfigs->push([
-                'handle' => $layoutField->handle,
-                'labels' => $layoutField->labels->toDBObject(),
-                'inputSettings' => $layoutFieldSettings->unwrap()
-            ]);
-
-            $apiSchema->push([
-                'key' => $fieldKey,
-                'fieldConfigs' => $layoutFieldConfigs->unwrap()
-            ]);
-        });
-
-        return $apiSchema;
     }
 
     /**
