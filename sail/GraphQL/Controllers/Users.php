@@ -17,8 +17,10 @@ use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
+use SailCMS\Types\MetaSearch;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
+use SailCMS\Types\UserTypeSearch;
 use SodiumException;
 
 class Users
@@ -93,14 +95,27 @@ class Users
             $order = Model::SORT_DESC;
         }
 
+        $meta = $args->get('meta', '');
+        $metaValue = $args->get('meta_value', '');
+        $userType = $args->get('user_type', '');
+        $exceptType = $args->get('except_type', false);
+
+        if ($meta !== '' && $metaValue !== '') {
+            $metaSearch = new MetaSearch($meta, $metaValue);
+        }
+
+        if ($userType !== '') {
+            $userTypeSearch = new UserTypeSearch($userType, $exceptType);
+        }
+
         return (new User())->getList(
             $args->get('page'),
             $args->get('limit'),
             $args->get('search') ?? '',
             $args->get('sort') ?? 'name.first',
             $order,
-            $args->get('user_type', ''),
-            $args->get('except_type', false)
+            $userTypeSearch ?? null,
+            $metaSearch ?? null
         );
     }
 

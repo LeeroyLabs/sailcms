@@ -23,11 +23,13 @@ use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
+use SailCMS\Types\MetaSearch;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
+use SailCMS\Types\UserTypeSearch;
 
 class User extends Model
 {
@@ -479,13 +481,13 @@ class User extends Model
      *
      * Get a list of users
      *
-     * @param  int     $page
-     * @param  int     $limit
-     * @param  string  $search
-     * @param  string  $sort
-     * @param  int     $direction
-     * @param  string  $user_type
-     * @param  bool    $except_type
+     * @param  int                  $page
+     * @param  int                  $limit
+     * @param  string               $search
+     * @param  string               $sort
+     * @param  int                  $direction
+     * @param  UserTypeSearch|null  $typeSearch
+     * @param  MetaSearch|null      $metaSearch
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -498,8 +500,8 @@ class User extends Model
         string $search = '',
         string $sort = 'name.first',
         int $direction = Model::SORT_ASC,
-        string $user_type = '',
-        bool $except_type = false
+        UserTypeSearch|null $typeSearch = null,
+        MetaSearch|null $metaSearch = null
     ): Listing {
         $this->hasPermissions(true);
 
@@ -520,12 +522,18 @@ class User extends Model
             ];
         }
 
-        if ($user_type !== '') {
-            $query['roles'] = ['$in' => explode(',', $user_type)];
+        // User Type Search Filter
+        if ($typeSearch) {
+            $query['roles'] = ['$in' => explode(',', $typeSearch->type)];
 
-            if ($except_type) {
-                $query['roles'] = ['$ne' => $user_type];
+            if ($typeSearch->except) {
+                $query['roles'] = ['$nin' => explode(',', $typeSearch->type)];
             }
+        }
+
+        // Meta Search Filter
+        if ($metaSearch) {
+            $query['meta' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
         }
 
         // Pagination
