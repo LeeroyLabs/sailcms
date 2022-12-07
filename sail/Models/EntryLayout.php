@@ -66,7 +66,7 @@ class EntryLayout extends Model
      * @return array
      *
      */
-    public function toArray(): array
+    public function toGraphQL(): array
     {
         return [
             '_id' => $this->_id,

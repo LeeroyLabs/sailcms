@@ -200,7 +200,7 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public function toArray(array|object|null $homepageConfig, bool $wantSchema = true): array
+    public function toGraphQL(array|object|null $homepageConfig, bool $wantSchema = true): array
     {
         $schema = Collection::init();
         if ($wantSchema) {
@@ -282,7 +282,7 @@ class Entry extends Model
      * @param string|null $locale
      * @param string|null $siteId
      * @param bool $getEntry
-     * @param bool $toArray
+     * @param bool $toGraphQL
      * @return array|object|null
      * @throws ACLException
      * @throws DatabaseException
@@ -293,7 +293,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public static function getHomepage(string $locale = null, string $siteId = null, bool $getEntry = false, bool $toArray = false): array|object|null
+    public static function getHomepage(string $locale = null, string $siteId = null, bool $getEntry = false, bool $toGraphQL = false): array|object|null
     {
         (new static())->hasPermissions(true);
 
@@ -312,8 +312,8 @@ class Entry extends Model
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
             $entry = $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
 
-            if ($toArray) {
-                return $entry->toArray($currentSiteHomepage);
+            if ($toGraphQL) {
+                return $entry->toGraphQL($currentSiteHomepage);
             }
             return $entry;
         }
@@ -388,6 +388,35 @@ class Entry extends Model
         });
 
         return $content;
+    }
+
+    /**
+     *
+     * Find entries of all types by category id
+     *
+     * @param int $categoryId
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public static function findByCategoryId(int $categoryId): Collection
+    {
+        $availableTypes = EntryType::getAll();
+        $allEntries = Collection::init();
+
+        $availableTypes->each(function ($key, $entryType) use ($categoryId, &$allEntries) {
+            $entry = new Entry($entryType->collection_name);
+            $entries = $entry->find([
+                'categories' => $categoryId
+            ])->exec();
+
+            $allEntries->pushSpread(...$entries);
+        });
+
+        return $allEntries;
     }
 
     /**
@@ -632,7 +661,7 @@ class Entry extends Model
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
-     * @throws EntryException
+     * @throws EntryExceptiongetEntriesById
      * @throws FilesystemException
      * @throws JsonException
      * @throws PermissionException
@@ -988,7 +1017,7 @@ class Entry extends Model
         $parent = $data->get('parent');
         $content = $data->get('content');
 
-        // TODO implements others fields: categories + alternate
+        // TODO implements others fields: categories
 
         // VALIDATION & PARSING
         static::validateStatus($status);

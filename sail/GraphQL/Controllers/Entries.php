@@ -225,8 +225,11 @@ class Entries
 
         // Clean data before returning it.
         $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, $data) {
+            /**
+             * @var Entry $entry
+             */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $entry->toArray($homepage);
+            $entryArray = $entry->toGraphQL($homepage);
             $data->push($entryArray);
         });
 
@@ -260,7 +263,7 @@ class Entries
         $entry = $entryModel->one(['_id' => $id]);
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
-        return $entry->toArray($homepage);
+        return $entry->toGraphQL($homepage);
     }
 
     /**
@@ -311,7 +314,7 @@ class Entries
             'errors' => []
         ];
         if ($entryOrErrors instanceof Entry) {
-            $result['entry'] = $entryOrErrors->toArray($homepage);
+            $result['entry'] = $entryOrErrors->toGraphQL($homepage);
         } else {
             $result['errors'] = $entryOrErrors;
         }
@@ -343,9 +346,11 @@ class Entries
         $entryTypeHandle = $args->get('entry_type_handle');
         $content = $args->get('content');
 
-        // Process the content to be able to save it
-        $args->pushKeyValue('content', Entry::processContentFromGraphQL($content));
-
+        if ($content) {
+            // Process the content to be able to save it
+            $args->pushKeyValue('content', Entry::processContentFromGraphQL($content));
+        }
+        
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         $errors = $entryModel->updateById($id, $args, false);
@@ -403,7 +408,7 @@ class Entries
             '_id' => $entryLayoutId
         ]);
 
-        return $entryLayout?->toArray();
+        return $entryLayout?->toGraphQL();
     }
 
     /**
@@ -425,8 +430,10 @@ class Entries
         $result = (new EntryLayout())->getAll() ?? [];
 
         (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts) {
-            $entryLayouts->push($entryLayout->toArray());
-            $entryLayouts->push($entryLayout->toArray());
+            /**
+             * @var EntryLayout $entryLayout
+             */
+            $entryLayouts->push($entryLayout->toGraphQL());
         });
 
         return $entryLayouts->unwrap();
@@ -460,7 +467,7 @@ class Entries
         $entryLayoutModel = new EntryLayout();
         $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
 
-        return $entryLayout->toArray();
+        return $entryLayout->toGraphQL();
     }
 
     /**
