@@ -1,6 +1,6 @@
 <?php
 
-namespace SailCMS\types;
+namespace SailCMS\Types;
 
 class UserSorting
 {
