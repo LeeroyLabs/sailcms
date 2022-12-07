@@ -3,7 +3,7 @@ type Query {
 
     # Users
     user(id: ID!): User
-    users(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder, user_type: String, except_type: Boolean, meta: String, meta_value: String, status: Boolean): UserListing
+    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean): UserListing
 
     # Authentication
     resendValidationEmail(email: String!): Boolean!
@@ -90,6 +90,21 @@ type Mutation {
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
+}
+
+input UserSort {
+    sort: String!
+    order: SortingOrder!
+}
+
+input UserType {
+    type: String!
+    except: Boolean!
+}
+
+input MetaSearch {
+    key: String!
+    value: String!
 }
 
 enum SortingOrder {

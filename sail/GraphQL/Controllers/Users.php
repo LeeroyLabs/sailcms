@@ -20,6 +20,7 @@ use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
+use SailCMS\types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 use SodiumException;
 
@@ -96,24 +97,29 @@ class Users
         }
 
         $meta = $args->get('meta', '');
-        $metaValue = $args->get('meta_value', '');
-        $userType = $args->get('user_type', '');
-        $exceptType = $args->get('except_type', false);
+        $userType = $args->get('type', '');
+        $sorting = $args->get('sorting', null);
 
-        if ($meta !== '' && $metaValue !== '') {
-            $metaSearch = new MetaSearch($meta, $metaValue);
+        if ($meta) {
+            $metaSearch = new MetaSearch($meta->get('key'), $meta->get('value'));
         }
 
         if ($userType !== '') {
-            $userTypeSearch = new UserTypeSearch($userType, $exceptType);
+            $userTypeSearch = new UserTypeSearch($userType->get('type'), $userType->get('except'));
         }
+
+        if ($sorting) {
+            $sorting = new UserSorting($sorting->get('sort'), $sorting->get('order'));
+        } else {
+            $sorting = new UserSorting('name.full', 'asc');
+        }
+
 
         return (new User())->getList(
             $args->get('page'),
             $args->get('limit'),
             $args->get('search') ?? '',
-            $args->get('sort') ?? 'name.first',
-            $order,
+            $sorting,
             $userTypeSearch ?? null,
             $metaSearch ?? null,
             $args->get('status', null)
