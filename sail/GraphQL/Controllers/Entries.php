@@ -205,7 +205,6 @@ class Entries
      */
     public function entries(mixed $obj, Collection $args, Context $context): Listing
     {
-        // TODO add performance options with context
         $entryTypeHandle = $args->get('entry_type_handle');
         $page = $args->get('page', 1);
         $limit = $args->get('limit', 50);
@@ -292,7 +291,7 @@ class Entries
         $title = $args->get('title');
         $slug = $args->get('slug');
         $categories = $args->get('categories');
-        $content = $args->get('content');
+        $content = Entry::processContentFromGraphQL($args->get('content'));
         $siteId = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
@@ -342,10 +341,16 @@ class Entries
     {
         $id = $args->get('id');
         $entryTypeHandle = $args->get('entry_type_handle');
+        $content = $args->get('content');
+
+        // Process the content to be able to save it
+        $args->pushKeyValue('content', Entry::processContentFromGraphQL($content));
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        return $entryModel->updateById($id, $args);
+        $errors = $entryModel->updateById($id, $args, false);
+
+        return Entry::processErrorsForGraphQL($errors);
     }
 
     /**
@@ -420,6 +425,7 @@ class Entries
         $result = (new EntryLayout())->getAll() ?? [];
 
         (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts) {
+            $entryLayouts->push($entryLayout->toArray());
             $entryLayouts->push($entryLayout->toArray());
         });
 

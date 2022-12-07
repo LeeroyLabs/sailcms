@@ -2,7 +2,6 @@
 
 namespace SailCMS\Models;
 
-use JetBrains\PhpStorm\Pure;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
@@ -12,7 +11,6 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
-use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
 use SailCMS\Models\Entry\Field as ModelField;
@@ -146,7 +144,7 @@ class Entry extends Model
 
     /**
      *
-     *
+     * Get entry layout if entry type has one
      *
      * @return EntryLayout|null
      * @throws ACLException
@@ -170,14 +168,49 @@ class Entry extends Model
 
     /**
      *
+     * Parse content for GraphQL
+     *
+     * @return Collection
+     *
+     */
+    public function contentForGraphQL(): Collection
+    {
+        $parsedContent = Collection::init();
+
+        $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
+            $parsedContent->push([
+                'key' => $key,
+                'handle' => $modelFieldContent->handle,
+                'content' => $modelFieldContent->content
+            ]);
+        });
+
+        return $parsedContent;
+    }
+
+    /**
+     *
      * Parse the entry into an array for api
      *
      * @param array|object|null $homepageConfig
+     * @param bool $wantSchema
      * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
      *
      */
-    #[Pure] public function toArray(array|object|null $homepageConfig): array
+    public function toArray(array|object|null $homepageConfig, bool $wantSchema = true): array
     {
+        $schema = Collection::init();
+        if ($wantSchema) {
+            $entryLayout = $this->getEntryLayout();
+
+            if ($entryLayout) {
+                $schema = $entryLayout->processSchemaToGraphQL();
+            }
+        }
+
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
@@ -193,7 +226,8 @@ class Entry extends Model
             'authors' => $this->authors->toDBObject(),
             'dates' => $this->dates->toDBObject(),
             'categories' => $this->categories,
-            'content' => $this->content
+            'content' => $this->contentForGraphQL(),
+            'schema' => $schema
         ];
     }
 
@@ -458,6 +492,52 @@ class Entry extends Model
 
     /**
      *
+     * Process content from graphQL to be able to create/update
+     *
+     * @param Collection|null $content
+     * @return Collection|null
+     *
+     */
+    public static function processContentFromGraphQL(?Collection $content): ?Collection
+    {
+        $parsedContent = null;
+
+        if ($content) {
+            $parsedContent = Collection::init();
+            $content->each(function ($i, $toParse) use (&$parsedContent) {
+                $parsedContent->pushKeyValue($toParse->key, (object)[
+                    'handle' => $toParse->handle,
+                    'content' => $toParse->content->unwrap()
+                ]);
+            });
+        }
+
+        return $parsedContent;
+    }
+
+    /**
+     *
+     * Process errors for GraphQL
+     *
+     * @param Collection $errors
+     * @return Collection
+     *
+     */
+    public static function processErrorsForGraphQL(Collection $errors): Collection
+    {
+        $parsedErrors = Collection::init();
+        $errors->each(function ($key, $errors) use (&$parsedErrors) {
+            $parsedErrors->push([
+                'key' => $key,
+                'errors' => $errors
+            ]);
+        });
+
+        return $parsedErrors;
+    }
+
+    /**
+     *
      * Get an entry with filters
      *
      * @param array $filters
@@ -669,7 +749,6 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws FieldException
      *
      */
     public function updateEntriesUrl(LocaleField $urlPrefix): void

@@ -76,7 +76,7 @@ type Mutation {
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryErrors
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
     updateEntryLayout(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
@@ -209,6 +209,7 @@ type Entry {
     dates: Dates!
     categories: [ID!]!
     content: [ModelFieldContent]!
+    schema: [LayoutField]!
 }
 
 type EntryType {
@@ -248,6 +249,7 @@ type InputSettings {
 
 type ModelFieldContent {
     key: String!
+    handle: String!
     content: [FieldContent]!
 }
 
@@ -276,6 +278,7 @@ input InputSettingsInput {
 
 input ModelFieldContentInput {
     key: String!
+    handle: String!
     content: [FieldContentInput]!
 }
 
@@ -333,7 +336,7 @@ type EntryResult {
 
 type EntryErrors {
     key: String!
-    errors: [String]!
+    errors: [[String]]!
 }
 
 type EntryListing {

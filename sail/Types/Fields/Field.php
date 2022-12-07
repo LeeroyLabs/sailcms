@@ -5,12 +5,11 @@ namespace SailCMS\Types\Fields;
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\StoringType;
 use stdClass;
 
 abstract class Field implements DatabaseType
 {
-    /* Errors */
-    const INVALID_VALUE_FOR_TYPE = 'Invalid value %s for %s';
 
     /**
      *
@@ -22,27 +21,63 @@ abstract class Field implements DatabaseType
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool        $required = false
+        public readonly bool $required = false
     )
     {
     }
 
     /**
      *
-     * For storing in the database
-     *  > IMPORTANT : the settings must be regrouped in a configs array
+     * Must defined default settings
      *
-     * @return stdClass
+     * @return Collection
      *
      */
-    public function toDBObject(): stdClass
+    abstract public static function defaultSettings(): Collection;
+
+    /**
+     *
+     * Must define the available properties
+     *
+     * @return Collection
+     *
+     */
+    abstract public static function availableProperties(): Collection;
+
+    /**
+     *
+     * Get the type of how it's store in the database
+     *
+     * @return string
+     */
+    abstract public static function storingType(): string;
+
+    /**
+     *
+     * Validate the input from a given content
+     *
+     * @param mixed $content
+     * @return Collection
+     *
+     */
+    abstract public function validate(mixed $content): Collection;
+
+    /**
+     *
+     * Valid a value by Field types
+     *
+     * @param string $type
+     * @param mixed $value
+     * @return bool
+     *
+     */
+    protected static function validByType(string $type, mixed $value): bool
     {
-        return (object)[
-            'labels' => $this->labels->toDBObject(),
-            'settings' => [
-                'required' => $this->required
-            ]
-        ];
+        return match ($type) {
+            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
+            InputSettings::INPUT_TYPE_NUMBER => is_integer($value),
+            default => false
+        };
     }
 
     /**
@@ -76,49 +111,44 @@ abstract class Field implements DatabaseType
 
     /**
      *
-     * Must defined default settings
+     * Get setting type from a field
      *
-     * @return Collection
-     *
-     */
-    abstract public static function defaultSettings(): Collection;
-
-    /**
-     *
-     * Must define the available properties
-     *
-     * @return Collection
-     *
-     */
-    abstract public static function availableProperties(): Collection;
-
-    abstract public static function storingType(): string;
-
-    /**
-     *
-     * Validate the input from a given content
-     *
-     * @param mixed $content
-     * @return Collection
-     *
-     */
-    abstract public function validate(mixed $content): Collection;
-
-    /**
-     *
-     * Valid a value by Field types
-     *
-     * @param string $type
+     * @param string $name
      * @param mixed $value
-     * @return bool
+     * @return string
      *
      */
-    protected static function validByType(string $type, mixed $value): bool
+    public function getSettingType(string $name, mixed $value): string
     {
-        return match ($type) {
-            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
-            InputSettings::INPUT_TYPE_NUMBER => is_integer($value),
-            default => false
-        };
+        $type = StoringType::STRING->value;
+        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value) {
+            if ($setting->name === $name) {
+                $type = match ($setting->type) {
+                    "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
+                    "checkbox" => StoringType::BOOLEAN->value,
+                    default => StoringType::STRING->value
+                };
+            }
+        });
+
+        return $type;
+    }
+
+    /**
+     *
+     * For storing in the database
+     *  > IMPORTANT : the settings must be regrouped in a 'settings' array
+     *
+     * @return stdClass
+     *
+     */
+    public function toDBObject(): stdClass
+    {
+        return (object)[
+            'labels' => $this->labels->toDBObject(),
+            'settings' => [
+                'required' => $this->required
+            ]
+        ];
     }
 }
