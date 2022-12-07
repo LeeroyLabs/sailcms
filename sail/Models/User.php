@@ -23,11 +23,14 @@ use SailCMS\Security;
 use SailCMS\Session;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
+use SailCMS\Types\MetaSearch;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
+use SailCMS\types\UserSorting;
+use SailCMS\Types\UserTypeSearch;
 
 class User extends Model
 {
@@ -46,10 +49,10 @@ class User extends Model
     public string $password;
     public string $avatar;
     public UserMeta $meta;
-    public string $temporary_token;
-    public string $auth_token;
+    public string $temporary_token = '';
+    public string $auth_token = '';
     public string $locale;
-    public string $validation_code;
+    public string $validation_code = '';
     public string $reset_code;
     public bool $validated;
 
@@ -479,25 +482,36 @@ class User extends Model
      *
      * Get a list of users
      *
-     * @param  int     $page
-     * @param  int     $limit
-     * @param  string  $search
-     * @param  string  $sort
-     * @param  int     $direction
-     * @param  string  $user_type
+     * @param  int                  $page
+     * @param  int                  $limit
+     * @param  string               $search
+     * @param  UserSorting|null     $sorting
+     * @param  UserTypeSearch|null  $typeSearch
+     * @param  MetaSearch|null      $metaSearch
+     * @param  bool|null            $status
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getList(int $page = 0, int $limit = 25, string $search = '', string $sort = 'name.first', int $direction = Model::SORT_ASC, string $user_type = ''): Listing
-    {
+    public function getList(
+        int $page = 0,
+        int $limit = 25,
+        string $search = '',
+        UserSorting $sorting = null,
+        UserTypeSearch|null $typeSearch = null,
+        MetaSearch|null $metaSearch = null,
+        bool|null $status = null
+    ): Listing {
         $this->hasPermissions(true);
 
-        $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
+        if (!isset($sorting)) {
+            $sorting = new UserSorting('name.full', 'asc');
+        }
 
-        $options = QueryOptions::initWithSort([$sort => $direction]);
+        $offset = $page * $limit - $limit; // (ex: 1 * 25 - 25 = 0 offset)
+        $options = QueryOptions::initWithSort([$sorting->sort => $sorting->order]);
         $options->skip = $offset;
         $options->limit = ($limit > 100) ? 25 : $limit;
 
@@ -512,8 +526,22 @@ class User extends Model
             ];
         }
 
-        if ($user_type !== '') {
-            $query['roles'] = $user_type;
+        // User Type Search Filter
+        if ($typeSearch) {
+            $query['roles'] = ['$in' => explode(',', $typeSearch->type)];
+
+            if ($typeSearch->except) {
+                $query['roles'] = ['$nin' => explode(',', $typeSearch->type)];
+            }
+        }
+
+        // Meta Search Filter
+        if ($metaSearch) {
+            $query['meta' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
+        }
+
+        if (isset($status)) {
+            $query['status'] = $status;
         }
 
         // Pagination
