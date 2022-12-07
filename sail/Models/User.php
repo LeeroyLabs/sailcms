@@ -521,7 +521,7 @@ class User extends Model
         }
 
         if ($user_type !== '') {
-            $query['roles'] = $user_type;
+            $query['roles'] = ['$in' => explode(',', $user_type)];
 
             if ($except_type) {
                 $query['roles'] = ['$ne' => $user_type];
