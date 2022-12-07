@@ -223,7 +223,7 @@ type Entry {
     authors: Authors!
     dates: Dates!
     categories: [ID!]!
-    content: [ModelFieldContent]!
+    content: [ModelFieldContent!]!
     schema: [LayoutField]!
 }
 

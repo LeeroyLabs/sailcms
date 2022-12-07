@@ -495,22 +495,19 @@ class Entry extends Model
      * Process content from graphQL to be able to create/update
      *
      * @param Collection|null $content
-     * @return Collection|null
+     * @return Collection
      *
      */
-    public static function processContentFromGraphQL(?Collection $content): ?Collection
+    public static function processContentFromGraphQL(?Collection $content): Collection
     {
-        $parsedContent = null;
+        $parsedContent = Collection::init();
 
-        if ($content) {
-            $parsedContent = Collection::init();
-            $content->each(function ($i, $toParse) use (&$parsedContent) {
-                $parsedContent->pushKeyValue($toParse->key, (object)[
-                    'handle' => $toParse->handle,
-                    'content' => $toParse->content->unwrap()
-                ]);
-            });
-        }
+        $content?->each(function ($i, $toParse) use (&$parsedContent) {
+            $parsedContent->pushKeyValue($toParse->key, (object)[
+                'handle' => $toParse->handle,
+                'content' => $toParse->content->unwrap()
+            ]);
+        });
 
         return $parsedContent;
     }
@@ -708,10 +705,10 @@ class Entry extends Model
             throw new EntryException(sprintf(Entry::DOES_NOT_EXISTS, 'id = ' . $entryId));
         }
 
-        $updateResult = $this->updateWithoutPermission($entry, $data, $throwErrors);
+        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors);
 
         // Update homepage if needed
-        if ($updateResult->length <= 0) {
+        if ($updateErrors->length <= 0) {
             $locale = $data->get('locale', $entry->locale);
             $oldLocale = $data->get('locale') ? $entry->locale : null;
 
@@ -736,7 +733,7 @@ class Entry extends Model
             }
         }
 
-        return $updateResult;
+        return $updateErrors;
     }
 
     /**
@@ -991,7 +988,7 @@ class Entry extends Model
         $parent = $data->get('parent');
         $content = $data->get('content');
 
-        // TODO implements others fields: categories
+        // TODO implements others fields: categories + alternate
 
         // VALIDATION & PARSING
         static::validateStatus($status);
@@ -1033,9 +1030,9 @@ class Entry extends Model
                 'url' => static::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
                 'authors' => $authors,
                 'dates' => $dates,
+                'content' => $content ?? [],
                 // TODO
-                'categories' => Collection::init(),
-                'content' => $content ?? []
+                'categories' => Collection::init()
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -1044,17 +1041,6 @@ class Entry extends Model
         $entry = $this->findById($entryId)->exec();
         // The query has the good entry type
         $entry->entryType = $this->entryType;
-
-        // Must update alternates after save because we need the entry id
-        $alternates->push((object)[
-            'locale' => $locale,
-            'entry' => (string)$entryId
-        ]);
-        $this->updateWithoutPermission($entry, new Collection([
-            'alternates' => $alternates
-        ]));
-        // Set the attribute manually to avoid another query
-        $entry->alternates = $alternates;
 
         return $entry;
     }
@@ -1094,7 +1080,7 @@ class Entry extends Model
             static::validateStatus($data->get('status'));
         }
 
-        if (in_array('content', $data->keys()->unwrap())) {
+        if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
             $errors = $this->validateContent($data->get('content'));
 
             if ($errors->length > 0) {
