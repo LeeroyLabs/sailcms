@@ -6,7 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
 use stdClass;
 
-class Input implements DatabaseType
+class InputSettings implements DatabaseType
 {
     const INPUT_TYPE_CHECKBOX = 'checkbox';
     const INPUT_TYPE_NUMBER = 'number';

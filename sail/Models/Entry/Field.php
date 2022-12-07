@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Errors\FieldException;
 use SailCMS\Text;
 use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
@@ -83,16 +82,20 @@ abstract class Field
      *
      * This is the default content validation for the field
      *
-     * @param Collection $content
+     * @param array|Collection $content
      * @return Collection
-     * @throws FieldException
      *
      */
-    public function validateContent(Collection $content): Collection
+    public function validateContent(array|Collection $content): Collection
     {
         $errors = new Collection();
+
+        if (is_array($content)) {
+            $content = new Collection($content);
+        }
+
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            $errors->push($fieldTypeClass->validate($content->get($index)));
+            $errors->push($fieldTypeClass->validate($content->get($index)['value']));
         });
 
         $otherErrors = $this->validate($content);

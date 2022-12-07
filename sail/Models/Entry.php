@@ -551,7 +551,8 @@ class Entry extends Model
      * @param string $title
      * @param string|null $slug
      * @param array|Collection $extraData
-     * @return array|Entry|null
+     * @param bool $throwErrors
+     * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -561,7 +562,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $extraData = []): array|Entry|null
+    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $extraData = [], bool $throwErrors = true): array|Entry|Collection|null
     {
         $this->hasPermissions();
 
@@ -583,13 +584,13 @@ class Entry extends Model
 
         $siteId = $data->get('site_id', Sail::siteId());
 
-        $entry = $this->createWithoutPermission($data);
+        $entryOrErrors = $this->createWithoutPermission($data, $throwErrors);
 
-        if ($isHomepage) {
-            $entry->setAsHomepage($locale, $siteId);
+        if ($isHomepage && $entryOrErrors instanceof Entry) {
+            $entryOrErrors->setAsHomepage($locale, $siteId);
         }
 
-        return $entry;
+        return $entryOrErrors;
     }
 
     /**
@@ -598,7 +599,8 @@ class Entry extends Model
      *
      * @param Entry|string $entry or id
      * @param array|Collection $data
-     * @return bool
+     * @param bool $throwErrors
+     * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -608,7 +610,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function updateById(Entry|string $entry, array|Collection $data): bool
+    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true): Collection
     {
         $this->hasPermissions();
 
@@ -626,10 +628,10 @@ class Entry extends Model
             throw new EntryException(sprintf(Entry::DOES_NOT_EXISTS, 'id = ' . $entryId));
         }
 
-        $updateResult = $this->updateWithoutPermission($entry, $data);
+        $updateResult = $this->updateWithoutPermission($entry, $data, $throwErrors);
 
         // Update homepage if needed
-        if ($updateResult) {
+        if ($updateResult->length <= 0) {
             $locale = $data->get('locale', $entry->locale);
             $oldLocale = $data->get('locale') ? $entry->locale : null;
 
@@ -667,6 +669,7 @@ class Entry extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws FieldException
      *
      */
     public function updateEntriesUrl(LocaleField $urlPrefix): void
@@ -689,7 +692,6 @@ class Entry extends Model
      * Delete an entry in soft mode or definitively
      *
      * @param string|ObjectId $entryId
-     * @param string|null $siteId
      * @param bool $soft
      * @return bool
      * @throws ACLException
@@ -699,7 +701,6 @@ class Entry extends Model
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
-     *
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
@@ -790,15 +791,13 @@ class Entry extends Model
      * Validate content from the entry type layout schema
      *
      * @param Collection $content
-     * @return void
+     * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws FieldException
-     *
      */
-    private function validateContent(Collection $content): void
+    private function validateContent(Collection $content): Collection
     {
         $errors = Collection::init();
 
@@ -815,7 +814,7 @@ class Entry extends Model
             $schema = Collection::init();
         }
 
-        // Validate content
+        // Validate content from schema
         $schema->each(function ($key, $modelField) use ($content, $errors) {
             /**
              * @var ModelField $modelField
@@ -831,17 +830,7 @@ class Entry extends Model
             }
         });
 
-        if ($errors->length > 0) {
-            $errorsArray = $errors->unwrap();
-            $errorsStrings = [];
-            array_walk_recursive($errorsArray, function ($item, $key) use (&$errorsStrings) {
-                $errorsStrings[] = "[" . $key . "] = " . $item;
-            });
-
-            if (count($errorsStrings) > 0) {
-                throw new EntryException(static::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
-            }
-        }
+        return $errors;
     }
 
     /**
@@ -903,15 +892,15 @@ class Entry extends Model
      * Create an entry
      *
      * @param Collection $data
-     * @return array|Entry|null
+     * @param bool $throwErrors
+     * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws FieldException
      *
      */
-    private function createWithoutPermission(Collection $data): array|Entry|null
+    private function createWithoutPermission(Collection $data, bool $throwErrors = true): array|Entry|Collection|null
     {
         $locale = $data->get('locale');
         $status = $data->get('status', EntryStatus::INACTIVE->value);
@@ -925,14 +914,23 @@ class Entry extends Model
 
         // TODO implements others fields: categories
 
-        // VALIDATION
+        // VALIDATION & PARSING
         static::validateStatus($status);
         if ($content) {
-            $this->validateContent($content);
+            $errors = $this->validateContent($content);
+
+            if ($errors->length > 0) {
+                if ($throwErrors) {
+                    static::throwErrorContent($errors);
+                } else {
+                    return $errors;
+                }
+            }
+
             $content = $content->unwrap();
         }
 
-        // Get the validated slug just to be sure
+        // Get the validated slug
         $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
         $published = false;
@@ -984,19 +982,19 @@ class Entry extends Model
 
     /**
      *
-     * Update an entry
+     * Update an entry without permission protection
      *
      * @param Entry $entry
      * @param Collection $data
-     * @return bool
+     * @param bool $throwErrors
+     * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws FieldException
      *
      */
-    private function updateWithoutPermission(Entry $entry, Collection $data): bool
+    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true): Collection
     {
         $update = [];
         $slug = $entry->slug;
@@ -1018,7 +1016,15 @@ class Entry extends Model
         }
 
         if (in_array('content', $data->keys()->unwrap())) {
-            $this->validateContent($data->get('content'));
+            $errors = $this->validateContent($data->get('content'));
+
+            if ($errors->length > 0) {
+                if ($throwErrors) {
+                    static::throwErrorContent($errors);
+                } else {
+                    return $errors;
+                }
+            }
         }
 
         $data->each(function ($key, $value) use (&$update) {
@@ -1040,7 +1046,7 @@ class Entry extends Model
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
-        return $qtyUpdated === 1;
+        return Collection::init();
     }
 
     /**
@@ -1088,5 +1094,27 @@ class Entry extends Model
         }
 
         return $qtyDeleted === 1;
+    }
+
+    /**
+     *
+     * Parse and throw the content errors
+     *
+     * @param Collection $errors
+     * @return void
+     * @throws EntryException
+     *
+     */
+    private static function throwErrorContent(Collection $errors): void
+    {
+        $errorsArray = $errors->unwrap();
+        $errorsStrings = [];
+        array_walk_recursive($errorsArray, function ($item, $key) use (&$errorsStrings) {
+            $errorsStrings[] = $item;
+        });
+
+        if (count($errorsStrings) > 0) {
+            throw new EntryException(static::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
+        }
     }
 }
