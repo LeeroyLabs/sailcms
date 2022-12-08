@@ -328,15 +328,13 @@ class Users
      *
      * Forgot password, send an email for the request
      *
-     * @param  mixed        $obj
-     * @param  Collection   $args
-     * @param  Context      $context
-     * @param  ResolveInfo  $info
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws DatabaseException
-     * @throws FileException
      * @throws EmailException
-     *
+     * @throws FileException
      */
     public function forgotPassword(mixed $obj, Collection $args, Context $context): bool
     {
