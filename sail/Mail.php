@@ -290,6 +290,15 @@ class Mail
                 );
             }
 
+            // cta_link is present and code. Replace {code} in link for code
+            if ($context->get('reset_code', null) !== null) {
+                $superContext->cta_link = str_replace(
+                    '{code}',
+                    $context->get('reset_code', ''),
+                    $superContext->get('cta_link')
+                );
+            }
+
             // Replace locale variable in template name to the actual locale
             $template->template = str_replace('{locale}', $locale, $template->template);
 
