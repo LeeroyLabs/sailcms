@@ -468,7 +468,7 @@ class User extends Model
         }
 
         if ($meta) {
-            $update['meta'] = $meta;
+            $update['meta'] = $meta->simplify();
         }
 
         $this->updateOne(['_id' => $id], ['$set' => $update]);
@@ -905,7 +905,7 @@ class User extends Model
      */
     public static function forgotPassword(string $email): bool
     {
-        $data = new Middleware\Data(Middleware\Login::ForgotPassword, ['email' => $email, 'allowed' => false]);
+        $data = new Middleware\Data(Middleware\Login::ForgotPassword, ['email' => $email, 'allowed' => true]);
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
 
         if ($mwResult->data['allowed']) {
