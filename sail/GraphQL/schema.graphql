@@ -276,6 +276,7 @@ type FieldContent {
 
 input FieldConfigsInput {
     labels: LocaleFieldInput
+    key: String!
     handle: String!
     inputSettings: [[InputSettingsInput]]!
 }

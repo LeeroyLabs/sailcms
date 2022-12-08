@@ -95,7 +95,9 @@ class EntryLayout extends Model
                 throw new FieldException(static::SCHEMA_MUST_CONTAIN_FIELDS);
             }
 
-            $schema->pushKeyValue($field->generateKey(), $field->toLayoutField());
+            // TODO verify if key existed before... and slugify
+
+            $schema->pushKeyValue($key, $field->toLayoutField());
         });
 
         return $schema;
@@ -186,6 +188,9 @@ class EntryLayout extends Model
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0, ?LocaleField $labels = null): void
     {
         $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels) {
+            /**
+             * @var ModelField $field
+             */
             if ($currentFieldKey === $fieldKey) {
                 $currentInput = $field->configs->get($fieldIndex)->toDbObject();
                 $inputClass = $field->configs->get($fieldIndex)::class;
@@ -313,7 +318,7 @@ class EntryLayout extends Model
             });
 
             $field = new $fieldClass($labels, $parsedConfigs);
-            $schema->push($field);
+            $schema->pushKeyValue($fieldSettings->key, $field);
         }
         return $schema;
     }

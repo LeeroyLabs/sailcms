@@ -15,7 +15,6 @@ abstract class Field
     const SCHEMA_MUST_CONTENT_FIELD_TYPE = 'The %s schema must contains only SailCMS/Types/Fields/Field type';
 
     /* Properties */
-    // TODO add a prop to be able to identify the Field in the schema instead of using generateKey
     public LocaleField $labels;
     public string $handle;
     public Collection $baseConfigs;
@@ -38,18 +37,6 @@ abstract class Field
 
         $this->defineBaseConfigs();
         $this->instantiateConfigs($labels, $settings);
-    }
-
-    /**
-     *
-     *  Generate a field to retrieve a field in an entry layout or in an entry content
-     *
-     * @return string
-     *
-     */
-    public function generateKey(): string
-    {
-        return $this->handle . '_' . uniqid();
     }
 
     /**

@@ -15,8 +15,8 @@ class LayoutField implements DatabaseType
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly string      $handle,
-        public readonly Collection  $configs
+        public readonly string $handle,
+        public readonly Collection $configs
     )
     {
     }
