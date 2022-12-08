@@ -1020,12 +1020,12 @@ class Entry extends Model
         $alternates = new Collection($data->get('alternates', []));
         $parent = $data->get('parent');
         $content = $data->get('content');
-
-        // TODO implements others fields: categories
+        $categories = $data->get('categories');
 
         // VALIDATION & PARSING
         static::validateStatus($status);
-        if ($content) {
+        if ($content instanceof Collection && $content->length > 0) {
+            // Check if there is errors
             $errors = $this->validateContent($content);
 
             if ($errors->length > 0) {
@@ -1064,8 +1064,7 @@ class Entry extends Model
                 'authors' => $authors,
                 'dates' => $dates,
                 'content' => $content ?? [],
-                // TODO
-                'categories' => Collection::init()
+                'categories' => $categories ?? []
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
