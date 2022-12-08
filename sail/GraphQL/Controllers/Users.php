@@ -114,7 +114,6 @@ class Users
             $sorting = new UserSorting('name.full', 'asc');
         }
 
-
         return (new User())->getList(
             $args->get('page'),
             $args->get('limit'),

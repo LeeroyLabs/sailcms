@@ -35,9 +35,10 @@ class UserMeta implements DatabaseType
 
         foreach ($object as $key => $value) {
             if (is_array($value)) {
-                $this->{$key} = (object)$value;
+                $obj = (object)$value;
+                $this->{$key} = $obj ?? (object)[];
             } else {
-                $this->{$key} = $value;
+                $this->{$key} = $value ?? '';
             }
         }
     }
@@ -54,7 +55,7 @@ class UserMeta implements DatabaseType
         $output = new stdClass();
 
         foreach ($this as $key => $value) {
-            $output->{$key} = $value;
+            $output->{$key} = $value ?? '';
         }
 
         return $output;

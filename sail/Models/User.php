@@ -468,7 +468,7 @@ class User extends Model
         }
 
         if ($meta) {
-            $update['meta'] = $meta;
+            $update['meta'] = $meta->simplify();
         }
 
         $this->updateOne(['_id' => $id], ['$set' => $update]);
