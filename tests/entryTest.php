@@ -251,7 +251,6 @@ test('Create an entry with an entry type with an existing url', function () {
             'handle' => $modelField->handle
         ]));
     });
-    print_r($content);
 
     try {
         $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', [

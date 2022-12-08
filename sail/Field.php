@@ -33,7 +33,7 @@ class Field
     {
         $fieldList = Collection::init();
         $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
-        // TODO put fields in a collection
+        // TODO put fields in a collection to be able to send it to graphql + create a info method in entry/field
         return Collection::init();
     }
 }

@@ -168,20 +168,21 @@ class Entry extends Model
 
     /**
      *
-     * Parse content for GraphQL
+     * Parse content
      *
      * @return Collection
      *
      */
-    public function contentForGraphQL(): Collection
+    public function getContent(): Collection
     {
         $parsedContent = Collection::init();
 
         $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
+            // TODO simplify this to have content: {key: value, key2: value, key3: ['value of matrix1', 'value of matrix2']}
             $parsedContent->push([
                 'key' => $key,
                 'handle' => $modelFieldContent->handle,
-                'content' => $modelFieldContent->content
+                'content' => $modelFieldContent->content // TODO if only 1 index remove array
             ]);
         });
 
@@ -226,7 +227,7 @@ class Entry extends Model
             'authors' => $this->authors->toDBObject(),
             'dates' => $this->dates->toDBObject(),
             'categories' => $this->categories,
-            'content' => $this->contentForGraphQL(),
+            'content' => $this->getContent(),
             'schema' => $schema
         ];
     }
@@ -394,7 +395,8 @@ class Entry extends Model
      *
      * Find entries of all types by category id
      *
-     * @param int $categoryId
+     * @param string $categoryId
+     * @param string|null $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -402,15 +404,17 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public static function findByCategoryId(int $categoryId): Collection
+    public static function findByCategoryId(string $categoryId, string $siteId = null): Collection
     {
         $availableTypes = EntryType::getAll();
         $allEntries = Collection::init();
+        $siteId = $siteId ?? Sail::siteId();
 
-        $availableTypes->each(function ($key, $entryType) use ($categoryId, &$allEntries) {
+        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries) {
             $entry = new Entry($entryType->collection_name);
             $entries = $entry->find([
-                'categories' => $categoryId
+                'categories' => ['$in' => ['_id', $categoryId]],
+                'site_id' => $siteId
             ])->exec();
 
             $allEntries->pushSpread(...$entries);

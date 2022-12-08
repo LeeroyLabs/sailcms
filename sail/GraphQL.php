@@ -355,6 +355,7 @@ class GraphQL
         static::addQueryResolver('category', Categories::class, 'category');
         static::addQueryResolver('categoryBySlug', Categories::class, 'categoryBySlug');
         static::addQueryResolver('categoryFullTree', Categories::class, 'categoryFullTree');
+        static::addQueryResolver('categoryEntries', Categories::class, 'categoryEntries');
         static::addMutationResolver('createCategory', Categories::class, 'createCategory');
         static::addMutationResolver('updateCategory', Categories::class, 'updateCategory');
         static::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
