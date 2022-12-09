@@ -346,6 +346,7 @@ class GraphQL
         static::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
         static::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
         static::addMutationResolver('updateEntryLayoutSchema', Entries::class, 'updateEntryLayoutSchema');
+        static::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
         static::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
 
         // Register

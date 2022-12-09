@@ -24,6 +24,7 @@ class EntryLayout extends Model
     const DATABASE_ERROR = 'Exception when %s an entry';
     const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances';
     const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types';
+    const SCHEMA_KEY_DOES_NOT_EXISTS = 'The given key %s does not exists in the schema';
     const DOES_NOT_EXISTS = 'Entry layout %s does not exists';
 
     const ACL_HANDLE = "entrylayout";
@@ -252,6 +253,41 @@ class EntryLayout extends Model
 
     /**
      *
+     * Update a key in the schema
+     *
+     * @param string $key
+     * @param string $newKey
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function updateSchemaKey(string $key, string $newKey): bool
+    {
+        $this->hasPermissions();
+
+        if (!in_array($key, $this->schema->keys()->unwrap())) {
+            throw new EntryException(static::SCHEMA_KEY_DOES_NOT_EXISTS);
+        }
+
+        $newSchema = Collection::init();
+        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey) {
+            /**
+             * @var ModelField $modelField
+             */
+            if ($key === $currentKey) {
+                $currentKey = $newKey;
+            }
+            $newSchema->pushKeyValue($currentKey, $modelField->toLayoutField());
+        });
+
+        return $this->updateById($this->_id, null, $newSchema);
+    }
+
+    /**
+     *
      * Delete an entry layout with soft or hard mode
      *
      * @param string|ObjectId $entryLayoutId
@@ -315,7 +351,7 @@ class EntryLayout extends Model
 
                 $parsedConfigs->pushKeyValue($index, $settings);
             });
-            
+
             $field = new $fieldClass($labels, $parsedConfigs);
             $schema->pushKeyValue($fieldSettings->key, $field);
         }

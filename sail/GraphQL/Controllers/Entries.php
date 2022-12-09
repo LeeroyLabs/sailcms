@@ -502,6 +502,22 @@ class Entries
         return $entryLayoutModel->updateById($id, $titles, $entryLayout->schema);
     }
 
+    public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
+    {
+        $id = $args->get('id');
+        $key = $args->get('key');
+        $newKey = $args->get('newKey');
+
+        $entryLayoutModel = new EntryLayout();
+        $entryLayout = $entryLayoutModel->one(['_id' => $id]);
+
+        if (!$entryLayout) {
+            throw new EntryException(sprintf(EntryLayout::DOES_NOT_EXISTS, $id));
+        }
+
+        return $entryLayout->updateSchemaKey($key, $newKey);
+    }
+
     /**
      *
      * Delete an entry layout
