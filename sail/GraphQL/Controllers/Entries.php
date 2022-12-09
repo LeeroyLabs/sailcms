@@ -350,7 +350,7 @@ class Entries
             // Process the content to be able to save it
             $args->pushKeyValue('content', Entry::processContentFromGraphQL($content));
         }
-        
+
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         $errors = $entryModel->updateById($id, $args, false);
@@ -484,7 +484,7 @@ class Entries
      * @throws PermissionException
      *
      */
-    public function updateEntryLayout(mixed $obj, Collection $args, Context $context): bool
+    public function updateEntryLayoutSchema(mixed $obj, Collection $args, Context $context): bool
     {
         $id = $args->get('id');
         $titles = $args->get('titles');

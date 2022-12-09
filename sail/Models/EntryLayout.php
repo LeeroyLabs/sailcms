@@ -307,19 +307,19 @@ class EntryLayout extends Model
             $labels = new LocaleField($fieldSettings->labels->unwrap());
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fields) use ($parsedConfigs) {
+            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs) {
                 $settings = Collection::init();
-
-                $fields->each(function ($key, $setting) use ($settings) {
+                $fields->each(function ($key, $setting) use (&$settings) {
                     $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
                 });
 
                 $parsedConfigs->pushKeyValue($index, $settings);
             });
-
+            
             $field = new $fieldClass($labels, $parsedConfigs);
             $schema->pushKeyValue($fieldSettings->key, $field);
         }
+
         return $schema;
     }
 

@@ -80,7 +80,7 @@ type Mutation {
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
-    updateEntryLayout(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
+    updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
     deleteEntryLayout(id: ID!, soft: Boolean): Boolean
 
     # Categories
