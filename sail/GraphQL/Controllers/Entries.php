@@ -62,13 +62,12 @@ class Entries
     {
         $result = EntryType::getAll(true);
 
-        $result->each(function ($key, &$entryType) {
-            if (!$entryType->entry_layout_id) {
-                $entryType->entry_layout_id = "";
-            }
+        $parsedResult = Collection::init();
+        $result->each(function ($key, &$entryType) use ($parsedResult) {
+            $parsedResult->push($entryType->toGraphQL());
         });
 
-        return $result;
+        return $parsedResult;
     }
 
     /**
@@ -84,7 +83,7 @@ class Entries
      * @throws PermissionException
      *
      */
-    public function entryType(mixed $obj, Collection $args, Context $context): ?EntryType
+    public function entryType(mixed $obj, Collection $args, Context $context): ?array
     {
         $id = $args->get('id');
         $handle = $args->get('handle');
@@ -108,11 +107,7 @@ class Entries
             throw new EntryException(sprintf(EntryType::DOES_NOT_EXISTS, $msg));
         }
 
-        if (!$result->entry_layout_id) {
-            $result->entry_layout_id = "";
-        }
-
-        return $result;
+        return $result->toGraphQL();
     }
 
     /**
@@ -122,19 +117,21 @@ class Entries
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return EntryType
+     * @return array
      * @throws DatabaseException
      * @throws EntryException
      * @throws ACLException
      * @throws PermissionException
      *
      */
-    public function createEntryType(mixed $obj, Collection $args, Context $context): EntryType
+    public function createEntryType(mixed $obj, Collection $args, Context $context): array
     {
         $handle = $args->get('handle');
         $title = $args->get('title');
         $urlPrefix = $args->get('url_prefix');
         $entryLayoutId = $args->get('entry_layout_id');
+
+        $urlPrefix = new LocaleField($urlPrefix->unwrap());
 
         $result = (new EntryType())->create($handle, $title, $urlPrefix, $entryLayoutId);
 
@@ -142,7 +139,7 @@ class Entries
             $result->entry_layout_id = "";
         }
 
-        return $result;
+        return $result->toGraphQL();
     }
 
     /**

@@ -364,8 +364,10 @@ class EntryType extends Model
      *
      * @param string $handle
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function checkHandle(string $handle): void
@@ -404,8 +406,10 @@ class EntryType extends Model
      * @param string|ObjectId|null $entryLayoutId
      * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
-     * @throws EntryException
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
@@ -420,7 +424,7 @@ class EntryType extends Model
                 'collection_name' => $collectionName,
                 'handle' => $handle,
                 'title' => $title,
-                'url_prefix' => $urlPrefix,
+                'url_prefix' => $urlPrefix->toDBObject(),
                 'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
             ]);
         } catch (DatabaseException $exception) {
@@ -480,5 +484,23 @@ class EntryType extends Model
         }
 
         return true;
+    }
+
+    /**
+     *
+     * Parse the entry into an array for api
+     *
+     * @return array
+     *
+     */
+    public function toGraphQL(): array
+    {
+        return [
+            '_id' => $this->_id,
+            'title' => $this->title,
+            'handle' => $this->handle,
+            'url_prefix' => $this->url_prefix->toDBObject(),
+            'entry_layout_id' => $this->entry_layout_id ?? ""
+        ];
     }
 }
