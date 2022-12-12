@@ -42,7 +42,7 @@ test('Create an entry layout', function () {
     ]);
 
     $schema = EntryLayout::generateLayoutSchema(new Collection([
-        $textField
+        'title' => $textField
     ]));
 
     try {
@@ -64,10 +64,7 @@ test('Update an entry layout', function () {
         'titles.fr' => 'Test de disposition'
     ]);
 
-    // key the first key
-    $fieldKey = $entryLayout->schema->keys()->unwrap()[0];
-
-    $entryLayout->updateSchemaConfig($fieldKey, [
+    $entryLayout->updateSchemaConfig('title', [
         'max_length' => 255,
         'min_length' => 10
     ], 0, new LocaleField([
@@ -81,9 +78,9 @@ test('Update an entry layout', function () {
             '_id' => $entryLayout->_id
         ]);
         expect($result)->toBe(true);
-        expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.max_length"))->toBe(255);
-        expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.min_length"))->toBe(10);
-        expect($updatedEntryLayout->schema->get($fieldKey . ".configs.0.labels.fr"))->toBe('Titre de section');
+        expect($updatedEntryLayout->schema->get("title.configs.0.max_length"))->toBe(255);
+        expect($updatedEntryLayout->schema->get("title.configs.0.min_length"))->toBe(10);
+        expect($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());6
@@ -251,7 +248,6 @@ test('Create an entry with an entry type with an existing url', function () {
             'handle' => $modelField->handle
         ]));
     });
-    print_r($content);
 
     try {
         $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', [

@@ -345,7 +345,8 @@ class GraphQL
         static::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
         static::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
         static::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
-        static::addMutationResolver('updateEntryLayout', Entries::class, 'updateEntryLayout');
+        static::addMutationResolver('updateEntryLayoutSchema', Entries::class, 'updateEntryLayoutSchema');
+        static::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
         static::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
 
         // Register
@@ -355,6 +356,7 @@ class GraphQL
         static::addQueryResolver('category', Categories::class, 'category');
         static::addQueryResolver('categoryBySlug', Categories::class, 'categoryBySlug');
         static::addQueryResolver('categoryFullTree', Categories::class, 'categoryFullTree');
+        static::addQueryResolver('categoryEntries', Categories::class, 'categoryEntries');
         static::addMutationResolver('createCategory', Categories::class, 'createCategory');
         static::addMutationResolver('updateCategory', Categories::class, 'updateCategory');
         static::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');

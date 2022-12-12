@@ -41,18 +41,6 @@ abstract class Field
 
     /**
      *
-     *  Generate a field to retrieve a field in an entry layout or in an entry content
-     *
-     * @return string
-     *
-     */
-    public function generateKey(): string
-    {
-        return $this->handle . '_' . uniqid();
-    }
-
-    /**
-     *
      * Update schema attribute before save with settings
      *
      * @param LocaleField $labels

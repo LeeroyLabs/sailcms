@@ -2,9 +2,11 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use Exception;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Category;
@@ -56,6 +58,40 @@ class Categories
     public function categoryFullTree(mixed $obj, Collection $args, Context $context): Collection
     {
         return (new Category())->getList($args->get('parent_id'), $args->get('site_id'));
+    }
+
+    /**
+     *
+     * Get entries from a category slug or id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     * @throws EntryException
+     *
+     */
+    public function categoryEntries(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $id = $args->get('id');
+        $slug = $args->get('slug');
+        $siteId = $args->get('site_id');
+
+        if (!$id && !$slug) {
+            throw new Exception('You must set at least the id or the slug of the category');
+        }
+
+        $entries = Collection::init();
+        if ($id) {
+            $entries = Category::getEntriesById($id, $siteId);
+        } else if ($slug) {
+            $entries = Category::getEntriesBySlug($slug, $siteId);
+        }
+
+        return $entries;
     }
 
     /**

@@ -75,7 +75,7 @@ abstract class Field implements DatabaseType
     {
         return match ($type) {
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
-            InputSettings::INPUT_TYPE_NUMBER => is_integer($value),
+            InputSettings::INPUT_TYPE_NUMBER => is_integer((int)$value),
             default => false
         };
     }
@@ -92,14 +92,15 @@ abstract class Field implements DatabaseType
     {
         $validSettings = Collection::init();
 
-        static::availableProperties()->each(function ($key, $inputType) use ($settings, $validSettings) {
+
+        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
             $settingValue = $settings->get($inputType->name);
             $defaultValue = static::defaultSettings()->get($inputType->name);
 
-            if (in_array($inputType->name, $settings->keys()->unwrap()) && static::validByType($inputType->type, $settingValue)) {
+            if ($settingValue && static::validByType($inputType->type, $settingValue)) {
                 $validSettings->pushKeyValue($inputType->name, $settingValue);
             } else {
                 $validSettings->pushKeyValue($inputType->name, $defaultValue);

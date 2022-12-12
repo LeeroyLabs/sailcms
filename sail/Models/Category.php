@@ -7,7 +7,9 @@ use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\QueryOptions;
@@ -95,20 +97,17 @@ class Category extends Model
      * Get all entries that are in the given category id
      *
      * @param ObjectId|string $id
+     * @param string|null $siteId
      * @return Collection
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
-    public static function getEntriesById(ObjectId|string $id): Collection
+    public static function getEntriesById(ObjectId|string $id, string $siteId = null): Collection
     {
-        $instance = new static();
-        $record = $instance->findById($id)->exec((string)$id);
-
-        if ($record) {
-            // TODO: Call method in Entry to load from the given category slug and site_id
-        }
-
-        return Collection::init();
+        return Entry::findByCategoryId((string)$id, $siteId);
     }
 
     /**
@@ -116,14 +115,26 @@ class Category extends Model
      * Alias for Entry's method for that
      *
      * @param string $slug
+     * @param string|null $siteId
      * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
-    public static function getEntriesBySlug(string $slug): Collection
+    public static function getEntriesBySlug(string $slug, string $siteId = null): Collection
     {
-        // TODO: Call method in Entry to load from the given category slug and site_id
+        $siteId = $siteId ?? Sail::siteId();
 
-        return Collection::init();
+        $record = static::getBySlug($slug, $siteId);
+
+        $entries = Collection::init();
+        if ($record) {
+            $entries = Entry::findByCategoryId($record->_id);
+        }
+
+        return $entries;
     }
 
     /**

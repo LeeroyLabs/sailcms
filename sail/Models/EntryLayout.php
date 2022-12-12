@@ -24,6 +24,7 @@ class EntryLayout extends Model
     const DATABASE_ERROR = 'Exception when %s an entry';
     const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances';
     const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types';
+    const SCHEMA_KEY_DOES_NOT_EXISTS = 'The given key %s does not exists in the schema';
     const DOES_NOT_EXISTS = 'Entry layout %s does not exists';
 
     const ACL_HANDLE = "entrylayout";
@@ -95,7 +96,9 @@ class EntryLayout extends Model
                 throw new FieldException(static::SCHEMA_MUST_CONTAIN_FIELDS);
             }
 
-            $schema->pushKeyValue($field->generateKey(), $field->toLayoutField());
+            // TODO verify if key existed before... and slugify
+
+            $schema->pushKeyValue($key, $field->toLayoutField());
         });
 
         return $schema;
@@ -186,6 +189,9 @@ class EntryLayout extends Model
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0, ?LocaleField $labels = null): void
     {
         $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels) {
+            /**
+             * @var ModelField $field
+             */
             if ($currentFieldKey === $fieldKey) {
                 $currentInput = $field->configs->get($fieldIndex)->toDbObject();
                 $inputClass = $field->configs->get($fieldIndex)::class;
@@ -247,6 +253,41 @@ class EntryLayout extends Model
 
     /**
      *
+     * Update a key in the schema
+     *
+     * @param string $key
+     * @param string $newKey
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function updateSchemaKey(string $key, string $newKey): bool
+    {
+        $this->hasPermissions();
+
+        if (!in_array($key, $this->schema->keys()->unwrap())) {
+            throw new EntryException(static::SCHEMA_KEY_DOES_NOT_EXISTS);
+        }
+
+        $newSchema = Collection::init();
+        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey) {
+            /**
+             * @var ModelField $modelField
+             */
+            if ($key === $currentKey) {
+                $currentKey = $newKey;
+            }
+            $newSchema->pushKeyValue($currentKey, $modelField->toLayoutField());
+        });
+
+        return $this->updateById($this->_id, null, $newSchema);
+    }
+
+    /**
+     *
      * Delete an entry layout with soft or hard mode
      *
      * @param string|ObjectId $entryLayoutId
@@ -302,10 +343,9 @@ class EntryLayout extends Model
             $labels = new LocaleField($fieldSettings->labels->unwrap());
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fields) use ($parsedConfigs) {
+            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs) {
                 $settings = Collection::init();
-
-                $fields->each(function ($key, $setting) use ($settings) {
+                $fields->each(function ($key, $setting) use (&$settings) {
                     $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
                 });
 
@@ -313,8 +353,9 @@ class EntryLayout extends Model
             });
 
             $field = new $fieldClass($labels, $parsedConfigs);
-            $schema->push($field);
+            $schema->pushKeyValue($fieldSettings->key, $field);
         }
+
         return $schema;
     }
 
