@@ -37,14 +37,14 @@ class Entry extends Model
     const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
 
     /* Errors */
-    const TITLE_MISSING = 'You must set the entry title in your data';
-    const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
-    const CANNOT_VALIDATE_CONTENT = 'You cannot validate content without setting an entry layout to the type';
-    const SCHEMA_VALIDATION_ERROR = 'The entry layout schema does not fits with the contents sends';
-    const CONTENT_KEY_ERROR = 'The key %s does not exists in the schema of the entry layout.';
+    const TITLE_MISSING = 'You must set the entry title in your data.';
+    const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead.';
+    const CANNOT_VALIDATE_CONTENT = 'You cannot validate content without setting an entry layout to the type.';
+    const SCHEMA_VALIDATION_ERROR = 'The entry layout schema does not fits with the contents sends.';
+    const CONTENT_KEY_ERROR = 'The key "%s" does not exists in the schema of the entry layout.';
     const CONTENT_ERROR = 'The content has theses errors :' . PHP_EOL;
-    const DOES_NOT_EXISTS = 'Entry %s does not exists';
-    const DATABASE_ERROR = 'Exception when %s an entry';
+    const DOES_NOT_EXISTS = 'Entry "%s" does not exists.';
+    const DATABASE_ERROR = 'Exception when "%s" an entry.';
 
     /* Cache */
     const HOMEPAGE_CACHE = 'homepage_entry';
