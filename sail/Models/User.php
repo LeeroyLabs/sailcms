@@ -513,6 +513,9 @@ class User extends Model
         $options->skip = $offset;
         $options->limit = ($limit > 100) ? 25 : $limit;
 
+        // Sorting required collation
+        $options->collation = 'en';
+
         $query = [];
 
         if (!empty($search)) {
