@@ -562,6 +562,7 @@ class Entries
         } else {
             $entryModel = new Entry();
         }
+
         return $entryModel;
     }
 }

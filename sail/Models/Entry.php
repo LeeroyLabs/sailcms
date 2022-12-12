@@ -37,13 +37,14 @@ class Entry extends Model
     const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
 
     /* Errors */
-    const TITLE_MISSING = 'You must set the entry title in your data';
-    const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead';
-    const CANNOT_VALIDATE_CONTENT = 'You cannot validate content without setting an entry layout to the type';
-    const SCHEMA_VALIDATION_ERROR = 'The entry layout schema does not fits with the contents sends';
+    const TITLE_MISSING = 'You must set the entry title in your data.';
+    const STATUS_CANNOT_BE_TRASH = 'You cannot delete a entry this way, use the delete method instead.';
+    const CANNOT_VALIDATE_CONTENT = 'You cannot validate content without setting an entry layout to the type.';
+    const SCHEMA_VALIDATION_ERROR = 'The entry layout schema does not fits with the contents sends.';
+    const CONTENT_KEY_ERROR = 'The key "%s" does not exists in the schema of the entry layout.';
     const CONTENT_ERROR = 'The content has theses errors :' . PHP_EOL;
-    const DOES_NOT_EXISTS = 'Entry %s does not exists';
-    const DATABASE_ERROR = 'Exception when %s an entry';
+    const DOES_NOT_EXISTS = 'Entry "%s" does not exists.';
+    const DATABASE_ERROR = 'Exception when "%s" an entry.';
 
     /* Cache */
     const HOMEPAGE_CACHE = 'homepage_entry';
@@ -178,11 +179,11 @@ class Entry extends Model
         $parsedContent = Collection::init();
 
         $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
-            // TODO simplify this to have content: {key: value, key2: value, key3: ['value of matrix1', 'value of matrix2']}
             $parsedContent->push([
                 'key' => $key,
+                'type' => $modelFieldContent->type,
                 'handle' => $modelFieldContent->handle,
-                'content' => $modelFieldContent->content // TODO if only 1 index remove array
+                'content' => $modelFieldContent->content
             ]);
         });
 
@@ -536,9 +537,15 @@ class Entry extends Model
         $parsedContent = Collection::init();
 
         $content?->each(function ($i, $toParse) use (&$parsedContent) {
+            $content = $toParse->content;
+            if ($toParse->content instanceof Collection) {
+                $content = $toParse->content->unwrap();
+            }
+
             $parsedContent->pushKeyValue($toParse->key, (object)[
                 'handle' => $toParse->handle,
-                'content' => $toParse->content->unwrap()
+                'type' => $toParse->type,
+                'content' => $content
             ]);
         });
 
@@ -665,7 +672,7 @@ class Entry extends Model
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
-     * @throws EntryExceptiongetEntriesById
+     * @throws EntryException
      * @throws FilesystemException
      * @throws JsonException
      * @throws PermissionException
@@ -929,6 +936,12 @@ class Entry extends Model
              * @var ModelField $modelField
              */
             $modelFieldContent = $content->get($key);
+
+            // Cannot find content, it's not filled at all
+            if (!$modelFieldContent) {
+                return;
+            }
+
             if ($modelField->handle != $modelFieldContent->handle) {
                 throw new EntryException(static::SCHEMA_VALIDATION_ERROR);
             }
@@ -936,6 +949,12 @@ class Entry extends Model
 
             if ($modelFieldErrors->length > 0) {
                 $errors->pushKeyValue($key, $modelFieldErrors->unwrap());
+            }
+        });
+
+        $content->each(function ($key, $content) use ($schema) {
+            if (!$schema->get($key)) {
+                throw new EntryException(sprintf(static::CONTENT_KEY_ERROR, $key));
             }
         });
 
