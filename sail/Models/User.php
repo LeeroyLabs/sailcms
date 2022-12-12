@@ -538,7 +538,7 @@ class User extends Model
 
         // Meta Search Filter
         if ($metaSearch) {
-            $query['meta' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
+            $query['meta.' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
         }
 
         if (isset($status)) {
