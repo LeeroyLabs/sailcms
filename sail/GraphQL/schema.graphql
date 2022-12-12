@@ -94,6 +94,8 @@ type Mutation {
     #{CUSTOM_MUTATIONS}#
 }
 
+scalar Json
+
 input UserSort {
     sort: String!
     order: SortingOrder!
@@ -266,13 +268,9 @@ type InputSettings {
 
 type ModelFieldContent {
     key: String!
+    content: Json
     handle: String!
-    content: [FieldContent]!
-}
-
-type FieldContent {
-    value: String
-    type: InputType!
+    type: Json!
 }
 
 input FieldConfigsInput {
@@ -296,8 +294,9 @@ input InputSettingsInput {
 
 input ModelFieldContentInput {
     key: String!
+    content: Json
     handle: String!
-    content: [FieldContentInput]!
+    type: Json!
 }
 
 input FieldContentInput {
@@ -310,6 +309,7 @@ enum InputType {
     float
     string
     boolean
+    array
 }
 
 enum EntryStatus {

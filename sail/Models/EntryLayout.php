@@ -283,7 +283,11 @@ class EntryLayout extends Model
             $newSchema->pushKeyValue($currentKey, $modelField->toLayoutField());
         });
 
-        return $this->updateById($this->_id, null, $newSchema);
+        $result = $this->updateById($this->_id, null, $newSchema);
+
+        // TODO update all entries that has the key in their content.
+
+        return $result;
     }
 
     /**

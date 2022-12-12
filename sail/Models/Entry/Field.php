@@ -70,11 +70,11 @@ abstract class Field
      *
      * This is the default content validation for the field
      *
-     * @param array|Collection $content
+     * @param mixed $content
      * @return Collection
      *
      */
-    public function validateContent(array|Collection $content): Collection
+    public function validateContent(mixed $content): Collection
     {
         $errors = new Collection();
 
@@ -83,12 +83,7 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            $fieldContent = $content->get($index);
-            if ($fieldContent instanceof Collection) {
-                $fieldContent = $fieldContent->unwrap();
-            }
-
-            $error = $fieldTypeClass->validate($fieldContent['value']);
+            $error = $fieldTypeClass->validate($content);
 
             if ($error->length > 0) {
                 $errors->push($error);
@@ -159,6 +154,14 @@ abstract class Field
 
         return $className;
     }
+
+    /**
+     *
+     *
+     *
+     * @return string
+     */
+    abstract public function storingType(): string;
 
     /**
      * Must define default settings of the field

@@ -11,8 +11,8 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
-use SailCMS\Types\Fields\Field;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\StoringType;
 use SailCMS\Types\Username;
 
 beforeAll(function () {
@@ -232,20 +232,17 @@ test('Create an entry with an entry type with an existing url', function () {
         /**
          * @var ModelField $modelField
          */
-        $modelFieldContent = Collection::init();
-        $modelField->configs->each(function ($index, $field) use (&$modelFieldContent) {
-            /**
-             * @var Field $field
-             */
-            $modelFieldContent->pushKeyValue($index, [
-                'value' => "Textfield Test",
-                'type' => $field->storingType()
-            ]);
-        });
+        $modelFieldContent = null;
+
+        if ($modelField->storingType() != StoringType::ARRAY->value) {
+            // Assuming is a TextField
+            $modelFieldContent = "Textfield content";
+        } // and no other field has been set into the layout schema
 
         $content->pushKeyValue($key, new Collection([
             'content' => $modelFieldContent,
-            'handle' => $modelField->handle
+            'handle' => $modelField->handle,
+            'type' => $modelField->storingType()
         ]));
     });
 
@@ -291,7 +288,7 @@ test('Failed to update content because a field does not validate', function () {
         'title' => 'Test 2'
     ]);
     $firstKey = $entry->content->keys()->first;
-    $entry->content->get($firstKey)->content[0]['value'] = "TooShort";
+    $entry->content->get($firstKey)->content = "TooShort";
 
     try {
         $entryModel->updateById($entry->_id, [
