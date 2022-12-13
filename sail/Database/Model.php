@@ -44,6 +44,7 @@ abstract class Model implements JsonSerializable
     private int $currentSkip = 0;
     private array $currentPopulation = [];
     private string $currentField = '';
+    private string $currentCollation = '';
     private bool $isSingle = false;
 
     abstract public function fields(bool $fetchAllFields = false): array;
@@ -191,6 +192,13 @@ abstract class Model implements JsonSerializable
 
         if (count($this->currentProjection) > 0) {
             $options['projection'] = $this->currentProjection;
+        }
+
+        if ($this->currentCollation !== '') {
+            $options['collation'] = [
+                'locale' => $this->currentCollation,
+                'strength' => 3
+            ];
         }
 
         // Single query
@@ -351,6 +359,7 @@ abstract class Model implements JsonSerializable
         $this->currentLimit = $options->limit;
         $this->currentSort = $options->sort ?? [];
         $this->currentProjection = $options->projection ?? [];
+        $this->currentCollation = $options->collation;
         return $this;
     }
 
@@ -400,6 +409,7 @@ abstract class Model implements JsonSerializable
         $this->currentLimit = 1;
         $this->currentSort = $options->sort ?? [];
         $this->currentProjection = $options->projection ?? [];
+        $this->currentCollation = $options->collation;
         return $this;
     }
 
@@ -866,7 +876,7 @@ abstract class Model implements JsonSerializable
     protected function hasPermissions(bool $read = false): void
     {
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
-        
+
         if ($read) {
             if (!ACL::hasPermission(User::$currentUser, ACL::read($this->_permissionGroup))) {
                 throw new PermissionException($errorMsg, 0403);

@@ -8,6 +8,7 @@ class QueryOptions
     public int $limit = 10_000;
     public array|null $sort = null;
     public array|null $projection = null;
+    public string $collation = '';
 
     /**
      *
@@ -17,16 +18,18 @@ class QueryOptions
      * @param  int         $skip
      * @param  int         $limit
      * @param  array|null  $sort
+     * @param  string      $collation
      * @return QueryOptions
      *
      */
-    public static function init(array|null $projection = null, int $skip = 0, int $limit = 10_000, array|null $sort = null): QueryOptions
+    public static function init(array|null $projection = null, int $skip = 0, int $limit = 10_000, array|null $sort = null, string $collation = ''): QueryOptions
     {
         $options = new static();
         $options->skip = $skip;
         $options->limit = $limit;
         $options->sort = $sort;
         $options->projection = $projection;
+        $options->collation = $collation;
 
         return $options;
     }
@@ -46,6 +49,7 @@ class QueryOptions
         $options->limit = 10_000;
         $options->sort = $sort;
         $options->projection = null;
+        $options->collation = '';
 
         return $options;
     }
@@ -65,6 +69,19 @@ class QueryOptions
         $options->limit = 10_000;
         $options->sort = null;
         $options->projection = $projection;
+        $options->collation = '';
+
+        return $options;
+    }
+
+    public static function initWithCollation(string $collation): QueryOptions
+    {
+        $options = new static();
+        $options->skip = 0;
+        $options->limit = 10_000;
+        $options->sort = null;
+        $options->projection = null;
+        $options->collation = $collation;
 
         return $options;
     }
@@ -85,6 +102,7 @@ class QueryOptions
         $options->limit = $limit;
         $options->sort = null;
         $options->projection = null;
+        $options->collation = '';
 
         return $options;
     }

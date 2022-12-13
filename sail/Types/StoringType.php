@@ -8,4 +8,5 @@ enum StoringType: string
     case FLOAT = 'float';
     case STRING = 'string';
     case BOOLEAN = 'boolean';
+    case ARRAY = 'array';
 }

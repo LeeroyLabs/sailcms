@@ -81,6 +81,7 @@ type Mutation {
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
+    updateEntryLayoutSchemaKey(id: ID!, key: String!, newKey: String!): Boolean
     deleteEntryLayout(id: ID!, soft: Boolean): Boolean
 
     # Categories
@@ -92,6 +93,8 @@ type Mutation {
 
     #{CUSTOM_MUTATIONS}#
 }
+
+scalar Json
 
 input UserSort {
     sort: String!
@@ -265,13 +268,9 @@ type InputSettings {
 
 type ModelFieldContent {
     key: String!
+    content: Json
     handle: String!
-    content: [FieldContent]!
-}
-
-type FieldContent {
-    value: String
-    type: InputType!
+    type: Json!
 }
 
 input FieldConfigsInput {
@@ -295,8 +294,9 @@ input InputSettingsInput {
 
 input ModelFieldContentInput {
     key: String!
+    content: Json
     handle: String!
-    content: [FieldContentInput]!
+    type: Json!
 }
 
 input FieldContentInput {
@@ -309,6 +309,7 @@ enum InputType {
     float
     string
     boolean
+    array
 }
 
 enum EntryStatus {

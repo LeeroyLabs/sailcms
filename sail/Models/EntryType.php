@@ -15,13 +15,13 @@ use SailCMS\Types\LocaleField;
 class EntryType extends Model
 {
     /* Errors */
-    const HANDLE_MISSING = "You must set the entry type handle in your data";
-    const HANDLE_ALREADY_EXISTS = "Handle already exists";
-    const HANDLE_USE_RESERVED_WORD = "The %s word is reserved to create an entry type";
-    const TITLE_MISSING = "You must set the entry type title in your data";
-    const CANNOT_DELETE = "You must emptied all related entries before deleting an entry type";
-    const DOES_NOT_EXISTS = "Entry type %s does not exists";
-    const DATABASE_ERROR = "Exception when %s an entry type";
+    const HANDLE_MISSING = 'You must set the entry type handle in your data.';
+    const HANDLE_ALREADY_EXISTS = 'Handle already exists.';
+    const HANDLE_USE_RESERVED_WORD = 'The "%s" word is reserved to create an entry type.';
+    const TITLE_MISSING = 'You must set the entry type title in your data.';
+    const CANNOT_DELETE = 'You must emptied all related entries before deleting an entry type.';
+    const DOES_NOT_EXISTS = 'Entry type "%s" does not exists.';
+    const DATABASE_ERROR = 'Exception when "%s" an entry type.';
 
     const ACL_HANDLE = "entrytype";
 
@@ -364,8 +364,10 @@ class EntryType extends Model
      *
      * @param string $handle
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function checkHandle(string $handle): void
@@ -404,8 +406,10 @@ class EntryType extends Model
      * @param string|ObjectId|null $entryLayoutId
      * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
-     * @throws EntryException
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
@@ -420,7 +424,7 @@ class EntryType extends Model
                 'collection_name' => $collectionName,
                 'handle' => $handle,
                 'title' => $title,
-                'url_prefix' => $urlPrefix,
+                'url_prefix' => $urlPrefix->toDBObject(),
                 'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
             ]);
         } catch (DatabaseException $exception) {
@@ -480,5 +484,23 @@ class EntryType extends Model
         }
 
         return true;
+    }
+
+    /**
+     *
+     * Parse the entry into an array for api
+     *
+     * @return array
+     *
+     */
+    public function toGraphQL(): array
+    {
+        return [
+            '_id' => $this->_id,
+            'title' => $this->title,
+            'handle' => $this->handle,
+            'url_prefix' => $this->url_prefix->toDBObject(),
+            'entry_layout_id' => $this->entry_layout_id ?? ""
+        ];
     }
 }

@@ -513,6 +513,9 @@ class User extends Model
         $options->skip = $offset;
         $options->limit = ($limit > 100) ? 25 : $limit;
 
+        // Sorting required collation
+        $options->collation = 'en';
+
         $query = [];
 
         if (!empty($search)) {
@@ -535,7 +538,7 @@ class User extends Model
 
         // Meta Search Filter
         if ($metaSearch) {
-            $query['meta' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
+            $query['meta.' . $metaSearch->key] = new Regex($metaSearch->value, 'gi');
         }
 
         if (isset($status)) {
