@@ -805,6 +805,49 @@ class Entry extends Model
 
     /**
      *
+     * Update all content keys with a new given key
+     *
+     * @param string $key
+     * @param string $newKey
+     * @return true
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function updateAllContentKey(string $key, string $newKey): bool
+    {
+        $entries = $this->all();
+
+        $updates = [];
+        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey) {
+            $newContent = Collection::init();
+            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey) {
+                if ($currentKey == $key) {
+                    $currentKey = $newKey;
+                }
+                $newContent->pushKeyValue($currentKey, $content);
+            });
+
+            $updates[] = [
+                'updateOne' => [
+                    ['_id' => $entry->_id],
+                    ['$set' => ['content' => $newContent->unwrap()]]
+                ]
+            ];
+        });
+
+        if (count($updates)) {
+            try {
+                $this->bulkWrite($updates);
+            } catch (Exception $exception) {
+                throw new EntryException(sprintf(static::DATABASE_ERROR, "bulk update content") . PHP_EOL . $exception->getMessage());
+            }
+        }
+        return true;
+    }
+
+    /**
+     *
      * Delete an entry in soft mode or definitively
      *
      * @param string|ObjectId $entryId

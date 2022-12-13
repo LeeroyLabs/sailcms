@@ -88,7 +88,6 @@ class EntryLayout extends Model
      * @param Collection $fields
      * @return Collection
      * @throws FieldException
-     * @throws EntryException
      *
      */
     public static function generateLayoutSchema(Collection $fields): Collection
@@ -269,8 +268,15 @@ class EntryLayout extends Model
     {
         $this->hasPermissions();
 
+        // Slugify the new key
+        $newKey = Text::slugify($newKey);
+
         if (!in_array($key, $this->schema->keys()->unwrap())) {
-            throw new EntryException(static::SCHEMA_KEY_DOES_NOT_EXISTS);
+            throw new EntryException(sprintf(static::SCHEMA_KEY_DOES_NOT_EXISTS, $key));
+        }
+
+        if (in_array($newKey, $this->schema->keys()->unwrap())) {
+            throw new EntryException(sprintf(static::SCHEMA_KEY_ALREADY_EXISTS, $newKey));
         }
 
         $newSchema = Collection::init();
@@ -286,7 +292,19 @@ class EntryLayout extends Model
 
         $result = $this->updateById($this->_id, null, $newSchema);
 
-        // TODO update all entries that has the key in their content.
+        if ($result) {
+            $entryTypes = EntryType::findAll([
+                'entry_layout_id' => (string)$this->_id
+            ]);
+
+            $entryTypes->each(function ($k, $entryType) use ($key, $newKey) {
+                /**
+                 * @var EntryType $entryType
+                 */
+                $entryModel = $entryType->getEntryModel();
+                $entryModel->updateAllContentKey($key, $newKey);
+            });
+        }
 
         return $result;
     }

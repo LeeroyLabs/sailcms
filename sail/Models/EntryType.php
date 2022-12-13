@@ -102,6 +102,29 @@ class EntryType extends Model
 
     /**
      *
+     * Find all entry type according to the given filters
+     *
+     * @param array|Collection $filters
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function findAll(array|Collection $filters): Collection
+    {
+        (new static())->hasPermissions(true);
+
+        if ($filters instanceof Collection) {
+            $filters = $filters->unwrap();
+        }
+
+        $instance = new static();
+        return new Collection($instance->find($filters)->exec());
+    }
+
+    /**
+     *
      * Use the settings to create the default type
      *
      * @param bool $api
@@ -203,6 +226,11 @@ class EntryType extends Model
      */
     public function getEntryModel(EntryType $entryType = null): Entry
     {
+        // Pass the entry type to avoid a query
+        if (isset($this->_id) && !$entryType) {
+            return new Entry($this->collection_name, $this);
+        }
+
         return new Entry($this->collection_name, $entryType);
     }
 
@@ -364,8 +392,10 @@ class EntryType extends Model
      *
      * @param string $handle
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function checkHandle(string $handle): void
@@ -404,8 +434,10 @@ class EntryType extends Model
      * @param string|ObjectId|null $entryLayoutId
      * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
-     * @throws EntryException
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
@@ -420,7 +452,7 @@ class EntryType extends Model
                 'collection_name' => $collectionName,
                 'handle' => $handle,
                 'title' => $title,
-                'url_prefix' => $urlPrefix,
+                'url_prefix' => $urlPrefix->toDBObject(),
                 'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
             ]);
         } catch (DatabaseException $exception) {
@@ -480,5 +512,23 @@ class EntryType extends Model
         }
 
         return true;
+    }
+
+    /**
+     *
+     * Parse the entry into an array for api
+     *
+     * @return array
+     *
+     */
+    public function toGraphQL(): array
+    {
+        return [
+            '_id' => $this->_id,
+            'title' => $this->title,
+            'handle' => $this->handle,
+            'url_prefix' => $this->url_prefix->toDBObject(),
+            'entry_layout_id' => $this->entry_layout_id ?? ""
+        ];
     }
 }
