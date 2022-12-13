@@ -102,6 +102,29 @@ class EntryType extends Model
 
     /**
      *
+     * Find all entry type according to the given filters
+     *
+     * @param array|Collection $filters
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function findAll(array|Collection $filters): Collection
+    {
+        (new static())->hasPermissions(true);
+
+        if ($filters instanceof Collection) {
+            $filters = $filters->unwrap();
+        }
+
+        $instance = new static();
+        return new Collection($instance->find($filters)->exec());
+    }
+
+    /**
+     *
      * Use the settings to create the default type
      *
      * @param bool $api
@@ -203,6 +226,11 @@ class EntryType extends Model
      */
     public function getEntryModel(EntryType $entryType = null): Entry
     {
+        // Pass the entry type to avoid a query
+        if (isset($this->_id) && !$entryType) {
+            return new Entry($this->collection_name, $this);
+        }
+
         return new Entry($this->collection_name, $entryType);
     }
 
