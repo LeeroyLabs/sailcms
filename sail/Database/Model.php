@@ -253,7 +253,7 @@ abstract class Model implements JsonSerializable
                 $results = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
             }
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
 
         foreach ($results as $result) {
@@ -437,7 +437,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('aggregate', $qt, ['pipeline' => $pipeline]);
             return $docs;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -462,7 +462,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('insert', $qt);
             return $id;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -490,7 +490,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('insertMany', $qt);
             return $ids;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -514,7 +514,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('bulkWrite', $qt);
             return $res;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -544,7 +544,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -573,7 +573,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -598,7 +598,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteOne', $qt, ['query' => $query]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -622,7 +622,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -651,7 +651,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -686,7 +686,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->collection->createIndex($index, $options);
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -704,7 +704,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->collection->createIndexes($indexes, $options);
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -721,7 +721,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->collection->dropIndex($index);
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -738,7 +738,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->collection->dropIndexes($indexes);
         } catch (Exception $e) {
-            throw new DatabaseException($e->getMessage(), 0500);
+            throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
     }
 
@@ -879,10 +879,10 @@ abstract class Model implements JsonSerializable
 
         if ($read) {
             if (!ACL::hasPermission(User::$currentUser, ACL::read($this->_permissionGroup))) {
-                throw new PermissionException($errorMsg, 0403);
+                throw new PermissionException('0403: ' . $errorMsg, 0403);
             }
         } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->_permissionGroup))) {
-            throw new PermissionException($errorMsg, 0403);
+            throw new PermissionException('0403: ' . $errorMsg, 0403);
         }
     }
 

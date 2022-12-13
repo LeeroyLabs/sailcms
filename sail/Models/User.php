@@ -243,7 +243,7 @@ class User extends Model
 
         // Validate name (basic)
         if (empty($name->first) || empty($name->last)) {
-            throw new DatabaseException('Name is not valid, please make sure you fill in both first and last name.', 0403);
+            throw new DatabaseException('9001: Name is not valid, please make sure you fill in both first and last name.', 0403);
         }
 
         // Validate email properly
@@ -253,7 +253,7 @@ class User extends Model
         $valid = Security::validatePassword($password);
 
         if (!$valid) {
-            throw new DatabaseException('Password does not pass minimum security level', 0403);
+            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
         }
 
         $code = Security::generateVerificationCode();
@@ -344,7 +344,7 @@ class User extends Model
 
         // Validate name (basic)
         if (empty($name->first) || empty($name->last)) {
-            throw new DatabaseException('Name is not valid, please make sure you fill in both first and last name.', 0403);
+            throw new DatabaseException('9001: Name is not valid, please make sure you fill in both first and last name.', 0403);
         }
 
         // Validate password
@@ -352,7 +352,7 @@ class User extends Model
             $valid = Security::validatePassword($password);
 
             if (!$valid) {
-                throw new DatabaseException('Password does not pass minimum security level', 0403);
+                throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
             }
         }
 
@@ -447,7 +447,7 @@ class User extends Model
             $valid = Security::validatePassword($password);
 
             if (!$valid) {
-                throw new DatabaseException('Password does not pass minimum security level', 0403);
+                throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
             }
 
             $update['password'] = Security::hashPassword($password);
@@ -957,7 +957,7 @@ class User extends Model
         $valid = Security::validatePassword($password);
 
         if (!$valid) {
-            throw new DatabaseException('Password does not pass minimum security level', 0403);
+            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
         }
 
         $instance->updateOne(['reset_code' => $code],
@@ -994,7 +994,7 @@ class User extends Model
             // Error if the email already used by someone that is not the updated user's id
             if ($found && (string)$found->_id !== $id) {
                 if ($throw) {
-                    throw new DatabaseException("Cannot use email '{$email}', already in use.", 0403);
+                    throw new DatabaseException("9001: Cannot use email '{$email}', already in use.", 0403);
                 }
 
                 return false;
@@ -1004,7 +1004,7 @@ class User extends Model
         }
 
         if ($throw) {
-            throw new DatabaseException("Email '{$email}' is not a valid email.", 0400);
+            throw new DatabaseException("9003: Email '{$email}' is not a valid email.", 0400);
         }
 
         return false;
@@ -1029,18 +1029,18 @@ class User extends Model
             if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id)) {
                 if ($read) {
                     if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-                        throw new PermissionException('Permission Denied', 0403);
+                        throw new PermissionException('0403: Permission Denied', 0403);
                     }
                 } elseif (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-                    throw new PermissionException('Permission Denied', 0403);
+                    throw new PermissionException('0403: Permission Denied', 0403);
                 }
             }
         } elseif ($read) {
             if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
-                throw new PermissionException('Permission Denied', 0403);
+                throw new PermissionException('0403: Permission Denied', 0403);
             }
         } elseif (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
-            throw new PermissionException('Permission Denied', 0403);
+            throw new PermissionException('0403: Permission Denied', 0403);
         }
     }
 }
