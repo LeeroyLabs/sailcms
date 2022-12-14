@@ -65,7 +65,8 @@
         "leeroy/php-inflector": "^1.0.1"
     },
     "require-dev": {
-        "pestphp/pest": "^1.21"
+        "pestphp/pest": "^1.21",
+        "phpstan/phpstan": "^1.9"
     },
     "config": {
         "allow-plugins": {
@@ -74,7 +75,8 @@
         }
     },
     "scripts": {
-        "test": "./vendor/bin/pest"
+        "test": "./vendor/bin/pest",
+        "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G"
     },
     "sailcms": {
         "containers": []

@@ -266,7 +266,7 @@ class Users
         $meta = $args->get('meta', null);
         $name = $args->get('name', null);
 
-        if ($roles) {
+        if ($roles && is_array($roles)) {
             $roles = new Collection($roles);
         }
 
