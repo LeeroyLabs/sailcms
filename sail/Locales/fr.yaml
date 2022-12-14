@@ -16,3 +16,5 @@ fields:
     is_required: est requis
     max_length: est trop long
     min_length: est trop court
+    min_number: nombre est trop petit
+    max_number: nombre est trop gros

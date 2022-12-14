@@ -5,6 +5,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
@@ -41,8 +42,21 @@ test('Create an entry layout', function () {
         ['required' => true,],
     ]);
 
+    $numberLabels = new LocaleField([
+        'fr' => 'Age',
+        'en' => 'Age'
+    ]);
+    $numberField = new NumberField($numberLabels, [
+        [
+            'required' => true,
+            'min_number' => 0,
+            'max_number' => 20
+        ],
+    ]);
+
     $schema = EntryLayout::generateLayoutSchema(new Collection([
-        'title' => $textField
+        'title' => $textField,
+        //'age' => $numberField
     ]));
 
     try {

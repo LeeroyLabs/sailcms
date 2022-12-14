@@ -16,3 +16,5 @@ fields:
     is_required: is required
     max_length: is too long
     min_length: is too short
+    min_number: number not enough big
+    max_number: number is too big
