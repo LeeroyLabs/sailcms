@@ -793,14 +793,21 @@ class Entry extends Model
         $entries = $this->all();
 
         // TODO can we do that in batches...
-        $entries->each(function ($key, $value) use ($urlPrefix) {
-            /**
-             * @var Entry $value
-             */
-            $this->updateWithoutPermission($value, new Collection([
-                'url' => Entry::getRelativeUrl($urlPrefix, $value->slug, $value->locale)
-            ]));
-        });
+        $writes = [];
+
+        foreach ($entries as $entry) {
+            $writes[] = [
+                'updateOne' => [
+                    ['_id' => $entry->_id],
+                    ['$set' => ['url' => Entry::getRelativeUrl($urlPrefix, $entry->slug, $entry->locale)]]
+                ]
+            ];
+        }
+
+        if ( count($writes) ) {
+            // Bulk write everything, performance++
+            $this->bulkWrite($writes);
+        }
     }
 
     /**

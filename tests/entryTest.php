@@ -129,32 +129,6 @@ test('Failed to create an entry type because the handle is already in use', func
     }
 });
 
-
-test('Update an entry type', function () {
-    $model = new EntryType();
-
-    $entryLayout = (new EntryLayout())->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
-
-    try {
-        $result = $model->updateByHandle('test', new Collection([
-            'title' => 'Test Pages',
-            'url_prefix' => new LocaleField([
-                'en' => 'test-pages',
-                'fr' => 'pages-de-test'
-            ]),
-            'entry_layout_id' => $entryLayout->_id
-        ]));
-        expect($result)->toBe(true);
-        $entryType = $model->getByHandle('test');
-        expect($entryType->title)->toBe('Test Pages');
-        expect($entryType->url_prefix->en)->toBe('test-pages');
-    } catch (Exception $exception) {
-        expect(true)->toBe(false);
-    }
-});
-
 test('Create an entry with the default type', function () {
     $model = new Entry();
 
@@ -179,7 +153,33 @@ test('Create an entry with an entry type', function () {
         expect($entry->title)->toBe('Test');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('pages-de-test/test');
+        expect($entry->url)->toBe('test/test');
+    } catch (Exception $exception) {
+        //print_r($exception);
+        expect(true)->toBe(false);
+    }
+});
+
+test('Update an entry type', function () {
+    $model = new EntryType();
+
+    $entryLayout = (new EntryLayout())->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $result = $model->updateByHandle('test', new Collection([
+            'title' => 'Test Pages',
+            'url_prefix' => new LocaleField([
+                'en' => 'test-pages',
+                'fr' => 'pages-de-test'
+            ]),
+            'entry_layout_id' => $entryLayout->_id
+        ]));
+        expect($result)->toBe(true);
+        $entryType = $model->getByHandle('test');
+        expect($entryType->title)->toBe('Test Pages');
+        expect($entryType->url_prefix->en)->toBe('test-pages');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }

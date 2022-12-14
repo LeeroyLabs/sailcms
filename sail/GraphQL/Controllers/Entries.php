@@ -159,6 +159,11 @@ class Entries
     public function updateEntryType(mixed $obj, Collection $args, Context $context): bool
     {
         $handle = $args->get('handle');
+        $urlPrefix = $args->get('url_prefix');
+
+        if ($urlPrefix) {
+            $args->pushKeyValue('url_prefix', new LocaleField($urlPrefix->unwrap()));
+        }
 
         return (new EntryType())->updateByHandle($handle, $args);
     }
@@ -211,7 +216,7 @@ class Entries
         // For filtering
         $siteId = $args->get('site_id', Sail::siteId());
 
-        $currentSiteHomepages = Entry::getHomepage()?->{$siteId};
+        $currentSiteHomepages = Entry::getHomepage($siteId)?->{$siteId};
 
         $filters = [
             "site_id" => $siteId
