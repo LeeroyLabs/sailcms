@@ -468,6 +468,8 @@ class EntryType extends Model
 
     /**
      *
+     * TODO : Change collection for each specific fields or a type
+     *
      * Update the entry type
      *
      * @param EntryType $entryType
