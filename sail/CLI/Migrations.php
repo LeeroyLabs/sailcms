@@ -30,7 +30,7 @@ class Migrations extends Command
         }
 
         $existing = count(glob(Sail::getWorkingDirectory() . '/migrations/Migration_*.php')) + 1;
-        $next = str_pad($existing, 4, '0', STR_PAD_LEFT);
+        $next = str_pad((string)$existing, 4, '0', STR_PAD_LEFT);
         $name = 'Migration_' . $next;
         $file = $name . '.php';
 

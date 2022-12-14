@@ -6,7 +6,7 @@ use Exception;
 use JsonException;
 use \SailCMS\Models\Queue as QueueModel;
 
-class Queue
+final class Queue
 {
     private static Queue $manager;
 
@@ -23,11 +23,11 @@ class Queue
      */
     public static function manager(): Queue
     {
-        if (!isset(static::$manager)) {
-            static::$manager = new static();
+        if (!isset(self::$manager)) {
+            self::$manager = new self();
         }
 
-        return static::$manager;
+        return self::$manager;
     }
 
     /**

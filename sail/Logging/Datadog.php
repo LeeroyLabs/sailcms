@@ -54,7 +54,7 @@ class Datadog extends AbstractProcessingHandler
         $data = [
             'ddsource' => $channel,
             'ddtags' => env('environment', 'dev') . ',php:' . PHP_VERSION,
-            'hostname' => Sail::currentApp(),
+            'hostname' => Sail::siteId(),
             'message' => $record->formatted,
             'service' => 'sailcms'
         ];

@@ -2,7 +2,7 @@
 
 namespace SailCMS;
 
-class Event
+final class Event
 {
     private static Collection $registered;
 

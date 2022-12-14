@@ -344,10 +344,9 @@ class Users
      *
      * Change the password of the given code's user
      *
-     * @param  mixed        $obj
-     * @param  Collection   $args
-     * @param  Context      $context
-     * @param  ResolveInfo  $info
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return mixed
      * @throws DatabaseException
      *

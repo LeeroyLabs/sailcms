@@ -11,7 +11,7 @@ use SailCMS\Collection;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 
-class TwoFactorAuthentication
+final class TwoFactorAuthentication
 {
     private static TwoFactorAuth $auth;
 
@@ -24,8 +24,8 @@ class TwoFactorAuthentication
      */
     public function __construct()
     {
-        if (empty(static::$auth)) {
-            static::$auth = new TwoFactorAuth(
+        if (empty(self::$auth)) {
+            self::$auth = new TwoFactorAuth(
                 setting('tfa.issuer', 'sailcms'),
                 setting('tfa.length', 6),
                 setting('tfa.expire', 30),
@@ -47,7 +47,7 @@ class TwoFactorAuthentication
      */
     public function signup(): string
     {
-        return static::$auth->createSecret();
+        return self::$auth->createSecret();
     }
 
     /**
@@ -60,7 +60,7 @@ class TwoFactorAuthentication
      */
     public function getCode(string $secret): string
     {
-        return static::$auth->getCode($secret);
+        return self::$auth->getCode($secret);
     }
 
     /**
@@ -74,7 +74,7 @@ class TwoFactorAuthentication
      */
     public function getQRCode(string $secret): string
     {
-        return static::$auth->getQRCodeImageAsDataUri('marc_leeroy.ca', $secret);
+        return self::$auth->getQRCodeImageAsDataUri('marc_leeroy.ca', $secret);
     }
 
     /**
@@ -88,7 +88,7 @@ class TwoFactorAuthentication
      */
     public function validate(string $secret, string $code): bool
     {
-        return static::$auth->verifyCode($secret, $code, 2);
+        return self::$auth->verifyCode($secret, $code, 2);
     }
 
     /**

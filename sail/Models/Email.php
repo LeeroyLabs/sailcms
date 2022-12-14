@@ -182,7 +182,7 @@ class Email extends Model
         LocaleField|Collection|array|null $cta_title = null,
         string|null $template = null
     ): bool {
-        return static::updateBy(['_id' => $this->_id], $name, $subject, $title, $content, $cta, $cta_title, $template);
+        return self::updateBy(['_id' => $this->_id], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
 
     /**
@@ -215,7 +215,7 @@ class Email extends Model
     ): bool {
         $instance = new static();
         $id = $instance->ensureObjectId($id);
-        return static::updateBy(['_id' => $id], $name, $subject, $title, $content, $cta, $cta_title, $template);
+        return self::updateBy(['_id' => $id], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
 
     /**
@@ -246,7 +246,7 @@ class Email extends Model
         LocaleField|Collection|array|null $cta_title = null,
         string|null $template = null
     ): bool {
-        return static::updateBy(['slug' => $slug], $name, $subject, $title, $content, $cta, $cta_title, $template);
+        return self::updateBy(['slug' => $slug], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
 
     /**
@@ -261,7 +261,7 @@ class Email extends Model
      */
     public function remove(): bool
     {
-        return static::removeBy(['_id' => $this->_id]);
+        return self::removeBy(['_id' => $this->_id]);
     }
 
     /**
@@ -280,7 +280,7 @@ class Email extends Model
         $instance = new static();
         $id = $instance->ensureObjectId($id);
 
-        return static::removeBy(['_id' => $id]);
+        return self::removeBy(['_id' => $id]);
     }
 
     /**
@@ -296,7 +296,7 @@ class Email extends Model
      */
     public static function removeBySlug(string $slug): bool
     {
-        return static::removeBy(['slug' => $slug]);
+        return self::removeBy(['slug' => $slug]);
     }
 
     /**

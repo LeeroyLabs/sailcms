@@ -1,4 +1,17 @@
 parameters:
-    level: 6
+    level: 5
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+    	- '#Unsafe usage of new static\(\)#'
+    	- "#^Call to method color\\(\\) on an unknown class Spatie\\\\#"
+    	- "#^Cannot access property \\$version on array\\|object.$#"
+    	- "#^Call to an undefined method Symfony\\\\Component\\\\Console\\\\Helper\\\\HelperInterface::ask\\(\\).$#"
+    	- "#^Readonly property SailCMS\\\\Types\\\\UserSorting::\\$order is already assigned.$#"
+    	- "#^Call to an undefined method Lcobucci\\\\JWT\\\\Token::claims\\(\\).$#"
+    	- "#^Offset 'envBlacklist' does not exist on array{}.$#"
+    	- "#^Parameter \\#1 \\$contents of static method Lcobucci\\\\JWT\\\\Signer\\\\Key\\\\InMemory::plainText\\(\\) expects non-empty-string, string given.$#"
+    	- "#^Parameter \\#1 \\$encrypted of static method SailCMS\\\\Security::decrypt\\(\\) expects string, array\\|object given.$#"
     paths:
         - sail
+    scanFiles:
+        - Globals.php

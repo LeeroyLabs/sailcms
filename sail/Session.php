@@ -6,7 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Contracts\AppSession;
 use SailCMS\Session\Stateless;
 
-class Session
+final class Session
 {
     private static AppSession $adapter;
     private static string $adapterType;
@@ -24,11 +24,11 @@ class Session
      */
     public static function manager(): Session
     {
-        if (!isset(static::$adapter)) {
+        if (!isset(self::$adapter)) {
             $adapter = setting('session.mode', Stateless::class);
 
-            static::$adapter = new $adapter();
-            static::$adapterType = strtolower(static::$adapter->type());
+            self::$adapter = new $adapter();
+            self::$adapterType = strtolower(self::$adapter->type());
         }
 
         return new static();
@@ -45,8 +45,8 @@ class Session
      */
     public function set(string $key, mixed $value): void
     {
-        if (static::$adapterType !== 'stateless') {
-            static::$adapter->set($key, $value);
+        if (self::$adapterType !== 'stateless') {
+            self::$adapter->set($key, $value);
         }
     }
 
@@ -60,7 +60,7 @@ class Session
      */
     public function get(string $key): mixed
     {
-        return static::$adapter->get($key);
+        return self::$adapter->get($key);
     }
 
     /**
@@ -72,7 +72,7 @@ class Session
      */
     public function getId(): string
     {
-        return static::$adapter->getId();
+        return self::$adapter->getId();
     }
 
     /**
@@ -85,7 +85,7 @@ class Session
      */
     public function remove(string $key): void
     {
-        static::$adapter->remove($key);
+        self::$adapter->remove($key);
     }
 
     /**
@@ -97,7 +97,7 @@ class Session
      */
     public function all(): Collection
     {
-        return static::$adapter->all();
+        return self::$adapter->all();
     }
 
     /**
@@ -109,7 +109,7 @@ class Session
      */
     public function clear(): void
     {
-        static::$adapter->clear();
+        self::$adapter->clear();
     }
 
     /**
@@ -122,12 +122,12 @@ class Session
      */
     public function setUserId(ObjectId|string $id): void
     {
-        if (static::$adapterType === 'stateless') {
+        if (self::$adapterType === 'stateless') {
             if (!is_string($id)) {
                 $id = (string)$id;
             }
 
-            static::$adapter->set('user_id', $id);
+            self::$adapter->set('user_id', $id);
         }
     }
 
@@ -140,6 +140,6 @@ class Session
      */
     public function type(): string
     {
-        return static::$adapterType;
+        return self::$adapterType;
     }
 }

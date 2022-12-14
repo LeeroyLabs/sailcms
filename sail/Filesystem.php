@@ -7,7 +7,7 @@ use \League\Flysystem\Local\LocalFilesystemAdapter;
 use \League\Flysystem\MountManager;
 use \League\Flysystem\Filesystem as FS;
 
-class Filesystem
+final class Filesystem
 {
     private static array $adapters = [];
     private static MountManager $manager;

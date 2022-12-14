@@ -10,7 +10,7 @@ use SailCMS\Contracts\AppController;
 use SailCMS\Locale;
 use SailCMS\Text;
 
-class Route
+final class Route
 {
     private string $name;
     private string $locale;

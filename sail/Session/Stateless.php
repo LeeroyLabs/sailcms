@@ -19,7 +19,7 @@ use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\Constraint\PermittedFor;
 use Lcobucci\JWT\Validation\Validator;
 
-class Stateless implements AppSession
+final class Stateless implements AppSession
 {
     private Builder $builder;
     private string $token = '';
@@ -199,7 +199,7 @@ class Stateless implements AppSession
 
             $this->token = $cookie;
 
-            if ($cookie === 'null' || trim(empty($cookie))) {
+            if ($cookie === 'null' || empty(trim($cookie))) {
                 $this->token = '';
                 $cookie = '';
             }

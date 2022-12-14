@@ -13,20 +13,19 @@ class Authors implements DatabaseType
         public readonly ?string $updated_by,
         public readonly ?string $published_by,
         public readonly ?string $deleted_by
-    )
-    {
+    ) {
     }
 
     /**
      *
      * Init an authors type with now
      *
-     * @param User $author
-     * @param bool $published
+     * @param  User  $author
+     * @param  bool  $published
      * @return array
      *
      */
-    #[Pure] static public function init(User $author, bool $published): array
+    static public function init(User $author, bool $published): array
     {
         $publisherId = null;
         if ($published) {
@@ -41,8 +40,8 @@ class Authors implements DatabaseType
      *
      * Update the updateBy attribute of a given Authors object
      *
-     * @param Authors $authors
-     * @param string $updateAuthorId
+     * @param  Authors  $authors
+     * @param  string   $updateAuthorId
      * @return array
      */
     static public function updated(Authors $authors, string $updateAuthorId)
@@ -56,8 +55,8 @@ class Authors implements DatabaseType
      *
      * Update the deletedBy attribute of a given Authors object
      *
-     * @param Authors $authors
-     * @param string $deleteAuthorId
+     * @param  Authors  $authors
+     * @param  string   $deleteAuthorId
      * @return array
      *
      */

@@ -6,11 +6,7 @@ use \GraphQL\Type\Definition\Type;
 
 class Argument
 {
-    private string $name;
-    private bool $optional = false;
-    private Type $type;
-
-    public function __construct(string $name, Type $type, bool $optional = false)
+    public function __construct(public readonly string $name, public readonly Type $type, public readonly bool $optional = false)
     {
     }
 }

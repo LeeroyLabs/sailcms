@@ -5,7 +5,7 @@ namespace SailCMS;
 use JsonException;
 use Predis\Client;
 
-class Cache
+final class Cache
 {
     private static bool $isConnected = false;
     private static Client $client;
@@ -15,9 +15,9 @@ class Cache
     public const TTL_WEEK = 604_800;
     public const TTL_MONTH = 2_592_000;
 
-    public static function init(bool $forceUse = false)
+    public static function init(bool $forceUse = false): void
     {
-        if (static::$isConnected) {
+        if (self::$isConnected) {
             return;
         }
 
@@ -45,8 +45,8 @@ class Cache
                 $opts['verify_peer'] = setting('cache.ssl.verify', true);
             }
 
-            static::$client = new Client($opts);
-            static::$isConnected = true;
+            self::$client = new Client($opts);
+            self::$isConnected = true;
         }
     }
 
@@ -63,7 +63,7 @@ class Cache
      */
     public static function set(string $key, mixed $value, int $ttl = Cache::TTL_WEEK): void
     {
-        if (!static::$isConnected) {
+        if (!self::$isConnected) {
             return;
         }
 
@@ -74,7 +74,7 @@ class Cache
             $value = 'json:' . $encType . ':=>:' . json_encode($value, JSON_THROW_ON_ERROR);
         }
 
-        static::$client->set($key, $value, 'EX', $ttl);
+        self::$client->set($key, $value, 'EX', $ttl);
     }
 
     /**
@@ -88,11 +88,11 @@ class Cache
      */
     public static function get(string $key): mixed
     {
-        if (!static::$isConnected) {
+        if (!self::$isConnected) {
             return null;
         }
 
-        $value = static::$client->get($key);
+        $value = self::$client->get($key);
 
         if ($value && str_starts_with($value, 'json:')) {
             [$enc, $json] = explode(':=>:', $value);
@@ -118,21 +118,21 @@ class Cache
      */
     public static function remove(array|Collection|string $key): void
     {
-        if (!static::$isConnected) {
+        if (!self::$isConnected) {
             return;
         }
 
         if (is_string($key)) {
-            static::$client->del($key);
+            self::$client->del($key);
             return;
         }
 
         if (is_array($key)) {
-            static::$client->del($key);
+            self::$client->del($key);
             return;
         }
 
-        static::$client->del($key->unwrap());
+        self::$client->del($key->unwrap());
     }
 
     /**
@@ -145,16 +145,16 @@ class Cache
      */
     public static function removeAll(bool $global = false): void
     {
-        if (!static::$isConnected) {
+        if (!self::$isConnected) {
             return;
         }
 
         if ($global) {
-            static::$client->flushall();
+            self::$client->flushall();
             return;
         }
 
-        static::$client->flushdb();
+        self::$client->flushdb();
     }
 
     /**
@@ -167,17 +167,17 @@ class Cache
      */
     public static function removeUsingPrefix(string $prefix): bool
     {
-        if (!static::$isConnected) {
+        if (!self::$isConnected) {
             return false;
         }
 
-        $keys = static::$client->keys("{$prefix}:*");
+        $keys = self::$client->keys("{$prefix}:*");
 
         if (count($keys) === 0) {
             return false;
         }
 
-        static::$client->del($keys);
+        self::$client->del($keys);
         return true;
     }
 }

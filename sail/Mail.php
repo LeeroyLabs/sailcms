@@ -283,20 +283,20 @@ class Mail
 
             // cta_link is present and verification_code. Replace {code} in link for code
             if ($context->get('verification_code', null) !== null) {
-                $superContext->cta_link = str_replace(
+                $superContext->setFor('cta_link', str_replace(
                     '{code}',
                     $context->get('verification_code', ''),
                     $superContext->get('cta_link')
-                );
+                ));
             }
 
             // cta_link is present and code. Replace {code} in link for code
             if ($context->get('reset_code', null) !== null) {
-                $superContext->cta_link = str_replace(
+                $superContext->setfor('cta_link', str_replace(
                     '{code}',
                     $context->get('reset_code', ''),
                     $superContext->get('cta_link')
-                );
+                ));
             }
 
             // Replace locale variable in template name to the actual locale

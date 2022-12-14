@@ -204,9 +204,6 @@ class Text
         '\x{017f}' => 's',
     ];
 
-    /** Used to match Latin Unicode letters (excluding mathematical operators). */
-    private const reLatin = '/[\xc0-\xd6\xd8-\xf6\xf8-\xff\x{0100}-\x{017f}]/u';
-
     /** Used to compose unicode character classes. */
     private const rsComboMarksRange = '\\x{0300}-\\x{036f}';
     private const reComboHalfMarksRange = '\\x{fe20}-\\x{fe2f}';
@@ -255,8 +252,8 @@ class Text
      */
     public static function deburr(string $string): string
     {
-        $patterns = \array_map(static fn($pattern) => "#$pattern#u", \array_keys(static::deburredLetters));
-        return \preg_replace(static::rsCombo, '', \preg_replace($patterns, \array_values(static::deburredLetters), $string));
+        $patterns = \array_map(static fn($pattern) => "#$pattern#u", \array_keys(self::deburredLetters));
+        return \preg_replace(self::rsCombo, '', \preg_replace($patterns, \array_values(self::deburredLetters), $string));
     }
 
     /**
@@ -269,7 +266,7 @@ class Text
      */
     public static function kebabCase(string $string): string
     {
-        return str_replace([' ', '/', '\\', '&'], ['-', '-', '-', '-'], strtolower(static::deburr($string)));
+        return str_replace([' ', '/', '\\', '&'], ['-', '-', '-', '-'], strtolower(self::deburr($string)));
     }
 
     /**

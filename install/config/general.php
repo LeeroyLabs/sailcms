@@ -2,7 +2,7 @@
 
 use SailCMS\Assets\Transformer;
 
-$config = [
+return [
     'dev' => [
         'devMode' => true,
         'allowAdmin' => true,

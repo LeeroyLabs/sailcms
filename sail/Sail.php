@@ -33,7 +33,7 @@ use Whoops\Handler\PlainTextHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
-class Sail
+final class Sail
 {
     public const SAIL_VERSION = '3.0.0-next.1';
     public const STATE_WEB = 10001;
@@ -54,8 +54,6 @@ class Sail
 
     // In install mode?
     private static bool $installMode = false;
-
-    private static int $appState = Sail::STATE_WEB;
 
     private static string $siteID = 'main';
 
@@ -91,14 +89,14 @@ class Sail
      */
     public static function init(string $execPath): void
     {
-        static::$workingDirectory = dirname($execPath);
-        static::setupEnv();
+        self::$workingDirectory = dirname($execPath);
+        self::setupEnv();
 
         $securitySettings = [];
-        include_once static::$workingDirectory . '/config/security.php';
+        include_once self::$workingDirectory . '/config/security.php';
 
         // Register the error handler
-        static::$errorHandler = new Run();
+        self::$errorHandler = new Run();
         $ct = getallheaders()['Content-Type'] ?? '';
         $isWeb = false;
 
@@ -116,25 +114,25 @@ class Sail
             }
         }
 
-        static::$errorHandler->pushHandler($ph);
-        static::$errorHandler->register();
+        self::$errorHandler->pushHandler($ph);
+        self::$errorHandler->register();
 
-        static::bootBasics($securitySettings);
+        self::bootBasics($securitySettings);
 
         // CORS setup
-        static::setupCORS();
+        self::setupCORS();
 
         // CSRF Check
         Security::verifyCSRF();
 
         // 2FA Setup
-        static::setup2FA();
+        self::setup2FA();
 
         // Headless CSRF Setup
-        static::setupHeadlessCSRF();
+        self::setupHeadlessCSRF();
 
         if ($_SERVER['REQUEST_URI'] === '/v3/sitelist') {
-            static::outputAvailableSites();
+            self::outputAvailableSites();
         }
 
         if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
@@ -143,11 +141,11 @@ class Sail
             }
 
             // Run GraphQL
-            static::$isGraphQL = true;
+            self::$isGraphQL = true;
             $data = GraphQL::init();
 
             if (env('debug', 'off') === 'on') {
-                static::$clockwork->requestProcessed();
+                self::$clockwork->requestProcessed();
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -179,8 +177,8 @@ class Sail
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
     {
-        if (!file_exists(static::$workingDirectory . '/config')) {
-            static::$installMode = true;
+        if (!file_exists(self::$workingDirectory . '/config')) {
+            self::$installMode = true;
         }
 
         // Initialize the ACLs
@@ -199,10 +197,10 @@ class Sail
         }
 
         // Load Sites
-        static::loadAndDetectSites();
+        self::loadAndDetectSites();
 
         // Load Filesystem
-        static::$fsDirectory = static::$workingDirectory . '/storage/fs';
+        self::$fsDirectory = self::$workingDirectory . '/storage/fs';
         Filesystem::mountCore();
         Filesystem::init();
 
@@ -210,14 +208,12 @@ class Sail
         Security::init();
 
         // Load configurations
-        static::$configDirectory = static::$workingDirectory . '/config';
+        self::$configDirectory = self::$workingDirectory . '/config';
 
-        $config = [];
-
-        if (!static::$installMode) {
-            include_once static::$configDirectory . '/general.php';
+        if (!self::$installMode) {
+            $config = include self::$configDirectory . '/general.php';
         } else {
-            include_once dirname(__DIR__) . '/install/config/general.php';
+            $config = include dirname(__DIR__) . '/install/config/general.php';
         }
 
         $settings = new Collection($config);
@@ -226,7 +222,10 @@ class Sail
 
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
-            error_reporting(E_ALL);
+            error_reporting(E_ALL & ~E_WARNING | ~E_DEPRECATED);
+        } else {
+            ini_set('display_errors', false);
+            error_reporting(~E_ALL);
         }
 
         // Load cms ACLs
@@ -236,8 +235,8 @@ class Sail
         Log::init();
 
         // Determine the Template directory for the site
-        static::$templateDirectory = static::$workingDirectory . '/templates/';
-        static::$cacheDirectory = static::$workingDirectory . '/storage/cache';
+        self::$templateDirectory = self::$workingDirectory . '/templates/';
+        self::$cacheDirectory = self::$workingDirectory . '/storage/cache';
 
         // Register Search Adapters
         Search::registerSystemAdapters();
@@ -247,7 +246,7 @@ class Sail
         Router::init();
 
         // If We are not in the CLI, setup session
-        if (!static::$isCLI) {
+        if (!self::$isCLI) {
             Session::manager();
         }
 
@@ -257,17 +256,17 @@ class Sail
         // Load all site's containers
         if (!$skipContainers) {
             Debug::eventStart('Initialize Containers', 'green');
-            static::loadContainerFromComposer(static::$workingDirectory);
+            self::loadContainerFromComposer(self::$workingDirectory);
             Debug::eventEnd('Initialize Containers');
         }
 
         // Load all site's modules
         Debug::eventStart('Initialize Modules', 'purple');
-        static::loadModulesFromComposer(static::$workingDirectory);
+        self::loadModulesFromComposer(self::$workingDirectory);
         Debug::eventEnd('Initialize Modules');
 
         // Ensure peak performance from the database
-        static::ensurePerformance();
+        self::ensurePerformance();
     }
 
     /**
@@ -280,22 +279,22 @@ class Sail
     private static function setupEnv(): void
     {
         // Create .env file if does not exist
-        if (!file_exists(static::$workingDirectory . '/.env')) {
+        if (!file_exists(self::$workingDirectory . '/.env')) {
             file_put_contents(
-                static::$workingDirectory . '/.env',
+                self::$workingDirectory . '/.env',
                 file_get_contents(dirname(__DIR__) . '/install/env')
             );
         }
 
         // Load .env file
-        $dotenv = Dotenv::createImmutable(static::$workingDirectory, '.env');
+        $dotenv = Dotenv::createImmutable(self::$workingDirectory, '.env');
         $dotenv->load();
 
         // Setup Clockwork for debugging info
         if (env('debug', 'off') === 'on') {
-            $path = static::$workingDirectory . '/storage/debug';
+            $path = self::$workingDirectory . '/storage/debug';
 
-            if (static::$isServerless) {
+            if (self::$isServerless) {
                 if (!file_exists('/tmp/storage')) {
                     try {
                         mkdir('/tmp/storage');
@@ -306,12 +305,12 @@ class Sail
                 }
             }
 
-            static::$clockwork = Clockwork::init([
+            self::$clockwork = Clockwork::init([
                 'storage_files_path' => $path,
                 'register_helper' => true
             ]);
 
-            register_shutdown_function('static::shutdownHandler');
+            register_shutdown_function('self::shutdownHandler');
             Debug::eventStart('Running SailCMS', 'blue');
         }
     }
@@ -449,21 +448,21 @@ class Sail
      */
     public static function initForCron(string $execPath): void
     {
-        static::$workingDirectory = dirname($execPath);
-        static::setupEnv();
-        static::$isCLI = true;
+        self::$workingDirectory = dirname($execPath);
+        self::setupEnv();
+        self::$isCLI = true;
 
         $securitySettings = [];
-        include_once static::$workingDirectory . '/config/security.php';
+        include_once self::$workingDirectory . '/config/security.php';
 
         // Register the error handler
-        static::$errorHandler = new Run();
+        self::$errorHandler = new Run();
         $ph = new PlainTextHandler();
 
-        static::$errorHandler->pushHandler($ph);
-        static::$errorHandler->register();
+        self::$errorHandler->pushHandler($ph);
+        self::$errorHandler->register();
 
-        static::bootBasics($securitySettings);
+        self::bootBasics($securitySettings);
     }
 
     /**
@@ -481,26 +480,26 @@ class Sail
      */
     public static function initForCli(string $execPath): void
     {
-        static::$workingDirectory = $execPath;
-        static::setupEnv();
-        static::$isCLI = true;
+        self::$workingDirectory = $execPath;
+        self::setupEnv();
+        self::$isCLI = true;
 
         $securitySettings = [];
 
-        if (file_exists(static::$workingDirectory . '/config')) {
-            include_once static::$workingDirectory . '/config/security.php';
+        if (file_exists(self::$workingDirectory . '/config')) {
+            include_once self::$workingDirectory . '/config/security.php';
         } else {
             $securitySettings = ['envBlacklist' => []];
         }
 
         // Register the error handler
-        static::$errorHandler = new Run();
+        self::$errorHandler = new Run();
         $ph = new PlainTextHandler();
 
-        static::$errorHandler->pushHandler($ph);
-        static::$errorHandler->register();
+        self::$errorHandler->pushHandler($ph);
+        self::$errorHandler->register();
 
-        static::bootBasics($securitySettings);
+        self::bootBasics($securitySettings);
     }
 
     /**
@@ -512,7 +511,7 @@ class Sail
      */
     public static function getWorkingDirectory(): string
     {
-        return static::$workingDirectory;
+        return self::$workingDirectory;
     }
 
     /**
@@ -525,7 +524,7 @@ class Sail
      */
     public static function setWorkingDirectory(string $path): void
     {
-        static::$workingDirectory = $path;
+        self::$workingDirectory = $path;
     }
 
     /**
@@ -537,7 +536,7 @@ class Sail
      */
     public static function getTemplateDirectory(): string
     {
-        return static::$templateDirectory . '/';
+        return self::$templateDirectory . '/';
     }
 
     /**
@@ -549,7 +548,7 @@ class Sail
      */
     public static function getCacheDirectory(): string
     {
-        return static::$cacheDirectory;
+        return self::$cacheDirectory;
     }
 
     /**
@@ -561,7 +560,7 @@ class Sail
      */
     public static function getFSDirectory(): string
     {
-        return static::$fsDirectory;
+        return self::$fsDirectory;
     }
 
     /**
@@ -573,7 +572,7 @@ class Sail
      */
     public static function isCLI(): bool
     {
-        return static::$isCLI;
+        return self::$isCLI;
     }
 
     /**
@@ -590,18 +589,16 @@ class Sail
      */
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
     {
-        if ($state === static::STATE_CLI) {
+        if ($state === self::STATE_CLI) {
             $_ENV['DEBUG'] = 'off';
-            static::$appState = $state;
-            static::$isCLI = true;
+            self::$isCLI = true;
 
-            static::$templateDirectory = static::$workingDirectory . '/templates';
-            static::$cacheDirectory = static::$workingDirectory . '/storage/cache';
+            self::$templateDirectory = self::$workingDirectory . '/templates';
+            self::$cacheDirectory = self::$workingDirectory . '/storage/cache';
 
-            static::setupEnv();
+            self::setupEnv();
 
-            $config = [];
-            include dirname(__DIR__) . '/install/config/general.php';
+            $config = include dirname(__DIR__) . '/install/config/general.php';
 
             if ($env !== '' && isset($config[$env])) {
                 $_ENV['SETTINGS'] = new Collection($config[$env]);
@@ -611,14 +608,13 @@ class Sail
 
             ACL::init();
 
-            static::loadAndDetectSites();
+            self::loadAndDetectSites();
             Filesystem::mountCore($forceIOPath);
             Filesystem::init();
             return;
         }
 
-        static::$appState = static::STATE_WEB;
-        static::$isCLI = false;
+        self::$isCLI = false;
     }
 
     /**
@@ -630,7 +626,7 @@ class Sail
      */
     public static function getErrorHandler(): Run
     {
-        return static::$errorHandler;
+        return self::$errorHandler;
     }
 
     /**
@@ -642,7 +638,7 @@ class Sail
      */
     public static function siteId(): string
     {
-        return static::$siteID ?? 'main';
+        return self::$siteID ?? 'main';
     }
 
     /**
@@ -656,8 +652,8 @@ class Sail
     {
         Debug::eventEnd('Running SailCMS');
 
-        if (!static::$isGraphQL) {
-            static::$clockwork->requestProcessed();
+        if (!self::$isGraphQL) {
+            self::$clockwork->requestProcessed();
         }
     }
 
@@ -671,7 +667,7 @@ class Sail
     public static function getClockWork(): ?Clockwork
     {
         if (env('debug', 'off') === 'on') {
-            return static::$clockwork;
+            return self::$clockwork;
         }
 
         return null;
@@ -794,8 +790,8 @@ class Sail
      */
     private static function loadAndDetectSites(): void
     {
-        if (file_exists(static::$workingDirectory . '/config/sites.php')) {
-            $sites = include static::$workingDirectory . '/config/sites.php';
+        if (file_exists(self::$workingDirectory . '/config/sites.php')) {
+            $sites = include self::$workingDirectory . '/config/sites.php';
 
             foreach ($sites as $name => $config) {
                 if (isset($_SERVER['HTTP_HOST'])) {
@@ -805,7 +801,7 @@ class Sail
                 }
 
                 if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
-                    static::$siteID = $name;
+                    self::$siteID = $name;
                     Locale::setAvailableLocales($config['locales']);
                     break;
                 }
@@ -816,13 +812,13 @@ class Sail
 
             foreach ($headers as $key => $value) {
                 if (strtolower($key) === 'x-site-id') {
-                    static::$siteID = $value;
+                    self::$siteID = $value;
                     Locale::setAvailableLocales($sites[$value]['locales']);
                     break;
                 }
             }
         } else {
-            static::$siteID = 'main';
+            self::$siteID = 'main';
             Locale::setAvailableLocales(['en']);
         }
     }
@@ -837,7 +833,7 @@ class Sail
      */
     private static function outputAvailableSites(): void
     {
-        $sites = include static::$workingDirectory . '/config/sites.php';
+        $sites = include self::$workingDirectory . '/config/sites.php';
         $names = [];
 
         foreach ($sites as $key => $value) {

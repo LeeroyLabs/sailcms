@@ -4,7 +4,7 @@ namespace SailCMS\Database\Migration;
 
 use SailCMS\Errors\DatabaseException;
 
-class Schema
+final class Schema
 {
     private Executor $executor;
 
@@ -26,7 +26,7 @@ class Schema
      */
     public static function rename(string $collection, string $field, string $newName): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runUpdate(['$rename' => [$field => $newName]]);
     }
 
@@ -43,7 +43,7 @@ class Schema
      */
     public static function add(string $collection, string $field, mixed $baseValue): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runUpdate(['$set' => [$field => $baseValue]]);
     }
 
@@ -59,7 +59,7 @@ class Schema
      */
     public static function remove(string $collection, string $field): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runUpdate(['$unset' => $field]);
     }
 
@@ -75,7 +75,7 @@ class Schema
      */
     public static function index(string $collection, array $index): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runIndex($index);
     }
 
@@ -91,7 +91,7 @@ class Schema
      */
     public static function dropIndex(string $collection, array $index): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runDropIndex($index);
     }
 
@@ -107,7 +107,7 @@ class Schema
      */
     public static function addRecord(string $collection, array $record): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runInsert($record);
     }
 
@@ -123,7 +123,7 @@ class Schema
      */
     public static function removeRecord(string $collection, array $query): void
     {
-        $instance = new static($collection);
+        $instance = new Schema($collection);
         $instance->executor->runDelete($query);
     }
 }

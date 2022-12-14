@@ -41,10 +41,10 @@ class Engine
         // Set tags to enable twig and vue side by side
         if (setting('templating.vueCompat', false)) {
             $lexer = new Lexer($this->twig, [
-                'tag_comment' => $settings['syntax']['comment'] ?? ['[*', '*]'],
-                'tag_block' => $settings['syntax']['block'] ?? ['[%', '%]'],
-                'tag_variable' => $settings['syntax']['variable'] ?? ['[=', '=]'],
-                'interpolation' => $settings['syntax']['interpolation'] ?? ['[[', ']]'],
+                'tag_comment' => ['[*', '*]'],
+                'tag_block' => ['[%', '%]'],
+                'tag_variable' => ['[=', '=]'],
+                'interpolation' => ['[[', ']]'],
             ]);
 
             $this->twig->setLexer($lexer);
@@ -105,7 +105,7 @@ class Engine
      */
     public static function addFilter(string $name, callable $callback): void
     {
-        static::$filters[] = new TwigFilter($name, $callback);
+        self::$filters[] = new TwigFilter($name, $callback);
     }
 
     /**
@@ -119,7 +119,7 @@ class Engine
      */
     public static function addFunction(string $name, callable $callback): void
     {
-        static::$filters[] = new TwigFunction($name, $callback);
+        self::$filters[] = new TwigFunction($name, $callback);
     }
 
     /**
@@ -132,7 +132,7 @@ class Engine
      */
     public static function addExtension(AbstractExtension $extension): void
     {
-        static::$extensions[] = $extension;
+        self::$extensions[] = $extension;
     }
 
     // -------------------------------------------------- Private -------------------------------------------------- //
@@ -141,15 +141,15 @@ class Engine
     {
         $this->twig->addExtension(new Bundled());
 
-        foreach (static::$extensions as $extension) {
+        foreach (self::$extensions as $extension) {
             $this->twig->addExtension($extension);
         }
 
-        foreach (static::$filters as $filter) {
+        foreach (self::$filters as $filter) {
             $this->twig->addFilter($filter);
         }
 
-        foreach (static::$functions as $function) {
+        foreach (self::$functions as $function) {
             $this->twig->addFunction($function);
         }
     }

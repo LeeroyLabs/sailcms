@@ -20,7 +20,7 @@ class LocaleField implements DatabaseType
         }
     }
 
-    public function __get(string $locale)
+    public function get(string $locale): mixed
     {
         $out = '';
 
@@ -32,6 +32,11 @@ class LocaleField implements DatabaseType
         });
 
         return $out;
+    }
+
+    public function __get(string $locale)
+    {
+        return $this->get($locale);
     }
 
     public function toDBObject(): \stdClass|array

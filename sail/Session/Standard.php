@@ -10,7 +10,7 @@ use Josantonius\Session\Session;
 use SailCMS\Collection;
 use SailCMS\Contracts\AppSession;
 
-class Standard implements AppSession
+final class Standard implements AppSession
 {
     private static Session $instance;
 
