@@ -30,7 +30,7 @@ class Middleware
         }
 
         Register::registerMiddleware($middleware, $class);
-        static::$middlewares[$middleware->type()->value][] = $middleware;
+        self::$middlewares[$middleware->type()->value][] = $middleware;
     }
 
     /**
@@ -44,7 +44,7 @@ class Middleware
      */
     public static function execute(MiddlewareType $type, Data $data): Data
     {
-        $mws = static::$middlewares[$type->value] ?? [];
+        $mws = self::$middlewares[$type->value] ?? [];
 
         foreach ($mws as $mw) {
             $data = $mw->process($data);

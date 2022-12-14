@@ -221,7 +221,7 @@ class Transformer
             default:
             case static::OUTPUT_WEBP:
                 $imagick->setImageFormat('webp');
-                $imagick->setOption('webp:lossless', true);
+                $imagick->setOption('webp:lossless', 'true');
                 break;
         }
 

@@ -5,7 +5,7 @@ namespace SailCMS;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
 
-class Log
+final class Log
 {
     private static Logger $logger;
 
@@ -13,10 +13,10 @@ class Log
     {
         $handlers = setting('logging.adapters');
 
-        static::$logger = new Logger(setting('logging.loggerName', 'sailcms'));
+        self::$logger = new Logger(setting('logging.loggerName', 'sailcms'));
 
         foreach ($handlers as $handler) {
-            static::$logger->pushHandler(
+            self::$logger->pushHandler(
                 new $handler(setting('logging.minLevel', \Monolog\Level::Debug), setting('logging.bubble', true))
             );
         }
@@ -32,7 +32,7 @@ class Log
      */
     public static function addAdapter(AbstractProcessingHandler $adapter): void
     {
-        static::$logger->pushHandler($adapter);
+        self::$logger->pushHandler($adapter);
     }
 
     /**
@@ -44,47 +44,47 @@ class Log
      */
     public static function logger(): Logger
     {
-        return static::$logger;
+        return self::$logger;
     }
 
     public static function debug(string $message, Collection|array $context): void
     {
-        static::log('debug', $message, $context);
+        self::log('debug', $message, $context);
     }
 
     public static function info(string $message, Collection|array $context): void
     {
-        static::log('info', $message, $context);
+        self::log('info', $message, $context);
     }
 
     public static function notice(string $message, Collection|array $context): void
     {
-        static::log('notice', $message, $context);
+        self::log('notice', $message, $context);
     }
 
     public static function warning(string $message, Collection|array $context): void
     {
-        static::log('warning', $message, $context);
+        self::log('warning', $message, $context);
     }
 
     public static function error(string $message, Collection|array $context): void
     {
-        static::log('error', $message, $context);
+        self::log('error', $message, $context);
     }
 
     public static function critical(string $message, Collection|array $context): void
     {
-        static::log('critical', $message, $context);
+        self::log('critical', $message, $context);
     }
 
     public static function alert(string $message, Collection|array $context): void
     {
-        static::log('alert', $message, $context);
+        self::log('alert', $message, $context);
     }
 
     public static function emergency(string $message, Collection|array $context): void
     {
-        static::log('emergency', $message, $context);
+        self::log('emergency', $message, $context);
     }
 
     private static function log(string $level, string $message, Collection|array $context): void
@@ -96,35 +96,35 @@ class Log
         switch ($level) {
             default:
             case 'debug':
-                static::$logger->debug($message, $context);
+                self::$logger->debug($message, $context);
                 break;
 
             case 'info':
-                static::$logger->info($message, $context);
+                self::$logger->info($message, $context);
                 break;
 
             case 'notice':
-                static::$logger->notice($message, $context);
+                self::$logger->notice($message, $context);
                 break;
 
             case 'warning':
-                static::$logger->warning($message, $context);
+                self::$logger->warning($message, $context);
                 break;
 
             case 'error':
-                static::$logger->error($message, $context);
+                self::$logger->error($message, $context);
                 break;
 
             case 'critical':
-                static::$logger->critical($message, $context);
+                self::$logger->critical($message, $context);
                 break;
 
             case 'alert':
-                static::$logger->alert($message, $context);
+                self::$logger->alert($message, $context);
                 break;
 
             case 'emergency':
-                static::$logger->emergency($message, $context);
+                self::$logger->emergency($message, $context);
                 break;
         }
     }

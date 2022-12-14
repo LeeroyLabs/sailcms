@@ -31,6 +31,7 @@ class ACL
                 break;
         }
 
+        $this->type = $type;
         $this->providedName = strtolower(Text::deburr($name));
         $this->category = $shortType;
         $this->name = strtoupper(Text::deburr($name)) . '_' . $shortType;

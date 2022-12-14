@@ -9,7 +9,7 @@ use SailCMS\Errors\RegisterException;
 use SailCMS\Types\ContainerInformation;
 use SailCMS\Types\ModuleInformation;
 
-class Register
+final class Register
 {
     private static Collection $containers;
     private static Collection $modules;

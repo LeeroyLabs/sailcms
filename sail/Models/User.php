@@ -53,6 +53,7 @@ class User extends Model
     public string $validation_code = '';
     public string $reset_code;
     public bool $validated;
+    public int $created_at = 0;
 
     public function fields(bool $fetchAllFields = false): array
     {
@@ -94,8 +95,8 @@ class User extends Model
 
     public static function initForTest()
     {
-        static::$currentUser = new User();
-        static::$currentUser->_id = new ObjectId();
+        self::$currentUser = new User();
+        self::$currentUser->_id = new ObjectId();
     }
 
     protected function processOnFetch(string $field, mixed $value): mixed
@@ -132,10 +133,10 @@ class User extends Model
 
         if (!empty($uid)) {
             $instance = new static();
-            static::$currentUser = $instance->findById($uid)->exec();
+            self::$currentUser = $instance->findById($uid)->exec();
 
-            if (static::$currentUser) {
-                static::$currentUser->auth_token = env('jwt', '');
+            if (self::$currentUser) {
+                self::$currentUser->auth_token = env('jwt', '');
             }
         }
     }
@@ -149,7 +150,7 @@ class User extends Model
      */
     public static function isAuthenticated(): bool
     {
-        return (isset(static::$currentUser));
+        return (isset(self::$currentUser));
     }
 
     /**
@@ -163,8 +164,8 @@ class User extends Model
      */
     public function permissions(bool $forceLoad = false): Collection
     {
-        if (isset(static::$permsCache)) {
-            return static::$permsCache;
+        if (isset(self::$permsCache)) {
+            return self::$permsCache;
         }
 
         $roleModel = new Role();
@@ -178,7 +179,7 @@ class User extends Model
             }
         }
 
-        static::$permsCache = $permissions;
+        self::$permsCache = $permissions;
 
         return $permissions;
     }
@@ -279,15 +280,15 @@ class User extends Model
             try {
                 $mail = new Mail();
                 $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
-                Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             } catch (Exception $e) {
-                Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
         }
 
-        Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+        Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
         return $id;
     }
 
@@ -405,7 +406,7 @@ class User extends Model
             }
         }
 
-        Event::dispatch(static::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+        Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
         return $id;
     }
 
@@ -455,7 +456,7 @@ class User extends Model
 
         if ($roles) {
             // Make sure we are not allowing a user with lower role to give higher role (by hack)
-            $current = Role::getHighestLevel(static::$currentUser->roles);
+            $current = Role::getHighestLevel(self::$currentUser->roles);
             $requested = Role::getHighestLevel($roles);
 
             if ($current >= $requested) {
@@ -472,7 +473,7 @@ class User extends Model
         }
 
         $this->updateOne(['_id' => $id], ['$set' => $update]);
-        Event::dispatch(static::EVENT_UPDATE, ['id' => $id, 'update' => $update]);
+        Event::dispatch(self::EVENT_UPDATE, ['id' => $id, 'update' => $update]);
         return true;
     }
 
@@ -549,7 +550,7 @@ class User extends Model
         $total = $this->count($query);
         $pages = ceil($total / $limit);
         $current = $page;
-        $pagination = new Pagination($current, $pages, $total);
+        $pagination = new Pagination($current, (int)$pages, $total);
 
         $list = $this->find($query, $options)->exec();
 
@@ -571,7 +572,7 @@ class User extends Model
         $this->hasPermissions();
 
         $this->deleteById($this->_id);
-        Event::dispatch(static::EVENT_DELETE, (string)$this->_id);
+        Event::dispatch(self::EVENT_DELETE, (string)$this->_id);
         return true;
     }
 
@@ -592,7 +593,7 @@ class User extends Model
 
         $id = $this->ensureObjectId($id);
         $this->deleteById($id);
-        Event::dispatch(static::EVENT_DELETE, (string)$id);
+        Event::dispatch(self::EVENT_DELETE, (string)$id);
         return true;
     }
 
@@ -612,7 +613,7 @@ class User extends Model
         $this->hasPermissions();
 
         $this->deleteOne(['email' => $email]);
-        Event::dispatch(static::EVENT_DELETE, $email);
+        Event::dispatch(self::EVENT_DELETE, $email);
         return true;
     }
 
@@ -683,13 +684,13 @@ class User extends Model
             $session->set('user_id', (string)$user->_id);
             $token = $session->get('set_token'); // Only works with stateless
 
-            static::$currentUser = $this->findById((string)$user->_id)->exec();
+            self::$currentUser = $this->findById((string)$user->_id)->exec();
 
             // Clear temporary token
             $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => '']]);
 
-            static::$currentUser->auth_token = $token ?? '';
-            return static::$currentUser;
+            self::$currentUser->auth_token = $token ?? '';
+            return self::$currentUser;
         }
 
         return null;
@@ -729,10 +730,10 @@ class User extends Model
             $token = $session->get('set_token'); // Only works with stateless
 
             $instance = new static();
-            static::$currentUser = $instance->findById((string)$user->_id)->exec();
+            self::$currentUser = $instance->findById((string)$user->_id)->exec();
 
             // Get role
-            static::$currentUser->auth_token = $token ?? '';
+            self::$currentUser->auth_token = $token ?? '';
 
             return true;
         }
@@ -751,7 +752,7 @@ class User extends Model
     {
         $session = Session::manager();
         $session->clear();
-        static::$currentUser = null;
+        self::$currentUser = null;
     }
 
     /**
@@ -884,12 +885,12 @@ class User extends Model
             $session->set('user_id', (string)$user->_id);
             $token = $session->get('set_token'); // Only works with stateless
 
-            static::$currentUser = $user;
+            self::$currentUser = $user;
 
             // Get role
-            static::$currentUser->auth_token = $token ?? '';
+            self::$currentUser->auth_token = $token ?? '';
 
-            return static::$currentUser;
+            return self::$currentUser;
         }
 
         return null;
@@ -1026,20 +1027,20 @@ class User extends Model
     protected function hasPermissions(bool $read = false, bool $advanced = false, string|null $id = null): void
     {
         if ($advanced) {
-            if ((isset(static::$currentUser) && (string)static::$currentUser->_id === $id)) {
+            if ((isset(self::$currentUser) && (string)self::$currentUser->_id === $id)) {
                 if ($read) {
-                    if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
+                    if (!ACL::hasPermission(self::$currentUser, ACL::read('user'))) {
                         throw new PermissionException('0403: Permission Denied', 0403);
                     }
-                } elseif (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+                } elseif (!ACL::hasPermission(self::$currentUser, ACL::write('user'))) {
                     throw new PermissionException('0403: Permission Denied', 0403);
                 }
             }
         } elseif ($read) {
-            if (!ACL::hasPermission(static::$currentUser, ACL::read('user'))) {
+            if (!ACL::hasPermission(self::$currentUser, ACL::read('user'))) {
                 throw new PermissionException('0403: Permission Denied', 0403);
             }
-        } elseif (!ACL::hasPermission(static::$currentUser, ACL::write('user'))) {
+        } elseif (!ACL::hasPermission(self::$currentUser, ACL::write('user'))) {
             throw new PermissionException('0403: Permission Denied', 0403);
         }
     }

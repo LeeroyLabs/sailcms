@@ -146,7 +146,7 @@ class Asset extends Model
         $count = $this->count([]);
         $total = ceil($count / $limit);
 
-        $pagination = new Pagination($page, $total, $count);
+        $pagination = new Pagination($page, (int)$total, $count);
         return new Listing($pagination, new Collection($results));
     }
 

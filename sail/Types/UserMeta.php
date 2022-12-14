@@ -16,7 +16,8 @@ class UserMeta implements DatabaseType
     public const TYPE_BOOL = 4;
     public const TYPE_CUSTOM = 5;
 
-    public readonly stdClass $flags;
+    public stdClass $flags;
+    public array $customMeta;
 
     private static array $registered = [
         'Flags' => [
@@ -33,14 +34,17 @@ class UserMeta implements DatabaseType
             $object = $object->unwrap();
         }
 
+        $userMeta = [];
+
         foreach ($object as $key => $value) {
-            if (is_array($value)) {
-                $obj = (object)$value;
-                $this->{$key} = $obj ?? (object)[];
+            if ($key === 'flags') {
+                $this->flags = $value;
             } else {
-                $this->{$key} = $value ?? '';
+                $userMeta[$key] = $value ?? '';
             }
         }
+
+        $this->customMeta = $userMeta;
     }
 
     /**
@@ -54,7 +58,9 @@ class UserMeta implements DatabaseType
     {
         $output = new stdClass();
 
-        foreach ($this as $key => $value) {
+        $output->flags = $this->flags;
+
+        foreach ($this->customMeta as $key => $value) {
             $output->{$key} = $value ?? '';
         }
 
@@ -71,7 +77,11 @@ class UserMeta implements DatabaseType
      */
     public function __get(string $name): mixed
     {
-        return $this->{$name} ?? null;
+        if ($name === 'flags') {
+            return $this->flags ?? null;
+        }
+
+        return $this->customMeta[$name] ?? '';
     }
 
     /**
@@ -84,11 +94,17 @@ class UserMeta implements DatabaseType
      */
     public function __set(string $name, $value): void
     {
-        if (is_array($value)) {
-            $this->{$name} = new Collection($value);
-        } else {
-            $this->{$name} = $value;
+        if ($name === 'flags') {
+            $this->flags = $value;
+            return;
         }
+
+        if (is_array($value)) {
+            $this->customMeta[$name] = new Collection($value);
+            return;
+        }
+
+        $this->customMeta[$name] = $value;
     }
 
     /**
@@ -101,7 +117,7 @@ class UserMeta implements DatabaseType
      */
     public function __isset(string $name): bool
     {
-        if (static::$registered[$name]) {
+        if (self::$registered[$name]) {
             return (isset($this->{$name}));
         }
 
@@ -120,7 +136,7 @@ class UserMeta implements DatabaseType
      */
     public static function register(string $key, int $type = UserMeta::TYPE_STRING, callable $callback = null): void
     {
-        static::$registered[$key] = ['type' => $type, 'callback' => $callback];
+        self::$registered[$key] = ['type' => $type, 'callback' => $callback];
     }
 
     /**
@@ -133,7 +149,7 @@ class UserMeta implements DatabaseType
      */
     public static function registerFlag(string $key): void
     {
-        static::$registeredFlags[] = $key;
+        self::$registeredFlags[] = $key;
     }
 
     /**
@@ -148,26 +164,26 @@ class UserMeta implements DatabaseType
     {
         $graphql = '';
 
-        foreach (static::$registered as $key => $options) {
+        foreach (self::$registered as $key => $options) {
             switch ($options['type']) {
-                case static::TYPE_BOOL:
+                case self::TYPE_BOOL:
                     $graphql .= $key . ": Boolean\n";
                     break;
 
-                case static::TYPE_FLOAT:
+                case self::TYPE_FLOAT:
                     $graphql .= $key . ": Float\n";
                     break;
 
-                case static::TYPE_INT:
+                case self::TYPE_INT:
                     $graphql .= $key . ": Int\n";
                     break;
 
                 default:
-                case static::TYPE_STRING:
+                case self::TYPE_STRING:
                     $graphql .= $key . ": String\n";
                     break;
 
-                case static::TYPE_CUSTOM:
+                case self::TYPE_CUSTOM:
                     $input = ($inputs) ? 'Input' : '';
                     $graphql .= Text::snakeCase($key) . ": {$key}{$input}\n";
                     break;
@@ -188,7 +204,7 @@ class UserMeta implements DatabaseType
     {
         $graphql = '';
 
-        foreach (static::$registeredFlags as $value) {
+        foreach (self::$registeredFlags as $value) {
             $graphql .= $value . ": Boolean\n";
         }
 

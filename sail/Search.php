@@ -6,7 +6,7 @@ use SailCMS\Search\Adapter;
 use SailCMS\Search\Database;
 use SailCMS\Types\SearchResults;
 
-class Search
+final class Search
 {
     private static Adapter $adapter;
     private static array $registeredAdapters = [];
@@ -15,14 +15,14 @@ class Search
     {
         $engine = env('search_engine', 'database');
 
-        if (empty(static::$adapter)) {
-            if (!empty(static::$registeredAdapters[$engine])) {
-                $adapterInfo = static::$registeredAdapters[$engine];
-                static::$adapter = new $adapterInfo();
+        if (empty(self::$adapter)) {
+            if (!empty(self::$registeredAdapters[$engine])) {
+                $adapterInfo = self::$registeredAdapters[$engine];
+                self::$adapter = new $adapterInfo();
                 return;
             }
 
-            static::$adapter = new Database();
+            self::$adapter = new Database();
         }
     }
 
@@ -50,7 +50,7 @@ class Search
      */
     public function search(string $search, array $meta = [], string $dataIndex = ''): SearchResults
     {
-        return static::$adapter->search($search, $meta, $dataIndex);
+        return self::$adapter->search($search, $meta, $dataIndex);
     }
 
     /**
@@ -64,8 +64,8 @@ class Search
      */
     public function execute(string $method, array $arguments = []): mixed
     {
-        if (method_exists(static::$adapter, $method)) {
-            return call_user_func_array([static::$adapter, $method], $arguments);
+        if (method_exists(self::$adapter, $method)) {
+            return call_user_func_array([self::$adapter, $method], $arguments);
         }
 
         return null;
@@ -82,7 +82,7 @@ class Search
      */
     public static function registerAdapter(string $name, string $className): void
     {
-        static::$registeredAdapters[$name] = $className;
+        self::$registeredAdapters[$name] = $className;
     }
 
     /**
@@ -102,7 +102,7 @@ class Search
         $engines = $composer->sailcms->search ?? [];
 
         foreach ($engines as $name => $engine) {
-            static::registerAdapter($name, $engine);
+            self::registerAdapter($name, $engine);
         }
     }
 
@@ -115,7 +115,7 @@ class Search
      */
     public static function getRawClient(): mixed
     {
-        return static::$adapter->getRawAdapter();
+        return self::$adapter->getRawAdapter();
     }
 
     /**
@@ -127,6 +127,6 @@ class Search
      */
     public static function getAdapter(): Adapter
     {
-        return static::$adapter;
+        return self::$adapter;
     }
 }

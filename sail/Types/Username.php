@@ -15,12 +15,12 @@ class Username implements DatabaseType
      * Return an instance with a regular object
      *
      * @param  object  $name
-     * @return $this
+     * @return Username
      *
      */
     public static function initWith(object $name): Username
     {
-        return new static($name->first, $name->last, $name->first . ' ' . $name->last);
+        return new self($name->first, $name->last, $name->first . ' ' . $name->last);
     }
 
     public function toDBObject(): \stdClass|array

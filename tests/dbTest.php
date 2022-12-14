@@ -6,6 +6,8 @@ include_once __DIR__ . '/mock/db.php';
 
 class DbTest extends Model
 {
+    public string $version = '';
+
     public function __construct()
     {
         parent::__construct('tests');

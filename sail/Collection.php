@@ -741,6 +741,36 @@ class Collection implements \JsonSerializable, \Iterator
         return json_encode($this->_internal, JSON_THROW_ON_ERROR);
     }
 
+    /**
+     *
+     * Set new value for given index
+     *
+     * @param  int    $index
+     * @param  mixed  $value
+     * @return Collection
+     *
+     */
+    public function setAt(int $index, mixed $value): Collection
+    {
+        $this->_internal[$index] = $value;
+        return $this;
+    }
+
+    /**
+     *
+     * Set new value for given key
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return Collection
+     *
+     */
+    public function setFor(string $key, mixed $value): Collection
+    {
+        $this->_internal[$key] = $value;
+        return $this;
+    }
+
     // ----------------------------------------- Interface Implementations ----------------------------------------- //
 
     /**

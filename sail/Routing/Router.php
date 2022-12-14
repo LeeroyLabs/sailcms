@@ -33,7 +33,7 @@ class Router
 
     public static function init(): void
     {
-        static::$routes = new Collection([
+        self::$routes = new Collection([
             'get' => Collection::init(),
             'post' => Collection::init(),
             'put' => Collection::init(),
@@ -41,7 +41,7 @@ class Router
             'any' => Collection::init()
         ]);
 
-        static::$redirects = Collection::init();
+        self::$redirects = Collection::init();
     }
 
     /**
@@ -54,7 +54,7 @@ class Router
      */
     public static function getAll(string $method): Collection
     {
-        return static::$routes->get(strtolower($method));
+        return self::$routes->get(strtolower($method));
     }
 
     /**
@@ -160,21 +160,15 @@ class Router
      *
      * Add a redirected route
      *
-     * @param  string                $from
-     * @param  string                $to
-     * @param  AppController|string  $controller
-     * @param  string                $method
+     * @param  string  $from
+     * @param  string  $to
      * @return void
      *
      */
-    public function redirect(string $from, string $to, AppController|string $controller = '', string $method = ''): void
+    public function redirect(string $from, string $to): void
     {
-        if (is_string($controller) && $controller !== '') {
-            $controller = new $controller();
-        }
-
-        $redirect = new Redirect($from, $to, $controller, $method);
-        static::$redirects->push($redirect);
+        $redirect = new Redirect($from, $to);
+        self::$redirects->push($redirect);
     }
 
     /**
@@ -201,8 +195,8 @@ class Router
             $uri = '/';
         }
 
-        if (!empty(static::$root) && static::$root !== '/') {
-            static::$root = rtrim(static::$root, '/');
+        if (!empty(self::$root) && self::$root !== '/') {
+            self::$root = rtrim(self::$root, '/');
 
             if (self::$root === $uri) {
                 $uri = '/';
@@ -219,7 +213,7 @@ class Router
         $method = strtolower($_SERVER['REQUEST_METHOD']);
 
         // Method based routes
-        foreach (static::$routes->get($method) as $num => $route) {
+        foreach (self::$routes->get($method) as $num => $route) {
             $response = $route->matches($uri);
 
             if ($response) {
@@ -234,7 +228,7 @@ class Router
         }
 
         // Any Routes
-        foreach (static::$routes->get('any') as $num => $route) {
+        foreach (self::$routes->get('any') as $num => $route) {
             $response = $route->matches($uri);
 
             if ($response) {
@@ -249,7 +243,7 @@ class Router
         }
 
         // Try the redirect list to see if the url is one of them
-        static::$redirects->each(function ($key, $redirect) use ($uri)
+        self::$redirects->each(function ($key, $redirect) use ($uri)
         {
             $redirect->matchAndExecute($uri);
         });
@@ -284,7 +278,7 @@ class Router
         $alternateRoutes = Collection::init();
         $method = $route->getHTTPMethod();
 
-        static::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $method, $route)
+        self::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $route)
         {
             if ($value->getName() === $route->getName() && $value->getLocale() !== Locale::current()) {
                 $alternateRoutes->push($value);
@@ -308,7 +302,7 @@ class Router
     public static function getBy(string $name, string $method, string $locale = 'en', Collection|array $arguments = []): ?string
     {
         $route = null;
-        static::$routes->get($method)->each(static function ($key, $value) use (&$route, $name, $locale)
+        self::$routes->get($method)->each(static function ($key, $value) use (&$route, $name, $locale)
         {
             if ($value->getName() === $name && $value->getLocale() === $locale) {
                 $route = $value;
@@ -335,7 +329,7 @@ class Router
     public static function getAllBy(string $name, string $method, Collection|array $arguments = []): Collection
     {
         $routes = Collection::init();
-        static::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
+        self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
         {
             if ($value->getName() === $name) {
                 $routes->pushKeyValue($value->getLocale(), $value);
@@ -369,7 +363,7 @@ class Router
         $methods = ['get', 'post', 'delete', 'put', 'any'];
 
         foreach ($methods as $method) {
-            static::$routes->get($method)->each(static function ($key, $value) use (&$routes, $method, $name)
+            self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
             {
                 if ($value->getName() === $name) {
                     $routes->push($value);
@@ -428,6 +422,6 @@ class Router
         }
 
         $route = new Route($name, $url, $locale, $controller, $callback, $method);
-        static::$routes->get(strtolower($method))->push($route);
+        self::$routes->get(strtolower($method))->push($route);
     }
 }

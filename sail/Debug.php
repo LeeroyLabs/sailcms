@@ -5,10 +5,8 @@ namespace SailCMS;
 use Clockwork\Support\Vanilla\Clockwork;
 use SailCMS\Debug\DbParser;
 
-class Debug
+final class Debug
 {
-    private static bool $useRay = false;
-
     /**
      *
      * Log messages

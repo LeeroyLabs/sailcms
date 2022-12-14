@@ -266,7 +266,7 @@ class Users
         $meta = $args->get('meta', null);
         $name = $args->get('name', null);
 
-        if ($roles) {
+        if ($roles && is_array($roles)) {
             $roles = new Collection($roles);
         }
 
@@ -344,10 +344,9 @@ class Users
      *
      * Change the password of the given code's user
      *
-     * @param  mixed        $obj
-     * @param  Collection   $args
-     * @param  Context      $context
-     * @param  ResolveInfo  $info
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return mixed
      * @throws DatabaseException
      *

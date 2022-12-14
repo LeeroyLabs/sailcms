@@ -21,7 +21,7 @@ use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
 use Symfony\Component\Console\Application;
 
-class CLI
+final class CLI
 {
     public const CLI_VERSION = '1.0.0-next.2';
     private static string $workingDirectory = '';

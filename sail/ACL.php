@@ -10,7 +10,7 @@ use SailCMS\Models\User;
 use SailCMS\Types\ACL as ACLObject;
 use SailCMS\Types\ACLType;
 
-class ACL
+final class ACL
 {
     private static Collection $loadedACL;
 
