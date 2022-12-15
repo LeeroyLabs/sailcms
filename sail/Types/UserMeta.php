@@ -37,7 +37,7 @@ class UserMeta implements DatabaseType
 
         foreach ($object as $key => $value) {
             if ($key === 'flags') {
-                $this->flags = $value;
+                $this->flags = (object)$value;
             } else {
                 $userMeta[$key] = $value ?? '';
             }
@@ -91,10 +91,10 @@ class UserMeta implements DatabaseType
      * @param          $value
      * @return void
      */
-    public function __set(string $name, $value): void
+    public function __set(string $name, mixed $value): void
     {
         if ($name === 'flags') {
-            $this->flags = $value;
+            $this->flags = (object)$value;
             return;
         }
 
