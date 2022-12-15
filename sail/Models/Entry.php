@@ -782,19 +782,14 @@ class Entry extends Model
      *
      * @param LocaleField $urlPrefix
      * @return void
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      *
      */
     public function updateEntriesUrl(LocaleField $urlPrefix): void
     {
         $entries = $this->all();
 
-        // TODO can we do that in batches...
         $writes = [];
-
         foreach ($entries as $entry) {
             $writes[] = [
                 'updateOne' => [
@@ -804,7 +799,7 @@ class Entry extends Model
             ];
         }
 
-        if ( count($writes) ) {
+        if (count($writes)) {
             // Bulk write everything, performance++
             $this->bulkWrite($writes);
         }
@@ -1205,7 +1200,7 @@ class Entry extends Model
         $update['dates'] = Dates::updated($entry->dates);
 
         try {
-            $qtyUpdated = $this->updateOne(['_id' => $entry->_id], [
+            $this->updateOne(['_id' => $entry->_id], [
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {

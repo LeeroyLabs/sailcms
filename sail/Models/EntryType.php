@@ -74,9 +74,35 @@ class EntryType extends Model
         ];
     }
 
+    /**
+     *
+     * Initialization for entry type
+     *
+     * @return void
+     *
+     */
     public function init(): void
     {
         $this->setPermissionGroup(static::ACL_HANDLE);
+    }
+
+
+    /**
+     *
+     * Parse the entry into an array for api
+     *
+     * @return array
+     *
+     */
+    public function toGraphQL(): array
+    {
+        return [
+            '_id' => $this->_id,
+            'title' => $this->title,
+            'handle' => $this->handle,
+            'url_prefix' => $this->url_prefix->toDBObject(),
+            'entry_layout_id' => $this->entry_layout_id ?? ""
+        ];
     }
 
     /**
@@ -149,6 +175,9 @@ class EntryType extends Model
 
         $entryType = $instance->getByHandle($defaultHandle);
 
+        // TODO : remove handle from the settings (this cannot be changed), add entry_layout_id to the settings.
+        // TODO : update when settings changed
+
         if (!$entryType) {
             $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix);
         }
@@ -185,7 +214,6 @@ class EntryType extends Model
 
     /**
      *
-     * $entryLayout =
      * Get an entry model instance by entry type handle
      *
      * @param string $handle
@@ -514,23 +542,5 @@ class EntryType extends Model
         }
 
         return true;
-    }
-
-    /**
-     *
-     * Parse the entry into an array for api
-     *
-     * @return array
-     *
-     */
-    public function toGraphQL(): array
-    {
-        return [
-            '_id' => $this->_id,
-            'title' => $this->title,
-            'handle' => $this->handle,
-            'url_prefix' => $this->url_prefix->toDBObject(),
-            'entry_layout_id' => $this->entry_layout_id ?? ""
-        ];
     }
 }
