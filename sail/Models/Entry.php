@@ -84,10 +84,11 @@ class Entry extends Model
      */
     public function __construct(string $collection = '', EntryType $entryType = null)
     {
+
         if (!$entryType) {
             // Get or create the default entry type
             if (!$collection) {
-                $this->entryType = EntryType::getDefaultType();
+                $this->entryType = EntryType::getDefaultType(false, true);
             } else {
                 // Get entry type by collection name
                 $this->entryType = EntryType::getByCollectionName($collection);

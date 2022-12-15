@@ -117,11 +117,11 @@ return [
         'entry' => [
             'defaultType' => [
                 'title' => 'Page',
-                'handle' => 'page',
                 'urlPrefix' => [
                     'en' => '',
                     'fr' => ''
-                ]
+                ],
+                'entryLayoutId' => null
             ],
             'cacheTtl' => \SailCMS\Cache::TTL_WEEK
         ]
@@ -215,7 +215,6 @@ return [
         'entry' => [
             'defaultType' => [
                 'title' => 'Page',
-                'handle' => 'page',
                 'urlPrefix' => [
                     'en' => '',
                     'fr' => ''
