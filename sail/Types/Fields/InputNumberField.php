@@ -17,16 +17,16 @@ class InputNumberField extends Field
      *
      * @param LocaleField $labels
      * @param bool $required
-     * @param int $min_number
-     * @param int $max_number
+     * @param int $min
+     * @param int $max
      * @param bool $negative_number
      *
      */
     public function __construct(
         public readonly LocaleField $labels,
         public readonly bool $required = false,
-        public readonly int $min_number = 0,
-        public readonly int $max_number = 0,
+        public readonly int $min = 0,
+        public readonly int $max = 0,
         public readonly bool $negative_number = false,
     )
     {
@@ -43,8 +43,8 @@ class InputNumberField extends Field
     {
         return new Collection([
             'required' => false,
-            'min_number' => 0,
-            'max_number' => 0,
+            'min' => 0,
+            'max' => 0,
             'negative_number' => false
         ]);
     }
@@ -60,8 +60,8 @@ class InputNumberField extends Field
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('min_number', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('max_number', InputSettings::INPUT_TYPE_NUMBER),
+            new InputSettings('min', InputSettings::INPUT_TYPE_NUMBER),
+            new InputSettings('max', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('negative_number', InputSettings::INPUT_TYPE_CHECKBOX),
         ]);
     }
@@ -100,24 +100,24 @@ class InputNumberField extends Field
             $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '.');
         }
 
-        if ($this->min_number > 0 && strlen($content) < $this->min_number) {
+        if ($this->min > 0 && strlen($content) < $this->min) {
             try {
                 $errorMessage = Locale::translate('fields.errors.min_number');
             } catch (Exception $exception) {
                 $errorMessage = 'number not enough big';
             }
 
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->min_number . ').');
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->min . ').');
         }
 
-        if ($this->max_number > 0 && strlen($content) > $this->max_number) {
+        if ($this->max > 0 && strlen($content) > $this->max) {
             try {
                 $errorMessage = Locale::translate('fields.errors.max_number');
             } catch (Exception $exception) {
                 $errorMessage = 'number is too big';
             }
 
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->max_number . ').');
+            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->max . ').');
         }
 
         return $errors;
@@ -136,8 +136,8 @@ class InputNumberField extends Field
             'labels' => $this->labels->toDBObject(),
             'settings' => [
                 'required' => $this->required,
-                'min_number' => $this->min_number,
-                'max_number' => $this->max_number,
+                'min' => $this->min,
+                'max' => $this->max,
                 'negative_number' => $this->negative_number,
             ]
         ];
