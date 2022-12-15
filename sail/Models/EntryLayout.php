@@ -252,7 +252,6 @@ class EntryLayout extends Model
     }
 
     /**
-     * TODO add a unit test for that
      *
      * Update a key in the schema
      *

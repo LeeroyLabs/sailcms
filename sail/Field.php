@@ -8,7 +8,7 @@ namespace SailCMS;
  * LIST of potential FIELDS
  *
  * TextField // option uppercase
- * NumberField
+ * NumberField // option float
  * DateField
  * DateTimeField
  * EmailField
