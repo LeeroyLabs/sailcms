@@ -22,13 +22,12 @@ use stdClass;
 class EntryLayout extends Model
 {
     /* Errors */
-    // TODO add numbers to theses errors
-    const DATABASE_ERROR = 'Exception when %s an entry.';
-    const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances.';
-    const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types.';
-    const SCHEMA_KEY_ALREADY_EXISTS = 'Cannot use "%s" again, it is already in the schema.';
-    const SCHEMA_KEY_DOES_NOT_EXISTS = 'The given key "%s" does not exists in the schema.';
-    const DOES_NOT_EXISTS = 'Entry layout "%s" does not exists.';
+    const DATABASE_ERROR = '6001: Exception when %s an entry.';
+    const SCHEMA_MUST_CONTAIN_FIELDS = '6002: The schema must contains only SailCMS\Models\Entry\Field instances.';
+    const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
+    const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
+    const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
+    const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
 
     const ACL_HANDLE = "entrylayout";
 
