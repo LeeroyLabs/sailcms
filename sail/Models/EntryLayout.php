@@ -22,6 +22,7 @@ use stdClass;
 class EntryLayout extends Model
 {
     /* Errors */
+    // TODO add numbers to theses errors
     const DATABASE_ERROR = 'Exception when %s an entry.';
     const SCHEMA_MUST_CONTAIN_FIELDS = 'The schema must contains only SailCMS\Models\Entry\Field instances.';
     const SCHEMA_IS_USED = 'Cannot delete the schema because it is used by entry types.';
@@ -252,6 +253,7 @@ class EntryLayout extends Model
     }
 
     /**
+     * TODO add a unit test for that
      *
      * Update a key in the schema
      *

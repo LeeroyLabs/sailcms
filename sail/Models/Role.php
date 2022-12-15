@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use Exception;
 use MongoDB\BSON\ObjectId;
 use RuntimeException;
 use SailCMS\ACL;
@@ -38,14 +39,14 @@ class Role extends Model
      * @param  string            $name
      * @param  string            $description
      * @param  Collection|array  $permissions
-     * @return string
+     * @return bool
      * @throws DatabaseException
      * @throws ACLException
      * @throws RuntimeException
      * @throws PermissionException
      *
      */
-    public function create(string $name, string $description, Collection|array $permissions): string
+    public function create(string $name, string $description, Collection|array $permissions): bool
     {
         $this->hasPermissions();
 
@@ -66,12 +67,18 @@ class Role extends Model
             $permissions = new Collection(['*']);
         }
 
-        return $this->insert([
-            'name' => $name,
-            'slug' => $slug,
-            'description' => $description,
-            'permissions' => $permissions
-        ]);
+        try {
+            $this->insert([
+                'name' => $name,
+                'slug' => $slug,
+                'description' => $description,
+                'permissions' => $permissions
+            ]);
+
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**

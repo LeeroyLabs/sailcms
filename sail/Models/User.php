@@ -46,7 +46,7 @@ class User extends Model
     public string $status;
     public string $password;
     public string $avatar;
-    public UserMeta $meta;
+    public UserMeta|\stdClass $meta;
     public string $temporary_token = '';
     public string $auth_token = '';
     public string $locale;

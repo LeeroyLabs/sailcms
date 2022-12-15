@@ -23,7 +23,7 @@ namespace SailCMS;
  * EntryListField
  * CategoryField // to talk about
  *
- * MatrixField
+ * ObjectField
  *
  */
 class Field

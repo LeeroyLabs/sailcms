@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -41,7 +42,13 @@ class Users
      */
     public function user(mixed $obj, Collection $args, Context $context): ?User
     {
-        return (new User())->getById($args->get('id'));
+        $user = (new User())->getById($args->get('id'));
+
+        if ($user) {
+            $user->meta = $user->meta->simplify();
+        }
+
+        return $user;
     }
 
     /**
@@ -56,7 +63,13 @@ class Users
      */
     public function userWithToken(mixed $obj, Collection $args, Context $context): ?User
     {
-        return User::$currentUser ?? null;
+        $user = User::$currentUser ?? null;
+
+        if ($user) {
+            $user->meta = $user->meta->simplify();
+        }
+
+        return $user;
     }
 
     /**
@@ -114,7 +127,7 @@ class Users
             $sorting = new UserSorting('name.full', 'asc');
         }
 
-        return (new User())->getList(
+        $list = (new User())->getList(
             $args->get('page'),
             $args->get('limit'),
             $args->get('search') ?? '',
@@ -123,6 +136,13 @@ class Users
             $metaSearch ?? null,
             $args->get('status', null)
         );
+
+        $list->list->each(function ($key, $value)
+        {
+            $value->meta = $value->meta->simplify();
+        });
+
+        return $list;
     }
 
     /**
@@ -154,7 +174,13 @@ class Users
      */
     public function verifyAuthenticationToken(mixed $obj, Collection $args, Context $context): ?User
     {
-        return (new User())->verifyTemporaryToken($args->get('token'));
+        $user = (new User())->verifyTemporaryToken($args->get('token'));
+
+        if ($user) {
+            $user->meta = $user->meta->simplify();
+        }
+
+        return $user;
     }
 
     /**

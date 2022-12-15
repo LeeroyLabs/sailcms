@@ -4,11 +4,10 @@ namespace SailCMS\Types;
 
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
-use SailCMS\GraphQL\Types as GTypes;
 use SailCMS\Text;
 use stdClass;
 
-class UserMeta implements DatabaseType
+class UserMeta implements DatabaseType, \JsonSerializable
 {
     public const TYPE_STRING = 1;
     public const TYPE_INT = 2;
@@ -38,7 +37,7 @@ class UserMeta implements DatabaseType
 
         foreach ($object as $key => $value) {
             if ($key === 'flags') {
-                $this->flags = $value;
+                $this->flags = (object)$value;
             } else {
                 $userMeta[$key] = $value ?? '';
             }
@@ -92,10 +91,10 @@ class UserMeta implements DatabaseType
      * @param          $value
      * @return void
      */
-    public function __set(string $name, $value): void
+    public function __set(string $name, mixed $value): void
     {
         if ($name === 'flags') {
-            $this->flags = $value;
+            $this->flags = (object)$value;
             return;
         }
 
@@ -167,25 +166,25 @@ class UserMeta implements DatabaseType
         foreach (self::$registered as $key => $options) {
             switch ($options['type']) {
                 case self::TYPE_BOOL:
-                    $graphql .= $key . ": Boolean\n";
+                    $graphql .= $key . ": Boolean!\n";
                     break;
 
                 case self::TYPE_FLOAT:
-                    $graphql .= $key . ": Float\n";
+                    $graphql .= $key . ": Float!\n";
                     break;
 
                 case self::TYPE_INT:
-                    $graphql .= $key . ": Int\n";
+                    $graphql .= $key . ": Int!\n";
                     break;
 
                 default:
                 case self::TYPE_STRING:
-                    $graphql .= $key . ": String\n";
+                    $graphql .= $key . ": String!\n";
                     break;
 
                 case self::TYPE_CUSTOM:
                     $input = ($inputs) ? 'Input' : '';
-                    $graphql .= Text::snakeCase($key) . ": {$key}{$input}\n";
+                    $graphql .= Text::snakeCase($key) . ": {$key}{$input}!\n";
                     break;
             }
         }
@@ -215,10 +214,22 @@ class UserMeta implements DatabaseType
      *
      * Return a simple format for the database
      *
-     * @return stdClass|array
+     * @return stdClass
      *
      */
-    public function toDBObject(): \stdClass|array
+    public function toDBObject(): \stdClass
+    {
+        return $this->simplify();
+    }
+
+    /**
+     *
+     * Automatically simplify when you serialize
+     *
+     * @return stdClass
+     *
+     */
+    public function jsonSerialize(): \stdClass
     {
         return $this->simplify();
     }

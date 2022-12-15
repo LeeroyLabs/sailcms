@@ -5,14 +5,6 @@ namespace SailCMS;
 use JsonException;
 use SailCMS\Types\Sorting;
 
-/**
- *
- * @property int         $length
- * @property false|mixed $first
- * @property false|mixed $last
- * @property bool        empty
- *
- */
 class Collection implements \JsonSerializable, \Iterator
 {
     private array $_internal;
@@ -150,10 +142,10 @@ class Collection implements \JsonSerializable, \Iterator
      * Push a new element at the end of the collection
      *
      * @param  mixed  $element
-     * @return $this
+     * @return Collection
      *
      */
-    public function push(mixed $element): static
+    public function push(mixed $element): self
     {
         $this->_internal[] = $element;
         return $this;
@@ -165,10 +157,10 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * @param  string  $key
      * @param  mixed   $value
-     * @return $this
+     * @return Collection
      *
      */
-    public function pushKeyValue(string $key, mixed $value): static
+    public function pushKeyValue(string $key, mixed $value): self
     {
         $this->_internal[$key] = $value;
         return $this;
@@ -179,10 +171,10 @@ class Collection implements \JsonSerializable, \Iterator
      * Push an array or statics into separate elements in the static
      *
      * @param ...$elements
-     * @return $this
+     * @return Collection
      *
      */
-    public function pushSpread(...$elements): static
+    public function pushSpread(...$elements): self
     {
         foreach ($elements as $element) {
             $this->_internal[] = $element;
@@ -197,10 +189,10 @@ class Collection implements \JsonSerializable, \Iterator
      * key/value version
      *
      * @param ...$elements
-     * @return $this
+     * @return Collection
      *
      */
-    public function pushSpreadKeyValue(...$elements): static
+    public function pushSpreadKeyValue(...$elements): self
     {
         foreach ($elements as $key => $element) {
             $this->_internal[$key] = $element;
@@ -214,9 +206,9 @@ class Collection implements \JsonSerializable, \Iterator
      * Add an element to the beginning of the collection
      *
      * @param  mixed  $element
-     * @return $this
+     * @return Collection
      */
-    public function prepend(mixed $element): static
+    public function prepend(mixed $element): self
     {
         array_unshift($this->_internal, $element);
         return $this;
@@ -228,10 +220,10 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * @param  string  $key
      * @param  mixed   $element
-     * @return $this
+     * @return Collection
      *
      */
-    public function add(string $key, mixed $element): static
+    public function add(string $key, mixed $element): self
     {
         $this->_internal[$key] = $element;
         return $this;
@@ -244,7 +236,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @return static
      *
      */
-    public function reverse(): static
+    public function reverse(): self
     {
         $arr = array_reverse($this->_internal);
         return new static($arr);
@@ -259,7 +251,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @return static
      *
      */
-    public function slice(int $start, int $end): static
+    public function slice(int $start, int $end): self
     {
         $arr = array_slice($this->_internal, $start, $end);
         return new static($arr);
@@ -270,10 +262,10 @@ class Collection implements \JsonSerializable, \Iterator
      * Get and remove the last N items from the collection
      *
      * @param  int  $count
-     * @return $this
+     * @return Collection
      *
      */
-    public function pop(int $count): static
+    public function pop(int $count): self
     {
         if ($this->empty) {
             return new static([]);
@@ -300,7 +292,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @return static
      *
      */
-    public function keys(): static
+    public function keys(): self
     {
         $keys = array_keys($this->_internal);
         return new static($keys);
@@ -353,7 +345,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @return static
      *
      */
-    public function map(callable $callback): static
+    public function map(callable $callback): self
     {
         $result = array_map($callback, $this->_internal);
         return new static($result);
@@ -367,7 +359,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @return static
      *
      */
-    public function filter(callable $callback): static
+    public function filter(callable $callback): self
     {
         $filtered = array_filter($this->_internal, $callback, ARRAY_FILTER_USE_BOTH);
         return new static($filtered);
@@ -400,7 +392,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @return static
      *
      */
-    public function chunks(int $size, bool $preserveKeys = true): static
+    public function chunks(int $size, bool $preserveKeys = true): self
     {
         $chunks = array_chunk($this->_internal, $size, $preserveKeys);
         $static = new static([]);
@@ -416,10 +408,10 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * Shuffle a static
      *
-     * @return $this
+     * @return Collection
      *
      */
-    public function shuffle(): static
+    public function shuffle(): self
     {
         shuffle($this->_internal);
         return $this;
@@ -446,7 +438,7 @@ class Collection implements \JsonSerializable, \Iterator
      * @param  int  $mode
      * @return static
      */
-    public function dedup(int $mode = SORT_REGULAR): static
+    public function dedup(int $mode = SORT_REGULAR): self
     {
         $arr = array_unique($this->_internal, $mode);
         return new static($arr);
@@ -534,10 +526,10 @@ class Collection implements \JsonSerializable, \Iterator
      * @param  int   $sort
      * @param  int   $flag
      * @param  bool  $maintain
-     * @return $this
+     * @return Collection
      *
      */
-    public function sort(int $sort = Sorting::ASC, int $flag = SORT_REGULAR, bool $maintain = false): static
+    public function sort(int $sort = Sorting::ASC, int $flag = SORT_REGULAR, bool $maintain = false): self
     {
         if (!$maintain) {
             if ($sort === Sorting::ASC) {
@@ -559,10 +551,10 @@ class Collection implements \JsonSerializable, \Iterator
      * Sort by given object key. Only works on collection of objects where key resides.
      *
      * @param  string  $key
-     * @return $this
+     * @return Collection
      *
      */
-    public function sortBy(string $key): static
+    public function sortBy(string $key): self
     {
         usort($this->_internal, static function ($a, $b) use ($key)
         {
@@ -634,10 +626,10 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * @param  Collection|array  $collection
      * @param  bool              $assoc
-     * @return $this
+     * @return Collection
      *
      */
-    public function diff(Collection|array $collection, bool $assoc = false): static
+    public function diff(Collection|array $collection, bool $assoc = false): self
     {
         if ($collection instanceof Collection) {
             $collection = $collection->unwrap();
@@ -659,10 +651,10 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * @param  Collection|array  $collection
      * @param  bool              $assoc
-     * @return $this
+     * @return Collection
      *
      */
-    public function intersect(Collection|array $collection, bool $assoc = false): static
+    public function intersect(Collection|array $collection, bool $assoc = false): self
     {
         if ($collection instanceof Collection) {
             $collection = $collection->unwrap();
@@ -685,7 +677,7 @@ class Collection implements \JsonSerializable, \Iterator
      *
      * @param  Collection|array  $collection
      * @param  bool              $recursive
-     * @return $this
+     * @return Collection
      *
      */
     public function merge(Collection|array $collection, bool $recursive = false): Collection
@@ -1038,7 +1030,7 @@ class Collection implements \JsonSerializable, \Iterator
         foreach ($this->_internal as $k => $v) {
             if (is_array($v)) {
                 foreach ($v as $_k => $_v) {
-                    if ($_k === $key && $v >= $low && $v <= $high) {
+                    if ($_k === $key && $_v >= $low && $_v <= $high) {
                         $list[] = $v;
                     }
                 }
@@ -1077,7 +1069,7 @@ class Collection implements \JsonSerializable, \Iterator
         foreach ($this->_internal as $k => $v) {
             if (is_array($v)) {
                 foreach ($v as $_k => $_v) {
-                    if ($_k === $key && $v < $low && $v > $high) {
+                    if ($_k === $key && $_v < $low && $_v > $high) {
                         $list[] = $v;
                     }
                 }

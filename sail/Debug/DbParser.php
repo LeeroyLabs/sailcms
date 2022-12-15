@@ -57,7 +57,7 @@ class DbParser
                     }
 
                     $firstUpdate = true;
-                    $out .= static::buildWhere($key, '=', $value);
+                    $out .= self::buildWhere($key, '=', $value);
                 }
             }
 
@@ -154,7 +154,7 @@ class DbParser
                             }
 
                             $orset = true;
-                            $out .= static::parseComparisonOperators($k, $v);
+                            $out .= self::parseComparisonOperators($k, $v);
                         }
                     }
 
@@ -203,10 +203,10 @@ class DbParser
                 $value[$firstKey] = '%' . str_replace(['/^', '/'], '', $value[$firstKey]) . '%';
             }
 
-            return static::buildWhere($key, $op, $value[$firstKey]);
+            return self::buildWhere($key, $op, $value[$firstKey]);
         }
 
-        return static::buildWhere($key, '=', $value);
+        return self::buildWhere($key, '=', $value);
     }
 
     private static function buildWhere(string $key, string $sign, mixed $value): string

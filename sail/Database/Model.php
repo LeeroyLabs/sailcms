@@ -4,7 +4,7 @@ namespace SailCMS\Database;
 
 use Carbon\Carbon;
 use Exception;
-use JsonException;
+use \JsonException;
 use JsonSerializable;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
@@ -149,11 +149,11 @@ abstract class Model implements JsonSerializable
      *
      * @param  string  $cacheKey
      * @param  int     $cacheTTL
-     * @return array|$this|null
+     * @return array|static|null
      * @throws DatabaseException
      *
      */
-    protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): Model|array|null
+    protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): static|array|null
     {
         $qt = Debug::startQuery();
         $options = [];
@@ -910,10 +910,10 @@ abstract class Model implements JsonSerializable
      *
      * @param  object  $doc
      * @param  bool    $fetchAllFields
-     * @return $this
+     * @return Model
      *
      */
-    private function transformDocToModel(object $doc, bool $fetchAllFields = false): static
+    private function transformDocToModel(object $doc, bool $fetchAllFields = false): self
     {
         $instance = new static();
         $fields = $instance->fields($fetchAllFields);
