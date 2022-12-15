@@ -5,6 +5,7 @@ namespace SailCMS\GraphQL\Controllers;
 use RuntimeException;
 use SailCMS\ACL;
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
