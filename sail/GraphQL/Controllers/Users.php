@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -56,7 +57,13 @@ class Users
      */
     public function userWithToken(mixed $obj, Collection $args, Context $context): ?User
     {
-        return User::$currentUser ?? null;
+        $user = User::$currentUser ?? null;
+
+        if ($user) {
+            $user->meta = $user->meta->simplify();
+        }
+
+        return $user;
     }
 
     /**
