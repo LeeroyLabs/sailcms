@@ -7,7 +7,7 @@ use SailCMS\Contracts\DatabaseType;
 use SailCMS\Text;
 use stdClass;
 
-class UserMeta implements DatabaseType
+class UserMeta implements DatabaseType, \JsonSerializable
 {
     public const TYPE_STRING = 1;
     public const TYPE_INT = 2;
@@ -214,10 +214,22 @@ class UserMeta implements DatabaseType
      *
      * Return a simple format for the database
      *
-     * @return stdClass|array
+     * @return stdClass
      *
      */
-    public function toDBObject(): \stdClass|array
+    public function toDBObject(): \stdClass
+    {
+        return $this->simplify();
+    }
+
+    /**
+     *
+     * Automatically simplify when you serialize
+     *
+     * @return stdClass
+     *
+     */
+    public function jsonSerialize(): \stdClass
     {
         return $this->simplify();
     }
