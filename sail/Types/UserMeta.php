@@ -4,7 +4,6 @@ namespace SailCMS\Types;
 
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
-use SailCMS\GraphQL\Types as GTypes;
 use SailCMS\Text;
 use stdClass;
 

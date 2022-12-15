@@ -23,10 +23,10 @@ class Locale
      */
     public static function setCurrent(string $locale, bool $skipReload = false): void
     {
-        static::$current = $locale;
+        self::$current = $locale;
 
         if (!$skipReload) {
-            static::loadAll();
+            self::loadAll();
         }
     }
 
@@ -39,7 +39,7 @@ class Locale
      */
     public static function current(): string
     {
-        return static::$current;
+        return self::$current;
     }
 
     /**
@@ -53,7 +53,7 @@ class Locale
      */
     public function reset(string $locale): void
     {
-        static::setCurrent($locale);
+        self::setCurrent($locale);
     }
 
     /**
@@ -71,7 +71,7 @@ class Locale
 
         foreach ($parts as $num => $part) {
             if (empty($val)) {
-                $val = static::$strings[$part];
+                $val = self::$strings[$part];
             } elseif (!empty($val[$part])) {
                 $val = $val[$part];
             } else {
@@ -92,7 +92,7 @@ class Locale
      */
     public static function t(string $path): string
     {
-        return static::translate($path);
+        return self::translate($path);
     }
 
     /**
@@ -105,7 +105,7 @@ class Locale
      */
     public function _(string $path): string
     {
-        return static::translate($path);
+        return self::translate($path);
     }
 
     /**
@@ -118,7 +118,7 @@ class Locale
      */
     public function _e(string $path): void
     {
-        echo static::translate($path);
+        echo self::translate($path);
     }
 
     /**
@@ -131,7 +131,7 @@ class Locale
      */
     public static function setAvailableLocales(array $locales): void
     {
-        static::$availableLocales = $locales;
+        self::$availableLocales = $locales;
     }
 
     /**
@@ -143,7 +143,7 @@ class Locale
      */
     public static function getAvailableLocales(): Collection
     {
-        return new Collection(static::$availableLocales);
+        return new Collection(self::$availableLocales);
     }
 
     /**
@@ -156,11 +156,11 @@ class Locale
         $fs = Filesystem::manager();
 
         // Load global locale file
-        $file = $fs->read('root://locales/' . static::$current . '.yaml');
+        $file = $fs->read('root://locales/' . self::$current . '.yaml');
         $yaml = Yaml::parse($file);
 
         if (!empty($yaml)) {
-            static::$strings = $yaml;
+            self::$strings = $yaml;
         }
 
         // General CMS Locales
@@ -187,23 +187,23 @@ class Locale
             if (is_object($directory) && $directory->isDir()) {
                 $path = $directory->path() . '/locales';
 
-                if ($fs->directoryExists($path) && $fs->fileExists($path . '/' . static::$current . '.yaml')) {
-                    $file = $fs->read($path . '/' . static::$current . '.yaml');
+                if ($fs->directoryExists($path) && $fs->fileExists($path . '/' . self::$current . '.yaml')) {
+                    $file = $fs->read($path . '/' . self::$current . '.yaml');
                     $yaml = Yaml::parse($file);
 
                     if (!empty($yaml)) {
-                        static::$strings = [...$yaml];
+                        self::$strings = [...$yaml];
                     }
                 }
             } elseif (is_string($directory)) {
                 $path = $directory . '/locales';
 
-                if ($fs->directoryExists($path) && $fs->fileExists($path . '/' . static::$current . '.yaml')) {
-                    $file = $fs->read($path . '/' . static::$current . '.yaml');
+                if ($fs->directoryExists($path) && $fs->fileExists($path . '/' . self::$current . '.yaml')) {
+                    $file = $fs->read($path . '/' . self::$current . '.yaml');
                     $yaml = Yaml::parse($file);
 
                     if (!empty($yaml)) {
-                        static::$strings = [...$yaml];
+                        self::$strings = [...$yaml];
                     }
                 }
             }
