@@ -344,7 +344,11 @@ class EntryType extends Model
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
-        return $this->updateWithoutPermission($entryType, $data);
+        $title = $data->get('title');
+        $urlPrefix = $data->get('url_prefix');
+        $entryLayoutId = $data->get('entry_layout_id');
+
+        return $this->updateWithoutPermission($entryType, $title, $urlPrefix, $entryLayoutId);
     }
 
     /**
@@ -496,51 +500,50 @@ class EntryType extends Model
 
     /**
      *
-     * TODO : Change collection for each specific fields or a type
-     *
      * Update the entry type
      *
      * @param EntryType $entryType
-     * @param Collection $data
+     * @param string|null $title
+     * @param LocaleField|null $urlPrefix
+     * @param string|null $entryLayoutId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    private function updateWithoutPermission(EntryType $entryType, Collection $data): bool
+    private function updateWithoutPermission(EntryType $entryType, ?string $title, ?LocaleField $urlPrefix, ?string $entryLayoutId): bool
     {
-        $title = $data->get('title');
-        $urlPrefix = $data->get('url_prefix');
-        $entryLayoutId = $data->get('entry_layout_id');
-
         $update = [];
 
         // Check if field has been sent
         if ($title) {
             $update['title'] = $title;
         }
-        if ($urlPrefix !== null) {
+        if ($urlPrefix) {
             $update['url_prefix'] = $urlPrefix;
         }
         if ($entryLayoutId) {
-            $update['entry_layout_id'] = (string)$entryLayoutId;
+            $update['entry_layout_id'] = $entryLayoutId;
         }
 
-        try {
-            $this->updateOne(['_id' => $entryType->_id], [
-                '$set' => $update
-            ]);
-        } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
-        }
+        if (count($update) > 0) {
+            try {
+                $this->updateOne(['_id' => $entryType->_id], [
+                    '$set' => $update
+                ]);
+            } catch (DatabaseException $exception) {
+                throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            }
 
-        // Update url of related entries
-        if (array_key_exists('url_prefix', $update)) {
-            ($entryType->getEntryModel())->updateEntriesUrl($update['url_prefix']);
-        }
+            // Update url of related entries
+            if (array_key_exists('url_prefix', $update)) {
+                ($entryType->getEntryModel())->updateEntriesUrl($update['url_prefix']);
+            }
 
-        return true;
+            return true;
+        }
+        // Nothing to update
+        return false;
     }
 }
