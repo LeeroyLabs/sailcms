@@ -133,6 +133,7 @@ type User {
     auth_token: String
     created_at: Int!
     validated: Boolean!
+    locale: String!
 }
 
 type UserListing {
