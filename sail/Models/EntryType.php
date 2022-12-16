@@ -22,6 +22,7 @@ class EntryType extends Model
     const CANNOT_DELETE = '4005: You must emptied all related entries before deleting an entry type.';
     const DOES_NOT_EXISTS = '4006: Entry type "%s" does not exists.';
     const DATABASE_ERROR = '4007: Exception when "%s" an entry type.';
+    const CANNOT_UPDATE_DEFAULT_TYPE = '4008: Cannot update default type page, use general settings for that';
 
     const ACL_HANDLE = "entrytype";
 
@@ -154,14 +155,14 @@ class EntryType extends Model
      * Use the settings to create the default type
      *
      * @param bool $api
+     * @param bool $avoidUpdate
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public static function getDefaultType(bool $api = false): EntryType
+    public static function getDefaultType(bool $api = false, bool $avoidUpdate = false): EntryType
     {
         $instance = new static();
         if ($api) {
@@ -169,17 +170,24 @@ class EntryType extends Model
         }
 
         // Get default values for default type
-        $defaultHandle = $_ENV['SETTINGS']->get('entry.defaultType.handle', static::DEFAULT_HANDLE);
+        $defaultHandle = static::DEFAULT_HANDLE;
         $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title', static::DEFAULT_TITLE);
         $defaultUrlPrefix = new LocaleField($_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', static::DEFAULT_URL_PREFIX));
+        $defaultEntryLayoutId = $_ENV['SETTINGS']->get('entry.defaultType.entryLayoutId', false);
 
-        $entryType = $instance->getByHandle($defaultHandle);
-
-        // TODO : remove handle from the settings (this cannot be changed), add entry_layout_id to the settings.
-        // TODO : update when settings changed
-
+        $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
+        
         if (!$entryType) {
-            $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix);
+            $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
+        } else if (!$avoidUpdate
+            && ($entryType->title != $defaultTitle || $entryType->url_prefix->toDBObject() != $defaultUrlPrefix->toDBObject() || $entryType->entry_layout_id != $defaultEntryLayoutId)) {
+
+            // Update the settings because it changed.
+            $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
+
+            if ($result) {
+                $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
+            }
         }
         return $entryType;
     }
@@ -266,6 +274,8 @@ class EntryType extends Model
      *
      * Get an entryType by id
      *
+     * Todo maybe remove that because we cannot check if it is the default type
+     *
      * @param string $id
      * @return EntryType|null
      * @throws ACLException
@@ -289,11 +299,16 @@ class EntryType extends Model
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     * @throws EntryException
      *
      */
     public function getByHandle(string $handle): ?EntryType
     {
         $this->hasPermissions(true);
+
+        if ($handle == self::DEFAULT_HANDLE) {
+            return self::getDefaultType();
+        }
 
         return $this->findOne(['handle' => $handle])->exec();
     }
@@ -338,13 +353,21 @@ class EntryType extends Model
     {
         $this->hasPermissions();
 
+        if ($handle == self::DEFAULT_HANDLE) {
+            throw new EntryException(self::CANNOT_UPDATE_DEFAULT_TYPE);
+        }
+
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
         if (!$entryType) {
             throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
         }
 
-        return $this->updateWithoutPermission($entryType, $data);
+        $title = $data->get('title');
+        $urlPrefix = $data->get('url_prefix');
+        $entryLayoutId = $data->get('entry_layout_id');
+
+        return $this->updateWithoutPermission($entryType, $title, $urlPrefix, $entryLayoutId);
     }
 
     /**
@@ -434,7 +457,7 @@ class EntryType extends Model
         }
 
         // Check everytime if the handle is already exists
-        if ($this->getByHandle($handle) !== null) {
+        if ($handle == self::DEFAULT_HANDLE || $this->getByHandle($handle) !== null) {
             throw new EntryException(static::HANDLE_ALREADY_EXISTS);
         }
     }
@@ -496,51 +519,52 @@ class EntryType extends Model
 
     /**
      *
-     * TODO : Change collection for each specific fields or a type
-     *
      * Update the entry type
      *
      * @param EntryType $entryType
-     * @param Collection $data
+     * @param string|null $title
+     * @param LocaleField|null $urlPrefix
+     * @param string|bool|null $entryLayoutId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    private function updateWithoutPermission(EntryType $entryType, Collection $data): bool
+    private function updateWithoutPermission(EntryType $entryType, ?string $title, ?LocaleField $urlPrefix, string|bool|null $entryLayoutId): bool
     {
-        $title = $data->get('title');
-        $urlPrefix = $data->get('url_prefix');
-        $entryLayoutId = $data->get('entry_layout_id');
-
         $update = [];
 
         // Check if field has been sent
         if ($title) {
             $update['title'] = $title;
         }
-        if ($urlPrefix !== null) {
+        if ($urlPrefix) {
             $update['url_prefix'] = $urlPrefix;
         }
-        if ($entryLayoutId) {
-            $update['entry_layout_id'] = (string)$entryLayoutId;
+        if ($entryLayoutId === false)
+            $update['entry_layout_id'] = null;
+        else if ($entryLayoutId) {
+            $update['entry_layout_id'] = $entryLayoutId;
         }
 
-        try {
-            $this->updateOne(['_id' => $entryType->_id], [
-                '$set' => $update
-            ]);
-        } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
-        }
+        if (count($update) > 0) {
+            try {
+                $this->updateOne(['_id' => $entryType->_id], [
+                    '$set' => $update
+                ]);
+            } catch (DatabaseException $exception) {
+                throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            }
 
-        // Update url of related entries
-        if (array_key_exists('url_prefix', $update)) {
-            ($entryType->getEntryModel())->updateEntriesUrl($update['url_prefix']);
-        }
+            // Update url of related entries
+            if (array_key_exists('url_prefix', $update)) {
+                (new Entry($entryType->collection_name))->updateEntriesUrl($update['url_prefix']);
+            }
 
-        return true;
+            return true;
+        }
+        // Nothing to update
+        return false;
     }
 }

@@ -161,6 +161,7 @@ class Entries
         $handle = $args->get('handle');
         $urlPrefix = $args->get('url_prefix');
 
+        // Override url_prefix to pass a LocaleField instead of a Collection
         if ($urlPrefix) {
             $args->pushKeyValue('url_prefix', new LocaleField($urlPrefix->unwrap()));
         }
@@ -504,6 +505,20 @@ class Entries
         return $entryLayoutModel->updateById($id, $titles, $entryLayout->schema);
     }
 
+    /**
+     *
+     * Update a key in an entry layout schema
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
     {
         $id = $args->get('id');
