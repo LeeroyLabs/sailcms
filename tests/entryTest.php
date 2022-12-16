@@ -227,7 +227,7 @@ test('Update an entry type', function () {
 });
 
 test('Get homepage entry', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry->title)->toBe('Test');
 });
@@ -257,7 +257,7 @@ test('Update an entry with an entry type', function () {
 });
 
 test('Fail to get homepage entry', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
 });
@@ -368,7 +368,7 @@ test('Update an entry with the default type', function () {
 });
 
 test('Get homepage entry after update', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
     expect($entry->title)->toBe('Home page');
 });
 
@@ -539,7 +539,7 @@ test('Hard delete an entry layout', function () {
 });
 
 test('Fail to get homepage entry after deletion', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
 });

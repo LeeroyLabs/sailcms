@@ -43,7 +43,7 @@ class Entries
         $locale = $args->get('locale');
         $siteId = $args->get('site_id');
 
-        return Entry::getHomepage($locale, $siteId, true, true);
+        return Entry::getHomepageEntry($siteId, $locale, true);
     }
 
     /**
@@ -217,7 +217,7 @@ class Entries
         // For filtering
         $siteId = $args->get('site_id', Sail::siteId());
 
-        $currentSiteHomepages = Entry::getHomepage($siteId)?->{$siteId};
+        $currentSiteHomepages = Entry::getHomepage($siteId);
 
         $filters = [
             "site_id" => $siteId
