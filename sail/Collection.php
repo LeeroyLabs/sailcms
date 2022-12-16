@@ -612,7 +612,11 @@ class Collection implements \JsonSerializable, \Iterator
             } elseif (is_object($value)) {
                 $value = $value->{$part} ?? $defaultValue;
             } elseif (is_array($value)) {
-                $value = $value[$part] ?? $defaultValue;
+                if (is_numeric($part)) {
+                    $value = $value[(int)$part] ?? $defaultValue;
+                } else {
+                    $value = $value[$part] ?? $defaultValue;
+                }
             }
         }
 
