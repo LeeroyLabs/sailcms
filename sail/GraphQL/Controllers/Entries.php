@@ -28,7 +28,7 @@ class Entries
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return Entry|null
+     * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -76,7 +76,7 @@ class Entries
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return EntryType|null
+     * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -242,7 +242,7 @@ class Entries
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return Entry|null
+     * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -272,7 +272,7 @@ class Entries
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return Entry|null
+     * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
