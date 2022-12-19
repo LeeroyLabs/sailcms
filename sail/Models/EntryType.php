@@ -176,7 +176,7 @@ class EntryType extends Model
         $defaultEntryLayoutId = $_ENV['SETTINGS']->get('entry.defaultType.entryLayoutId', false);
 
         $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
-        
+
         if (!$entryType) {
             $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
         } else if (!$avoidUpdate
@@ -273,8 +273,6 @@ class EntryType extends Model
     /**
      *
      * Get an entryType by id
-     *
-     * Todo maybe remove that because we cannot check if it is the default type
      *
      * @param string $id
      * @return EntryType|null

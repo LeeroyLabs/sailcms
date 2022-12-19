@@ -89,12 +89,8 @@ class Entries
         $handle = $args->get('handle');
 
         $result = null;
-        if (!$id && !$handle) {
+        if (!$handle) {
             $result = EntryType::getDefaultType();
-        }
-
-        if ($id) {
-            $result = (new EntryType())->getById($id);
         }
 
         if ($handle) {
