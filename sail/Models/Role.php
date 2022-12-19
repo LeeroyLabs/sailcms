@@ -8,10 +8,12 @@ use RuntimeException;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
+use SailCMS\Types\QueryOptions;
 use SailCMS\Types\RoleConfig;
 
 class Role extends Model
@@ -185,7 +187,10 @@ class Role extends Model
         $this->hasPermissions(true);
 
         $userRoles = User::$currentUser->roles;
-        return (new Collection($this->find([])->exec()))->intersect($userRoles);
+        $highest = self::getHighestLevel($userRoles);
+        $list = $this->find(['level' => ['$lte' => $highest]], QueryOptions::initWithSort(['level' => -1]))->exec();
+
+        return new Collection($list);
     }
 
     /**

@@ -43,7 +43,7 @@ class Entries
         $locale = $args->get('locale');
         $siteId = $args->get('site_id');
 
-        return Entry::getHomepage($locale, $siteId, true, true);
+        return Entry::getHomepageEntry($siteId, $locale, true);
     }
 
     /**
@@ -89,12 +89,8 @@ class Entries
         $handle = $args->get('handle');
 
         $result = null;
-        if (!$id && !$handle) {
+        if (!$handle) {
             $result = EntryType::getDefaultType();
-        }
-
-        if ($id) {
-            $result = (new EntryType())->getById($id);
         }
 
         if ($handle) {
@@ -161,6 +157,7 @@ class Entries
         $handle = $args->get('handle');
         $urlPrefix = $args->get('url_prefix');
 
+        // Override url_prefix to pass a LocaleField instead of a Collection
         if ($urlPrefix) {
             $args->pushKeyValue('url_prefix', new LocaleField($urlPrefix->unwrap()));
         }
@@ -216,7 +213,7 @@ class Entries
         // For filtering
         $siteId = $args->get('site_id', Sail::siteId());
 
-        $currentSiteHomepages = Entry::getHomepage($siteId)?->{$siteId};
+        $currentSiteHomepages = Entry::getHomepage($siteId);
 
         $filters = [
             "site_id" => $siteId
@@ -504,6 +501,20 @@ class Entries
         return $entryLayoutModel->updateById($id, $titles, $entryLayout->schema);
     }
 
+    /**
+     *
+     * Update a key in an entry layout schema
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
     {
         $id = $args->get('id');

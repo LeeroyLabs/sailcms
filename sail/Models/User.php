@@ -49,7 +49,7 @@ class User extends Model
     public UserMeta|\stdClass $meta;
     public string $temporary_token = '';
     public string $auth_token = '';
-    public string $locale;
+    public string $locale = 'en';
     public string $validation_code = '';
     public string $reset_code;
     public bool $validated;

@@ -28,7 +28,7 @@ type Query {
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]
-    entryType(id: ID, handle: String): EntryType
+    entryType(handle: String): EntryType
     entries(entry_type_handle: String!, page: Int, limit: Int, sort: String, direction: Int, site_id: String): EntryListing
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
@@ -132,6 +132,8 @@ type User {
     meta: UserMeta!
     auth_token: String
     created_at: Int!
+    validated: Boolean!
+    locale: String!
 }
 
 type UserListing {

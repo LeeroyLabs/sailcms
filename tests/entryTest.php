@@ -46,17 +46,9 @@ test('Create an entry layout', function () {
         'fr' => 'Age',
         'en' => 'Age'
     ]);
-    $numberField = new NumberField($numberLabels, [
-        [
-            'required' => true,
-            'min' => 0,
-            'max' => 20
-        ],
-    ]);
 
     $schema = EntryLayout::generateLayoutSchema(new Collection([
-        'title' => $textField,
-        'age' => $numberField
+        'title' => $textField
     ]));
 
     try {
@@ -72,19 +64,11 @@ test('Create an entry layout', function () {
     }
 });
 
-test('Update an entry layout', function () {
+test('Update the config of an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
     ]);
-
-    $entryLayout->updateSchemaConfig('age', [
-        'min' => 10,
-        'max' => 55
-    ], 0, new LocaleField([
-        'fr' => 'Ages',
-        'en' => 'Agess'
-    ]));
 
     $entryLayout->updateSchemaConfig('title', [
         'max_length' => 255,
@@ -105,8 +89,44 @@ test('Update an entry layout', function () {
         expect($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
-        print_r($exception);
+//        print_r($exception->getTraceAsString());6
         expect(true)->toBe(false);
+    }
+});
+
+test('Update a key of a entry layout schema', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $entryLayout->updateSchemaKey('title', 'sub title');
+        $entryLayout = $model->one([
+            'titles.fr' => 'Test de disposition'
+        ]);
+        expect($entryLayout->schema->get('title'))->toBe(null);
+        expect($entryLayout->schema->get('sub-title.handle'))->toBe('text_field');
+    } catch (Exception $exception) {
+//        print_r($exception->getMessage());
+//        print_r($exception->getTraceAsString());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Failed to update a key of a entry layout schema', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->one([
+        'titles.fr' => 'Test de disposition'
+    ]);
+
+    try {
+        $entryLayout->updateSchemaKey('title', 'sub title');
+        expect(true)->toBe(false);
+    } catch (Exception $exception) {
+//        print_r($exception->getMessage());
+//        print_r($exception->getTraceAsString());
+        expect($exception->getMessage())->toBe('6005: The given key "title" does not exists in the schema.');
     }
 });
 
@@ -208,7 +228,7 @@ test('Update an entry type', function () {
 });
 
 test('Get homepage entry', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry->title)->toBe('Test');
 });
@@ -238,7 +258,7 @@ test('Update an entry with an entry type', function () {
 });
 
 test('Fail to get homepage entry', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
 });
@@ -319,7 +339,7 @@ test('Failed to update content because a field does not validate', function () {
         expect(true)->toBe(false);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("The content has theses errors :" . PHP_EOL . "Section title is too short (10).");
+        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "Section title is too short (10).");
     }
 });
 
@@ -349,7 +369,7 @@ test('Update an entry with the default type', function () {
 });
 
 test('Get homepage entry after update', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
     expect($entry->title)->toBe('Home page');
 });
 
@@ -520,7 +540,7 @@ test('Hard delete an entry layout', function () {
 });
 
 test('Fail to get homepage entry after deletion', function () {
-    $entry = Entry::getHomepage('fr', Sail::siteId(), true);
+    $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
 });
