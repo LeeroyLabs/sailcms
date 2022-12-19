@@ -2,6 +2,8 @@
 
 namespace SailCMS;
 
+use SailCMS\Models\Entry\Field as ModelField;
+
 /**
  * Field utilities
  *
@@ -29,11 +31,25 @@ namespace SailCMS;
 class Field
 {
     // static get available fields
-    public static function getAvailableFields(): Collection
+    public static function getAvailableFields(string $locale): Collection
     {
+        Locale::setCurrent($locale);
+
         $fieldList = Collection::init();
         $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
-        // TODO put fields in a collection to be able to send it to graphql + create a info method in entry/field
-        return Collection::init();
+
+        $fields->each(function ($key, $file) use ($fieldList) {
+            $name = substr(basename($file), 0, -4);
+
+            if ($name != "Field" && !str_starts_with($name, "_")) {
+                /**
+                 * @var ModelField $class
+                 */
+                $class = 'SailCMS\\Models\\Entry\\' . $name;
+                $fieldList->push($class::info());
+            }
+        });
+
+        return $fieldList;
     }
 }

@@ -33,6 +33,7 @@ type Query {
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout]
+    fields(locale: String): [FieldInfo]
 
     # Registers
     registeredExtensions: RegisteredExtensions!
@@ -362,6 +363,22 @@ type EntryErrors {
 type EntryListing {
     pagination: Pagination!
     list: [Entry!]!
+}
+
+type FieldInfo {
+    name: String!
+    fullname: String!
+    handle: String!
+    description: String!
+    storingType: String!
+    inputs: [FieldInputInfo]!
+}
+
+type FieldInputInfo {
+    name: String!
+    fullname: String!
+    type: String!
+    availableSettings: [InputSettings!]!
 }
 
 type LocaleField {

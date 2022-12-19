@@ -10,6 +10,7 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Field;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
@@ -553,6 +554,23 @@ class Entries
         $entryLayoutModel = new EntryLayout();
 
         return $entryLayoutModel->delete($id, $soft);
+    }
+
+    /**
+     *
+     * Get all fields Info
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return Collection
+     *
+     */
+    public function fields(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $locale = $args->get('locale', 'en');
+
+        return Field::getAvailableFields($locale);
     }
 
     /**

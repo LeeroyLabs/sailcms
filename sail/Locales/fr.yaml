@@ -12,6 +12,10 @@ system_2fa:
   activated_success: Identification à deux facteurs activée!
   rescue_codes: Veuillez garder ces codes de sécurité à un endroit sécuritaire. Ces codes vous seront utiles pour accèder à votre compte en cas de perte de votre appareil mobile.
 fields:
+  text_field:
+    description: Champs pour implémenter un input html de type text.
+  number_field:
+    description: Champs pour implémenter un input html de type number.
   errors:
     is_required: est requis
     max_length: est trop long
