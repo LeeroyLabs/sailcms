@@ -49,14 +49,14 @@ test('Create an entry layout', function () {
     $numberField = new NumberField($numberLabels, [
         [
             'required' => true,
-            'min_number' => 0,
-            'max_number' => 20
+            'min' => 0,
+            'max' => 20
         ],
     ]);
 
     $schema = EntryLayout::generateLayoutSchema(new Collection([
         'title' => $textField,
-        //'age' => $numberField
+        'age' => $numberField
     ]));
 
     try {
@@ -78,6 +78,14 @@ test('Update an entry layout', function () {
         'titles.fr' => 'Test de disposition'
     ]);
 
+    $entryLayout->updateSchemaConfig('age', [
+        'min' => 10,
+        'max' => 55
+    ], 0, new LocaleField([
+        'fr' => 'Ages',
+        'en' => 'Agess'
+    ]));
+
     $entryLayout->updateSchemaConfig('title', [
         'max_length' => 255,
         'min_length' => 10
@@ -97,7 +105,7 @@ test('Update an entry layout', function () {
         expect($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
-//        print_r($exception->getTraceAsString());6
+        print_r($exception);
         expect(true)->toBe(false);
     }
 });
