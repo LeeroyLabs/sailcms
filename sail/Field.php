@@ -2,6 +2,7 @@
 
 namespace SailCMS;
 
+use League\Flysystem\FilesystemException;
 use SailCMS\Models\Entry\Field as ModelField;
 
 /**
@@ -10,7 +11,7 @@ use SailCMS\Models\Entry\Field as ModelField;
  * LIST of potential FIELDS
  *
  * TextField // option uppercase
- * NumberField // option float
+ * NumberField // option float + negative number
  * DateField
  * DateTimeField
  * EmailField
@@ -30,7 +31,15 @@ use SailCMS\Models\Entry\Field as ModelField;
  */
 class Field
 {
-    // static get available fields
+    /**
+     *
+     * Get available fields
+     *
+     * @param string $locale
+     * @return Collection
+     * @throws FilesystemException
+     *
+     */
     public static function getAvailableFields(string $locale): Collection
     {
         Locale::setCurrent($locale);

@@ -2,7 +2,6 @@
 
 namespace SailCMS\Models\Entry;
 
-use Exception;
 use SailCMS\Collection;
 use SailCMS\Locale;
 use SailCMS\Text;
@@ -171,12 +170,6 @@ abstract class Field
         $fakeLabels = new LocaleField(['en' => 'Fake', 'fr' => 'Faux']);
         $fakeInstance = new static($fakeLabels, []);
 
-        try {
-            $description = Locale::translate('fields.' . $fakeInstance->handle . '.description');
-        } catch (Exception $exception) {
-            $description = 'Field to implement an html input.';
-        }
-
         $availableSettings = Collection::init();
         $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings) {
             /**
@@ -200,6 +193,7 @@ abstract class Field
         });
 
         $className = array_reverse(explode('\\', static::class))[0];
+        $description = Locale::translate('fields.' . $fakeInstance->handle . '.description');
 
         return new FieldInfo(
             $className,
