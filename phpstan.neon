@@ -11,7 +11,6 @@ parameters:
         - "#^Offset 'envBlacklist' does not exist on array{}.$#"
         - "#^Parameter \\#1 \\$contents of static method Lcobucci\\\\JWT\\\\Signer\\\\Key\\\\InMemory::plainText\\(\\) expects non-empty-string, string given.$#"
         - "#^Access to an undefined property SailCMS\\\\Collection::\\$empty.$#"
-        - "#^Access to an undefined property SailCMS\\\\Collection::\\$length.$#"
         - "#^Parameter \\#1 \\$object_or_class of function class_implements expects object\\|string, false given.$#"
         - "#^Method SailCMS\\\\Database\\\\Model::exec\\(\\) should return array\\|static\\(SailCMS\\\\Database\\\\Model\\)\\|null but returns SailCMS\\\\Database\\\\Model.$#"
         - "#^Parameter \\#1 \\$encrypted of static method SailCMS\\\\Security::decrypt\\(\\) expects string, array\\|object given.$#"

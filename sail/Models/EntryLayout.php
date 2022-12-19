@@ -28,6 +28,7 @@ class EntryLayout extends Model
     const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
     const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
     const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
+    const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
     const ACL_HANDLE = "entrylayout";
 
@@ -47,7 +48,7 @@ class EntryLayout extends Model
      */
     public function init(): void
     {
-        $this->setPermissionGroup(static::ACL_HANDLE);
+        $this->setPermissionGroup(self::ACL_HANDLE);
     }
 
     /**
@@ -95,7 +96,7 @@ class EntryLayout extends Model
         $schema = Collection::init();
         $fields->each(function ($key, $field) use ($schema) {
             if (!$field instanceof ModelField) {
-                throw new FieldException(static::SCHEMA_MUST_CONTAIN_FIELDS);
+                throw new FieldException(self::SCHEMA_MUST_CONTAIN_FIELDS);
             }
 
             $schema->pushKeyValue(Text::slugify($key), $field->toLayoutField());
@@ -165,7 +166,7 @@ class EntryLayout extends Model
         $this->hasPermissions();
 
         // Schema preparation
-        static::validateSchema($schema);
+        self::validateSchema($schema);
         $schema = $this->processSchemaOnStore($schema);
 
         return $this->createWithoutPermission($titles, $schema);
@@ -193,8 +194,8 @@ class EntryLayout extends Model
              * @var ModelField $field
              */
             if ($currentFieldKey === $fieldKey) {
-                $currentInput = $field->configs->get($fieldIndex)->toDbObject();
-                $inputClass = $field->configs->get($fieldIndex)::class;
+                $currentInput = $field->configs->get((string)$fieldIndex)->toDbObject();
+                $inputClass = $field->configs->get((string)$fieldIndex)::class;
 
                 foreach ($toUpdate as $key => $value) {
                     $currentInput->settings[$key] = $value;
@@ -240,7 +241,7 @@ class EntryLayout extends Model
         }
 
         if ($schema) {
-            static::validateSchema($schema);
+            self::validateSchema($schema);
             $schema = $this->processSchemaOnStore($schema);
             $data->pushKeyValue('schema', $schema);
         }
@@ -272,11 +273,11 @@ class EntryLayout extends Model
         $newKey = Text::slugify($newKey);
 
         if (!in_array($key, $this->schema->keys()->unwrap())) {
-            throw new EntryException(sprintf(static::SCHEMA_KEY_DOES_NOT_EXISTS, $key));
+            throw new EntryException(sprintf(self::SCHEMA_KEY_DOES_NOT_EXISTS, $key));
         }
 
         if (in_array($newKey, $this->schema->keys()->unwrap())) {
-            throw new EntryException(sprintf(static::SCHEMA_KEY_ALREADY_EXISTS, $newKey));
+            throw new EntryException(sprintf(self::SCHEMA_KEY_ALREADY_EXISTS, $newKey));
         }
 
         $newSchema = Collection::init();
@@ -328,14 +329,14 @@ class EntryLayout extends Model
 
         // Check if there is and entry type is using the layout
         if ($this->hasEntryTypes($entryLayoutId)) {
-            throw new EntryException(static::SCHEMA_IS_USED);
+            throw new EntryException(self::SCHEMA_IS_USED);
         }
 
         if ($soft) {
             $entryLayout = $this->findById($entryLayoutId)->exec();
 
             if (!$entryLayout) {
-                throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryLayoutId));
+                throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryLayoutId));
             }
 
             $result = $this->softDelete($entryLayout);
@@ -371,7 +372,7 @@ class EntryLayout extends Model
             if (!$keys->has($fieldSettings->key)) {
                 $keys->push($fieldSettings->key);
             } else {
-                throw new EntryException(sprintf(static::SCHEMA_KEY_ALREADY_EXISTS, $fieldSettings->key));
+                throw new EntryException(sprintf(self::SCHEMA_KEY_ALREADY_EXISTS, $fieldSettings->key));
             }
 
             $parsedConfigs = Collection::init();
@@ -384,6 +385,9 @@ class EntryLayout extends Model
                 $parsedConfigs->pushKeyValue($index, $settings);
             });
 
+            /**
+             * @var ModelField $field
+             */
             $field = new $fieldClass($labels, $parsedConfigs);
             $schema->pushKeyValue($fieldSettings->key, $field);
         }
@@ -404,6 +408,9 @@ class EntryLayout extends Model
     {
         $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout) {
             if (isset($updateInput->inputSettings)) {
+                /**
+                 * @var object $updateInput
+                 */
                 $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
                     $settings = [];
                     $toUpdate->each(function ($k, $setting) use (&$settings) {
@@ -414,11 +421,14 @@ class EntryLayout extends Model
                     if (isset($updateInput->labels)) {
                         $labels = new LocaleField($updateInput->labels->unwrap());
                     }
-                    $entryLayout->updateSchemaConfig($updateInput->get('key'), $settings, $index, $labels);
+                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $index, $labels);
                 });
             } else if (isset($updateInput->labels)) {
+                /**
+                 * @var object $updateInput
+                 */
                 $labels = new LocaleField($updateInput->labels->unwrap());
-                $entryLayout->updateSchemaConfig($updateInput->get('key'), [], 0, $labels);
+                $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
             }
         });
     }
@@ -438,7 +448,7 @@ class EntryLayout extends Model
             $layoutFieldConfigs = Collection::init();
             $layoutFieldSettings = Collection::init();
 
-            $layoutField->configs->each(function ($fieldIndex, $input) use ($layoutFieldConfigs, $layoutFieldSettings) {
+            $layoutField->configs->each(function ($fieldIndex, $input) use (&$layoutFieldSettings) {
                 /**
                  * @var Field $input
                  */
@@ -533,7 +543,7 @@ class EntryLayout extends Model
     {
         $schema->each(function ($key, $value) {
             if (!$value instanceof LayoutField) {
-                throw new EntryException('TODO');
+                throw new EntryException(self::INVALID_SCHEMA);
             }
         });
     }
@@ -624,7 +634,7 @@ class EntryLayout extends Model
                 'is_trashed' => false
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
         return $this->findById($entryLayoutId)->exec();
@@ -662,7 +672,7 @@ class EntryLayout extends Model
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -691,7 +701,7 @@ class EntryLayout extends Model
                 ]
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -711,7 +721,7 @@ class EntryLayout extends Model
         try {
             $qtyDeleted = $this->deleteById((string)$entryLayoutId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
