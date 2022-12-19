@@ -16,6 +16,7 @@ use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
+use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SodiumException;
@@ -208,10 +209,12 @@ class Entries
         $entryTypeHandle = $args->get('entry_type_handle');
         $page = $args->get('page', 1);
         $limit = $args->get('limit', 50);
+        $ignoreTrashed = $args->get('ignore_trashed', true);
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
 
         // For filtering
+        // TODO implements filterinput
         $siteId = $args->get('site_id', Sail::siteId());
 
         $currentSiteHomepages = Entry::getHomepage($siteId);
@@ -219,6 +222,10 @@ class Entries
         $filters = [
             "site_id" => $siteId
         ];
+
+        if ($ignoreTrashed) {
+            $filters['status'] = ['$ne' => EntryStatus::TRASH];
+        }
 
         $result = Entry::getList($entryTypeHandle, $filters, $page, $limit, $sort, $direction); // By entry type instead
         $data = Collection::init();

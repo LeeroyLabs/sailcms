@@ -240,7 +240,7 @@ class Entry extends Model
      * Get all entries by entry type handle
      *
      * @param string $entryTypeHandle
-     * @param array|null $filters
+     * @param array|null $filters if filters is null it is default to ignore trash entries
      * @param int $page
      * @param int $limit
      * @param string $sort
@@ -257,14 +257,11 @@ class Entry extends Model
 
         $offset = $page * $limit - $limit;
 
-        if (!$filters) {
+        if ($filters === null) {
             $filters = [
                 'status' => ['$ne' => EntryStatus::TRASH]
             ];
         }
-        // TODO handle search and filters
-        // TODO handle any status
-        // $query['field'] = new Regex($search, 'gi');
 
         $options = QueryOptions::initWithPagination($offset, $limit);
         $options->sort = [$sort => $direction];
