@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use Exception;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
@@ -195,7 +196,7 @@ class Entry extends Model
      *
      * Parse the entry into an array for api
      *
-     * @param array|object|null $homepageConfig
+     * @param array|object|null $currentHomepageEntry
      * @param bool $wantSchema
      * @return array
      * @throws ACLException
@@ -203,7 +204,7 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public function toGraphQL(array|object|null $homepageConfig, bool $wantSchema = true): array
+    public function toGraphQL(array|object|null $currentHomepageEntry, bool $wantSchema = true): array
     {
         $schema = Collection::init();
         if ($wantSchema) {
@@ -217,7 +218,7 @@ class Entry extends Model
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
-            'is_homepage' => isset($homepageConfig) && $this->_id == $homepageConfig->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'is_homepage' => isset($currentHomepageEntry) && $this->_id == $currentHomepageEntry->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
@@ -282,11 +283,36 @@ class Entry extends Model
      *
      * Get homepage configs
      *
+     * @param string $siteId
      * @param string|null $locale
-     * @param string|null $siteId
-     * @param bool $getEntry
+     * @return object|null
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     */
+    public static function getHomepage(string $siteId, ?string $locale = null): object|null
+    {
+        $configHandle = self::homepageConfigHandle($siteId);
+
+        $homepageConfig = Config::getByName($configHandle);
+
+        if (!$homepageConfig) {
+            return new stdClass();
+        } else if ($locale) {
+            return $homepageConfig->config->{$locale} ?? null;
+        }
+        return $homepageConfig->config;
+    }
+
+    /**
+     *
+     *
+     *
+     * @param string $siteId
+     * @param string $locale
      * @param bool $toGraphQL
-     * @return array|object|null
+     * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -296,37 +322,24 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public static function getHomepage(string $locale = null, string $siteId = null, bool $getEntry = false, bool $toGraphQL = false): array|object|null
+    public static function getHomepageEntry(string $siteId, string $locale, bool $toGraphQL = false): array|Entry|null
     {
-        (new static())->hasPermissions(true);
-
-        $siteId = $siteId ?? Sail::siteId();
-
-        $homepageConfig = Config::getByName(static::HOMEPAGE_CONFIG_HANDLE);
-
-        if ($getEntry && $locale) {
-            $currentSiteHomepage = $homepageConfig?->config?->{$siteId}?->{$locale} ?? null;
-            if (!$currentSiteHomepage) {
-                return null;
-            }
-
-            $entryModel = EntryType::getEntryModelByHandle($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
-
-            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
-            $entry = $entryModel->findById($currentSiteHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec(static::HOMEPAGE_CACHE, $cache_ttl);
-
-            if ($toGraphQL) {
-                return $entry->toGraphQL($currentSiteHomepage);
-            }
-            return $entry;
+        $currentHomepageEntry = self::getHomepage($siteId, $locale);
+        if (!$currentHomepageEntry) {
+            return null;
         }
 
-        if (isset($siteId) && isset($locale)) {
-            return $homepageConfig->{$siteId}->{$locale} ?? null;
+        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
+
+        $cacheHandle = self::HOMEPAGE_CACHE . "_" . $siteId . "_" . $locale;
+        $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+        $entry = $entryModel->findById($currentHomepageEntry->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec($cacheHandle, $cacheTtl);
+
+        if ($toGraphQL) {
+            return $entry->toGraphQL($currentHomepageEntry);
         }
 
-        // Return all homepage configs
-        return $homepageConfig->config ?? null;
+        return $entry;
     }
 
     /**
@@ -705,7 +718,7 @@ class Entry extends Model
         $entryOrErrors = $this->createWithoutPermission($data, $throwErrors);
 
         if ($isHomepage && $entryOrErrors instanceof Entry) {
-            $entryOrErrors->setAsHomepage($locale, $siteId);
+            $entryOrErrors->setAsHomepage($siteId, $locale);
         }
 
         return $entryOrErrors;
@@ -740,7 +753,6 @@ class Entry extends Model
         if (is_array($data)) {
             $data = new Collection($data);
         }
-        $siteId = $data->get('site_id', Sail::siteId());
 
         if (!$entry) {
             throw new EntryException(sprintf(Entry::DOES_NOT_EXISTS, 'id = ' . $entryId));
@@ -748,30 +760,9 @@ class Entry extends Model
 
         $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors);
 
-        // Update homepage if needed
+
         if ($updateErrors->length <= 0) {
-            $locale = $data->get('locale', $entry->locale);
-            $oldLocale = $data->get('locale') ? $entry->locale : null;
-
-            $is_homepage = $data->get('is_homepage');
-            $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages->{$siteId}->{$locale} ?? false;
-            $oldCurrentHomepage = $currentHomepages->{$siteId}->{$oldLocale} ?? false;
-
-            // Update homepage according current value when is_homepage is sent
-            if ($is_homepage && (!$currentHomepage || $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id)) {
-                $entry->setAsHomepage($locale, $siteId, $currentHomepages);
-            } else if ($is_homepage === false && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
-                $this->emptyHomepage($currentHomepages, $locale, $siteId);
-            }
-
-            // Update homepage when locale is changed but is_homepage is not sent
-            if ($oldLocale && $oldLocale === $locale && $oldCurrentHomepage && $oldCurrentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entry->_id) {
-                $this->emptyHomepage($currentHomepages, $oldLocale, $siteId);
-            }
-            if ($oldLocale && (!$currentHomepage || $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$entry->_id)) {
-                $entry->setAsHomepage($locale, $siteId, $currentHomepages);
-            }
+            $this->handleHomepageUpdate($entry, $data);
         }
 
         return $updateErrors;
@@ -881,10 +872,10 @@ class Entry extends Model
 
         // Update homepage if needed
         if ($result) {
-            $currentHomepages = Entry::getHomepage();
-            $currentHomepage = $currentHomepages->{$entry->site_id}->{$entry->locale} ?? false;
+            $currentHomepages = Entry::getHomepage($entry->site_id);
+            $currentHomepage = $currentHomepages->{$entry->locale} ?? false;
             if ($currentHomepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
-                $this->emptyHomepage($currentHomepages, $entry->locale, $entry->site_id);
+                $this->emptyHomepage($entry->site_id, $entry->locale, $currentHomepages);
             }
         }
 
@@ -1009,56 +1000,90 @@ class Entry extends Model
 
     /**
      *
-     * Set the current entry has homepage
+     * Handle homepage config after update
      *
-     * @param string $locale
-     * @param string|null $siteId
-     * @param object|null $currentConfig
+     * @param Entry $oldEntry
+     * @param Collection $newData
      * @return void
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws EntryException
      * @throws FilesystemException
      * @throws JsonException
-     * @throws PermissionException
      * @throws SodiumException
      *
      */
-    private function setAsHomepage(string $locale, string $siteId = null, object $currentConfig = null): void
+    private function handleHomepageUpdate(Entry $oldEntry, Collection $newData): void
+    {
+        $newSiteId = $newData->get('site_id');
+        $newLocale = $newData->get('locale');
+        $homepageChange = $newData->get('is_homepage');
+
+        $currentSiteId = $newSiteId ?? $oldEntry->site_id;
+        $currentLocale = $newLocale ?? $oldEntry->locale;
+
+        // According to the changes, update and/or remove entry from homepage.
+        if (($newSiteId && $newSiteId != $currentSiteId) || ($newLocale && $newLocale != $currentLocale) || $homepageChange === true) {
+            // Remove homepage
+            self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+            // Add homepage
+            $oldEntry->setAsHomepage($currentSiteId, $currentLocale);
+        } else if ($homepageChange === false) {
+            // Remove homepage
+            self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+        }
+    }
+
+    /**
+     *
+     * Set the current entry has homepage
+     *
+     * @param string $siteId
+     * @param string $locale
+     * @param object|null $currentConfig
+     * @return void
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     */
+    private function setAsHomepage(string $siteId, string $locale, object $currentConfig = null): void
     {
         $siteId = $siteId ?? Sail::siteId();
 
         if (!isset($currentConfig)) {
-            $currentConfig = static::getHomepage();
+            $currentConfig = static::getHomepage($siteId);
         }
 
-        $currentConfig->{$siteId}->{$locale} = [
+        $currentConfig->{$locale} = (object)[
             static::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
             static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
         ];
 
-        Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
+        Config::setByName(self::homepageConfigHandle($siteId), $currentConfig);
     }
 
     /**
      *
      * Empty the homepage for the current site
      *
-     * @param object|array $currentConfig
+     * @param string $siteId
      * @param string $locale
-     * @param string|null $siteId
+     * @param object|array|null $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
      */
-    private function emptyHomepage(object|array $currentConfig, string $locale, string $siteId = null): void
+    private function emptyHomepage(string $siteId, string $locale, object|array $currentConfig = null): void
     {
         $siteId = $siteId ?? Sail::siteId();
 
-        $currentConfig->{$siteId}->{$locale} = null;
-        Config::setByName(static::HOMEPAGE_CONFIG_HANDLE, $currentConfig);
+        if (!$currentConfig) {
+            $currentConfig = self::getHomepage($siteId);
+        }
+
+        $currentConfig->{$locale} = null;
+        Config::setByName(static::homepageConfigHandle($siteId), $currentConfig);
     }
 
     /**
@@ -1278,5 +1303,17 @@ class Entry extends Model
         if (count($errorsStrings) > 0) {
             throw new EntryException(static::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
         }
+    }
+
+    /**
+     *
+     * Homepage config handle for a given site id
+     *
+     * @param $siteId
+     * @return string
+     */
+    private static function homepageConfigHandle($siteId): string
+    {
+        return self::HOMEPAGE_CONFIG_HANDLE . "_" . $siteId;
     }
 }
