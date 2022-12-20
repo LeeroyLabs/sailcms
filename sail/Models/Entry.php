@@ -46,6 +46,8 @@ class Entry extends Model
     const CONTENT_ERROR = '5006: The content has theses errors :' . PHP_EOL;
     const DOES_NOT_EXISTS = '5007: Entry "%s" does not exists.';
     const DATABASE_ERROR = '5008: Exception when "%s" an entry.';
+    const INVALID_FILTER_VALUE = '5009: Invalid filter value.';
+    const INVALID_FILTER_TYPE = '5010: Invalid filter type (array is not allowed).';
 
     /* Cache */
     const HOMEPAGE_CACHE = 'homepage_entry';
