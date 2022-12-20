@@ -41,11 +41,6 @@ test('Create an entry layout', function () {
         ['required' => true,],
     ]);
 
-    $numberLabels = new LocaleField([
-        'fr' => 'Age',
-        'en' => 'Age'
-    ]);
-
     $schema = EntryLayout::generateLayoutSchema(new Collection([
         'title' => $textField
     ]));

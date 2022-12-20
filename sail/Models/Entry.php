@@ -759,7 +759,6 @@ class Entry extends Model
 
         $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors);
 
-
         if ($updateErrors->length <= 0) {
             $this->handleHomepageUpdate($entry, $data);
         }

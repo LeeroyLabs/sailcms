@@ -10,8 +10,9 @@ use stdClass;
 class InputNumberField extends Field
 {
     /* Errors from 6140 to 6159 */
-    protected const FIELD_TOO_BIG = "6140: The value is too big";
-    protected const FIELD_TOO_SMALL = "6141: The value is too small";
+    protected const FIELD_TOO_BIG = '6140: The value is too big';
+    protected const FIELD_TOO_SMALL = '6141: The value is too small';
+    protected const FIELD_HAS_NEGATIVE_NUMBER = '6142: The value should not be negative.';
 
     /**
      *
@@ -47,7 +48,7 @@ class InputNumberField extends Field
             'required' => false,
             'min' => 0,
             'max' => 0,
-            'negative_number' => false
+            'negative_number' => true
         ]);
     }
 
@@ -102,6 +103,10 @@ class InputNumberField extends Field
 
         if ($this->max > 0 && (integer)$content > $this->max) {
             $errors->push(self::FIELD_TOO_BIG . ' (' . $this->max . ').');
+        }
+
+        if (!$this->negative_number && (integer)$content < 0) {
+            $errors->push(self::FIELD_HAS_NEGATIVE_NUMBER);
         }
 
         return $errors;

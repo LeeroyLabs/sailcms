@@ -23,6 +23,7 @@ class NumberField extends Field
     /**
      *
      * Returns the storing type
+     *  // TODO storing type according to option
      *
      * @return string
      *
@@ -72,4 +73,4 @@ class NumberField extends Field
         // Nothing to implement
         return null;
     }
-} 
+}

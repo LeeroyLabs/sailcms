@@ -1,19 +1,15 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
-use SailCMS\Models\Entry\Field as ModelField;
-use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\Entry\NumberField;
+use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
-use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\LocaleField;
-use SailCMS\Types\StoringType;
 use SailCMS\Types\Username;
 
 beforeAll(function () {
@@ -32,10 +28,14 @@ beforeAll(function () {
         'en' => 'Field Test'
     ]);
 
-   $layoutModel->create($titles, $schema);
+    $entryLayout = $layoutModel->create($titles, $schema);
 
     $entryModel = new Entry();
-    $entryModel->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
+    $entry = $entryModel->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
+
+//    (new EntryType())->updateByHandle('page', new Collection([
+//        'entry_layout_id' => $entryLayout->_id
+//    ]));
 });
 
 afterAll(function () {
@@ -57,11 +57,58 @@ afterAll(function () {
     $layoutModel->delete($entryLayout->_id, false);
 });
 
-test('Add a new Text field to an entry layout', function () {
+test('Add all fields to the layout', function () {
+    $layoutModel = new EntryLayout();
+    $entryLayout = $layoutModel->one([
+        'titles.fr' => 'Test des champs'
+    ]);
+
+    // Field with default settings
+    $textField = new TextField((new LocaleField(['en' => 'Text', 'fr' => 'Texte'])), [
+        'required' => true,
+        'max_length' => 10,
+        'min_length' => 5
+    ]);
+    $numberField = new NumberField((new LocaleField(['en' => 'Integer', 'fr' => 'Entier'])), [
+        'min' => -1,
+        'max' => 1
+    ]);
+
+    $fields = new Collection([
+        "text" => $textField,
+        "number" => $numberField
+    ]);
+
+    $schema = EntryLayout::generateLayoutSchema($fields);
+
     try {
-        $result = true;
-        expect($result)->toBe(true);
+        $updated = (new EntryLayout())->updateById($entryLayout->_id, $entryLayout->titles, $schema);
+        expect($updated)->toBe(true);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
 });
+
+//test('Failed to update the entry content', function () {
+//    $entryModel = EntryType::getEntryModelByHandle('page');
+//    $entry = $entryModel->one([
+//        'title' => 'Home Field Test'
+//    ]);
+//
+//
+//    try {
+//        $updated = $entryModel->updateById($entry, [
+//            'content' => [
+//                'number' => [
+//                    'type' => 'integer',
+//                    'content' => '0',
+//                    'handle' => 'number_field'
+//                ]
+//            ]
+//        ]);
+//        expect($updated)->toBe(false);
+//    } catch (Exception $exception) {
+//        print_r($exception->getMessage());
+//        expect(true)->toBe(false);
+//    }
+//});
