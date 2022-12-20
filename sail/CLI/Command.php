@@ -47,6 +47,9 @@ class Command extends CMD
                     $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $location], $code);
                     $fs->write($path . '/Commands/' . $name . '.php', $code);
 
+                    // Dump autoload and regenerate
+                    Tools::executeComposerRefresh();
+
                     Tools::outputInfo("created", "Created command [b]{$name}[/b] in module [b]{$location}[/b]", 'bg-green-500');
                     return CMD::SUCCESS;
                 }
