@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Locale;
 use SailCMS\Text;
 use SailCMS\Types\FieldInfo;
 use SailCMS\Types\Fields\Field as InputField;
@@ -190,17 +189,25 @@ abstract class Field
         });
 
         $className = array_reverse(explode('\\', static::class))[0];
-        $description = Locale::translate('fields.' . $fakeInstance->handle . '.description');
 
         return new FieldInfo(
             $className,
             static::class,
             $fakeInstance->handle,
-            $description,
+            $fakeInstance->description(),
             $fakeInstance->storingType(),
             $availableSettings->unwrap()
         );
     }
+
+    /**
+     *
+     * Return the description of the field for the field info
+     *
+     * @return string
+     *
+     */
+    abstract public function description(): string;
 
     /**
      *

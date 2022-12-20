@@ -10,6 +10,18 @@ class NumberField extends Field
 {
     /**
      *
+     * Description for field info
+     *
+     * @return string
+     *
+     */
+    public function description(): string
+    {
+        return 'Field to implement a number html input.';
+    }
+
+    /**
+     *
      * Returns the storing type
      *
      * @return string
@@ -60,4 +72,4 @@ class NumberField extends Field
         // Nothing to implement
         return null;
     }
-}
+} 

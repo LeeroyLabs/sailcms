@@ -10,6 +10,18 @@ class TextField extends Field
 {
     /**
      *
+     * Description for field info
+     *
+     * @return string
+     *
+     */
+    public function description(): string
+    {
+        return 'Field to implement an text html input.';
+    }
+
+    /**
+     *
      * Returns the storing type
      *
      * @return string
