@@ -137,6 +137,8 @@ class User extends Model
 
             if (self::$currentUser) {
                 self::$currentUser->auth_token = env('jwt', '');
+
+                Event::dispatch('authentication', self::$currentUser);
             }
         }
     }
@@ -690,6 +692,8 @@ class User extends Model
             $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => '']]);
 
             self::$currentUser->auth_token = $token ?? '';
+
+            Event::dispatch('authentication', self::$currentUser);
             return self::$currentUser;
         }
 
@@ -734,6 +738,8 @@ class User extends Model
 
             // Get role
             self::$currentUser->auth_token = $token ?? '';
+
+            Event::dispatch('authentication', self::$currentUser);
 
             return true;
         }
