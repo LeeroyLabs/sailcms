@@ -2,15 +2,17 @@
 
 namespace SailCMS\Types\Fields;
 
-use Exception;
 use SailCMS\Collection;
-use SailCMS\Locale;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
 
 class InputNumberField extends Field
 {
+    /* Errors from 6140 to 6159 */
+    protected const FIELD_TOO_BIG = "6140: The value is too big";
+    protected const FIELD_TOO_SMALL = "6141: The value is too small";
+
     /**
      *
      * Input text field from html input:number attributes
@@ -24,10 +26,10 @@ class InputNumberField extends Field
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool $required = false,
-        public readonly int $min = 0,
-        public readonly int $max = 0,
-        public readonly bool $negative_number = false,
+        public readonly bool        $required = false,
+        public readonly int         $min = 0,
+        public readonly int         $max = 0,
+        public readonly bool        $negative_number = false,
     )
     {
     }
@@ -80,6 +82,7 @@ class InputNumberField extends Field
     /**
      *
      * Input text field validation
+     *  // TODO cast the content according to the type + add type
      *
      * @param mixed $content
      * @return Collection
@@ -88,36 +91,17 @@ class InputNumberField extends Field
     public function validate(mixed $content): Collection
     {
         $errors = Collection::init();
-        $currentLocale = Locale::$current ?? 'en';
 
         if ($this->required && !$content) {
-            try {
-                $errorMessage = Locale::translate('fields.errors.is_required');
-            } catch (Exception $exception) {
-                $errorMessage = 'is required';
-            }
-
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . '.');
+            $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($this->min > 0 && strlen($content) < $this->min) {
-            try {
-                $errorMessage = Locale::translate('fields.errors.min_number');
-            } catch (Exception $exception) {
-                $errorMessage = 'number not enough big';
-            }
-
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->min . ').');
+        if ($this->min > 0 && (integer)$content < $this->min) {
+            $errors->push(self::FIELD_TOO_SMALL . ' (' . $this->min . ').');
         }
 
-        if ($this->max > 0 && strlen($content) > $this->max) {
-            try {
-                $errorMessage = Locale::translate('fields.errors.max_number');
-            } catch (Exception $exception) {
-                $errorMessage = 'number is too big';
-            }
-
-            $errors->push($this->labels->{$currentLocale} . ' ' . $errorMessage . ' (' . $this->max . ').');
+        if ($this->max > 0 && (integer)$content > $this->max) {
+            $errors->push(self::FIELD_TOO_BIG . ' (' . $this->max . ').');
         }
 
         return $errors;

@@ -14,10 +14,6 @@ use stdClass;
 
 abstract class Field
 {
-    /* Errors */
-    // 20 for each field
-    const SCHEMA_MUST_CONTENT_FIELD_TYPE = 'The %s schema must contains only SailCMS/Types/Fields/Field type';
-
     /* Properties */
     public LocaleField $labels;
     public string $handle;

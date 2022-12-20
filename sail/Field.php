@@ -10,8 +10,9 @@ use SailCMS\Models\Entry\Field as ModelField;
  *
  * LIST of potential FIELDS
  *
- * TextField // option uppercase
- * NumberField // option float + negative number
+ * abstract Field                                   => Errors 6100 to 6119
+ * TextField // option uppercase                    => Errors 6120 to 6139
+ * NumberField // option float + negative number    => Errors 6140 to 6159
  * DateField
  * DateTimeField
  * EmailField
