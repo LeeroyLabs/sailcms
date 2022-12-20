@@ -430,8 +430,16 @@ class User extends Model
      * @throws PermissionException
      *
      */
-    public function update(string|ObjectId $id, ?Username $name = null, ?string $email = null, ?string $password = null, ?Collection $roles = null, ?string $avatar = '', ?UserMeta $meta = null): bool
-    {
+    public function update(
+        string|ObjectId $id,
+        ?Username $name = null,
+        ?string $email = null,
+        ?string $password = null,
+        ?Collection $roles = null,
+        ?string $avatar = '',
+        ?UserMeta $meta = null,
+        ?string $locale = ''
+    ): bool {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -439,6 +447,10 @@ class User extends Model
 
         if ($name !== null) {
             $update['name'] = $name;
+        }
+
+        if ($locale !== '') {
+            $update['locale'] = $locale;
         }
 
         // Validate email properly

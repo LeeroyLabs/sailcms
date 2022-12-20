@@ -311,7 +311,8 @@ class Users
             $args->get('password', null),
             $roles,
             $args->get('avatar', null),
-            $meta
+            $meta,
+            $args->get('locale', '')
         );
     }
 
