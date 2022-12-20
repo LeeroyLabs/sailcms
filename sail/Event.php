@@ -22,7 +22,11 @@ final class Event
             self::$registered = Collection::init();
         }
 
-        self::$registered->{$event} = new Collection(['class' => new $class(), 'method' => $method]);
+        if (!isset(self::$registered->{$event})) {
+            self::$registered->{$event} = Collection::init();
+        }
+
+        self::$registered->{$event}->push(new Collection(['class' => new $class(), 'method' => $method]));
     }
 
     /**
