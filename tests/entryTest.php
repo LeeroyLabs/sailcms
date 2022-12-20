@@ -5,6 +5,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
