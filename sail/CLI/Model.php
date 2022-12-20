@@ -53,6 +53,9 @@ class Model extends Command
                     $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $location], $code);
                     $fs->write($path . '/Models/' . $name . '.php', $code);
 
+                    // Dump autoload and regenerate
+                    Tools::executeComposerRefresh();
+
                     Tools::outputInfo("created", "Created model [b]{$name}[/b] in module [b]{$location}[/b]", 'bg-green-500');
                     return CMD::SUCCESS;
                 }
@@ -73,6 +76,9 @@ class Model extends Command
                     $code = $fs->read("install://model.php");
                     $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $location], $code);
                     $fs->write($path . '/Models/' . $name . '.php', $code);
+
+                    // Dump autoload and regenerate
+                    Tools::executeComposerRefresh();
 
                     Tools::outputInfo("created", "Created model [b]{$name}[/b] in container [b]{$location}[/b]", 'bg-green-500');
                     return CMD::SUCCESS;

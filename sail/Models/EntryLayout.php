@@ -500,7 +500,7 @@ class EntryLayout extends Model
     {
         return match ($field) {
             'titles' => new LocaleField($value),
-            'schema' => $this->processSchemaOnFetch($value),
+            'schema' => is_array($value) ? $value : $this->processSchemaOnFetch($value),
             'authors' => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
             'dates' => new Dates($value->created, $value->updated, $value->published, $value->deleted),
             default => $value,
