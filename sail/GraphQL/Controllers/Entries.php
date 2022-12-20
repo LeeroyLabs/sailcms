@@ -10,11 +10,13 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Field;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
+use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SodiumException;
@@ -207,10 +209,12 @@ class Entries
         $entryTypeHandle = $args->get('entry_type_handle');
         $page = $args->get('page', 1);
         $limit = $args->get('limit', 50);
+        $ignoreTrashed = $args->get('ignore_trashed', true);
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
 
         // For filtering
+        // TODO implements filterinput
         $siteId = $args->get('site_id', Sail::siteId());
 
         $currentSiteHomepages = Entry::getHomepage($siteId);
@@ -218,6 +222,10 @@ class Entries
         $filters = [
             "site_id" => $siteId
         ];
+
+        if ($ignoreTrashed) {
+            $filters['status'] = ['$ne' => EntryStatus::TRASH];
+        }
 
         $result = Entry::getList($entryTypeHandle, $filters, $page, $limit, $sort, $direction); // By entry type instead
         $data = Collection::init();
@@ -553,6 +561,23 @@ class Entries
         $entryLayoutModel = new EntryLayout();
 
         return $entryLayoutModel->delete($id, $soft);
+    }
+
+    /**
+     *
+     * Get all fields Info
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return Collection
+     *
+     */
+    public function fields(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $locale = $args->get('locale', 'en');
+
+        return Field::getAvailableFields($locale);
     }
 
     /**

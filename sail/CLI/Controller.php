@@ -47,6 +47,10 @@ class Controller extends Command
             $ctrl = str_replace(['[CONTAINER]', '[NAME]'], [$container, $name], $ctrl);
 
             $fs->write($path . '/Controllers/' . $name . '.php', $ctrl);
+
+            // Dump autoload and regenerate
+            Tools::executeComposerRefresh();
+
             Tools::outputInfo('created', "Controller {$name} has been created and is ready to go! 🚀", 'bg-green-500');
             return Command::SUCCESS;
         }

@@ -18,11 +18,11 @@ final class Event
      */
     public static function register(string $event, string $class, string $method): void
     {
-        if (!isset(static::$registered)) {
-            static::$registered = Collection::init();
+        if (!isset(self::$registered)) {
+            self::$registered = Collection::init();
         }
 
-        static::$registered->{$event} = new Collection(['class' => new $class(), 'method' => $method]);
+        self::$registered->{$event} = new Collection(['class' => new $class(), 'method' => $method]);
     }
 
     /**
@@ -36,8 +36,8 @@ final class Event
      */
     public static function dispatch(string $event, mixed $data): void
     {
-        if (isset(static::$registered) && static::$registered->get($event)) {
-            static::$registered->get($event)->each(static function ($key, $value) use ($event, $data)
+        if (isset(self::$registered) && self::$registered->get($event)) {
+            self::$registered->get($event)->each(static function ($key, $value) use ($event, $data)
             {
                 $instance = $value->get('class');
                 $method = $value->get('method');

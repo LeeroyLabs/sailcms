@@ -12,6 +12,10 @@ system_2fa:
   activated_success: Two-Factor Authentication is Active!
   rescue_codes: Keep these rescue codes somewhere safe. They will help you to access your account if you lose your mobile device.
 fields:
+  text_field:
+    description: Field to implement an text html input.
+  number_field:
+    description: Field to implement a number html input.
   errors:
     is_required: is required
     max_length: is too long

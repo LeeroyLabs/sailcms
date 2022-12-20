@@ -35,6 +35,7 @@ class User extends Model
     public const EVENT_DELETE = 'event_delete_user';
     public const EVENT_CREATE = 'event_create_user';
     public const EVENT_UPDATE = 'event_update_user';
+    public const EVENT_LOGIN = 'event_login_user';
 
     public static ?User $currentUser = null;
 
@@ -137,6 +138,8 @@ class User extends Model
 
             if (self::$currentUser) {
                 self::$currentUser->auth_token = env('jwt', '');
+
+                Event::dispatch(self::EVENT_LOGIN, self::$currentUser);
             }
         }
     }
@@ -421,14 +424,23 @@ class User extends Model
      * @param  Collection|null  $roles
      * @param  string|null      $avatar
      * @param  UserMeta|null    $meta
+     * @param  string           $locale
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function update(string|ObjectId $id, ?Username $name = null, ?string $email = null, ?string $password = null, ?Collection $roles = null, ?string $avatar = '', ?UserMeta $meta = null): bool
-    {
+    public function update(
+        string|ObjectId $id,
+        ?Username $name = null,
+        ?string $email = null,
+        ?string $password = null,
+        ?Collection $roles = null,
+        ?string $avatar = '',
+        ?UserMeta $meta = null,
+        string $locale = ''
+    ): bool {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -436,6 +448,10 @@ class User extends Model
 
         if ($name !== null) {
             $update['name'] = $name;
+        }
+
+        if ($locale !== '') {
+            $update['locale'] = $locale;
         }
 
         // Validate email properly
@@ -690,6 +706,8 @@ class User extends Model
             $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => '']]);
 
             self::$currentUser->auth_token = $token ?? '';
+
+            Event::dispatch(self::EVENT_LOGIN, self::$currentUser);
             return self::$currentUser;
         }
 
@@ -734,6 +752,8 @@ class User extends Model
 
             // Get role
             self::$currentUser->auth_token = $token ?? '';
+
+            Event::dispatch(self::EVENT_LOGIN, self::$currentUser);
 
             return true;
         }

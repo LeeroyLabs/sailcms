@@ -21,9 +21,14 @@ abstract class Field implements DatabaseType
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly bool $required = false
+        public readonly bool        $required = false
     )
     {
+    }
+
+    public function __toString(): string
+    {
+        return $this::class;
     }
 
     /**
