@@ -196,7 +196,7 @@ class Entry extends Model
      *
      * Parse the entry into an array for api
      *
-     * @param array|object|null $currentHomepageEntry
+     * @param object|null $currentHomepageEntry
      * @param bool $wantSchema
      * @return array
      * @throws ACLException
@@ -204,7 +204,7 @@ class Entry extends Model
      * @throws PermissionException
      *
      */
-    public function toGraphQL(array|object|null $currentHomepageEntry, bool $wantSchema = true): array
+    public function toGraphQL(object|null $currentHomepageEntry, bool $wantSchema = true): array
     {
         $schema = Collection::init();
         if ($wantSchema) {
@@ -218,7 +218,7 @@ class Entry extends Model
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
-            'is_homepage' => isset($currentHomepageEntry) && $this->_id == $currentHomepageEntry->{static::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'is_homepage' => isset($currentHomepageEntry) && $this->_id == $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
@@ -240,7 +240,7 @@ class Entry extends Model
      * Get all entries by entry type handle
      *
      * @param string $entryTypeHandle
-     * @param array|null $filters
+     * @param array|null $filters if filters is null it is default to ignore trash entries
      * @param int $page
      * @param int $limit
      * @param string $sort
@@ -257,14 +257,11 @@ class Entry extends Model
 
         $offset = $page * $limit - $limit;
 
-        if (!$filters) {
+        if ($filters === null) {
             $filters = [
                 'status' => ['$ne' => EntryStatus::TRASH]
             ];
         }
-        // TODO handle search and filters
-        // TODO handle any status
-        // $query['field'] = new Regex($search, 'gi');
 
         $options = QueryOptions::initWithPagination($offset, $limit);
         $options->sort = [$sort => $direction];
@@ -272,7 +269,7 @@ class Entry extends Model
         $results = $entryModel->find($filters, $options)->exec();
 
         $count = $entryModel->count($filters);
-        $total = ceil($count / $limit);
+        $total = (integer)ceil($count / $limit);
 
         $pagination = new Pagination($page, $total, $count);
         return new Listing($pagination, new Collection($results));
@@ -329,11 +326,11 @@ class Entry extends Model
             return null;
         }
 
-        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
+        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
 
         $cacheHandle = self::HOMEPAGE_CACHE . "_" . $siteId . "_" . $locale;
         $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
-        $entry = $entryModel->findById($currentHomepageEntry->{static::HOMEPAGE_CONFIG_ENTRY_KEY})->exec($cacheHandle, $cacheTtl);
+        $entry = $entryModel->findById($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY})->exec($cacheHandle, $cacheTtl);
 
         if ($toGraphQL) {
             return $entry->toGraphQL($currentHomepageEntry);
@@ -375,7 +372,7 @@ class Entry extends Model
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
                 $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
-                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(static::FIND_BY_URL_CACHE . $url, $cache_ttl);
+                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(self::FIND_BY_URL_CACHE . $url, $cache_ttl);
 
                 $preview = false;
                 $previewVersion = false;
@@ -461,7 +458,7 @@ class Entry extends Model
         $slug = Text::slugify($slug, $locale);
 
         // Form the url to find if it already exists
-        $url = static::getRelativeUrl($urlPrefix, $slug, $locale);
+        $url = self::getRelativeUrl($urlPrefix, $slug, $locale);
         $found = 0;
 
         // Set the filters for the query
@@ -484,8 +481,8 @@ class Entry extends Model
         });
 
         if ($found > 0) {
-            $slug = static::incrementSlug($slug);
-            return static::getValidatedSlug($urlPrefix, $slug, $siteId, $locale, $currentId, $availableTypes);
+            $slug = self::incrementSlug($slug);
+            return self::getValidatedSlug($urlPrefix, $slug, $siteId, $locale, $currentId, $availableTypes);
         }
         return $slug;
     }
@@ -529,7 +526,7 @@ class Entry extends Model
 
         if (count($matches) > 0) {
             $increment = (int)$matches['increment'];
-            $newSlug = $matches['base'] . $increment + 1;
+            $newSlug = $matches['base'] . ($increment + 1);
         } else {
 
             $newSlug = $slug . "-2";
@@ -600,7 +597,7 @@ class Entry extends Model
     {
         if (isset($filters['_id'])) {
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
-            return $this->findById($filters['_id'])->exec(static::ONE_CACHE_BY_ID . $filters['_id'], $cache_ttl);
+            return $this->findById($filters['_id'])->exec(self::ONE_CACHE_BY_ID . $filters['_id'], $cache_ttl);
         }
 
         return $this->findOne($filters)->exec();
@@ -634,9 +631,9 @@ class Entry extends Model
         // TODO Filters available date, author, category, status
 
         $cache_key = null;
-        $cache_ttl = null;
+        $cache_ttl = Cache::TTL_WEEK;
         if (count($filters) === 0) {
-            $cache_key = static::ENTRY_BY_HANDLE_ALL . $this->entryType->handle;
+            $cache_key = self::ENTRY_BY_HANDLE_ALL . $this->entryType->handle;
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
         }
 
@@ -834,7 +831,7 @@ class Entry extends Model
             try {
                 $this->bulkWrite($updates);
             } catch (Exception $exception) {
-                throw new EntryException(sprintf(static::DATABASE_ERROR, "bulk update content") . PHP_EOL . $exception->getMessage());
+                throw new EntryException(sprintf(self::DATABASE_ERROR, "bulk update content") . PHP_EOL . $exception->getMessage());
             }
         }
         return true;
@@ -861,7 +858,7 @@ class Entry extends Model
 
         $entry = $this->findById($entryId)->exec();
         if (!$entry) {
-            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryId));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryId));
         }
 
         if ($soft) {
@@ -874,7 +871,7 @@ class Entry extends Model
         if ($result) {
             $currentHomepages = Entry::getHomepage($entry->site_id);
             $currentHomepage = $currentHomepages->{$entry->locale} ?? false;
-            if ($currentHomepage && $currentHomepage->{static::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
+            if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
                 $this->emptyHomepage($entry->site_id, $entry->locale, $currentHomepages);
             }
         }
@@ -913,7 +910,7 @@ class Entry extends Model
     {
         // Data verification
         if ($field == "title" && empty($value)) {
-            throw new EntryException(static::TITLE_MISSING);
+            throw new EntryException(self::TITLE_MISSING);
         }
 
         return parent::processOnStore($field, $value);
@@ -935,7 +932,7 @@ class Entry extends Model
             $status = $status->value;
         }
         if ($status === EntryStatus::TRASH->value) {
-            throw new EntryException(static::STATUS_CANNOT_BE_TRASH);
+            throw new EntryException(self::STATUS_CANNOT_BE_TRASH);
         }
     }
 
@@ -962,7 +959,7 @@ class Entry extends Model
         }
 
         if ($content->length > 0 && !$schema) {
-            throw new EntryException(static::CANNOT_VALIDATE_CONTENT);
+            throw new EntryException(self::CANNOT_VALIDATE_CONTENT);
         } else if (!$schema) {
             $schema = Collection::init();
         }
@@ -980,7 +977,7 @@ class Entry extends Model
             }
 
             if ($modelField->handle != $modelFieldContent->handle) {
-                throw new EntryException(static::SCHEMA_VALIDATION_ERROR);
+                throw new EntryException(self::SCHEMA_VALIDATION_ERROR);
             }
             $modelFieldErrors = $modelField->validateContent($modelFieldContent->content);
 
@@ -991,7 +988,7 @@ class Entry extends Model
 
         $content->each(function ($key, $content) use ($schema) {
             if (!$schema->get($key)) {
-                throw new EntryException(sprintf(static::CONTENT_KEY_ERROR, $key));
+                throw new EntryException(sprintf(self::CONTENT_KEY_ERROR, $key));
             }
         });
 
@@ -1047,15 +1044,13 @@ class Entry extends Model
      */
     private function setAsHomepage(string $siteId, string $locale, object $currentConfig = null): void
     {
-        $siteId = $siteId ?? Sail::siteId();
-
         if (!isset($currentConfig)) {
-            $currentConfig = static::getHomepage($siteId);
+            $currentConfig = self::getHomepage($siteId);
         }
 
         $currentConfig->{$locale} = (object)[
-            static::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
-            static::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
+            self::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
+            self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle
         ];
 
         Config::setByName(self::homepageConfigHandle($siteId), $currentConfig);
@@ -1076,14 +1071,12 @@ class Entry extends Model
      */
     private function emptyHomepage(string $siteId, string $locale, object|array $currentConfig = null): void
     {
-        $siteId = $siteId ?? Sail::siteId();
-
         if (!$currentConfig) {
             $currentConfig = self::getHomepage($siteId);
         }
 
         $currentConfig->{$locale} = null;
-        Config::setByName(static::homepageConfigHandle($siteId), $currentConfig);
+        Config::setByName(self::homepageConfigHandle($siteId), $currentConfig);
     }
 
     /**
@@ -1113,14 +1106,14 @@ class Entry extends Model
         $categories = $data->get('categories');
 
         // VALIDATION & PARSING
-        static::validateStatus($status);
+        self::validateStatus($status);
         if ($content instanceof Collection && $content->length > 0) {
             // Check if there is errors
             $errors = $this->validateContent($content);
 
             if ($errors->length > 0) {
                 if ($throwErrors) {
-                    static::throwErrorContent($errors);
+                    self::throwErrorContent($errors);
                 } else {
                     return $errors;
                 }
@@ -1130,7 +1123,7 @@ class Entry extends Model
         }
 
         // Get the validated slug
-        $slug = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
+        $slug = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
         $published = false;
         if ($status == EntryStatus::LIVE->value) {
@@ -1150,14 +1143,14 @@ class Entry extends Model
                 'status' => $status,
                 'title' => $title,
                 'slug' => $slug,
-                'url' => static::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
+                'url' => self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
                 'authors' => $authors,
                 'dates' => $dates,
                 'content' => $content ?? [],
                 'categories' => $categories ?? []
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
         $entry = $this->findById($entryId)->exec();
@@ -1196,10 +1189,10 @@ class Entry extends Model
         }
         if (in_array('slug', $data->keys()->unwrap())) {
             $slug = $data->get('slug');
-            $update['slug'] = static::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
+            $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
         if (in_array('status', $data->keys()->unwrap())) {
-            static::validateStatus($data->get('status'));
+            self::validateStatus($data->get('status'));
         }
 
         if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
@@ -1207,7 +1200,7 @@ class Entry extends Model
 
             if ($errors->length > 0) {
                 if ($throwErrors) {
-                    static::throwErrorContent($errors);
+                    self::throwErrorContent($errors);
                 } else {
                     return $errors;
                 }
@@ -1221,7 +1214,7 @@ class Entry extends Model
         });
 
         // Automatic attributes
-        $update['url'] = static::getRelativeUrl($this->entryType->url_prefix, $slug, $locale);
+        $update['url'] = self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale);
         $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
         $update['dates'] = Dates::updated($entry->dates);
 
@@ -1230,7 +1223,7 @@ class Entry extends Model
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return Collection::init();
@@ -1259,7 +1252,7 @@ class Entry extends Model
                 ]
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -1277,7 +1270,7 @@ class Entry extends Model
         try {
             $qtyDeleted = $this->deleteById((string)$entryTypeId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
@@ -1301,7 +1294,7 @@ class Entry extends Model
         });
 
         if (count($errorsStrings) > 0) {
-            throw new EntryException(static::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
+            throw new EntryException(self::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
         }
     }
 

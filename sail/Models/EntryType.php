@@ -84,7 +84,7 @@ class EntryType extends Model
      */
     public function init(): void
     {
-        $this->setPermissionGroup(static::ACL_HANDLE);
+        $this->setPermissionGroup(self::ACL_HANDLE);
     }
 
 
@@ -170,13 +170,13 @@ class EntryType extends Model
         }
 
         // Get default values for default type
-        $defaultHandle = static::DEFAULT_HANDLE;
-        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title', static::DEFAULT_TITLE);
-        $defaultUrlPrefix = new LocaleField($_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', static::DEFAULT_URL_PREFIX));
+        $defaultHandle = self::DEFAULT_HANDLE;
+        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title', self::DEFAULT_TITLE);
+        $defaultUrlPrefix = new LocaleField($_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', self::DEFAULT_URL_PREFIX));
         $defaultEntryLayoutId = $_ENV['SETTINGS']->get('entry.defaultType.entryLayoutId', false);
 
         $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
-        
+
         if (!$entryType) {
             $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
         } else if (!$avoidUpdate
@@ -214,7 +214,7 @@ class EntryType extends Model
 
         $entryType = $instance->findOne(['collection_name' => $collectionName])->exec();
         if (!$entryType) {
-            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $collectionName));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $collectionName));
         }
 
         return $entryType;
@@ -242,7 +242,7 @@ class EntryType extends Model
 
         $entryType = $instance->getByHandle($handle);
         if (!$entryType) {
-            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
         }
 
         return $entryType->getEntryModel($entryType);
@@ -273,8 +273,6 @@ class EntryType extends Model
     /**
      *
      * Get an entryType by id
-     *
-     * Todo maybe remove that because we cannot check if it is the default type
      *
      * @param string $id
      * @return EntryType|null
@@ -360,7 +358,7 @@ class EntryType extends Model
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
         if (!$entryType) {
-            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $handle));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
         }
 
         $title = $data->get('title');
@@ -388,19 +386,19 @@ class EntryType extends Model
         // Cannot delete if it not exists
         $entryType = $this->findById($entryTypeId)->exec();
         if (!$entryType) {
-            throw new EntryException(sprintf(static::DOES_NOT_EXISTS, $entryTypeId));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryTypeId));
         }
 
         // Check if there is entries content
         $counts = ($entryType->getEntryModel($entryType))->countEntries();
         if ($counts > 0) {
-            throw new EntryException(static::CANNOT_DELETE);
+            throw new EntryException(self::CANNOT_DELETE);
         }
 
         try {
             $qtyDeleted = $this->deleteById($entryTypeId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
@@ -428,10 +426,10 @@ class EntryType extends Model
     {
         // Data verification
         if ($field === "handle" && empty($value)) {
-            throw new EntryException(static::HANDLE_MISSING);
+            throw new EntryException(self::HANDLE_MISSING);
         }
         if ($field === "title" && empty($value)) {
-            throw new EntryException(static::TITLE_MISSING);
+            throw new EntryException(self::TITLE_MISSING);
         }
 
         return parent::processOnStore($field, $value);
@@ -452,13 +450,13 @@ class EntryType extends Model
     private function checkHandle(string $handle): void
     {
         // Check in reserved word for handle
-        if (in_array($handle, static::RESERVED_WORDS_FOR_HANDLE)) {
-            throw new EntryException(sprintf(static::HANDLE_USE_RESERVED_WORD, $handle));
+        if (in_array($handle, self::RESERVED_WORDS_FOR_HANDLE)) {
+            throw new EntryException(sprintf(self::HANDLE_USE_RESERVED_WORD, $handle));
         }
 
         // Check everytime if the handle is already exists
         if ($handle == self::DEFAULT_HANDLE || $this->getByHandle($handle) !== null) {
-            throw new EntryException(static::HANDLE_ALREADY_EXISTS);
+            throw new EntryException(self::HANDLE_ALREADY_EXISTS);
         }
     }
 
@@ -507,7 +505,7 @@ class EntryType extends Model
                 'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(static::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
         if ($getObject) {
@@ -554,7 +552,7 @@ class EntryType extends Model
                     '$set' => $update
                 ]);
             } catch (DatabaseException $exception) {
-                throw new EntryException(sprintf(static::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+                throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
             }
 
             // Update url of related entries

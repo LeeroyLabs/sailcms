@@ -3,11 +3,14 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Locale;
 use SailCMS\Text;
+use SailCMS\Types\FieldInfo;
+use SailCMS\Types\Fields\Field as InputField;
+use SailCMS\Types\Fields\InputSettings;
 use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
-
 
 abstract class Field
 {
@@ -157,13 +160,62 @@ abstract class Field
 
     /**
      *
+     * Return the field info
      *
+     * @return FieldInfo
+     *
+     */
+    public static function info(): FieldInfo
+    {
+        $fakeLabels = new LocaleField(['en' => 'Fake', 'fr' => 'Faux']);
+        $fakeInstance = new static($fakeLabels, []);
+
+        $availableSettings = Collection::init();
+        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings) {
+            /**
+             * @var InputField $inputFieldClass
+             */
+            $settings = Collection::init();
+            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings) {
+                /**
+                 * @var InputSettings $inputSettings
+                 */
+                $settings->push($inputSettings->toDBObject());
+            });
+
+            $className = array_reverse(explode('\\', $inputFieldClass))[0];
+            $availableSettings->push([
+                'name' => $className,
+                'fullname' => (string)$inputFieldClass,
+                'type' => $inputFieldClass::storingType(),
+                'availableSettings' => $settings->unwrap()
+            ]);
+        });
+
+        $className = array_reverse(explode('\\', static::class))[0];
+        $description = Locale::translate('fields.' . $fakeInstance->handle . '.description');
+
+        return new FieldInfo(
+            $className,
+            static::class,
+            $fakeInstance->handle,
+            $description,
+            $fakeInstance->storingType(),
+            $availableSettings->unwrap()
+        );
+    }
+
+    /**
+     *
+     * The storing type in the database
      *
      * @return string
+     *
      */
     abstract public function storingType(): string;
 
     /**
+     *
      * Must define default settings of the field
      *
      * @return Collection
