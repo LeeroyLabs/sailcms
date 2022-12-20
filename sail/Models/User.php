@@ -424,6 +424,7 @@ class User extends Model
      * @param  Collection|null  $roles
      * @param  string|null      $avatar
      * @param  UserMeta|null    $meta
+     * @param  string           $locale
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -438,7 +439,7 @@ class User extends Model
         ?Collection $roles = null,
         ?string $avatar = '',
         ?UserMeta $meta = null,
-        ?string $locale = ''
+        string $locale = ''
     ): bool {
         $this->hasPermissions(false, true, $id);
 
