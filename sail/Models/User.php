@@ -35,6 +35,7 @@ class User extends Model
     public const EVENT_DELETE = 'event_delete_user';
     public const EVENT_CREATE = 'event_create_user';
     public const EVENT_UPDATE = 'event_update_user';
+    public const EVENT_LOGIN = 'event_login_user';
 
     public static ?User $currentUser = null;
 
@@ -138,7 +139,7 @@ class User extends Model
             if (self::$currentUser) {
                 self::$currentUser->auth_token = env('jwt', '');
 
-                Event::dispatch('authentication', self::$currentUser);
+                Event::dispatch(self::EVENT_LOGIN, self::$currentUser);
             }
         }
     }
@@ -693,7 +694,7 @@ class User extends Model
 
             self::$currentUser->auth_token = $token ?? '';
 
-            Event::dispatch('authentication', self::$currentUser);
+            Event::dispatch(self::EVENT_LOGIN, self::$currentUser);
             return self::$currentUser;
         }
 
@@ -739,7 +740,7 @@ class User extends Model
             // Get role
             self::$currentUser->auth_token = $token ?? '';
 
-            Event::dispatch('authentication', self::$currentUser);
+            Event::dispatch(self::EVENT_LOGIN, self::$currentUser);
 
             return true;
         }
