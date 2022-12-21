@@ -271,16 +271,17 @@ final class Register
      * Check if a container exists in the current state
      *
      * @param  string  $name
+     * @param  float   $minVersion
      * @return bool
      *
      */
-    public static function containerExists(string $name): bool
+    public static function containerExists(string $name, float $minVersion = -1): bool
     {
         $exists = false;
 
-        self::$containers->each(function ($k, $container) use (&$exists, $name)
+        self::$containers->each(function ($k, $container) use (&$exists, $name, $minVersion)
         {
-            if ($container->info->name === $name) {
+            if ($container->info->name === $name && $container->info->version >= $minVersion) {
                 $exists = true;
             }
         });
@@ -293,16 +294,17 @@ final class Register
      * Check if a module exists in the current state
      *
      * @param  string  $name
+     * @param  float   $minVersion
      * @return bool
      *
      */
-    public static function moduleExists(string $name): bool
+    public static function moduleExists(string $name, float $minVersion = -1): bool
     {
         $exists = false;
 
-        self::$modules->each(function ($k, $module) use (&$exists, $name)
+        self::$modules->each(function ($k, $module) use (&$exists, $name, $minVersion)
         {
-            if ($module->info->name === $name) {
+            if ($module->info->name === $name && $module->info->version >= $minVersion) {
                 $exists = true;
             }
         });
