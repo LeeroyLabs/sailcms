@@ -21,6 +21,7 @@ use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryParent;
 use SailCMS\Types\EntryStatus;
+use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
@@ -87,7 +88,6 @@ class Entry extends Model
      */
     public function __construct(string $collection = '', EntryType $entryType = null)
     {
-
         if (!$entryType) {
             // Get or create the default entry type
             if (!$collection) {
@@ -100,8 +100,7 @@ class Entry extends Model
             $this->entryType = $entryType;
         }
 
-
-        $this->entry_type_id = $this->entryType->_id;
+        $this->entry_type_id = (string)$this->entryType->_id;
         $collection = $this->entryType->collection_name;
 
         parent::__construct($collection);
@@ -736,7 +735,7 @@ class Entry extends Model
      * @throws EntryException
      * @throws FilesystemException
      * @throws JsonException
-     * @throws PermissionException
+     * @throws PermissionException                $errors->pushKeyValue($key, [Field::]);
      * @throws SodiumException
      *
      */
@@ -973,7 +972,10 @@ class Entry extends Model
             $modelFieldContent = $content->get($key);
 
             // Cannot find content, it's not filled at all
-            if (!$modelFieldContent) {
+            if (!$modelFieldContent && $modelField->isRequired()) {
+                $errors->pushKeyValue($key, [[InputField::FIELD_REQUIRED]]);
+                return;
+            } else if (!$modelFieldContent) {
                 return;
             }
 

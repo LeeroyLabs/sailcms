@@ -11,7 +11,7 @@ use stdClass;
 abstract class Field implements DatabaseType
 {
     /* Errors from 6100 to 6119 */
-    protected const FIELD_REQUIRED = "6100: This field is required.";
+    public const FIELD_REQUIRED = "6100: This field is required.";
 
     /**
      *

@@ -65,6 +65,22 @@ abstract class Field
         });
     }
 
+    public function isRequired(): bool
+    {
+        $result = false;
+
+        foreach ($this->configs as $inputField) {
+            /**
+             * @var InputField $inputField
+             */
+            if ($inputField->required) {
+                $result = true;
+                break;
+            }
+        }
+        return $result;
+    }
+
     /**
      *
      * This is the default content validation for the field
