@@ -5,7 +5,6 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Models\Entry\TextField;
-use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
@@ -40,11 +39,6 @@ test('Create an entry layout', function () {
     ]);
     $textField = new TextField($labels, [
         ['required' => true,],
-    ]);
-
-    $numberLabels = new LocaleField([
-        'fr' => 'Age',
-        'en' => 'Age'
     ]);
 
     $schema = EntryLayout::generateLayoutSchema(new Collection([
@@ -339,7 +333,7 @@ test('Failed to update content because a field does not validate', function () {
         expect(true)->toBe(false);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "Section title is too short (10).");
+        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10): sub-title");
     }
 });
 

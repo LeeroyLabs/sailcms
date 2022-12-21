@@ -759,7 +759,6 @@ class Entry extends Model
 
         $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors);
 
-
         if ($updateErrors->length <= 0) {
             $this->handleHomepageUpdate($entry, $data);
         }
@@ -1289,10 +1288,12 @@ class Entry extends Model
      */
     private static function throwErrorContent(Collection $errors): void
     {
-        $errorsArray = $errors->unwrap();
         $errorsStrings = [];
-        array_walk_recursive($errorsArray, function ($item, $key) use (&$errorsStrings) {
-            $errorsStrings[] = $item;
+
+        $errors->each(function ($key, $errorsArray) use (&$errorsStrings) {
+            foreach ($errorsArray as $error) {
+                $errorsStrings[] = rtrim($error[0], '.') . ": " . $key;
+            }
         });
 
         if (count($errorsStrings) > 0) {

@@ -10,6 +10,8 @@ use stdClass;
 
 abstract class Field implements DatabaseType
 {
+    /* Errors from 6100 to 6119 */
+    protected const FIELD_REQUIRED = "6100: This field is required.";
 
     /**
      *
@@ -97,12 +99,11 @@ abstract class Field implements DatabaseType
     {
         $validSettings = Collection::init();
 
-
         static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
-            $settingValue = $settings->get($inputType->name);
+            $settingValue = $settings?->get($inputType->name);
             $defaultValue = static::defaultSettings()->get($inputType->name);
 
             if ($settingValue && static::validByType($inputType->type, $settingValue)) {
