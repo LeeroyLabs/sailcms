@@ -298,8 +298,6 @@ input InputSettingsInput {
 input ModelFieldContentInput {
     key: String!
     content: Json
-    handle: String!
-    type: Json!
 }
 
 input FieldContentInput {

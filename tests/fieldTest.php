@@ -92,17 +92,13 @@ test('Failed to update the entry content', function () {
     try {
         $errors = $entryModel->updateById($entry, [
             'content' => [
-                'number' => [
-                    'type' => 'integer',
-                    'content' => '0',
-                    'handle' => 'number_field'
-                ]
+                'number' => '0'
             ]
         ], false);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });

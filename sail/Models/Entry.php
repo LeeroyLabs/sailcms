@@ -42,7 +42,7 @@ class Entry extends Model
     const TITLE_MISSING = '5001: You must set the entry title in your data.';
     const STATUS_CANNOT_BE_TRASH = '5002: You cannot delete a entry this way, use the delete method instead.';
     const CANNOT_VALIDATE_CONTENT = '5003: You cannot validate content without setting an entry layout to the type.';
-    const SCHEMA_VALIDATION_ERROR = '5004: The entry layout schema does not fits with the Wcontents sends.';
+    const SCHEMA_VALIDATION_ERROR = '5004: The entry layout schema does not fits with the contents sends.';
     const CONTENT_KEY_ERROR = '5005: The key "%s" does not exists in the schema of the entry layout.';
     const CONTENT_ERROR = '5006: The content has theses errors :' . PHP_EOL;
     const DOES_NOT_EXISTS = '5007: Entry "%s" does not exists.';
@@ -554,11 +554,7 @@ class Entry extends Model
                 $content = $toParse->content->unwrap();
             }
 
-            $parsedContent->pushKeyValue($toParse->key, (object)[
-                'handle' => $toParse->handle,
-                'type' => $toParse->type,
-                'content' => $content
-            ]);
+            $parsedContent->pushKeyValue($toParse->key, $content);
         });
 
         return $parsedContent;
@@ -972,17 +968,14 @@ class Entry extends Model
             $modelFieldContent = $content->get($key);
 
             // Cannot find content, it's not filled at all
-            if (!$modelFieldContent && $modelField->isRequired()) {
+            if ($modelFieldContent === null && $modelField->isRequired()) {
                 $errors->pushKeyValue($key, [[InputField::FIELD_REQUIRED]]);
                 return;
-            } else if (!$modelFieldContent) {
+            } else if ($modelFieldContent === null) {
                 return;
             }
 
-            if ($modelField->handle != $modelFieldContent->handle) {
-                throw new EntryException(self::SCHEMA_VALIDATION_ERROR);
-            }
-            $modelFieldErrors = $modelField->validateContent($modelFieldContent->content);
+            $modelFieldErrors = $modelField->validateContent($modelFieldContent);
 
             if ($modelFieldErrors->length > 0) {
                 $errors->pushKeyValue($key, $modelFieldErrors->unwrap());

@@ -275,11 +275,7 @@ test('Create an entry with an entry type with an existing url', function () {
             $modelFieldContent = "Textfield content";
         } // and no other field has been set into the layout schema
 
-        $content->pushKeyValue($key, new Collection([
-            'content' => $modelFieldContent,
-            'handle' => $modelField->handle,
-            'type' => $modelField->storingType()
-        ]));
+        $content->pushKeyValue($key, $modelFieldContent);
     });
 
     try {
@@ -324,7 +320,7 @@ test('Failed to update content because a field does not validate', function () {
         'title' => 'Test 2'
     ]);
     $firstKey = $entry->content->keys()->first;
-    $entry->content->get($firstKey)->content = "TooShort";
+    $entry->content->pushKeyValue($firstKey, "TooShort");
 
     try {
         $entryModel->updateById($entry->_id, [
