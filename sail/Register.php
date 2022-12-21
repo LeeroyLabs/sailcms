@@ -17,14 +17,14 @@ final class Register
 
     public static function instance(): Register
     {
-        if (empty(static::$instance)) {
-            static::$instance = new self();
+        if (empty(self::$instance)) {
+            self::$instance = new self();
 
-            static::$containers = Collection::init();
-            static::$modules = Collection::init();
+            self::$containers = Collection::init();
+            self::$modules = Collection::init();
         }
 
-        return static::$instance;
+        return self::$instance;
     }
 
     /**
@@ -38,7 +38,7 @@ final class Register
      */
     public function registerContainer(ContainerInformation $info, string $className): void
     {
-        static::$containers->push((object)[
+        self::$containers->push((object)[
             'name' => $info->name,
             'info' => $info,
             'class' => $className,
@@ -71,7 +71,7 @@ final class Register
      */
     public function registerModule(ModuleInformation $info, AppModule $instance, string $moduleName): void
     {
-        static::$modules->push((object)[
+        self::$modules->push((object)[
             'info' => $info,
             'instance' => $instance,
             'class' => get_class($instance),
@@ -92,7 +92,7 @@ final class Register
      */
     public static function registerRoute(string $method, string $url, string $class): void
     {
-        $container = static::$containers->find(fn($k, $c) => $c->class === $class);
+        $container = self::$containers->find(fn($k, $c) => $c->class === $class);
 
         if ($container) {
             $container->routes[strtolower($method)][] = $url;
@@ -111,7 +111,7 @@ final class Register
     public static function registerMiddleware(AppMiddleware $middleware, string $containerOrModule): void
     {
         $type = $middleware->type();
-        $containerObj = static::$containers->find(fn($k, $c) => $c->class === $containerOrModule);
+        $containerObj = self::$containers->find(fn($k, $c) => $c->class === $containerOrModule);
 
         if ($containerObj && is_subclass_of($containerObj->class, AppContainer::class)) {
             $containerObj->middlewares[] = (object)[
@@ -119,7 +119,7 @@ final class Register
                 'name' => get_class($middleware)
             ];
         } else {
-            $module = static::$modules->find(fn($k, $c) => $c->class === $containerOrModule);
+            $module = self::$modules->find(fn($k, $c) => $c->class === $containerOrModule);
 
             if ($module) {
                 $module->middlewares[] = (object)[
@@ -143,7 +143,7 @@ final class Register
      */
     public static function registerGraphQLQuery(string $name, string $handler, string $method, string $container): void
     {
-        $container = static::$containers->find(fn($k, $c) => $c->class === $container);
+        $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
             $container->graphql['queries'][] = (object)[
@@ -167,7 +167,7 @@ final class Register
      */
     public static function registerGraphQLMutation(string $name, string $handler, string $method, string $container): void
     {
-        $container = static::$containers->find(fn($k, $c) => $c->class === $container);
+        $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
             $container->graphql['mutations'][] = (object)[
@@ -191,7 +191,7 @@ final class Register
      */
     public static function registerGraphQLResolver(string $name, string $handler, string $method, string $container): void
     {
-        $container = static::$containers->find(fn($k, $c) => $c->class === $container);
+        $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
             $container->graphql['resolvers'][] = (object)[
@@ -213,7 +213,7 @@ final class Register
      */
     public static function module(string $name): AppModule
     {
-        $module = static::$modules->find(fn($k, $n) => $n->name === $name);
+        $module = self::$modules->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($module)) {
             return $module->instance;
@@ -233,7 +233,7 @@ final class Register
      */
     public static function container(string $name): AppContainer
     {
-        $container = static::$containers->find(fn($k, $n) => $n->name === $name);
+        $container = self::$containers->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($container)) {
             return $container->class();
@@ -251,7 +251,7 @@ final class Register
      */
     public static function getModules(): Collection
     {
-        return static::$modules;
+        return self::$modules;
     }
 
     /**
@@ -263,6 +263,52 @@ final class Register
      */
     public static function getContainerList(): Collection
     {
-        return static::$containers;
+        return self::$containers;
+    }
+
+    /**
+     *
+     * Check if a container exists in the current state
+     *
+     * @param  string  $name
+     * @param  float   $minVersion
+     * @return bool
+     *
+     */
+    public static function containerExists(string $name, float $minVersion = -1): bool
+    {
+        $exists = false;
+
+        self::$containers->each(function ($k, $container) use (&$exists, $name, $minVersion)
+        {
+            if ($container->info->name === $name && $container->info->version >= $minVersion) {
+                $exists = true;
+            }
+        });
+
+        return $exists;
+    }
+
+    /**
+     *
+     * Check if a module exists in the current state
+     *
+     * @param  string  $name
+     * @param  float   $minVersion
+     * @return bool
+     *
+     */
+    public static function moduleExists(string $name, float $minVersion = -1): bool
+    {
+        $exists = false;
+
+        self::$modules->each(function ($k, $module) use (&$exists, $name, $minVersion)
+        {
+            if ($module->info->name === $name && $module->info->version >= $minVersion) {
+                $exists = true;
+            }
+        });
+
+        return $exists;
     }
 }

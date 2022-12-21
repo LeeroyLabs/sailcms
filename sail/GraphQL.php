@@ -5,6 +5,7 @@ namespace SailCMS;
 use ArrayAccess;
 use GraphQL\Error\InvariantViolation;
 use GraphQL\Error\SyntaxError;
+use GraphQL\Error\DebugFlag;
 use GraphQL\GraphQL as GQL;
 use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\ResolveInfo;
@@ -42,9 +43,9 @@ final class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -67,9 +68,9 @@ final class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -92,9 +93,9 @@ final class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param string $type
-     * @param string $className
-     * @param string $method
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -117,7 +118,7 @@ final class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -130,7 +131,7 @@ final class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -143,7 +144,7 @@ final class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -242,8 +243,9 @@ final class GraphQL
             $data = $mresult->data;
 
             $result = GQL::executeQuery($schema, $data['query'], null, new Context(), $data['variables'], null, [__CLASS__, 'resolvers']);
-            $errors = $result->errors;
-            $serializableResult = (object)$result->toArray();
+
+            $serializableResult = (object)$result->toArray(DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::INCLUDE_TRACE);
+            $errors = $serializableResult->errors ?? [];
 
             if (!empty($input['query'])) {
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::AfterQuery, data: $serializableResult));
@@ -257,11 +259,11 @@ final class GraphQL
                 foreach ($errors as $error) {
                     $mresult->data->errors = [
                         [
-                            'message' => $error->getMessage(),
+                            'message' => $error['debugMessage'],
                             'extensions' => ['category' => 'internal'],
-                            'locations' => [['line' => $error->getLine(), 'column' => 1]],
-                            'file' => $error->getFile(),
-                            'stack' => debug_backtrace(),
+                            'locations' => [['line' => $error['trace'][0]['line'], 'column' => 1]],
+                            'file' => $error['trace'][0]['file'],
+                            'stack' => $error['trace'],
                             'path' => ['']
                         ]
                     ];
@@ -377,9 +379,9 @@ final class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param array $args
+     * @param  array        $args
      * @param               $contextValue
-     * @param ResolveInfo $info
+     * @param  ResolveInfo  $info
      * @return ArrayAccess|mixed
      *
      */

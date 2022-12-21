@@ -22,7 +22,7 @@ final class Route
     private static array $patterns = [
         ':any' => '([a-zA-Z0-9\-]+)',
         ':string' => '([a-zA-Z]+)',
-        ':id' => '([0-9]{24})',
+        ':id' => '([a-z0-9]{24})',
         ':num' => '([0-9]+)',
         ':all' => '(.*)'
     ];

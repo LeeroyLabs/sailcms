@@ -995,6 +995,34 @@ class User extends Model
 
     /**
      *
+     * Get a list of users by their ids.
+     *
+     * Note:
+     * This call is not permission protected because it would require some use case to give too much power
+     * to a normal user.
+     *
+     * @param  array|Collection  $ids
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public function getListByIds(array|Collection $ids): Collection
+    {
+        $list = [];
+
+        if (is_object($ids)) {
+            $ids = $ids->unwrap();
+        }
+
+        foreach ($ids as $id) {
+            $list[] = $this->ensureObjectId($id);
+        }
+
+        return new Collection($this->find(['_id' => ['$in' => $list]])->exec());
+    }
+
+    /**
+     *
      * Validate email
      *
      * @param  string  $email
