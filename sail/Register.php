@@ -280,7 +280,7 @@ final class Register
 
         self::$containers->each(function ($k, $container) use (&$exists, $name)
         {
-            if ($container->info()->name === $name) {
+            if ($container->info->name === $name) {
                 $exists = true;
             }
         });
@@ -302,7 +302,7 @@ final class Register
 
         self::$modules->each(function ($k, $module) use (&$exists, $name)
         {
-            if ($module->info()->name === $name) {
+            if ($module->info->name === $name) {
                 $exists = true;
             }
         });
