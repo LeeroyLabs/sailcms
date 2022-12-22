@@ -3,7 +3,6 @@
 use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
-use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
@@ -12,7 +11,6 @@ use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\LocaleField;
-use SailCMS\Types\StoringType;
 use SailCMS\Types\Username;
 
 beforeAll(function () {
@@ -260,27 +258,11 @@ test('Fail to get homepage entry', function () {
 test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
-    $content = Collection::init();
-    $entryLayout = $entryModel->getEntryLayout();
-
-    // Autofill the content for the layout
-    $entryLayout->schema->each(function ($key, $modelField) use (&$content) {
-        /**
-         * @var ModelField $modelField
-         */
-        $modelFieldContent = null;
-
-        if ($modelField->storingType() != StoringType::ARRAY->value) {
-            // Assuming is a TextField
-            $modelFieldContent = "Textfield content";
-        } // and no other field has been set into the layout schema
-
-        $content->pushKeyValue($key, $modelFieldContent);
-    });
-
     try {
         $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', [
-            'content' => $content
+            'content' => [
+                'sub-title' => "Textfield content"
+            ]
         ]);
         expect($entry->title)->toBe('Test 2');
         expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
@@ -319,8 +301,7 @@ test('Failed to update content because a field does not validate', function () {
     $entry = $entryModel->one([
         'title' => 'Test 2'
     ]);
-    $firstKey = $entry->content->keys()->first;
-    $entry->content->pushKeyValue($firstKey, "TooShort");
+    $entry->content->{"sub-title"} = "TooShort";
 
     try {
         $entryModel->updateById($entry->_id, [
@@ -431,7 +412,7 @@ test('Get all entries with ignoring trash and not', function () {
         $notIgnoreTrash = $model->all(false);
 
         expect($ignoredTrash->length)->toBe(1);
-//        expect($notIgnoreTrash->length)->toBe(0);TODO need to fix that
+        expect($notIgnoreTrash->length)->toBe(0);
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);
