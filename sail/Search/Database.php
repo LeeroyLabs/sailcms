@@ -2,24 +2,81 @@
 
 namespace SailCMS\Search;
 
+use SailCMS\Collection;
+use SailCMS\Errors\DatabaseException;
+use SailCMS\Models\Search;
 use SailCMS\Types\SearchResults;
 
 class Database implements Adapter
 {
+    /**
+     *
+     * Store or update a document
+     *
+     * @param  object|array  $document
+     * @param  string        $dataIndex
+     * @throws DatabaseException
+     *
+     */
     public function store(object|array $document, string $dataIndex = '')
     {
-        // TODO: Implement store() method.
+        if ($document instanceof Collection) {
+            $document = $document->unwrap();
+        } else {
+            $document = (array)$document;
+        }
+
+        if (isset($document['_id'])) {
+            $document['id'] = (string)$document['_id'];
+            unset($document['_id']);
+        }
+
+        $search = new Search();
+        $search->store($document);
     }
 
+    /**
+     *
+     * Delete a document by id
+     *
+     * @param  string  $id
+     * @param  string  $dataIndex
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public function remove(string $id, string $dataIndex = '')
+    {
+        $search = new Search();
+        $search->remove($id);
+    }
+
+    /**
+     *
+     * Search for the keywords (in title and content)
+     *
+     * @param  string  $search
+     * @param  array   $meta
+     * @param  string  $dataIndex
+     * @return SearchResults
+     * @throws DatabaseException
+     *
+     */
     public function search(string $search, array $meta = [], string $dataIndex = ''): SearchResults
     {
-        // TODO: Implement search() method.
-        return new SearchResults([], 0);
+        $model = new Search();
+        return $model->search($search);
     }
 
+    /**
+     *
+     * Send an instance of the search model
+     *
+     * @return mixed
+     *
+     */
     public function getRawAdapter(): mixed
     {
-        // TODO: Implement getRawAdapter() method.
-        return null;
+        return new Search();
     }
 }

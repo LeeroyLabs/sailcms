@@ -55,6 +55,25 @@ final class Search
 
     /**
      *
+     * Store a document in the database
+     *
+     * @param  array|object  $document
+     * @param  string        $dataIndex
+     * @return void
+     *
+     */
+    public function store(array|object $document, string $dataIndex = ''): void
+    {
+        self::$adapter->store($document, $dataIndex);
+    }
+
+    public function remove(string $id, string $dataIndex = ''): void
+    {
+        self::$adapter->remove($id, $dataIndex);
+    }
+
+    /**
+     *
      * Try to execute the give method on the adapter. if not available, null is returned
      *
      * @param  string  $method
