@@ -260,7 +260,7 @@ class Entry extends Model
 
         if ($filters === null) {
             $filters = [
-                'status' => ['$ne' => EntryStatus::TRASH]
+                'status' => ['$ne' => EntryStatus::TRASH->value]
             ];
         }
 
@@ -618,20 +618,24 @@ class Entry extends Model
      * Get all entries of the current type
      *  with filtering and pagination
      *
+     * @param bool $ignoreTrash
      * @param ?array $filters
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function all(?array $filters = []): Collection
+    public function all(bool $ignoreTrash = true, ?array $filters = []): Collection
     {
-        // TODO Filters available date, author, category, status
-
+        // Caching when there is no filter
         $cache_key = null;
         $cache_ttl = Cache::TTL_WEEK;
         if (count($filters) === 0) {
             $cache_key = self::ENTRY_BY_HANDLE_ALL . $this->entryType->handle;
             $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+        }
+
+        if (!$ignoreTrash && !in_array('status', $filters)) {
+            $filters['status'] = ['$ne' => EntryStatus::TRASH->value];
         }
 
         $result = $this->find($filters)->exec($cache_key, $cache_ttl);

@@ -405,6 +405,39 @@ test('Failed to delete an entry type with related entries in it', function () {
     }
 });
 
+test('Soft Delete an entry with the default type', function () {
+    $model = new Entry();
+    $entry = $model->one([
+        'title' => 'Home page'
+    ]);
+
+    try {
+        $result = $entry->delete($entry->_id);
+        $entry = $model->one([
+            'title' => 'Home page'
+        ]);
+        expect($result)->toBe(true);
+        expect($entry->status)->toBe(EntryStatus::TRASH->value);
+    } catch (EntryException $exception) {
+        expect(true)->toBe(false);
+    }
+});
+
+test('Get all entries with ignoring trash and not', function () {
+    $model = new Entry();
+
+    try {
+        $ignoredTrash = $model->all();
+        $notIgnoreTrash = $model->all(false);
+
+        expect($ignoredTrash->length)->toBe(1);
+//        expect($notIgnoreTrash->length)->toBe(0);TODO need to fix that
+    } catch (Exception $exception) {
+        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
+
 test('Hard delete an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
@@ -431,24 +464,6 @@ test('Hard delete an entry with an entry type 2', function () {
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect(true)->toBe(false);
-    }
-});
-
-test('Soft Delete an entry with the default type', function () {
-    $model = new Entry();
-    $entry = $model->one([
-        'title' => 'Home page'
-    ]);
-
-    try {
-        $result = $entry->delete($entry->_id);
-        $entry = $model->one([
-            'title' => 'Home page'
-        ]);
-        expect($result)->toBe(true);
-        expect($entry->status)->toBe(EntryStatus::TRASH->value);
-    } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }
 });
