@@ -134,7 +134,8 @@ class Users
             $sorting,
             $userTypeSearch ?? null,
             $metaSearch ?? null,
-            $args->get('status', null)
+            $args->get('status', null),
+            $args->get('validated', null)
         );
 
         $list->list->each(function ($key, $value)

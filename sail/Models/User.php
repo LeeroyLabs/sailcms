@@ -504,6 +504,7 @@ class User extends Model
      * @param  UserTypeSearch|null  $typeSearch
      * @param  MetaSearch|null      $metaSearch
      * @param  bool|null            $status
+     * @param  bool|null            $validated
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -517,7 +518,8 @@ class User extends Model
         UserSorting $sorting = null,
         UserTypeSearch|null $typeSearch = null,
         MetaSearch|null $metaSearch = null,
-        bool|null $status = null
+        bool|null $status = null,
+        bool|null $validated = null
     ): Listing {
         $this->hasPermissions(true);
 
@@ -560,6 +562,10 @@ class User extends Model
 
         if (isset($status)) {
             $query['status'] = $status;
+        }
+
+        if (isset($validated)) {
+            $query['validated'] = $validated;
         }
 
         // Pagination

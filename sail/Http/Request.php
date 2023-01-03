@@ -24,7 +24,14 @@ class Request
         $this->_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'CLI';
         $this->_post = new Post();
         $this->_get = new Get();
-        $this->_headers = new Collection(getallheaders());
+
+        $headers = getallheaders();
+
+        if (count($headers) === 1) {
+            $headers = $_SERVER['HEADERS']; // Added by Sail Server
+        }
+
+        $this->_headers = new Collection($headers);
     }
 
     /**

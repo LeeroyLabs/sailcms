@@ -3,7 +3,7 @@ type Query {
 
     # Users
     user(id: ID!): User
-    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean): UserListing
+    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean): UserListing
 
     # Authentication
     resendValidationEmail(email: String!): Boolean!
