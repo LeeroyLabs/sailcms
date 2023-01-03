@@ -4,12 +4,12 @@ namespace SailCMS\Types\Fields;
 
 use SailCMS\Collection;
 use SailCMS\Contracts\DatabaseType;
-use stdClass;
 
 class InputSettings implements DatabaseType
 {
     const INPUT_TYPE_CHECKBOX = 'checkbox';
     const INPUT_TYPE_NUMBER = 'number';
+    const INPUT_TYPE_REGEX = 'regex';
 
     /**
      *
@@ -32,10 +32,10 @@ class InputSettings implements DatabaseType
      *
      * Convert to an stdClass object
      *
-     * @return stdClass|array
+     * @return array
      *
      */
-    public function toDBObject(): stdClass|array
+    public function toDBObject(): array
     {
         return [
             'name' => $this->name,

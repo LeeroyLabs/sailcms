@@ -27,7 +27,8 @@ class InputTextField extends Field
         public readonly LocaleField $labels,
         public readonly bool        $required = false,
         public readonly int         $max_length = 0,
-        public readonly int         $min_length = 0
+        public readonly int         $min_length = 0,
+        public readonly string      $pattern = ''
     )
     {
     }
@@ -44,7 +45,8 @@ class InputTextField extends Field
         return new Collection([
             'required' => false,
             'max_length' => 0,
-            'min_length' => 0
+            'min_length' => 0,
+            'pattern' => ''
         ]);
     }
 
@@ -61,6 +63,7 @@ class InputTextField extends Field
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('max_length', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('min_length', InputSettings::INPUT_TYPE_NUMBER),
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_REGEX, Collection::init(),)
         ]);
     }
 
@@ -99,6 +102,11 @@ class InputTextField extends Field
             $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->min_length));
         }
 
+        preg_match("/$this->pattern/", $content, $matches);
+        if ($this->pattern && empty($matches)) {
+            $errors->push('regex errors');
+        }
+
         return $errors;
     }
 
@@ -116,7 +124,8 @@ class InputTextField extends Field
             'settings' => [
                 'required' => $this->required,
                 'max_length' => $this->max_length,
-                'min_length' => $this->min_length
+                'min_length' => $this->min_length,
+                'pattern' => $this->pattern
             ]
         ];
     }
