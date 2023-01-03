@@ -263,7 +263,6 @@ class Entry extends Model
 
         // Set up cache
         $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters);
-        print_r($cacheKey);
         $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
 
         // Actual query
