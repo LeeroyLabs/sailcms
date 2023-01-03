@@ -263,6 +263,7 @@ class Entry extends Model
 
         // Set up cache
         $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters);
+        print_r($cacheKey);
         $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
 
         // Actual query
@@ -1327,35 +1328,34 @@ class Entry extends Model
      */
     private static function generateCacheKeyFromFilters(string $handle, Collection|array $filters): string
     {
-        $cacheKey = self::ENTRY_FILTERED_CACHE . $handle;
-        foreach ($filters as $key => $iterableOrValue) {
-            $cacheKey .= "+" . $key . self::iterateIntoFilters($iterableOrValue);
-        }
-        return $cacheKey;
+        return self::ENTRY_FILTERED_CACHE . $handle . self::iterateIntoFilters($filters);
     }
 
     /**
      *
-     * Iterate into filter recursively.
+     * Iterate into filters recursively.
      *
      * @param mixed $iterableOrValue
-     * @param string $base
      * @return string
      *
      */
-    private static function iterateIntoFilters(mixed $iterableOrValue, string $base = ""): string
+    private static function iterateIntoFilters(mixed $iterableOrValue): string
     {
+        $result = "";
         if (!is_array($iterableOrValue) && !$iterableOrValue instanceof Collection) {
-            $result = "=" . $iterableOrValue . "|";
+            $result = "=" . $iterableOrValue;
         } else {
-            $result = "";
             foreach ($iterableOrValue as $key => $valueOrIterable) {
-                $prefix = $key;
+                $prefix = "+" . $key;
                 if (!is_string($key)) {
-                    $prefix = "+";
+                    $prefix = "";
+                } else if (in_array($key, ['$or', '$and', '$nor'])) {
+                    $prefix = "|" . $key;
+                } else if (str_starts_with($key, '$')) {
+                    $prefix = ">" . $key;
                 }
 
-                $result .= $prefix . self::iterateIntoFilters($valueOrIterable, $base);
+                $result .= $prefix . self::iterateIntoFilters($valueOrIterable);
             }
         }
         return $result;

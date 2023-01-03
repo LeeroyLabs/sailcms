@@ -17,7 +17,6 @@ use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SodiumException;
@@ -608,7 +607,8 @@ class Entries
      * @throws EntryException
      *
      */
-    private function parseFilterInput(?Collection $filters): array {
+    private function parseFilterInput(?Collection $filters): array
+    {
         $parsedFilters = [];
 
         $filters?->each(function ($i, $filter) use (&$parsedFilters) {
@@ -616,17 +616,17 @@ class Entries
                 throw new EntryException(Entry::INVALID_FILTER_VALUE);
             }
 
-            if ($filter->get('value') && (!$filter->get('type') || $filter->get('value') === 'array') ) {
+            if ($filter->get('value') && (!$filter->get('type') || $filter->get('value') === 'array')) {
                 throw new EntryException(Entry::INVALID_FILTER_TYPE);
             }
 
             $logic = '$' . $filter->get('logic', 'and');
 
-            $value = match($filter->get('type')) {
-                "float" => (float) $filter->get('value'),
-                "integer" => (integer) $filter->get('value'),
-                "boolean" => (boolean) $filter->get('value'),
-                default => (string) $filter->get('value')
+            $value = match ($filter->get('type')) {
+                "float" => (float)$filter->get('value'),
+                "integer" => (integer)$filter->get('value'),
+                "boolean" => (boolean)$filter->get('value'),
+                default => (string)$filter->get('value')
             };
 
             $filterValue = [$filter->get('field') => match ($filter->get('operation')) {
@@ -640,8 +640,7 @@ class Entries
 
             if ($logic === '$or') {
                 $parsedFilters['$and'][0][$logic][] = $filterValue;
-            }
-            else if (!isset($parsedFilters[$logic])) {
+            } else {
                 $parsedFilters[$logic][] = $filterValue;
             }
         });
