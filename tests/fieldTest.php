@@ -63,10 +63,15 @@ test('Add all fields to the layout', function () {
             'min_length' => 5
         ]
     ]);
+    $phoneField = new TextField(new LocaleField(['en' => 'Phone', 'fr' => 'Téléphone']), [
+        [
+            'pattern' => "\d{3}-\d{3}-\d{4}"
+        ]
+    ]);
     $numberFieldInteger = new NumberField(new LocaleField(['en' => 'Integer', 'fr' => 'Entier']), [
         [
             'min' => -1,
-            'max' => 1
+            'max' => 11
         ]
     ]);
     $numberFieldFloat = new NumberField(new LocaleField(['en' => 'Float', 'fr' => 'Flottant']), [
@@ -78,6 +83,7 @@ test('Add all fields to the layout', function () {
 
     $fields = new Collection([
         "text" => $textField,
+        "phone" => $phoneField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat
     ]);
