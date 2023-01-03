@@ -16,6 +16,10 @@ class Context
 
         $headers = getallheaders();
 
+        if (count($headers) === 1) {
+            $headers = $_SERVER['HEADERS']; // Added by Sail Server
+        }
+
         foreach ($headers as $key => $value) {
             if (strtolower($key) === 'x-access-token') {
                 $this->_token = $value;

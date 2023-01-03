@@ -191,6 +191,10 @@ final class Stateless implements AppSession
             $headers = getallheaders();
             $cookie = '';
 
+            if (count($headers) === 1) {
+                $headers = $_SERVER['HEADERS'] ?? []; // Added By Sail Server
+            }
+
             if (!empty($headers['X-Access-Token'])) {
                 $cookie = $headers['X-Access-Token'];
             } elseif (!empty($headers['x-access-token'])) {

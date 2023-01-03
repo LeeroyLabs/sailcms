@@ -97,7 +97,7 @@ final class Sail
 
         // Register the error handler
         self::$errorHandler = new Run();
-        $ct = getallheaders()['Content-Type'] ?? '';
+        $ct = getallheaders()['Content-Type'] ?? $_SERVER['HEADERS']['Content-Type'];
         $isWeb = false;
 
         if (!empty($ct) && stripos($ct, 'application/json') !== false) {
@@ -809,6 +809,10 @@ final class Sail
 
             // Let the header 'x-site-id' override the value
             $headers = getallheaders();
+
+            if (count($headers) === 1) {
+                $headers = $_SERVER['HEADERS']; // Added By Sail Server
+            }
 
             foreach ($headers as $key => $value) {
                 if (strtolower($key) === 'x-site-id') {
