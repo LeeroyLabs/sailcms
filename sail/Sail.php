@@ -177,6 +177,8 @@ final class Sail
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
     {
+        $_SERVER['HEADERS'] = [];
+        
         if (!file_exists(self::$workingDirectory . '/config')) {
             self::$installMode = true;
         }
