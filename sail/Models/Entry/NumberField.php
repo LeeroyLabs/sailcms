@@ -2,14 +2,45 @@
 
 namespace SailCMS\Models\Entry;
 
+use Exception;
 use SailCMS\Collection;
 use SailCMS\Types\Fields\InputNumberField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class NumberField extends Field
 {
+    protected const PRECISION_MAX_LIMIT = 14;
+    protected const INVALID_PRECISION = '6140: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
+
+    public int $precision = 0;
+
     /**
      *
+     * Override the constructor to pass a precision to the number
+     *
+     * @param LocaleField $labels
+     * @param array|Collection|null $settings
+     * @param int $precision
+     * @throws Exception
+     */
+    public function __construct(LocaleField $labels, array|Collection|null $settings, int $precision = 0)
+    {
+        // Validate precision to avoid errors
+        if ($precision < 0 || $precision > self::PRECISION_MAX_LIMIT) {
+            throw new Exception(self::INVALID_PRECISION);
+        }
+
+        $this->precision = $precision;
+        if ($precision > 0) {
+            $settings[0]['step'] = 1 / pow(10, $precision);
+        }
+
+        parent::__construct($labels, $settings);
+    }
+
+    /**
+     *3
      * Description for field info
      *
      * @return string
@@ -23,19 +54,22 @@ class NumberField extends Field
     /**
      *
      * Returns the storing type
-     *  // TODO storing type according to option
      *
      * @return string
      *
      */
     public function storingType(): string
     {
-        return StoringType::INTEGER->value;
+        if ($this->precision > 0) {
+            return StoringType::FLOAT->value;
+        } else {
+            return StoringType::INTEGER->value;
+        }
     }
 
     /**
      *
-     * Sets the default settings from the input text field
+     * Sets the default settings from the input number field
      *
      * @return Collection
      *

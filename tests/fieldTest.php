@@ -9,6 +9,7 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
+use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
@@ -55,22 +56,30 @@ test('Add all fields to the layout', function () {
     ]);
 
     // Field with default settings
-    $textField = new TextField((new LocaleField(['en' => 'Text', 'fr' => 'Texte'])), [
+    $textField = new TextField(new LocaleField(['en' => 'Text', 'fr' => 'Texte']), [
         [
             'required' => true,
             'max_length' => 10,
             'min_length' => 5
         ]
     ]);
-    $numberField = new NumberField((new LocaleField(['en' => 'Integer', 'fr' => 'Entier'])), [
+    $numberFieldInteger = new NumberField(new LocaleField(['en' => 'Integer', 'fr' => 'Entier']), [
         [
             'min' => -1,
             'max' => 1
         ]
     ]);
+    $numberFieldFloat = new NumberField(new LocaleField(['en' => 'Float', 'fr' => 'Flottant']), [
+        [
+            'required' => true,
+            'min' => 0.03
+        ]
+    ], 2);
+
     $fields = new Collection([
         "text" => $textField,
-        "number" => $numberField
+        "integer" => $numberFieldInteger,
+        "float" => $numberFieldFloat
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -92,11 +101,32 @@ test('Failed to update the entry content', function () {
     try {
         $errors = $entryModel->updateById($entry, [
             'content' => [
-                'number' => '0'
+                'float' => '0'
             ]
         ], false);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
+        expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
+    } catch (Exception $exception) {
+//        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
+
+test('Update content with success', function () {
+    $entryModel = EntryType::getEntryModelByHandle('field-test');
+    $entry = $entryModel->one([
+        'title' => 'Home Field Test'
+    ]);
+
+    try {
+        $errors = $entryModel->updateById($entry, [
+            'content' => [
+                'float' => '0.03',
+                'text' => 'Not empty'
+            ]
+        ], false);
+        expect($errors->length)->toBe(0);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);

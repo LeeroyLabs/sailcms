@@ -9,28 +9,28 @@ use stdClass;
 
 class InputNumberField extends Field
 {
-    /* Errors from 6140 to 6159 */
-    protected const FIELD_TOO_BIG = '6140: The value is too big';
-    protected const FIELD_TOO_SMALL = '6141: The value is too small';
-    protected const FIELD_HAS_NEGATIVE_NUMBER = '6142: The value should not be negative.';
+    /* Errors from 6141 to 6159 */
+    public const FIELD_TOO_BIG = '6141: The value is too big (%s)';
+    public const FIELD_TOO_SMALL = '6142: The value is too small (%s)';
 
     /**
+     *
      *
      * Input text field from html input:number attributes
      *
      * @param LocaleField $labels
      * @param bool $required
-     * @param int $min
-     * @param int $max
-     * @param bool $negative_number
+     * @param float $min
+     * @param float $max
+     * @param float|int $step
      *
      */
     public function __construct(
         public readonly LocaleField $labels,
         public readonly bool        $required = false,
-        public readonly int         $min = 0,
-        public readonly int         $max = 0,
-        public readonly bool        $negative_number = true,
+        public readonly float       $min = 0,
+        public readonly float       $max = 0,
+        public readonly float|int   $step = 1
     )
     {
     }
@@ -48,7 +48,7 @@ class InputNumberField extends Field
             'required' => false,
             'min' => 0,
             'max' => 0,
-            'negative_number' => true
+            'step' => 1
         ]);
     }
 
@@ -65,19 +65,20 @@ class InputNumberField extends Field
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('min', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('max', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('negative_number', InputSettings::INPUT_TYPE_CHECKBOX),
+            new InputSettings('step', InputSettings::INPUT_TYPE_NUMBER)
         ]);
     }
 
     /**
      *
      * Get the type of how it's store in the database
+     *  > it could be an integer or a float
      *
      * @return string
      */
     public static function storingType(): string
     {
-        return StoringType::INTEGER->value;
+        return StoringType::INTEGER->value . " or " . StoringType::FLOAT->value;
     }
 
     /**
@@ -93,20 +94,19 @@ class InputNumberField extends Field
     {
         $errors = Collection::init();
 
-        if ($this->required && !$content) {
+        $contentCasted = is_float($this->step) ? (float)$content : (integer)$content;
+
+        // Since "0" is treat as false, the condition for empty is stricter
+        if ($this->required && $content === "") {
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($this->min > 0 && (integer)$content < $this->min) {
-            $errors->push(self::FIELD_TOO_SMALL . ' (' . $this->min . ').');
+        if ($contentCasted < $this->min) {
+            $errors->push(sprintf(self::FIELD_TOO_SMALL, $this->min));
         }
 
-        if ($this->max > 0 && (integer)$content > $this->max) {
-            $errors->push(self::FIELD_TOO_BIG . ' (' . $this->max . ').');
-        }
-
-        if (!$this->negative_number && (integer)$content < 0) {
-            $errors->push(self::FIELD_HAS_NEGATIVE_NUMBER);
+        if ($this->max > 0 && $contentCasted > $this->max) {
+            $errors->push(sprintf(self::FIELD_TOO_BIG, $this->max));
         }
 
         return $errors;
@@ -127,7 +127,7 @@ class InputNumberField extends Field
                 'required' => $this->required,
                 'min' => $this->min,
                 'max' => $this->max,
-                'negative_number' => $this->negative_number,
+                'step' => $this->step
             ]
         ];
     }
