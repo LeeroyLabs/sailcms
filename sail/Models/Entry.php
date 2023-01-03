@@ -31,8 +31,6 @@ use stdClass;
 
 class Entry extends Model
 {
-    // TODO Add caching for queries with filters
-
     /* Homepage config */
     const HOMEPAGE_CONFIG_HANDLE = 'homepage';
     const HOMEPAGE_CONFIG_ENTRY_TYPE_KEY = 'entry_type_handle';
@@ -51,10 +49,11 @@ class Entry extends Model
     const INVALID_FILTER_TYPE = '5010: Invalid filter type (array is not allowed).';
 
     /* Cache */
-    const HOMEPAGE_CACHE = 'homepage_entry';
+    const HOMEPAGE_CACHE = 'homepage_entry_'; // Add site id and locale at the end
     const FIND_BY_URL_CACHE = 'find_by_url_entry_'; // Add url at the end
     const ONE_CACHE_BY_ID = 'entry_'; // Add id at the end
-    const ENTRY_BY_HANDLE_ALL = 'all_entry_'; // Add handle at the end
+    const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_'; // Add handle at the end
+    const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
 
     /* Fields */
     public string $entry_type_id;
@@ -182,12 +181,7 @@ class Entry extends Model
         $parsedContent = Collection::init();
 
         $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
-            $parsedContent->push([
-                'key' => $key,
-                'type' => $modelFieldContent->type,
-                'handle' => $modelFieldContent->handle,
-                'content' => $modelFieldContent->content
-            ]);
+            $parsedContent->push($modelFieldContent);
         });
 
         return $parsedContent;
@@ -258,17 +252,23 @@ class Entry extends Model
 
         $offset = $page * $limit - $limit;
 
+        // If filters is null it is default to ignore trash entries
         if ($filters === null) {
-            $filters = [
-                'status' => ['$ne' => EntryStatus::TRASH]
-            ];
+            $filters['status'] = ['$ne' => EntryStatus::TRASH->value];
         }
 
+        // Option for pagination
         $options = QueryOptions::initWithPagination($offset, $limit);
         $options->sort = [$sort => $direction];
 
-        $results = $entryModel->find($filters, $options)->exec();
+        // Set up cache
+        $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters);
+        $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
 
+        // Actual query
+        $results = $entryModel->find($filters, $options)->exec($cacheKey, $cacheTtl);
+
+        // Data for pagination
         $count = $entryModel->count($filters);
         $total = (integer)ceil($count / $limit);
 
@@ -305,7 +305,7 @@ class Entry extends Model
 
     /**
      *
-     *
+     * Get homepage entry !
      *
      * @param string $siteId
      * @param string $locale
@@ -329,7 +329,7 @@ class Entry extends Model
 
         $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
 
-        $cacheHandle = self::HOMEPAGE_CACHE . "_" . $siteId . "_" . $locale;
+        $cacheHandle = self::HOMEPAGE_CACHE . $siteId . "_" . $locale;
         $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
         $entry = $entryModel->findById($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY})->exec($cacheHandle, $cacheTtl);
 
@@ -615,26 +615,34 @@ class Entry extends Model
 
     /**
      *
-     * Get all entries of the current type
-     *  with filtering and pagination
+     * Get all entries of the current type without pagination
      *
+     * @param bool $ignoreTrash
      * @param ?array $filters
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function all(?array $filters = []): Collection
+    public function all(bool $ignoreTrash = true, ?array $filters = []): Collection
     {
-        // TODO Filters available date, author, category, status
-
-        $cache_key = null;
-        $cache_ttl = Cache::TTL_WEEK;
-        if (count($filters) === 0) {
-            $cache_key = self::ENTRY_BY_HANDLE_ALL . $this->entryType->handle;
-            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+        // Fast selection of only valid entry (not thrashed)
+        if (!$ignoreTrash && !in_array('status', $filters)) {
+            // Want everything but trash
+            $filters['status'] = ['$ne' => EntryStatus::TRASH->value];
         }
 
-        $result = $this->find($filters)->exec($cache_key, $cache_ttl);
+        // According to the filters, create the cache key
+        if (count($filters) === 0) {
+            $cacheKey = self::ENTRY_CACHE_BY_HANDLE_ALL . $this->entryType->handle;
+        } else {
+            $cacheKey = self::generateCacheKeyFromFilters($this->entryType->handle, $filters);
+        }
+
+        // Cache Time To Live value from setting or default
+        $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+
+        // Actual query!!!
+        $result = $this->find($filters)->exec($cacheKey, $cacheTtl);
         return new Collection($result);
     }
 
@@ -1306,5 +1314,49 @@ class Entry extends Model
     private static function homepageConfigHandle($siteId): string
     {
         return self::HOMEPAGE_CONFIG_HANDLE . "_" . $siteId;
+    }
+
+    /**
+     *
+     * Generate cache key from filters
+     *
+     * @param string $handle
+     * @param Collection|array $filters
+     * @return string
+     *
+     */
+    private static function generateCacheKeyFromFilters(string $handle, Collection|array $filters): string
+    {
+        return self::ENTRY_FILTERED_CACHE . $handle . self::iterateIntoFilters($filters);
+    }
+
+    /**
+     *
+     * Iterate into filters recursively.
+     *
+     * @param mixed $iterableOrValue
+     * @return string
+     *
+     */
+    private static function iterateIntoFilters(mixed $iterableOrValue): string
+    {
+        $result = "";
+        if (!is_array($iterableOrValue) && !$iterableOrValue instanceof Collection) {
+            $result = "=" . $iterableOrValue;
+        } else {
+            foreach ($iterableOrValue as $key => $valueOrIterable) {
+                $prefix = "+" . $key;
+                if (!is_string($key)) {
+                    $prefix = "";
+                } else if (in_array($key, ['$or', '$and', '$nor'])) {
+                    $prefix = "|" . $key;
+                } else if (str_starts_with($key, '$')) {
+                    $prefix = ">" . $key;
+                }
+
+                $result .= $prefix . self::iterateIntoFilters($valueOrIterable);
+            }
+        }
+        return $result;
     }
 }

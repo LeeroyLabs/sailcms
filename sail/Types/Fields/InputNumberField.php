@@ -30,7 +30,7 @@ class InputNumberField extends Field
         public readonly bool        $required = false,
         public readonly int         $min = 0,
         public readonly int         $max = 0,
-        public readonly bool        $negative_number = false,
+        public readonly bool        $negative_number = true,
     )
     {
     }
