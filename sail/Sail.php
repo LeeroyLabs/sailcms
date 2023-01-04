@@ -250,9 +250,6 @@ final class Sail
             Session::manager();
         }
 
-        // Authenticate user
-        User::authenticate();
-
         // Load all site's containers
         if (!$skipContainers) {
             Debug::eventStart('Initialize Containers', 'green');
@@ -264,6 +261,9 @@ final class Sail
         Debug::eventStart('Initialize Modules', 'purple');
         self::loadModulesFromComposer(self::$workingDirectory);
         Debug::eventEnd('Initialize Modules');
+
+        // Authenticate user
+        User::authenticate();
 
         // Ensure peak performance from the database
         self::ensurePerformance();
@@ -349,6 +349,9 @@ final class Sail
                     // Run the GraphQL setup
                     $instance->graphql();
 
+                    // Run the Event setup
+                    $instance->events();
+
                     // Run middleware registration
                     $instance->middleware();
 
@@ -401,6 +404,9 @@ final class Sail
 
                     // Run middleware registration
                     $instance->middleware();
+
+                    // Run the Event setup
+                    $instance->events();
 
                     // Run the command registration
                     $commands = $instance->cli();

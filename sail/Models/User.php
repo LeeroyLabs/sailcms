@@ -65,7 +65,7 @@ class User extends Model
                 'roles',
                 'email',
                 'status',
-                'avatatar',
+                'avatar',
                 'meta',
                 'password',
                 'temporary_token',
