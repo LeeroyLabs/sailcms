@@ -10,6 +10,7 @@ use SailCMS\Sail;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
+use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
@@ -107,12 +108,15 @@ test('Failed to update the entry content', function () {
     try {
         $errors = $entryModel->updateById($entry, [
             'content' => [
-                'float' => '0'
+                'float' => '0',
+                'phone' => '514-3344344'
             ]
         ], false);
+//        print_r($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
+        expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -129,7 +133,8 @@ test('Update content with success', function () {
         $errors = $entryModel->updateById($entry, [
             'content' => [
                 'float' => '0.03',
-                'text' => 'Not empty'
+                'text' => 'Not empty',
+                'phone' => '514-514-5145'
             ]
         ], false);
         expect($errors->length)->toBe(0);

@@ -83,6 +83,7 @@ abstract class Field implements DatabaseType
         return match ($type) {
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
             InputSettings::INPUT_TYPE_NUMBER => is_integer((int)$value),
+            InputSettings::INPUT_TYPE_REGEX => is_string($value),
             default => false
         };
     }

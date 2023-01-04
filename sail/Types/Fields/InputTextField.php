@@ -12,6 +12,7 @@ class InputTextField extends Field
     /* Errors from 6120 to 6139 */
     public const FIELD_TOO_LONG = '6120: The content is too long (%s)';
     public const FIELD_TOO_SHORT = '6121: The content is too short (%s)';
+    public const FIELD_PATTERN_NO_MATCH = '6122: The regex pattern does not matches /%s/';
 
     /**
      *
@@ -21,6 +22,7 @@ class InputTextField extends Field
      * @param bool $required
      * @param int $max_length
      * @param int $min_length
+     * @param string $pattern
      *
      */
     public function __construct(
@@ -63,7 +65,7 @@ class InputTextField extends Field
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('max_length', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('min_length', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('pattern', InputSettings::INPUT_TYPE_REGEX, Collection::init(),)
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_REGEX)
         ]);
     }
 
@@ -102,9 +104,11 @@ class InputTextField extends Field
             $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->min_length));
         }
 
-        preg_match("/$this->pattern/", $content, $matches);
-        if ($this->pattern && empty($matches)) {
-            $errors->push('regex errors');
+        if ($this->pattern) {
+            preg_match("/$this->pattern/", $content, $matches);
+            if (empty($matches[0])) {
+                $errors->push(sprintf(self::FIELD_PATTERN_NO_MATCH, $this->pattern));
+            }
         }
 
         return $errors;
