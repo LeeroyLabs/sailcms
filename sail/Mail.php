@@ -279,7 +279,7 @@ class Mail
             $gc = $globalContext->unwrap();
             unset($gc['locales']); // don't add twice
 
-            $superContext->pushSpreadKeyValue(...$locales, ...$gc);
+            $superContext->pushSpreadKeyValue(...$locales->unwrap(), ...$gc);
 
             // cta_link is present and verification_code. Replace {code} in link for code
             if ($context->get('verification_code', null) !== null) {
