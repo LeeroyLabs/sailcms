@@ -28,7 +28,7 @@ abstract class Field
      * @param Collection|array|null $settings
      *
      */
-    public function __construct(LocaleField $labels, Collection|array|null $settings)
+    public function __construct(LocaleField $labels, Collection|array|null $settings = null)
     {
         $name = array_reverse(explode('\\', get_class($this)))[0];
         $this->handle = Text::snakeCase($name);

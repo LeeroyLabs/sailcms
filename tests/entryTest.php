@@ -63,8 +63,8 @@ test('Update the config of an entry layout', function () {
     ]);
 
     $entryLayout->updateSchemaConfig('title', [
-        'max_length' => 255,
-        'min_length' => 10
+        'maxLength' => 255,
+        'minLength' => 10
     ], 0, new LocaleField([
         'fr' => 'Titre de section',
         'en' => 'Section title'
@@ -76,12 +76,12 @@ test('Update the config of an entry layout', function () {
             '_id' => $entryLayout->_id
         ]);
         expect($result)->toBe(true);
-        expect($updatedEntryLayout->schema->get("title.configs.0.max_length"))->toBe(255);
-        expect($updatedEntryLayout->schema->get("title.configs.0.min_length"))->toBe(10);
+        expect($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255);
+        expect($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10);
         expect($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
-//        print_r($exception->getTraceAsString());6
+//        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
 });

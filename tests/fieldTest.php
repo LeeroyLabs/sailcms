@@ -2,6 +2,7 @@
 
 use SailCMS\Collection;
 use SailCMS\Models\Entry\NumberField;
+use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
@@ -60,8 +61,8 @@ test('Add all fields to the layout', function () {
     $textField = new TextField(new LocaleField(['en' => 'Text', 'fr' => 'Texte']), [
         [
             'required' => true,
-            'max_length' => 10,
-            'min_length' => 5
+            'maxLength' => 10,
+            'minLength' => 5
         ]
     ]);
     $phoneField = new TextField(new LocaleField(['en' => 'Phone', 'fr' => 'Téléphone']), [
@@ -69,6 +70,7 @@ test('Add all fields to the layout', function () {
             'pattern' => "\d{3}-\d{3}-\d{4}"
         ]
     ]);
+    $descriptionField = new TextareaField(new LocaleField(['en' => 'Description', 'fr' => 'Description']));
     $numberFieldInteger = new NumberField(new LocaleField(['en' => 'Integer', 'fr' => 'Entier']), [
         [
             'min' => -1,
@@ -85,6 +87,7 @@ test('Add all fields to the layout', function () {
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
+        "description" => $descriptionField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat
     ]);
@@ -134,10 +137,18 @@ test('Update content with success', function () {
             'content' => [
                 'float' => '0.03',
                 'text' => 'Not empty',
+                'description' => 'This text contains line returns 
+and must keep it through all the process',
                 'phone' => '514-514-5145'
             ]
         ], false);
         expect($errors->length)->toBe(0);
+        $entry = $entryModel->one([
+            'title' => 'Home Field Test'
+        ]);
+        expect($entry->content->get('float'))->toBe('0.03');
+        expect($entry->content->get('text'))->toBe('Not empty');
+        expect($entry->content->get('description'))->toContain(PHP_EOL);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
