@@ -259,11 +259,11 @@ final class GraphQL
                 foreach ($errors as $error) {
                     $mresult->data->errors = [
                         [
-                            'message' => $error['debugMessage'],
+                            'message' => $error['debugMessage'] ?? $error['message'],
                             'extensions' => ['category' => 'internal'],
-                            'locations' => [['line' => $error['trace'][0]['line'], 'column' => 1]],
-                            'file' => $error['trace'][0]['file'],
-                            'stack' => $error['trace'],
+                            'locations' => (isset($error['trace'])) ? [['line' => $error['trace'][0]['line'], 'column' => 1]] : $error['locations'],
+                            'file' => $error['trace'][0]['file'] ?? 'unknown file',
+                            'stack' => $error['trace'] ?? [],
                             'path' => ['']
                         ]
                     ];
