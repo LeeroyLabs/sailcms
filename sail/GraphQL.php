@@ -257,7 +257,7 @@ final class GraphQL
                 $mresult->data->errors = [];
 
                 foreach ($errors as $error) {
-                    Debug::ray($error);
+                    error_log(json_encode($error));
                     $mresult->data->errors = [
                         [
                             'message' => $error['debugMessage'] ?? 'Unknown error message',
