@@ -657,7 +657,11 @@ class User extends Model
      */
     public function verifyUserPass(string $email, string $password): LoginResult
     {
-        $user = $this->findOne(['email' => $email, 'validated' => true])->allFields()->exec();
+        $user = $this->findOne(['email' => $email])->allFields()->exec();
+
+        if ($user && !$user->validated) {
+            return new LoginResult('', 'not-validated');
+        }
 
         $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password, 'allowed' => false]);
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
