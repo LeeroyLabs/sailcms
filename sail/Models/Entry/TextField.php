@@ -35,6 +35,7 @@ class TextField extends Field
     /**
      *
      * Sets the default settings from the input text field
+     *  TODO can support a string index as an
      *
      * @return Collection
      *

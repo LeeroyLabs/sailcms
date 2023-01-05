@@ -11,6 +11,7 @@ use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
+// TODO custom field registering
 abstract class Field
 {
     /* Properties */
@@ -30,6 +31,7 @@ abstract class Field
      */
     public function __construct(LocaleField $labels, Collection|array|null $settings = null)
     {
+        // TODO Check to avoid duplicate handle
         $name = array_reverse(explode('\\', get_class($this)))[0];
         $this->handle = Text::snakeCase($name);
         $this->labels = $labels;
