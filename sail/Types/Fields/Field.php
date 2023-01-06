@@ -13,6 +13,8 @@ abstract class Field implements DatabaseType
     /* Errors from 6100 to 6119 */
     public const FIELD_REQUIRED = "6100: This field is required.";
 
+    // TODO add protected property there
+
     /**
      *
      * Structure to replicate an html input
