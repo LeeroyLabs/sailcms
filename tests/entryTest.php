@@ -167,7 +167,7 @@ test('Create an entry with the default type', function () {
     $model = new Entry();
 
     try {
-        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', null, []);
+        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home', null, []);
         expect($entry->title)->toBe('Home');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -183,7 +183,7 @@ test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test');
+        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test', 'test');
         expect($entry->title)->toBe('Test');
         expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
@@ -259,7 +259,7 @@ test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test-de-test', [
+        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test', 'test-de-test', [
             'content' => [
                 'sub-title' => "Textfield content"
             ]
@@ -279,7 +279,7 @@ test('Fail to create an entry that is trashed', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 3', 'test-de-test', []);
+        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 3', 'test', 'test-de-test', []);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
         expect(true)->toBe(true);

@@ -84,7 +84,6 @@ class InputNumberField extends Field
     /**
      *
      * Input text field validation
-     *  // TODO cast the content according to the type + add type
      *
      * @param mixed $content
      * @return Collection
