@@ -402,7 +402,7 @@ class User extends Model
                 $url = setting('adminTrigger', 'admin') . '/validate/' . $code;
 
                 $mail = new Mail();
-                $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $url, 'name' => $name->first])->send();
+                $mail->to($email)->useEmail('new_admin_account', $locale, ['verification_code' => $url, 'name' => $name->first])->send();
                 return $id;
             } catch (Exception $e) {
                 return $id;
