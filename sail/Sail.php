@@ -792,6 +792,7 @@ final class Sail
      * Detect what site is running
      *
      * @return void
+     * @throws FilesystemException
      *
      */
     private static function loadAndDetectSites(): void
@@ -809,6 +810,7 @@ final class Sail
                 if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
                     self::$siteID = $name;
                     Locale::setAvailableLocales($config['locales']);
+                    Locale::setCurrent($config['defaultLocale']);
                     break;
                 }
             }
@@ -820,12 +822,14 @@ final class Sail
                 if (strtolower($key) === 'x-site-id') {
                     self::$siteID = $value;
                     Locale::setAvailableLocales($sites[$value]['locales']);
+                    Locale::setCurrent($sites[$value]['defaultLocale']);
                     break;
                 }
             }
         } else {
             self::$siteID = 'main';
             Locale::setAvailableLocales(['en']);
+            Locale::setCurrent('en');
         }
     }
 
