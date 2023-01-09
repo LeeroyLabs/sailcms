@@ -240,7 +240,7 @@ class EntryType extends Model
             $instance->hasPermissions(true);
         }
 
-        $entryType = $instance->getByHandle($handle);
+        $entryType = $instance->getByHandle($handle, $api);
         if (!$entryType) {
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $handle));
         }
@@ -300,9 +300,11 @@ class EntryType extends Model
      * @throws EntryException
      *
      */
-    public function getByHandle(string $handle): ?EntryType
+    public function getByHandle(string $handle, bool $api = false): ?EntryType
     {
-        $this->hasPermissions(true);
+        if ($api) {
+            $this->hasPermissions(true);
+        }
 
         if ($handle == self::DEFAULT_HANDLE) {
             return self::getDefaultType();

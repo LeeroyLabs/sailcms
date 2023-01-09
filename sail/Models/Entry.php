@@ -40,7 +40,7 @@ class Entry extends Model
     const TITLE_MISSING = '5001: You must set the entry title in your data.';
     const STATUS_CANNOT_BE_TRASH = '5002: You cannot delete a entry this way, use the delete method instead.';
     const CANNOT_VALIDATE_CONTENT = '5003: You cannot validate content without setting an entry layout to the type.';
-    const SCHEMA_VALIDATION_ERROR = '5004: The entry layout schema does not fits with the contents sends.';
+    const TEMPLATE_NOT_SET = '5004: Template property of the entry is not set.';
     const CONTENT_KEY_ERROR = '5005: The key "%s" does not exists in the schema of the entry layout.';
     const CONTENT_ERROR = '5006: The content has theses errors :' . PHP_EOL;
     const DOES_NOT_EXISTS = '5007: Entry "%s" does not exists.';
@@ -63,6 +63,7 @@ class Entry extends Model
     public Collection $alternates; // Array of object "locale" -> "lang_code", "entry" -> "entry_id"
     public string $status;
     public string $title;
+    public string $template;
     public ?string $slug;
     public string $url; // Concatenation of the slug and the entry type url_prefix
     public Authors $authors;
@@ -136,6 +137,7 @@ class Entry extends Model
             'alternates',
             'status',
             'title',
+            'template',
             'slug',
             'url',
             'authors',
@@ -220,6 +222,7 @@ class Entry extends Model
             'alternates' => $this->alternates,
             'status' => $this->status,
             'title' => $this->title,
+            'template' => $this->template ?? "", // Temporary because it's a new field
             'slug' => $this->slug,
             'url' => $this->url,
             'authors' => $this->authors->toDBObject(),
@@ -327,7 +330,7 @@ class Entry extends Model
             return null;
         }
 
-        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY});
+        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY}, $toGraphQL);
 
         $cacheHandle = self::HOMEPAGE_CACHE . $siteId . "_" . $locale;
         $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
@@ -359,6 +362,7 @@ class Entry extends Model
         $availableTypes = EntryType::getAll();
         $request = $fromRequest ? new Request() : null;
         $content = null;
+        $url = ltrim($url, "/");
 
         $availableTypes->each(function ($key, $value) use ($url, $request, &$content) {
             // We already have it, stop!
@@ -682,6 +686,7 @@ class Entry extends Model
      * @param string $locale
      * @param EntryStatus|string $status
      * @param string $title
+     * @param string $template
      * @param string|null $slug
      * @param array|Collection $extraData
      * @param bool $throwErrors
@@ -695,7 +700,7 @@ class Entry extends Model
      * @throws SodiumException
      *
      */
-    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, ?string $slug = null, array|Collection $extraData = [], bool $throwErrors = true): array|Entry|Collection|null
+    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, string $template, ?string $slug = null, array|Collection $extraData = [], bool $throwErrors = true): array|Entry|Collection|null
     {
         $this->hasPermissions();
 
@@ -706,6 +711,7 @@ class Entry extends Model
         $data = new Collection([
             'locale' => $locale,
             'title' => $title,
+            'template' => $template,
             'status' => $status,
             'slug' => $slug
         ]);
@@ -739,7 +745,7 @@ class Entry extends Model
      * @throws EntryException
      * @throws FilesystemException
      * @throws JsonException
-     * @throws PermissionException                $errors->pushKeyValue($key, [Field::]);
+     * @throws PermissionException
      * @throws SodiumException
      *
      */
@@ -1101,6 +1107,7 @@ class Entry extends Model
         $locale = $data->get('locale');
         $status = $data->get('status', EntryStatus::INACTIVE->value);
         $title = $data->get('title');
+        $template = $data->get('template');
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser;
@@ -1146,6 +1153,7 @@ class Entry extends Model
                 'alternates' => $alternates,
                 'status' => $status,
                 'title' => $title,
+                'template' => $template,
                 'slug' => $slug,
                 'url' => self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
                 'authors' => $authors,
@@ -1212,7 +1220,7 @@ class Entry extends Model
         }
 
         $data->each(function ($key, $value) use (&$update) {
-            if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'categories', 'content', 'alternates'])) {
+            if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'template', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
         });

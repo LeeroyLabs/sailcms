@@ -292,6 +292,7 @@ class Entries
         $alternates = $args->get('alternates');
         $status = $args->get('status');
         $title = $args->get('title');
+        $template = $args->get('template');
         $slug = $args->get('slug');
         $categories = $args->get('categories');
         $content = Entry::processContentFromGraphQL($args->get('content'));
@@ -299,7 +300,7 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $slug, [
+        $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $template, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
