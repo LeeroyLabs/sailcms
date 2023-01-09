@@ -213,9 +213,8 @@ class Router
             }
         }
 
-        // TODO: Marc, check this up
         if ($uri == '/') {
-            $entry = Entry::getHomepageEntry(Sail::siteId(), Locale::$current ?? 'en');
+            $entry = Entry::getHomepageEntry(Sail::siteId(), Locale::$current);
         } else {
             $entry = Entry::findByURL($uri);
         }
@@ -226,6 +225,8 @@ class Router
             if (!isset($entry->template)) {
                 throw new EntryException(Entry::TEMPLATE_NOT_SET);
             }
+
+            Locale::setCurrent($entry->locale);
 
             $response->template = $entry->template;
             $response->set('entry', $entry);
