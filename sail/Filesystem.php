@@ -24,8 +24,8 @@ final class Filesystem
     public static function mount(string $identifier, FilesystemAdapter $adapter): void
     {
         // Do not load twice
-        if (empty(static::$adapters[$identifier])) {
-            static::$adapters[$identifier] = new FS($adapter);
+        if (empty(self::$adapters[$identifier])) {
+            self::$adapters[$identifier] = new FS($adapter);
         }
     }
 
@@ -48,14 +48,14 @@ final class Filesystem
         $wd = Sail::getWorkingDirectory();
         $host = '/assets';
 
-        static::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
-        static::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/'));
-        static::$adapters['debug'] = new FS(new LocalFilesystemAdapter($wd . '/storage/debug/'));
-        static::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/logs/'));
-        static::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));
-        static::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/install/'));
-        static::$adapters['cms'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/cms/'));
-        static::$adapters['cms_root'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/'));
+        self::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
+        self::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/'));
+        self::$adapters['debug'] = new FS(new LocalFilesystemAdapter($wd . '/storage/debug/'));
+        self::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/logs/'));
+        self::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));
+        self::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/install/'));
+        self::$adapters['cms'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/cms/'));
+        self::$adapters['cms_root'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/'));
     }
 
     /**
@@ -79,7 +79,7 @@ final class Filesystem
      */
     public static function init(): void
     {
-        static::$manager = new MountManager(static::$adapters);
+        self::$manager = new MountManager(self::$adapters);
     }
 
     /**
@@ -91,6 +91,12 @@ final class Filesystem
      */
     public static function manager(): MountManager
     {
-        return static::$manager;
+        if (isset(self::$manager)) {
+            return self::$manager;
+        }
+
+        self::mountCore();
+        self::init();
+        return self::$manager;
     }
 }

@@ -591,6 +591,7 @@ final class Sail
      * @param  string  $forceIOPath
      * @return void
      * @throws DatabaseException
+     * @throws FilesystemException
      *
      */
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
