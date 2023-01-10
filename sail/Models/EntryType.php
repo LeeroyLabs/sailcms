@@ -61,7 +61,7 @@ class EntryType extends Model
     public string $title;
     public string $handle;
     public LocaleField $url_prefix;
-    public ?string $entry_layout_id;
+    public ?string $entry_layout_id = null;
 
     public function fields(bool $fetchAllFields = false): array
     {
