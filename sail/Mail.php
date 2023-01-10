@@ -307,7 +307,7 @@ class Mail
                     $superContext->get('cta_link')
                 ));
             }
-
+            
             // Replace locale variable in template name to the actual locale
             $template->template = str_replace('{locale}', $locale, $template->template);
 

@@ -263,7 +263,7 @@ class User extends Model
         $role = setting('users.baseRole', 'general-user');
         $validate = setting('users.requireValidation', true);
 
-        $code = Security::hashPassword($password);
+        $code = Security::generateVerificationCode();
 
         $id = $this->insert([
             'name' => $name,
@@ -271,11 +271,11 @@ class User extends Model
             'status' => true,
             'roles' => [$role],
             'avatar' => $avatar,
-            'password' => $code,
+            'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),
             'temporary_token' => '',
             'locale' => $locale,
-            'validation_code' => Security::generateVerificationCode(),
+            'validation_code' => $code,
             'validated' => !$validate,
             'reset_code' => '',
             'created_at' => time()
