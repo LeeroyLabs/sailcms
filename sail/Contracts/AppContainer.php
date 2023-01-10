@@ -26,7 +26,7 @@ abstract class AppContainer
 
     abstract public function events(): void;
 
-    // abstract custom field
+    abstract public function fields(): Collection;
 
     public function __construct()
     {

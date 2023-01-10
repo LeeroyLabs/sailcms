@@ -33,7 +33,7 @@ class Field
 {
     private static Collection $registered;
 
-    public static function init()
+    public static function init(): void
     {
         $fieldList = Collection::init();
         $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
@@ -51,6 +51,11 @@ class Field
         });
 
         self::$registered = $fieldList;
+    }
+
+    public static function loadCustom(Collection $customFields): void
+    {
+        self::$registered->pushSpread(...$customFields->unwrap());
     }
 
     /**

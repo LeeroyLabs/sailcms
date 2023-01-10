@@ -67,7 +67,7 @@ final class Sail
      *
      * Initialize the CMS
      *
-     * @param  string  $execPath
+     * @param string $execPath
      * @return void
      * @throws DatabaseException
      * @throws Errors\RouteReturnException
@@ -231,6 +231,9 @@ final class Sail
         // Load cms ACLs
         ACL::loadCmsACL();
 
+        // Load cms Fields
+        Field::init();
+
         // Initialize the logger
         Log::init();
 
@@ -361,6 +364,7 @@ final class Sail
                     ACL::loadCustom($acls);
 
                     // load custom fields
+                    Field::loadCustom($instance->fields());
 
                     // Run the command registration
                     $commands = $instance->cli()->unwrap();
@@ -427,8 +431,7 @@ final class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value)
-        {
+        $models->each(function ($key, $value) {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -442,7 +445,7 @@ final class Sail
      *
      * Launch Sail for Cron execution
      *
-     * @param  string  $execPath
+     * @param string $execPath
      * @return void
      * @throws SiteException
      * @throws JsonException
@@ -475,7 +478,7 @@ final class Sail
      *
      * Launch Sail for CLI execution
      *
-     * @param  string  $execPath
+     * @param string $execPath
      * @return void
      * @throws DatabaseException
      * @throws FileException
@@ -524,7 +527,7 @@ final class Sail
      *
      * Set the working directory
      *
-     * @param  string  $path
+     * @param string $path
      * @return void
      *
      */
@@ -586,9 +589,9 @@ final class Sail
      * Set app state (either web or cli) for some very specific use cases
      * NOTE: DO NOT USE FOR ANYTHING, THIS IS RESERVED FOR UNIT TEST
      *
-     * @param  int     $state
-     * @param  string  $env
-     * @param  string  $forceIOPath
+     * @param int $state
+     * @param string $env
+     * @param string $forceIOPath
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
