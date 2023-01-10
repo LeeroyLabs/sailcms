@@ -570,9 +570,7 @@ class Entries
      */
     public function fields(mixed $obj, Collection $args, Context $context): Collection
     {
-        $locale = $args->get('locale', 'en');
-
-        return Field::getAvailableFields($locale);
+        return Field::getAvailableFields();
     }
 
     /**
