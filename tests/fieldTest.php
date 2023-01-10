@@ -121,7 +121,7 @@ test('Failed to update the entry content', function () {
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
