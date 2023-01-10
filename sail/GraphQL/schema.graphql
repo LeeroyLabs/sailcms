@@ -33,7 +33,7 @@ type Query {
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout]
-    fields(locale: String): [FieldInfo]
+    fields: [FieldInfo]
 
     # Registers
     registeredExtensions: RegisteredExtensions!

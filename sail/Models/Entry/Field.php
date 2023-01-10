@@ -194,7 +194,9 @@ abstract class Field
                 /**
                  * @var InputSettings $inputSettings
                  */
-                $settings->push($inputSettings->toDBObject());
+                $inputSettingsList = $inputSettings->toDBObject();
+                $inputSettingsList['value'] = "";
+                $settings->push($inputSettingsList);
             });
 
             $className = array_reverse(explode('\\', $inputFieldClass))[0];

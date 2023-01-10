@@ -2,7 +2,6 @@
 
 namespace SailCMS;
 
-use League\Flysystem\FilesystemException;
 use SailCMS\Models\Entry\Field as ModelField;
 
 /**
@@ -32,19 +31,10 @@ use SailCMS\Models\Entry\Field as ModelField;
  */
 class Field
 {
-    /**
-     *
-     * Get available fields
-     *
-     * @param string $locale
-     * @return Collection
-     * @throws FilesystemException
-     *
-     */
-    public static function getAvailableFields(string $locale): Collection
-    {
-        Locale::setCurrent($locale);
+    private static Collection $registered;
 
+    public static function init()
+    {
         $fieldList = Collection::init();
         $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
 
@@ -60,6 +50,21 @@ class Field
             }
         });
 
-        return $fieldList;
+        self::$registered = $fieldList;
+    }
+
+    /**
+     *
+     * Get available fields
+     *
+     * @return Collection
+     *
+     */
+    public static function getAvailableFields(): Collection
+    {
+        if (!isset(self::$registered)) {
+            self::init();
+        }
+        return self::$registered;
     }
 }
