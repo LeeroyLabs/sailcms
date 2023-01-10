@@ -290,11 +290,20 @@ class Mail
                 ));
             }
 
-            // cta_link is present and code. Replace {code} in link for code
+            // cta_link is present and reset_code. Replace {code} in link for code
             if ($context->get('reset_code', null) !== null) {
                 $superContext->setfor('cta_link', str_replace(
                     '{code}',
                     $context->get('reset_code', ''),
+                    $superContext->get('cta_link')
+                ));
+            }
+
+            // cta_link is present and reset_pass_code. Replace {reset_code} in link for code
+            if ($context->get('reset_pass_code', null) !== null) {
+                $superContext->setfor('cta_link', str_replace(
+                    '{reset_code}',
+                    $context->get('reset_pass_code', ''),
                     $superContext->get('cta_link')
                 ));
             }

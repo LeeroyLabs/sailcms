@@ -260,20 +260,23 @@ class User extends Model
             throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
         }
 
-        $code = Security::generateVerificationCode();
+        $role = setting('users.baseRole', 'general-user');
+        $validate = setting('users.requireValidation', true);
+
+        $code = Security::hashPassword($password);
 
         $id = $this->insert([
             'name' => $name,
             'email' => $email,
             'status' => true,
-            'roles' => ['general-user'],
+            'roles' => [$role],
             'avatar' => $avatar,
-            'password' => Security::hashPassword($password),
+            'password' => $code,
             'meta' => $meta->simplify(),
             'temporary_token' => '',
             'locale' => $locale,
-            'validation_code' => $code,
-            'validated' => false,
+            'validation_code' => Security::generateVerificationCode(),
+            'validated' => !$validate,
             'reset_code' => '',
             'created_at' => time()
         ]);
@@ -372,12 +375,15 @@ class User extends Model
         // Validate email properly
         $this->validateEmail($email, '', true);
 
-        $code = Security::generateVerificationCode();
-
         $pass = Uuid::uuid4();
         if ($password !== '') {
             $pass = $password;
         }
+
+        $validate = setting('users.requireValidation', true);
+
+        $code = Security::generateVerificationCode();
+        $passCode = substr(Security::generateVerificationCode(), 5, 16);
 
         $id = $this->insert([
             'name' => $name,
@@ -390,8 +396,8 @@ class User extends Model
             'temporary_token' => '',
             'locale' => $locale,
             'validation_code' => $code,
-            'validated' => false,
-            'reset_code' => '',
+            'validated' => !$validate,
+            'reset_code' => $passCode,
             'created_at' => time()
         ]);
 
@@ -399,10 +405,16 @@ class User extends Model
             // Send a nice email to greet
             try {
                 // Overwrite the cta url for the admin one
-                $url = setting('adminTrigger', 'admin') . '/validate/' . $code;
-
                 $mail = new Mail();
-                $mail->to($email)->useEmail('new_admin_account', $locale, ['verification_code' => $url, 'name' => $name->first])->send();
+                $mail->to($email)->useEmail(
+                    'new_admin_account',
+                    $locale,
+                    [
+                        'verification_code' => $code,
+                        'reset_pass_code' => $passCode,
+                        'name' => $name->first
+                    ]
+                )->send();
                 return $id;
             } catch (Exception $e) {
                 return $id;

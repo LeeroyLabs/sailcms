@@ -124,6 +124,10 @@ return [
                 'entryLayoutId' => null
             ],
             'cacheTtl' => \SailCMS\Cache::TTL_WEEK
+        ],
+        'users' => [
+            'requireValidation' => true,
+            'baseRole' => 'general-user'
         ]
     ],
     'staging' => [
@@ -219,9 +223,13 @@ return [
                     'en' => '',
                     'fr' => ''
                 ]
-            ]
+            ],
+            'cacheTtl' => \SailCMS\Cache::TTL_WEEK
         ],
-        'cache_ttl' => \SailCMS\Cache::TTL_WEEK
+        'users' => [
+            'requireValidation' => true,
+            'baseRole' => 'general-user'
+        ]
     ],
     'production' => [
         'devMode' => false,
@@ -320,6 +328,10 @@ return [
                 ]
             ],
             'cache_ttl' => \SailCMS\Cache::TTL_WEEK
+        ],
+        'users' => [
+            'requireValidation' => true,
+            'baseRole' => 'general-user'
         ]
     ]
 ];
