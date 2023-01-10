@@ -259,21 +259,22 @@ class User extends Model
         if (!$valid) {
             throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
         }
-
-        $code = Security::generateVerificationCode();
+        
+        $role = setting('users.baseRole', 'general-user');
+        $validate = setting('users.requireValidation', true);
 
         $id = $this->insert([
             'name' => $name,
             'email' => $email,
             'status' => true,
-            'roles' => ['general-user'],
+            'roles' => [$role],
             'avatar' => $avatar,
             'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),
             'temporary_token' => '',
             'locale' => $locale,
-            'validation_code' => $code,
-            'validated' => false,
+            'validation_code' => Security::generateVerificationCode(),
+            'validated' => !$validate,
             'reset_code' => '',
             'created_at' => time()
         ]);
@@ -372,12 +373,12 @@ class User extends Model
         // Validate email properly
         $this->validateEmail($email, '', true);
 
-        $code = Security::generateVerificationCode();
-
         $pass = Uuid::uuid4();
         if ($password !== '') {
             $pass = $password;
         }
+
+        $validate = setting('users.requireValidation', true);
 
         $id = $this->insert([
             'name' => $name,
@@ -389,9 +390,9 @@ class User extends Model
             'meta' => $meta->simplify(),
             'temporary_token' => '',
             'locale' => $locale,
-            'validation_code' => $code,
-            'validated' => false,
-            'reset_code' => '',
+            'validation_code' => Security::generateVerificationCode(),
+            'validated' => !$validate,
+            'reset_code' => substr(Security::generateVerificationCode(), 5, 16),
             'created_at' => time()
         ]);
 

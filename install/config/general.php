@@ -124,6 +124,10 @@ return [
                 'entryLayoutId' => null
             ],
             'cacheTtl' => \SailCMS\Cache::TTL_WEEK
+        ],
+        'users' => [
+            'requireValidation' => true,
+            'baseRole' => 'general-user'
         ]
     ],
     'staging' => [
