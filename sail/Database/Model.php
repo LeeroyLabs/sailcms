@@ -541,7 +541,7 @@ abstract class Model implements JsonSerializable
 
         try {
             $doc = $this->prepareForWrite($doc);
-
+            
             // Run Validators
             $this->runValidators((object)$doc);
 
@@ -1132,7 +1132,7 @@ abstract class Model implements JsonSerializable
 
         // Run the casting for encryption
         foreach ($obj as $key => $value) {
-            if ($this->casting[$key] && $this->casting[$key] === 'encrypted') {
+            if (isset($this->casting[$key]) && $this->casting[$key] === 'encrypted') {
                 try {
                     $obj[$key] = Security::encrypt($value);
                 } catch (FilesystemException|Exception $e) {
