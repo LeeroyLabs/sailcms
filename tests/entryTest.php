@@ -178,10 +178,14 @@ test('Create an entry with the default type', function ()
 
     try {
         $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home', null, []);
-        expect($entry->title)->toBe('Home');
-        expect($entry->status)->toBe(EntryStatus::LIVE->value);
-        expect($entry->locale)->toBe('fr');
-        expect($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
+
+        expect($entry->title)->toBe('Home')
+                             -> and($entry->status)
+                             ->toBe(EntryStatus::LIVE->value)
+                             ->and($entry->locale)
+                             ->toBe('fr')
+                             ->and($entry->slug)
+                             ->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTrace());
@@ -286,7 +290,6 @@ test('Create an entry with an entry type with an existing url', function ()
         expect($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
         print_r($exception->getMessage());
-        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
 });

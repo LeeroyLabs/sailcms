@@ -4,6 +4,7 @@ namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
+use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -19,49 +20,36 @@ use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
-class EntryLayout extends Model
+/**
+ *
+ * @property LocaleField $titles
+ * @property Collection  $schema
+ * @property Authors     $authors
+ * @property Dates       $dates
+ * @property bool        $is_trashed
+ *
+ */
+class EntryLayout extends Model implements Castable
 {
+    protected string $collection = 'entry_layouts';
+    protected array $casting = [
+        'titles' => LocaleField::class,
+        'schema' => self::class,
+        'authors' => Authors::class,
+        'dates' => Dates::class
+    ];
+
     /* Errors */
-    const DATABASE_ERROR = '6001: Exception when %s an entry.';
-    const SCHEMA_MUST_CONTAIN_FIELDS = '6002: The schema must contains only SailCMS\Models\Entry\Field instances.';
-    const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
-    const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
-    const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
-    const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
-    const INVALID_SCHEMA = '6007: Invalid schema structure.';
+    public const DATABASE_ERROR = '6001: Exception when %s an entry.';
+    public const SCHEMA_MUST_CONTAIN_FIELDS = '6002: The schema must contains only SailCMS\Models\Entry\Field instances.';
+    public const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
+    public const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
+    public const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
+    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
+    public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
-    const ACL_HANDLE = "entrylayout";
-
-    /* Properties */
-    public LocaleField $titles;
-    public Collection $schema;
-    public Authors $authors;
-    public Dates $dates;
-    public bool $is_trashed;
-
-    /**
-     *
-     * Initialize the entry
-     *
-     * @return void
-     *
-     */
-    public function init(): void
-    {
-        $this->setPermissionGroup(self::ACL_HANDLE);
-    }
-
-    /**
-     *
-     * Layout available fields
-     *
-     * @param bool $fetchAllFields
-     * @return string[]
-     */
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['_id', 'titles', 'schema', 'authors', 'dates', 'is_trashed'];
-    }
+    private const ACL_HANDLE = "entrylayout";
+    protected string $permissionGroup = self::ACL_HANDLE;
 
     /**
      *
@@ -74,10 +62,10 @@ class EntryLayout extends Model
     {
         return [
             '_id' => $this->_id,
-            'titles' => $this->titles->toDBObject(),
+            'titles' => $this->titles->castFrom(),
             'schema' => $this->processSchemaToGraphQL(),
-            'authors' => $this->authors->toDBObject(),
-            'dates' => $this->dates->toDBObject(),
+            'authors' => $this->authors->castFrom(),
+            'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
         ];
     }
@@ -86,7 +74,7 @@ class EntryLayout extends Model
      *
      * Generate a schema for a layout for list of given fields
      *
-     * @param Collection $fields
+     * @param  Collection  $fields
      * @return Collection
      * @throws FieldException
      *
@@ -94,7 +82,8 @@ class EntryLayout extends Model
     public static function generateLayoutSchema(Collection $fields): Collection
     {
         $schema = Collection::init();
-        $fields->each(function ($key, $field) use ($schema) {
+        $fields->each(function ($key, $field) use ($schema)
+        {
             if (!$field instanceof ModelField) {
                 throw new FieldException(self::SCHEMA_MUST_CONTAIN_FIELDS);
             }
@@ -109,7 +98,7 @@ class EntryLayout extends Model
      *
      * Get all entry layouts
      *
-     * @param bool $ignoreTrashed default true
+     * @param  bool  $ignoreTrashed  default true
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -132,7 +121,7 @@ class EntryLayout extends Model
      *
      * Find one user with filters
      *
-     * @param array $filters
+     * @param  array  $filters
      * @return EntryLayout|null
      * @throws ACLException
      * @throws DatabaseException
@@ -152,8 +141,8 @@ class EntryLayout extends Model
      *
      * Create an entry layout with
      *
-     * @param LocaleField $titles
-     * @param Collection $schema
+     * @param  LocaleField  $titles
+     * @param  Collection   $schema
      * @return EntryLayout
      * @throws ACLException
      * @throws DatabaseException
@@ -180,21 +169,22 @@ class EntryLayout extends Model
      * > The field index is the index according to the baseConfigs of a Models\Entry\Field class,
      *      ¬ normally the Field class has only one element, but more complex ones can have many fields
      *
-     * @param string $fieldKey
-     * @param array $toUpdate
-     * @param int $fieldIndex
-     * @param LocaleField|null $labels
+     * @param  string            $fieldKey
+     * @param  array             $toUpdate
+     * @param  int               $fieldIndex
+     * @param  LocaleField|null  $labels
      * @return void
      *
      */
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels) {
+        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels)
+        {
             /**
              * @var ModelField $field
              */
             if ($currentFieldKey === $fieldKey) {
-                $currentInput = $field->configs->get((string)$fieldIndex)->toDbObject();
+                $currentInput = $field->configs->get((string)$fieldIndex)->castFrom();
                 $inputClass = $field->configs->get((string)$fieldIndex)::class;
 
                 foreach ($toUpdate as $key => $value) {
@@ -215,9 +205,9 @@ class EntryLayout extends Model
      *
      * Update an entry layout for a given id or entryLayout instance
      *
-     * @param Entry|string $entryOrId
-     * @param LocaleField|null $titles
-     * @param Collection|null $schema
+     * @param  Entry|string      $entryOrId
+     * @param  LocaleField|null  $titles
+     * @param  Collection|null   $schema
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -256,8 +246,8 @@ class EntryLayout extends Model
      *
      * Update a key in the schema
      *
-     * @param string $key
-     * @param string $newKey
+     * @param  string  $key
+     * @param  string  $newKey
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -272,16 +262,17 @@ class EntryLayout extends Model
         // Slugify the new key
         $newKey = Text::slugify($newKey);
 
-        if (!in_array($key, $this->schema->keys()->unwrap())) {
+        if (!in_array($key, $this->schema->keys()->unwrap(), true)) {
             throw new EntryException(sprintf(self::SCHEMA_KEY_DOES_NOT_EXISTS, $key));
         }
 
-        if (in_array($newKey, $this->schema->keys()->unwrap())) {
+        if (in_array($newKey, $this->schema->keys()->unwrap(), true)) {
             throw new EntryException(sprintf(self::SCHEMA_KEY_ALREADY_EXISTS, $newKey));
         }
 
         $newSchema = Collection::init();
-        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey) {
+        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey)
+        {
             /**
              * @var ModelField $modelField
              */
@@ -298,7 +289,8 @@ class EntryLayout extends Model
                 'entry_layout_id' => (string)$this->_id
             ]);
 
-            $entryTypes->each(function ($k, $entryType) use ($key, $newKey) {
+            $entryTypes->each(function ($k, $entryType) use ($key, $newKey)
+            {
                 /**
                  * @var EntryType $entryType
                  */
@@ -314,8 +306,8 @@ class EntryLayout extends Model
      *
      * Delete an entry layout with soft or hard mode
      *
-     * @param string|ObjectId $entryLayoutId
-     * @param bool $soft
+     * @param  string|ObjectId  $entryLayoutId
+     * @param  bool             $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -351,7 +343,7 @@ class EntryLayout extends Model
      *
      * Process schema from GraphQL inputs
      *
-     * @param array|Collection $configs
+     * @param  array|Collection  $configs
      * @return Collection
      * @throws EntryException
      *
@@ -376,9 +368,11 @@ class EntryLayout extends Model
             }
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs) {
+            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs)
+            {
                 $settings = Collection::init();
-                $fields->each(function ($key, $setting) use (&$settings) {
+                $fields->each(function ($key, $setting) use (&$settings)
+                {
                     $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
                 });
 
@@ -399,21 +393,24 @@ class EntryLayout extends Model
      *
      * Update a schema from graphQL inputs
      *
-     * @param Collection $schemaUpdate
-     * @param EntryLayout $entryLayout
+     * @param  Collection   $schemaUpdate
+     * @param  EntryLayout  $entryLayout
      * @return void
      *
      */
-    public static function updateSchemaFromGraphQL(Collection $schemaUpdate, EntryLayout $entryLayout)
+    public static function updateSchemaFromGraphQL(Collection $schemaUpdate, EntryLayout $entryLayout): void
     {
-        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout) {
+        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout)
+        {
             if (isset($updateInput->inputSettings)) {
                 /**
                  * @var object $updateInput
                  */
-                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
+                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput)
+                {
                     $settings = [];
-                    $toUpdate->each(function ($k, $setting) use (&$settings) {
+                    $toUpdate->each(function ($k, $setting) use (&$settings)
+                    {
                         $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
                     });
 
@@ -423,12 +420,14 @@ class EntryLayout extends Model
                     }
                     $entryLayout->updateSchemaConfig($updateInput->key, $settings, $index, $labels);
                 });
-            } else if (isset($updateInput->labels)) {
-                /**
-                 * @var object $updateInput
-                 */
-                $labels = new LocaleField($updateInput->labels->unwrap());
-                $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
+            } else {
+                if (isset($updateInput->labels)) {
+                    /**
+                     * @var object $updateInput
+                     */
+                    $labels = new LocaleField($updateInput->labels->unwrap());
+                    $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
+                }
             }
         });
     }
@@ -444,18 +443,21 @@ class EntryLayout extends Model
     {
         $apiSchema = Collection::init();
 
-        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
+        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema)
+        {
             $layoutFieldConfigs = Collection::init();
             $layoutFieldSettings = Collection::init();
 
-            $layoutField->configs->each(function ($fieldIndex, $input) use (&$layoutFieldSettings) {
+            $layoutField->configs->each(function ($fieldIndex, $input) use (&$layoutFieldSettings)
+            {
                 /**
                  * @var Field $input
                  */
-                $settings = new Collection($input->toDBObject()->settings);
+                $settings = new Collection($input->castFrom()->settings);
                 $fieldSettings = Collection::init();
 
-                $settings->each(function ($name, $value) use ($fieldSettings, $input) {
+                $settings->each(function ($name, $value) use ($fieldSettings, $input)
+                {
                     if (is_bool($value)) {
                         $value = $value ? 'true' : 'false';
                     }
@@ -474,7 +476,7 @@ class EntryLayout extends Model
             });
             $layoutFieldConfigs->push([
                 'handle' => $layoutField->handle,
-                'labels' => $layoutField->labels->toDBObject(),
+                'labels' => $layoutField->labels->castFrom(),
                 'inputSettings' => $layoutFieldSettings->unwrap()
             ]);
 
@@ -489,43 +491,27 @@ class EntryLayout extends Model
 
     /**
      *
-     * Fields process for fetching
-     *
-     * @param string $field
-     * @param mixed $value
-     * @return mixed
-     *
-     */
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        return match ($field) {
-            'titles' => new LocaleField($value),
-            'schema' => is_array($value) ? $value : $this->processSchemaOnFetch($value),
-            'authors' => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
-            'dates' => new Dates($value->created, $value->updated, $value->published, $value->deleted),
-            default => $value,
-        };
-    }
-
-    /**
-     *
      * Parse an input setting value according the given type
      *
-     * @param string $type
-     * @param string $value
+     * @param  string  $type
+     * @param  string  $value
      * @return string
      *
      */
     private static function parseSettingValue(string $type, string $value): string
     {
-        if ($type == "boolean") {
+        if ($type === "boolean") {
             $result = !($value === "false");
-        } else if ($type == "integer") {
-            $result = (integer)$value;
-        } else if ($type == "float") {
-            $result = (float)$value;
         } else {
-            $result = $value;
+            if ($type === "integer") {
+                $result = (integer)$value;
+            } else {
+                if ($type === "float") {
+                    $result = (float)$value;
+                } else {
+                    $result = $value;
+                }
+            }
         }
         return $result;
     }
@@ -534,14 +520,15 @@ class EntryLayout extends Model
      *
      * Validate the schema before save
      *
-     * @param Collection $schema
+     * @param  Collection  $schema
      * @return void
      * @throws EntryException
      *
      */
-    private static function validateSchema(Collection $schema)
+    private static function validateSchema(Collection $schema): void
     {
-        $schema->each(function ($key, $value) {
+        $schema->each(function ($key, $value)
+        {
             if (!$value instanceof LayoutField) {
                 throw new EntryException(self::INVALID_SCHEMA);
             }
@@ -552,7 +539,7 @@ class EntryLayout extends Model
      *
      * Process schema on fetch
      *
-     * @param stdClass|array|null $value
+     * @param  stdClass|array|null  $value
      * @return Collection
      *
      */
@@ -565,7 +552,8 @@ class EntryLayout extends Model
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
 
-        $schemaFromDb->each(function ($key, $value) use (&$schema) {
+        $schemaFromDb->each(function ($key, $value) use (&$schema)
+        {
             $valueParsed = ModelField::fromLayoutField($value);
             $schema->pushKeyValue($key, $valueParsed);
         });
@@ -577,18 +565,19 @@ class EntryLayout extends Model
      *
      * Process schema on store AKA convert all type to db object
      *
-     * @param Collection $schema
+     * @param  Collection  $schema
      * @return Collection
      *
      */
-    private function processSchemaOnStore(Collection &$schema): Collection
+    private function processSchemaOnStore(Collection $schema): Collection
     {
         $schemaForDb = Collection::init();
-        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb) {
+        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb)
+        {
             /**
              * @var LayoutField $layoutField
              */
-            $layoutField = $layoutField->toDBObject();
+            $layoutField = $layoutField->castFrom();
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
@@ -598,7 +587,7 @@ class EntryLayout extends Model
      *
      * Check if an entry layout have a related entry type
      *
-     * @param string|ObjectId $entryLayoutId
+     * @param  string|ObjectId  $entryLayoutId
      * @return bool
      *
      */
@@ -613,8 +602,8 @@ class EntryLayout extends Model
      *
      * Create an entry layout
      *
-     * @param LocaleField $titles
-     * @param Collection $schema
+     * @param  LocaleField  $titles
+     * @param  Collection   $schema
      * @return EntryLayout
      * @throws DatabaseException
      * @throws EntryException
@@ -644,8 +633,8 @@ class EntryLayout extends Model
      *
      * Update an entry layout
      *
-     * @param EntryLayout $entryLayout
-     * @param Collection $data
+     * @param  EntryLayout  $entryLayout
+     * @param  Collection   $data
      * @return bool
      * @throws EntryException
      *
@@ -682,7 +671,7 @@ class EntryLayout extends Model
      *
      * Delete an entry layout to the trash
      *
-     * @param EntryLayout $entryLayout
+     * @param  EntryLayout  $entryLayout
      * @return bool
      * @throws EntryException
      *
@@ -711,7 +700,7 @@ class EntryLayout extends Model
      *
      * Delete an entry layout forever
      *
-     * @param string|ObjectId $entryLayoutId
+     * @param  string|ObjectId  $entryLayoutId
      * @return bool
      * @throws EntryException
      *
@@ -725,5 +714,30 @@ class EntryLayout extends Model
         }
 
         return $qtyDeleted === 1;
+    }
+
+    /**
+     *
+     * Simplify schema
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        return $this->schema->unwrap();
+    }
+
+    /**
+     *
+     * Process Schema
+     *
+     * @param  mixed  $value
+     * @return array|Collection
+     *
+     */
+    public function castTo(mixed $value): array|Collection
+    {
+        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
     }
 }

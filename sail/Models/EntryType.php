@@ -4,6 +4,7 @@ namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
+use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -12,21 +13,40 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 
-class EntryType extends Model
+/**
+ *
+ * @property string      $collection_name
+ * @property string      $title
+ * @property string      $handle
+ * @property LocaleField $url_prefix
+ * @property ?string     $entry_layout_id
+ *
+ */
+class EntryType extends Model implements Validator
 {
+    protected string $collection = 'entry_types';
+    protected array $casting = [
+        'url_prefix' => LocaleField::class
+    ];
+    protected array $validators = [
+        'title' => EntryType::class
+    ];
+
     /* Errors */
-    const HANDLE_MISSING = '4001: You must set the entry type handle in your data.';
-    const HANDLE_ALREADY_EXISTS = '4002: Handle already exists.';
-    const HANDLE_USE_RESERVED_WORD = '4003: The "%s" word is reserved to create an entry type.';
-    const TITLE_MISSING = '4004: You must set the entry type title in your data.';
-    const CANNOT_DELETE = '4005: You must emptied all related entries before deleting an entry type.';
-    const DOES_NOT_EXISTS = '4006: Entry type "%s" does not exists.';
-    const DATABASE_ERROR = '4007: Exception when "%s" an entry type.';
-    const CANNOT_UPDATE_DEFAULT_TYPE = '4008: Cannot update default type page, use general settings for that';
+    public const HANDLE_MISSING = '4001: You must set the entry type handle in your data.';
+    public const HANDLE_ALREADY_EXISTS = '4002: Handle already exists.';
+    public const HANDLE_USE_RESERVED_WORD = '4003: The "%s" word is reserved to create an entry type.';
+    public const TITLE_MISSING = '4004: You must set the entry type title in your data.';
+    public const CANNOT_DELETE = '4005: You must emptied all related entries before deleting an entry type.';
+    public const DOES_NOT_EXISTS = '4006: Entry type "%s" does not exists.';
+    public const DATABASE_ERROR = '4007: Exception when "%s" an entry type.';
+    public const CANNOT_UPDATE_DEFAULT_TYPE = '4008: Cannot update default type page, use general settings for that';
 
-    const ACL_HANDLE = "entrytype";
+    private const ACL_HANDLE = "entrytype";
 
-    const RESERVED_WORDS_FOR_HANDLE = [
+    protected string $permissionGroup = self::ACL_HANDLE;
+
+    private const RESERVED_WORDS_FOR_HANDLE = [
         'entry',
         'entries',
         'entry_type',
@@ -56,37 +76,26 @@ class EntryType extends Model
     private const DEFAULT_TITLE = "Page";
     private const DEFAULT_URL_PREFIX = ['en' => '', 'fr' => ''];
 
-    /* fields */
-    public string $collection_name;
-    public string $title;
-    public string $handle;
-    public LocaleField $url_prefix;
-    public ?string $entry_layout_id = null;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return [
-            '_id',
-            'title',
-            'handle',
-            'collection_name',
-            'url_prefix',
-            'entry_layout_id'
-        ];
-    }
-
     /**
      *
-     * Initialization for entry type
+     * Validate properties before insertion
      *
+     * @param  string  $key
+     * @param  mixed   $value
      * @return void
+     * @throws EntryException
      *
      */
-    public function init(): void
+    public static function validate(string $key, mixed $value): void
     {
-        $this->setPermissionGroup(self::ACL_HANDLE);
-    }
+        if ($key === 'title' && empty($value)) {
+            throw new EntryException(self::TITLE_MISSING);
+        }
 
+        if ($key === 'handle' && empty($value)) {
+            throw new EntryException(self::HANDLE_MISSING);
+        }
+    }
 
     /**
      *
@@ -101,7 +110,7 @@ class EntryType extends Model
             '_id' => $this->_id,
             'title' => $this->title,
             'handle' => $this->handle,
-            'url_prefix' => $this->url_prefix->toDBObject(),
+            'url_prefix' => $this->url_prefix->castFrom(),
             'entry_layout_id' => $this->entry_layout_id ?? ""
         ];
     }
@@ -110,7 +119,7 @@ class EntryType extends Model
      *
      * Get a list of all available types
      *
-     * @param bool $api
+     * @param  bool  $api
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -131,7 +140,7 @@ class EntryType extends Model
      *
      * Find all entry type according to the given filters
      *
-     * @param array|Collection $filters
+     * @param  array|Collection  $filters
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -154,8 +163,8 @@ class EntryType extends Model
      *
      * Use the settings to create the default type
      *
-     * @param bool $api
-     * @param bool $avoidUpdate
+     * @param  bool  $api
+     * @param  bool  $avoidUpdate
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -179,14 +188,15 @@ class EntryType extends Model
 
         if (!$entryType) {
             $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
-        } else if (!$avoidUpdate
-            && ($entryType->title != $defaultTitle || $entryType->url_prefix->toDBObject() != $defaultUrlPrefix->toDBObject() || $entryType->entry_layout_id != $defaultEntryLayoutId)) {
+        } else {
+            if (!$avoidUpdate
+                && ($entryType->title !== $defaultTitle || $entryType->url_prefix->castFrom() !== $defaultUrlPrefix->castFrom() || $entryType->entry_layout_id !== $defaultEntryLayoutId)) {
+                // Update the settings because it changed.
+                $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
 
-            // Update the settings because it changed.
-            $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
-
-            if ($result) {
-                $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
+                if ($result) {
+                    $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
+                }
             }
         }
         return $entryType;
@@ -196,8 +206,8 @@ class EntryType extends Model
      *
      * Get an entry type by his collection name
      *
-     * @param string $collectionName
-     * @param bool $api
+     * @param  string  $collectionName
+     * @param  bool    $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -224,8 +234,8 @@ class EntryType extends Model
      *
      * Get an entry model instance by entry type handle
      *
-     * @param string $handle
-     * @param bool $api
+     * @param  string  $handle
+     * @param  bool    $api
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -252,7 +262,7 @@ class EntryType extends Model
      *
      * Shortcut to get entry model and make queries
      *
-     * @param EntryType|null $entryType
+     * @param  EntryType|null  $entryType
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -274,7 +284,7 @@ class EntryType extends Model
      *
      * Get an entryType by id
      *
-     * @param string $id
+     * @param  string  $id
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
@@ -292,12 +302,13 @@ class EntryType extends Model
      *
      * Get an entryType by handle
      *
-     * @param string $handle
+     * @param  string  $handle
+     * @param  bool    $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function getByHandle(string $handle, bool $api = false): ?EntryType
@@ -306,7 +317,7 @@ class EntryType extends Model
             $this->hasPermissions(true);
         }
 
-        if ($handle == self::DEFAULT_HANDLE) {
+        if ($handle === self::DEFAULT_HANDLE) {
             return self::getDefaultType();
         }
 
@@ -317,11 +328,11 @@ class EntryType extends Model
      *
      * Wrapper to handle permission for entry creation
      *
-     * @param string $handle
-     * @param string $title
-     * @param LocaleField $urlPrefix
-     * @param string|ObjectId|null $entryLayoutId
-     * @param bool $getObject
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  LocaleField           $urlPrefix
+     * @param  string|ObjectId|null  $entryLayoutId
+     * @param  bool                  $getObject
      * @return array|EntryType|string|null
      * @throws ACLException
      * @throws DatabaseException
@@ -340,8 +351,8 @@ class EntryType extends Model
      *
      * Wrapper to handle permission for entry modification by handle
      *
-     * @param string $handle
-     * @param Collection $data
+     * @param  string      $handle
+     * @param  Collection  $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -353,7 +364,7 @@ class EntryType extends Model
     {
         $this->hasPermissions();
 
-        if ($handle == self::DEFAULT_HANDLE) {
+        if ($handle === self::DEFAULT_HANDLE) {
             throw new EntryException(self::CANNOT_UPDATE_DEFAULT_TYPE);
         }
 
@@ -374,7 +385,7 @@ class EntryType extends Model
      *
      * Real deletion on the entry types
      *
-     * @param string|ObjectId $entryTypeId
+     * @param  string|ObjectId  $entryTypeId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -406,42 +417,11 @@ class EntryType extends Model
         return $qtyDeleted === 1;
     }
 
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        if ($field == "url_prefix") {
-            if (is_string($value)) {
-                $value = ['fr' => $value, 'en' => $value];
-            }
-            return new LocaleField($value);
-        }
-        return parent::processOnFetch($field, $value);
-    }
-
-    /**
-     *
-     * Validation on store
-     *
-     * @throws EntryException
-     *
-     */
-    protected function processOnStore(string $field, mixed $value): mixed
-    {
-        // Data verification
-        if ($field === "handle" && empty($value)) {
-            throw new EntryException(self::HANDLE_MISSING);
-        }
-        if ($field === "title" && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING);
-        }
-
-        return parent::processOnStore($field, $value);
-    }
-
     /**
      *
      * Check if handle is available
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -455,9 +435,9 @@ class EntryType extends Model
         if (in_array($handle, self::RESERVED_WORDS_FOR_HANDLE)) {
             throw new EntryException(sprintf(self::HANDLE_USE_RESERVED_WORD, $handle));
         }
-
+        
         // Check everytime if the handle is already exists
-        if ($handle == self::DEFAULT_HANDLE || $this->getByHandle($handle) !== null) {
+        if ($handle === self::DEFAULT_HANDLE || $this->getByHandle($handle) !== null) {
             throw new EntryException(self::HANDLE_ALREADY_EXISTS);
         }
     }
@@ -466,7 +446,7 @@ class EntryType extends Model
      *
      * Get collection name with handle
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return string
      *
      */
@@ -479,11 +459,11 @@ class EntryType extends Model
      *
      * Create an entry type
      *
-     * @param string $handle
-     * @param string $title
-     * @param LocaleField $urlPrefix
-     * @param string|ObjectId|null $entryLayoutId
-     * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  LocaleField           $urlPrefix
+     * @param  string|ObjectId|null  $entryLayoutId
+     * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
      * @throws ACLException
      * @throws DatabaseException
@@ -503,7 +483,7 @@ class EntryType extends Model
                 'collection_name' => $collectionName,
                 'handle' => $handle,
                 'title' => $title,
-                'url_prefix' => $urlPrefix->toDBObject(),
+                'url_prefix' => $urlPrefix,
                 'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
             ]);
         } catch (DatabaseException $exception) {
@@ -521,10 +501,10 @@ class EntryType extends Model
      *
      * Update the entry type
      *
-     * @param EntryType $entryType
-     * @param string|null $title
-     * @param LocaleField|null $urlPrefix
-     * @param string|bool|null $entryLayoutId
+     * @param  EntryType         $entryType
+     * @param  string|null       $title
+     * @param  LocaleField|null  $urlPrefix
+     * @param  string|bool|null  $entryLayoutId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -542,10 +522,12 @@ class EntryType extends Model
         if ($urlPrefix) {
             $update['url_prefix'] = $urlPrefix;
         }
-        if ($entryLayoutId === false)
+        if ($entryLayoutId === false) {
             $update['entry_layout_id'] = null;
-        else if ($entryLayoutId) {
-            $update['entry_layout_id'] = $entryLayoutId;
+        } else {
+            if ($entryLayoutId) {
+                $update['entry_layout_id'] = $entryLayoutId;
+            }
         }
 
         if (count($update) > 0) {

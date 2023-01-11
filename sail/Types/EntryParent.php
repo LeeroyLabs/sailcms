@@ -2,15 +2,14 @@
 
 namespace SailCMS\Types;
 
-use SailCMS\Contracts\DatabaseType;
+use SailCMS\Contracts\Castable;
 
-class EntryParent implements DatabaseType
+readonly class EntryParent implements Castable
 {
     public function __construct(
-        public readonly string $handle,
-        public readonly string $parent_id
-    )
-    {
+        public string $handle = '',
+        public string $parent_id = ''
+    ) {
     }
 
     /**
@@ -37,5 +36,33 @@ class EntryParent implements DatabaseType
             'handle' => $this->handle ?? '',
             'parent_id' => $this->parent_id ?? ''
         ];
+    }
+
+    /**
+     *
+     * Cast to simple version from EntryParent
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        return [
+            'handle' => $this->handle ?? '',
+            'parent_id' => $this->parent_id ?? ''
+        ];
+    }
+
+    /**
+     *
+     * Cast to EntryParent
+     *
+     * @param  mixed  $value
+     * @return EntryParent
+     *
+     */
+    public function castTo(mixed $value): self
+    {
+        return new self($value->handle, $value->parent_id);
     }
 }

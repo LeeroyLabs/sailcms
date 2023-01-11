@@ -7,22 +7,18 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\SearchResults;
 
+/**
+ *
+ * @property string $_id
+ * @property string $document_id
+ * @property string $title
+ * @property string $content
+ * @property string $type
+ *
+ */
 class Search extends Model
 {
-    public string $id = '';
-    public string $title = '';
-    public string $content = '';
-    public string $type = '';
-
-    public function __construct()
-    {
-        parent::__construct('search');
-    }
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['_id', 'id', 'title', 'content', 'type'];
-    }
+    protected string $collection = 'search';
 
     /**
      *
@@ -34,10 +30,10 @@ class Search extends Model
      */
     public function store(array $document): void
     {
-        $doc = $this->findOne(['id' => $document['_id']])->exec();
+        $doc = $this->findOne(['document_id' => $document['_id']])->exec();
 
         if ($doc) {
-            $this->updateOne(['id' => $document['_id']], ['$set' => $document]);
+            $this->updateOne(['document_id' => $document['_id']], ['$set' => $document]);
             return;
         }
 
@@ -55,7 +51,7 @@ class Search extends Model
      */
     public function remove(string $id): void
     {
-        $this->deleteOne(['id' => $id]);
+        $this->deleteOne(['document_id' => $id]);
     }
 
     /**

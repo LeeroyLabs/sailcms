@@ -23,58 +23,32 @@ use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 
+/**
+ *
+ * @property string      $filename
+ * @property string      $site_id
+ * @property string      $name
+ * @property LocaleField $title
+ * @property string      $folder
+ * @property string      $url
+ * @property int         $filesize
+ * @property Size        $size
+ * @property bool        $is_image
+ * @property string      $uploader_id
+ * @property bool        $public
+ * @property int         $created_at
+ * @property Collection  $transforms
+ *
+ */
 class Asset extends Model
 {
-    public string $filename;
-    public string $site_id;
-    public string $name;
-    public LocaleField $title;
-    public string $folder;
-    public string $url;
-    public int $filesize;
-    public Size $size;
-    public bool $is_image;
-    public string $uploader_id;
-    public bool $public;
-    public int $created_at;
-    public Collection $transforms;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return [
-            '_id',
-            'filename',
-            'title',
-            'name',
-            'url',
-            'filesize',
-            'is_image',
-            'size',
-            'uploader_id',
-            'public',
-            'created_at',
-            'transforms',
-            'folder'
-        ];
-    }
-
-    public function init(): void
-    {
-        $this->setPermissionGroup('assets');
-    }
-
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        if ($field === 'size') {
-            return new Size($value->width, $value->height);
-        }
-
-        if ($field === 'title') {
-            return new LocaleField($value);
-        }
-
-        return $value;
-    }
+    protected string $collection = 'assets';
+    protected string $permissionGroup = 'assets';
+    protected array $casting = [
+        'title' => LocaleField::class,
+        'size' => Size::class,
+        'transforms' => Collection::class
+    ];
 
     /**
      *
@@ -87,8 +61,7 @@ class Asset extends Model
      */
     public static function getById(string|ObjectId $id): ?Asset
     {
-        $instance = new static();
-        return $instance->findById($id)->exec((string)$id);
+        return self::query()->findById($id)->exec((string)$id);
     }
 
     /**
@@ -440,8 +413,7 @@ class Asset extends Model
      */
     public static function updateById(ObjectId|string $id, string $locale, string $title): bool
     {
-        $instance = new static();
-        $asset = $instance->findById($id)->exec((string)$id);
+        $asset = self::query()->findById($id)->exec((string)$id);
 
         if ($asset) {
             return $asset->update($locale, $title);
@@ -480,8 +452,7 @@ class Asset extends Model
      */
     public static function removeById(ObjectId|string $id): bool
     {
-        $instance = new static();
-        $asset = $instance->findById($id)->exec((string)$id);
+        $asset = self::query()->findById($id)->exec((string)$id);
 
         if ($asset) {
             return $asset->remove();

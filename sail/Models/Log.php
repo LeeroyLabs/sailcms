@@ -5,15 +5,15 @@ namespace SailCMS\Models;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 
+/**
+ *
+ * @property string $message
+ * @property int    $date
+ *
+ */
 class Log extends Model
 {
-    public string $message;
-    public int $date;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['message', 'date'];
-    }
+    protected string $collection = 'logs';
 
     /**
      *

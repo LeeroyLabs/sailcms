@@ -77,7 +77,7 @@ class Role extends Model
             ]);
 
             return true;
-        } catch (Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -212,7 +212,7 @@ class Role extends Model
         $permissionList = ACL::getList();
         $userPermissions = User::$currentUser->roles;
 
-        if ($userPermissions->length === 1 && $userPermissions->at(0) === '*') {
+        if ($userPermissions->length === 1 && $userPermissions->at() === '*') {
             $userPermissions = $permissionList;
         }
 

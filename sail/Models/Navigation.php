@@ -12,5 +12,4 @@ class Navigation extends Model
     protected array $casting = [
         'structure' => NavigationStructure::class
     ];
-
 }

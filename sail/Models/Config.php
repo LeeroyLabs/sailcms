@@ -35,8 +35,7 @@ class Config extends Model
      */
     public static function getByName(string $name): ?static
     {
-        $instance = new static();
-        $item = $instance->findOne(['name' => $name])->exec($name, Cache::TTL_MONTH);
+        $item = self::query()->findOne(['name' => $name])->exec($name, Cache::TTL_MONTH);
 
         if ($item && $item->flag) {
             $item->config = json_decode(Security::decrypt($item->config), false, 512, JSON_THROW_ON_ERROR);

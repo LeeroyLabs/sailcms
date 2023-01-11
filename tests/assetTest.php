@@ -24,19 +24,19 @@ test('Upload a jpg image and optimize to webp', function ()
     } catch (Exception $e) {
         expect($result)->not->toBeEmpty();
     }
-});
+})->group('assets');
 
 test('Get Asset by name', function ()
 {
     $item = Asset::getByName('unit_test.webp');
     expect($item)->not->toBeNull();
-});
+})->group('assets');
 
 test('Asset (now webp) should have one transform', function ()
 {
     $item = Asset::getByName('unit_test.webp');
     expect($item)->not->toBeNull()->and($item->transforms->length)->toBeGreaterThanOrEqual(1);
-});
+})->group('assets');
 
 test('Create a new transform on the Asset', function ()
 {
@@ -49,7 +49,7 @@ test('Create a new transform on the Asset', function ()
     } catch (Exception $e) {
         expect($result)->not->toBeEmpty();
     }
-});
+})->group('assets');
 
 test('Delete Asset', function ()
 {
@@ -61,4 +61,4 @@ test('Delete Asset', function ()
     } else {
         expect(false)->toBeTrue();
     }
-});
+})->group('assets');

@@ -15,11 +15,16 @@ TODO before v3.0.0 is complete
     - ✅ Use casting variable to declare what variable are to be casted into and from to what type of class
     - ✅ Use connection variable to declare what db connection to use (defaults to the primary)
     - ✅ Remove the need to define every object property in advance, use phpdoc for ide help
+    - ✅ Use validators to enable validation on given fields for built in validators or custom validators
+        - ✅ Support not-empty, string, numeric and boolean out of the box
+        - ✅ Support for custom validators
+    - ✅ Add a 'Validator' contract for validating fields
     - ✅ Support automatic casting for stdClass but require implementation of Castable for other objects
-        - ✅ Collection supported
+        - ✅ Collection supported (supported when typing Collection::class as cast)
         - ✅ Carbon (supported when typing Carbon::class as cast)
         - ✅ DateTime (supported when typing DateTime::class as cast)
         - ✅ Encrypted (supported when typing encrypted as cast, works only on strings)
+    - ✅ Unit Test all new changes
 
 - SEO
     - Robots.txt

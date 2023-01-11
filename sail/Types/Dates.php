@@ -2,53 +2,52 @@
 
 namespace SailCMS\Types;
 
-use SailCMS\Contracts\DatabaseType;
+use SailCMS\Contracts\Castable;
 
-class Dates implements DatabaseType
+readonly class Dates implements Castable
 {
     public function __construct(
-        public readonly ?float $created,
-        public readonly ?float $updated,
-        public readonly ?float $published,
-        public readonly ?float $deleted
-    )
-    {
+        public ?int $created = 0,
+        public ?int $updated = 0,
+        public ?int $published = 0,
+        public ?int $deleted = 0
+    ) {
     }
 
     /**
      *
      * Get an array of dates when we create an element
      *
-     * @param bool $published
+     * @param  bool  $published
      * @return array
      *
      */
-    static public function init(bool $published = false): array
+    public static function init(bool $published = false): array
     {
-        $now = microtime(true);
+        $now = time();
         $publishDate = null;
+
         if ($published) {
             $publishDate = $now;
         }
+
         $dates = new Dates($now, $now, $publishDate, null);
-        return $dates->toDBObject();
+        return $dates->castFrom();
     }
 
     /**
      *
      * Update the deleted attribute for a given Dates object
      *
-     * @param Dates $dates
+     * @param  Dates  $dates
      * @return array
      *
      */
-    static public function updated(Dates $dates): array
+    public static function updated(Dates $dates): array
     {
-        $now = microtime(true);
-
+        $now = time();
         $newDates = new Dates($dates->created, $now, $dates->published, $dates->deleted);
-
-        return $newDates->toDBObject();
+        return $newDates->castFrom();
     }
 
 
@@ -56,26 +55,25 @@ class Dates implements DatabaseType
      *
      * Update the deleted attribute for a given Dates object
      *
-     * @param Dates $dates
+     * @param  Dates  $dates
      * @return array
      *
      */
-    static public function deleted(Dates $dates): array
+    public static function deleted(Dates $dates): array
     {
-        $now = microtime(true);
-
+        $now = time();
         $newDates = new Dates($dates->created, $dates->updated, $dates->published, $now);
-        return $newDates->toDBObject();
+        return $newDates->castFrom();
     }
 
     /**
      *
-     * Transform class to an array
+     * Cast to simpler format from Username
      *
      * @return array
      *
      */
-    public function toDBObject(): array
+    public function castFrom(): array
     {
         return [
             'created' => $this->created,
@@ -83,5 +81,18 @@ class Dates implements DatabaseType
             'published' => $this->published ?? 0,
             'deleted' => $this->deleted ?? 0,
         ];
+    }
+
+    /**
+     *
+     * Cast to Dates
+     *
+     * @param  mixed  $value
+     * @return Dates
+     *
+     */
+    public function castTo(mixed $value): Dates
+    {
+        return new self($value->created, $value->updated, $value->published ?? 0, $value->deleted ?? 0);
     }
 }

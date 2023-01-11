@@ -8,6 +8,7 @@ use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Cache;
 use SailCMS\Collection;
+use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -29,47 +30,63 @@ use SailCMS\Types\QueryOptions;
 use SodiumException;
 use stdClass;
 
-class Entry extends Model
+/**
+ *
+ * @property string       $entry_type_id
+ * @property ?EntryParent $parent
+ * @property ?string      $site_id
+ * @property string       $locale
+ * @property Collection   $alternates
+ * @property string       $status
+ * @property string       $title
+ * @property string       $template
+ * @property ?string      $slug
+ * @property string       $url
+ * @property Authors      $authors
+ * @property Dates        $dates
+ * @property Collection   $categories
+ * @property Collection   $content
+ *
+ */
+class Entry extends Model implements Validator
 {
+    protected string $collection = 'entries';
+    protected array $casting = [
+        'parent' => EntryParent::class,
+        'alternates' => Collection::class,
+        'authors' => Authors::class,
+        'dates' => Dates::class,
+        'categories' => Collection::class,
+        'content' => Collection::class
+    ];
+
+    protected array $validators = [
+        'title' => self::class
+    ];
+
     /* Homepage config */
-    const HOMEPAGE_CONFIG_HANDLE = 'homepage';
-    const HOMEPAGE_CONFIG_ENTRY_TYPE_KEY = 'entry_type_handle';
-    const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
+    public const HOMEPAGE_CONFIG_HANDLE = 'homepage';
+    public const HOMEPAGE_CONFIG_ENTRY_TYPE_KEY = 'entry_type_handle';
+    public const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
 
     /* Errors */
-    const TITLE_MISSING = '5001: You must set the entry title in your data.';
-    const STATUS_CANNOT_BE_TRASH = '5002: You cannot delete a entry this way, use the delete method instead.';
-    const CANNOT_VALIDATE_CONTENT = '5003: You cannot validate content without setting an entry layout to the type.';
-    const TEMPLATE_NOT_SET = '5004: Template property of the entry is not set.';
-    const CONTENT_KEY_ERROR = '5005: The key "%s" does not exists in the schema of the entry layout.';
-    const CONTENT_ERROR = '5006: The content has theses errors :' . PHP_EOL;
-    const DOES_NOT_EXISTS = '5007: Entry "%s" does not exists.';
-    const DATABASE_ERROR = '5008: Exception when "%s" an entry.';
-    const INVALID_FILTER_VALUE = '5009: Invalid filter value.';
-    const INVALID_FILTER_TYPE = '5010: Invalid filter type (array is not allowed).';
+    public const TITLE_MISSING = '5001: You must set the entry title in your data.';
+    public const STATUS_CANNOT_BE_TRASH = '5002: You cannot delete a entry this way, use the delete method instead.';
+    public const CANNOT_VALIDATE_CONTENT = '5003: You cannot validate content without setting an entry layout to the type.';
+    public const TEMPLATE_NOT_SET = '5004: Template property of the entry is not set.';
+    public const CONTENT_KEY_ERROR = '5005: The key "%s" does not exist in the schema of the entry layout.';
+    public const CONTENT_ERROR = '5006: The content has theses errors :' . PHP_EOL;
+    public const DOES_NOT_EXISTS = '5007: Entry "%s" does not exist.';
+    public const DATABASE_ERROR = '5008: Exception when "%s" an entry.';
+    public const INVALID_FILTER_VALUE = '5009: Invalid filter value.';
+    public const INVALID_FILTER_TYPE = '5010: Invalid filter type (array is not allowed).';
 
     /* Cache */
-    const HOMEPAGE_CACHE = 'homepage_entry_'; // Add site id and locale at the end
-    const FIND_BY_URL_CACHE = 'find_by_url_entry_'; // Add url at the end
-    const ONE_CACHE_BY_ID = 'entry_'; // Add id at the end
-    const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_'; // Add handle at the end
-    const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
-
-    /* Fields */
-    public string $entry_type_id;
-    public ?EntryParent $parent;
-    public ?string $site_id;
-    public string $locale;
-    public Collection $alternates; // Array of object "locale" -> "lang_code", "entry" -> "entry_id"
-    public string $status;
-    public string $title;
-    public string $template;
-    public ?string $slug;
-    public string $url; // Concatenation of the slug and the entry type url_prefix
-    public Authors $authors;
-    public Dates $dates;
-    public Collection $categories;
-    public Collection $content;
+    private const HOMEPAGE_CACHE = 'homepage_entry_';         // Add site id and locale at the end
+    private const FIND_BY_URL_CACHE = 'find_by_url_entry_';   // Add url at the end
+    private const ONE_CACHE_BY_ID = 'entry_';                 // Add id at the end
+    private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';   // Add handle at the end
+    private const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
 
     private EntryType $entryType;
     private EntryLayout $entryLayout;
@@ -78,8 +95,8 @@ class Entry extends Model
      *
      *  Get the model according to the collection
      *
-     * @param string $collection
-     * @param EntryType|null $entryType
+     * @param  string          $collection
+     * @param  EntryType|null  $entryType
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -101,9 +118,9 @@ class Entry extends Model
         }
 
         $this->entry_type_id = (string)$this->entryType->_id;
-        $collection = $this->entryType->collection_name;
+        $this->collection = $this->entryType->collection_name;
 
-        parent::__construct($collection);
+        parent::__construct();
     }
 
     /**
@@ -115,36 +132,24 @@ class Entry extends Model
      */
     public function init(): void
     {
-        $this->setPermissionGroup($this->entryType->handle);
+        $this->permissionGroup = $this->entryType->handle;
     }
 
     /**
      *
-     * Fields for entry
+     * Validate fields
      *
-     * @param bool $fetchAllFields
-     * @return string[]
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return void
+     * @throws EntryException
      *
      */
-    public function fields(bool $fetchAllFields = false): array
+    public static function validate(string $key, mixed $value): void
     {
-        return [
-            '_id',
-            'entry_type_id',
-            'parent',
-            'site_id',
-            'locale',
-            'alternates',
-            'status',
-            'title',
-            'template',
-            'slug',
-            'url',
-            'authors',
-            'dates',
-            'categories',
-            'content'
-        ];
+        if ($key === 'title' && empty($value)) {
+            throw new EntryException(self::TITLE_MISSING);
+        }
     }
 
     /**
@@ -182,7 +187,8 @@ class Entry extends Model
     {
         $parsedContent = Collection::init();
 
-        $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
+        $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent)
+        {
             $parsedContent->push($modelFieldContent);
         });
 
@@ -193,8 +199,8 @@ class Entry extends Model
      *
      * Parse the entry into an array for api
      *
-     * @param object|null $currentHomepageEntry
-     * @param bool $wantSchema
+     * @param  object|null  $currentHomepageEntry
+     * @param  bool         $wantSchema
      * @return array
      * @throws ACLException
      * @throws DatabaseException
@@ -215,8 +221,8 @@ class Entry extends Model
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
-            'is_homepage' => isset($currentHomepageEntry) && $this->_id == $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
-            'parent' => $this->parent ? $this->parent->toDBObject() : EntryParent::init(),
+            'is_homepage' => isset($currentHomepageEntry) && $this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
             'alternates' => $this->alternates,
@@ -225,10 +231,10 @@ class Entry extends Model
             'template' => $this->template ?? "", // Temporary because it's a new field
             'slug' => $this->slug,
             'url' => $this->url,
-            'authors' => $this->authors->toDBObject(),
-            'dates' => $this->dates->toDBObject(),
-            'categories' => $this->categories,
-            'content' => $this->getContent(),
+            'authors' => $this->authors->castFrom(),
+            'dates' => $this->dates->castFrom(),
+            'categories' => $this->categories->castFrom(),
+            'content' => $this->castFrom(),
             'schema' => $schema
         ];
     }
@@ -237,12 +243,12 @@ class Entry extends Model
      *
      * Get all entries by entry type handle
      *
-     * @param string $entryTypeHandle
-     * @param array|null $filters if filters is null it is default to ignore trash entries
-     * @param int $page
-     * @param int $limit
-     * @param string $sort
-     * @param int $direction
+     * @param  string      $entryTypeHandle
+     * @param  array|null  $filters  if filters is null it is default to ignore trash entries
+     * @param  int         $page
+     * @param  int         $limit
+     * @param  string      $sort
+     * @param  int         $direction
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -284,8 +290,8 @@ class Entry extends Model
      *
      * Get homepage configs
      *
-     * @param string $siteId
-     * @param string|null $locale
+     * @param  string       $siteId
+     * @param  string|null  $locale
      * @return object|null
      * @throws DatabaseException
      * @throws FilesystemException
@@ -300,9 +306,12 @@ class Entry extends Model
 
         if (!$homepageConfig) {
             return new stdClass();
-        } else if ($locale) {
+        }
+
+        if ($locale) {
             return $homepageConfig->config->{$locale} ?? null;
         }
+
         return $homepageConfig->config;
     }
 
@@ -310,9 +319,9 @@ class Entry extends Model
      *
      * Get homepage entry !
      *
-     * @param string $siteId
-     * @param string $locale
-     * @param bool $toGraphQL
+     * @param  string  $siteId
+     * @param  string  $locale
+     * @param  bool    $toGraphQL
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -347,8 +356,8 @@ class Entry extends Model
      *
      * Find a content by the url
      *
-     * @param string $url
-     * @param bool $fromRequest
+     * @param  string  $url
+     * @param  bool    $fromRequest
      * @return Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -364,7 +373,8 @@ class Entry extends Model
         $content = null;
         $url = ltrim($url, "/");
 
-        $availableTypes->each(function ($key, $value) use ($url, $request, &$content) {
+        $availableTypes->each(function ($key, $value) use ($url, $request, &$content)
+        {
             // We already have it, stop!
             if ($content !== null) {
                 return;
@@ -412,8 +422,8 @@ class Entry extends Model
      *
      * Find entries of all types by category id
      *
-     * @param string $categoryId
-     * @param string|null $siteId
+     * @param  string       $categoryId
+     * @param  string|null  $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -427,7 +437,8 @@ class Entry extends Model
         $allEntries = Collection::init();
         $siteId = $siteId ?? Sail::siteId();
 
-        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries) {
+        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries)
+        {
             $entry = new Entry($entryType->collection_name);
             $entries = $entry->find([
                 'categories' => ['$in' => ['_id', $categoryId]],
@@ -444,12 +455,12 @@ class Entry extends Model
      *
      * Get a validated slug that is not already existing in the db
      *
-     * @param LocaleField $urlPrefix
-     * @param string $slug
-     * @param string $siteId
-     * @param string $locale
-     * @param string|null $currentId
-     * @param Collection|null $availableTypes
+     * @param  LocaleField      $urlPrefix
+     * @param  string           $slug
+     * @param  string           $siteId
+     * @param  string           $locale
+     * @param  string|null      $currentId
+     * @param  Collection|null  $availableTypes
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -476,7 +487,8 @@ class Entry extends Model
         if (!$availableTypes) {
             $availableTypes = EntryType::getAll();
         }
-        $availableTypes->each(function ($key, $value) use ($filters, &$found) {
+        $availableTypes->each(function ($key, $value) use ($filters, &$found)
+        {
             // We already find one no need to continue the search
             if ($found > 0) {
                 return;
@@ -496,9 +508,9 @@ class Entry extends Model
      *
      * Get the relative url of the entry
      *
-     * @param LocaleField $urlPrefix
-     * @param string $slug
-     * @param string $locale
+     * @param  LocaleField  $urlPrefix
+     * @param  string       $slug
+     * @param  string       $locale
      * @return string
      *
      */
@@ -514,7 +526,6 @@ class Entry extends Model
         $relativeUrl .= $slug;
 
         return $relativeUrl;
-
     }
 
     /**
@@ -533,7 +544,6 @@ class Entry extends Model
             $increment = (int)$matches['increment'];
             $newSlug = $matches['base'] . ($increment + 1);
         } else {
-
             $newSlug = $slug . "-2";
         }
 
@@ -544,7 +554,7 @@ class Entry extends Model
      *
      * Process content from graphQL to be able to create/update
      *
-     * @param Collection|null $content
+     * @param  Collection|null  $content
      * @return Collection
      *
      */
@@ -552,7 +562,8 @@ class Entry extends Model
     {
         $parsedContent = Collection::init();
 
-        $content?->each(function ($i, $toParse) use (&$parsedContent) {
+        $content?->each(function ($i, $toParse) use (&$parsedContent)
+        {
             $content = $toParse->content;
             if ($toParse->content instanceof Collection) {
                 $content = $toParse->content->unwrap();
@@ -568,14 +579,15 @@ class Entry extends Model
      *
      * Process errors for GraphQL
      *
-     * @param Collection $errors
+     * @param  Collection  $errors
      * @return Collection
      *
      */
     public static function processErrorsForGraphQL(Collection $errors): Collection
     {
         $parsedErrors = Collection::init();
-        $errors->each(function ($key, $errors) use (&$parsedErrors) {
+        $errors->each(function ($key, $errors) use (&$parsedErrors)
+        {
             $parsedErrors->push([
                 'key' => $key,
                 'errors' => $errors
@@ -589,7 +601,7 @@ class Entry extends Model
      *
      * Get an entry with filters
      *
-     * @param array $filters
+     * @param  array  $filters
      * @return Entry|null
      * @throws DatabaseException
      *
@@ -608,7 +620,7 @@ class Entry extends Model
      *
      * Get the count according to given filters
      *
-     * @param array $filters
+     * @param  array  $filters
      * @return int
      *
      */
@@ -621,8 +633,8 @@ class Entry extends Model
      *
      * Get all entries of the current type without pagination
      *
-     * @param bool $ignoreTrash
-     * @param ?array $filters
+     * @param  bool   $ignoreTrash
+     * @param ?array  $filters
      * @return Collection
      * @throws DatabaseException
      *
@@ -655,7 +667,7 @@ class Entry extends Model
      * Count entries for the current entry type
      *  (according to the __construct method)
      *
-     * @param EntryStatus|string|null $status
+     * @param  EntryStatus|string|null  $status
      * @return int
      *
      */
@@ -682,14 +694,14 @@ class Entry extends Model
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     * @param bool $isHomepage
-     * @param string $locale
-     * @param EntryStatus|string $status
-     * @param string $title
-     * @param string $template
-     * @param string|null $slug
-     * @param array|Collection $extraData
-     * @param bool $throwErrors
+     * @param  bool                $isHomepage
+     * @param  string              $locale
+     * @param  EntryStatus|string  $status
+     * @param  string              $title
+     * @param  string              $template
+     * @param  string|null         $slug
+     * @param  array|Collection    $extraData
+     * @param  bool                $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -736,9 +748,9 @@ class Entry extends Model
      *
      * Update an entry with a given entry id or entry instance
      *
-     * @param Entry|string $entry or id
-     * @param array|Collection $data
-     * @param bool $throwErrors
+     * @param  Entry|string      $entry  or id
+     * @param  array|Collection  $data
+     * @param  bool              $throwErrors
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -779,7 +791,7 @@ class Entry extends Model
      *
      * Update entries url according to an url prefix (normally comes from entry type)
      *
-     * @param LocaleField $urlPrefix
+     * @param  LocaleField  $urlPrefix
      * @return void
      * @throws DatabaseException
      *
@@ -808,8 +820,8 @@ class Entry extends Model
      *
      * Update all content keys with a new given key
      *
-     * @param string $key
-     * @param string $newKey
+     * @param  string  $key
+     * @param  string  $newKey
      * @return true
      * @throws DatabaseException
      * @throws EntryException
@@ -820,9 +832,11 @@ class Entry extends Model
         $entries = $this->all();
 
         $updates = [];
-        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey) {
+        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey)
+        {
             $newContent = Collection::init();
-            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey) {
+            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey)
+            {
                 if ($currentKey == $key) {
                     $currentKey = $newKey;
                 }
@@ -851,8 +865,8 @@ class Entry extends Model
      *
      * Delete an entry in soft mode or definitively
      *
-     * @param string|ObjectId $entryId
-     * @param bool $soft
+     * @param  string|ObjectId  $entryId
+     * @param  bool             $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -891,47 +905,10 @@ class Entry extends Model
 
     /**
      *
-     * Process authors and dates fields
-     *
-     * @param string $field
-     * @param mixed $value
-     * @return mixed
-     *
-     */
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        return match ($field) {
-            "authors" => new Authors($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by),
-            "dates" => new Dates($value->created, $value->updated, $value->published, $value->deleted),
-            "parent" => $value ? new EntryParent($value->handle, $value->parent_id) : null,
-            "content" => $value instanceof stdClass ? new Collection((array)$value) : $value,
-            default => $value,
-        };
-    }
-
-    /**
-     *
-     * Validation on store
-     *
-     * @throws EntryException
-     *
-     */
-    protected function processOnStore(string $field, mixed $value): mixed
-    {
-        // Data verification
-        if ($field == "title" && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING);
-        }
-
-        return parent::processOnStore($field, $value);
-    }
-
-    /**
-     *
      * Validate that status is not thrash
      *  because the only to set it to trash is in the delete method
      *
-     * @param EntryStatus|string $status
+     * @param  EntryStatus|string  $status
      * @return void
      * @throws EntryException
      *
@@ -950,7 +927,7 @@ class Entry extends Model
      *
      * Validate content from the entry type layout schema
      *
-     * @param Collection $content
+     * @param  Collection  $content
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -970,12 +947,15 @@ class Entry extends Model
 
         if ($content->length > 0 && !$schema) {
             throw new EntryException(self::CANNOT_VALIDATE_CONTENT);
-        } else if (!$schema) {
-            $schema = Collection::init();
+        } else {
+            if (!$schema) {
+                $schema = Collection::init();
+            }
         }
 
         // Validate content from schema
-        $schema->each(function ($key, $modelField) use ($content, $errors) {
+        $schema->each(function ($key, $modelField) use ($content, $errors)
+        {
             /**
              * @var ModelField $modelField
              */
@@ -985,8 +965,10 @@ class Entry extends Model
             if ($modelFieldContent === null && $modelField->isRequired()) {
                 $errors->pushKeyValue($key, [[InputField::FIELD_REQUIRED]]);
                 return;
-            } else if ($modelFieldContent === null) {
-                return;
+            } else {
+                if ($modelFieldContent === null) {
+                    return;
+                }
             }
 
             $modelFieldErrors = $modelField->validateContent($modelFieldContent);
@@ -996,7 +978,8 @@ class Entry extends Model
             }
         });
 
-        $content->each(function ($key, $content) use ($schema) {
+        $content->each(function ($key, $content) use ($schema)
+        {
             if (!$schema->get($key)) {
                 throw new EntryException(sprintf(self::CONTENT_KEY_ERROR, $key));
             }
@@ -1009,8 +992,8 @@ class Entry extends Model
      *
      * Handle homepage config after update
      *
-     * @param Entry $oldEntry
-     * @param Collection $newData
+     * @param  Entry       $oldEntry
+     * @param  Collection  $newData
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1033,9 +1016,11 @@ class Entry extends Model
             self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
             // Add homepage
             $oldEntry->setAsHomepage($currentSiteId, $currentLocale);
-        } else if ($homepageChange === false) {
-            // Remove homepage
-            self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+        } else {
+            if ($homepageChange === false) {
+                // Remove homepage
+                self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+            }
         }
     }
 
@@ -1043,9 +1028,9 @@ class Entry extends Model
      *
      * Set the current entry has homepage
      *
-     * @param string $siteId
-     * @param string $locale
-     * @param object|null $currentConfig
+     * @param  string       $siteId
+     * @param  string       $locale
+     * @param  object|null  $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1070,9 +1055,9 @@ class Entry extends Model
      *
      * Empty the homepage for the current site
      *
-     * @param string $siteId
-     * @param string $locale
-     * @param object|array|null $currentConfig
+     * @param  string             $siteId
+     * @param  string             $locale
+     * @param  object|array|null  $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1093,8 +1078,8 @@ class Entry extends Model
      *
      * Create an entry
      *
-     * @param Collection $data
-     * @param bool $throwErrors
+     * @param  Collection  $data
+     * @param  bool        $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -1137,7 +1122,7 @@ class Entry extends Model
         $slug = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
         $published = false;
-        if ($status == EntryStatus::LIVE->value) {
+        if ($status === EntryStatus::LIVE->value) {
             $published = true;
         }
 
@@ -1162,6 +1147,7 @@ class Entry extends Model
                 'categories' => $categories ?? []
             ]);
         } catch (DatabaseException $exception) {
+            echo "HERE?";
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
@@ -1176,9 +1162,9 @@ class Entry extends Model
      *
      * Update an entry without permission protection
      *
-     * @param Entry $entry
-     * @param Collection $data
-     * @param bool $throwErrors
+     * @param  Entry       $entry
+     * @param  Collection  $data
+     * @param  bool        $throwErrors
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1219,7 +1205,8 @@ class Entry extends Model
             }
         }
 
-        $data->each(function ($key, $value) use (&$update) {
+        $data->each(function ($key, $value) use (&$update)
+        {
             if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'template', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
@@ -1245,7 +1232,7 @@ class Entry extends Model
      *
      * Put an entry in the trash
      *
-     * @param Entry $entry
+     * @param  Entry  $entry
      * @return bool
      * @throws EntryException
      *
@@ -1292,7 +1279,7 @@ class Entry extends Model
      *
      * Parse and throw the content errors
      *
-     * @param Collection $errors
+     * @param  Collection  $errors
      * @return void
      * @throws EntryException
      *
@@ -1301,7 +1288,8 @@ class Entry extends Model
     {
         $errorsStrings = [];
 
-        $errors->each(function ($key, $errorsArray) use (&$errorsStrings) {
+        $errors->each(function ($key, $errorsArray) use (&$errorsStrings)
+        {
             foreach ($errorsArray as $error) {
                 $errorsStrings[] = rtrim($error[0], '.') . ": " . $key;
             }
@@ -1328,8 +1316,8 @@ class Entry extends Model
      *
      * Generate cache key from filters
      *
-     * @param string $handle
-     * @param Collection|array $filters
+     * @param  string            $handle
+     * @param  Collection|array  $filters
      * @return string
      *
      */
@@ -1342,7 +1330,7 @@ class Entry extends Model
      *
      * Iterate into filters recursively.
      *
-     * @param mixed $iterableOrValue
+     * @param  mixed  $iterableOrValue
      * @return string
      *
      */
@@ -1356,10 +1344,14 @@ class Entry extends Model
                 $prefix = "+" . $key;
                 if (!is_string($key)) {
                     $prefix = "";
-                } else if (in_array($key, ['$or', '$and', '$nor'])) {
-                    $prefix = "|" . $key;
-                } else if (str_starts_with($key, '$')) {
-                    $prefix = ">" . $key;
+                } else {
+                    if (in_array($key, ['$or', '$and', '$nor'])) {
+                        $prefix = "|" . $key;
+                    } else {
+                        if (str_starts_with($key, '$')) {
+                            $prefix = ">" . $key;
+                        }
+                    }
                 }
 
                 $result .= $prefix . self::iterateIntoFilters($valueOrIterable);

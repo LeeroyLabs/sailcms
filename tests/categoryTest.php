@@ -9,9 +9,9 @@ include_once __DIR__ . '/mock/db.php';
 
 beforeAll(function ()
 {
-    Locale::setAvailableLocales(['fr', 'en']);
     $_ENV['SITE_URL'] = 'http://localhost:8888';
-    Sail::setAppState(Sail::STATE_CLI);
+    Sail::setWorkingDirectory(__DIR__ . '/mock');
+    Sail::setAppState(Sail::STATE_CLI, 'dev', __DIR__ . '/mock');
 });
 
 test('Get category tree', function ()
@@ -19,7 +19,7 @@ test('Get category tree', function ()
     $category = new Category();
     $tree = $category->getList('');
     expect($tree->length)->toBe(3);
-});
+})->group('categories');
 
 test('Create a category', function ()
 {
@@ -28,7 +28,7 @@ test('Create a category', function ()
     $cat = Category::getBySlug('unit-test', 'main');
 
     expect($cat)->not->toBeNull();
-});
+})->group('categories');
 
 test('Update a category', function ()
 {
@@ -41,10 +41,10 @@ test('Update a category', function ()
         $ret = $category->update($cat->_id, new LocaleField(['en' => 'Unit Test 2', 'fr' => 'Test Unitaire 2']), '');
         expect($ret)->toBeTrue();
     }
-});
+})->group('categories');
 
 test('Delete a category', function ()
 {
     $ret = Category::deleteBySlug('unit-test', 'main');
     expect($ret)->toBeTrue();
-});
+})->group('categories');

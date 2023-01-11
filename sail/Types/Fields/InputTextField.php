@@ -18,30 +18,28 @@ class InputTextField extends Field
      *
      * Input text field from html input:text attributes
      *
-     * @param LocaleField $labels
-     * @param bool $required
-     * @param int $maxLength
-     * @param int $minLength
-     * @param string $pattern
-     * @param bool $multiline
-     *
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
+     * @param  int               $maxLength
+     * @param  int               $minLength
+     * @param  string            $pattern
+     * @param  bool              $multiline
      */
     public function __construct(
-        public readonly LocaleField $labels,
-        public readonly bool        $required = false,
-        public readonly int         $maxLength = 0,
-        public readonly int         $minLength = 0,
-        public readonly string      $pattern = '',
-        public readonly bool        $multiline = false,
-    )
-    {
+        public readonly ?LocaleField $labels = null,
+        public readonly bool $required = false,
+        public readonly int $maxLength = 0,
+        public readonly int $minLength = 0,
+        public readonly string $pattern = '',
+        public readonly bool $multiline = false,
+    ) {
     }
 
     /**
      *
      * Define default settings for a Input Text Field
      *
-     * @param bool $multiline
+     * @param  bool  $multiline
      * @return Collection
      *
      */
@@ -89,7 +87,7 @@ class InputTextField extends Field
      *
      * Input text field validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -130,7 +128,7 @@ class InputTextField extends Field
     public function toDBObject(): stdClass
     {
         return (object)[
-            'labels' => $this->labels->toDBObject(),
+            'labels' => $this->labels->castFrom(),
             'settings' => [
                 'required' => $this->required,
                 'maxLength' => $this->maxLength,
@@ -139,5 +137,46 @@ class InputTextField extends Field
                 'multiline' => $this->multiline,
             ]
         ];
+    }
+
+    /**
+     *
+     * Cast to simpler form from InputTextField
+     *
+     * @return stdClass
+     *
+     */
+    public function castFrom(): stdClass
+    {
+        return (object)[
+            'labels' => $this->labels->castFrom(),
+            'settings' => [
+                'required' => $this->required,
+                'maxLength' => $this->maxLength,
+                'minLength' => $this->minLength,
+                'pattern' => $this->pattern,
+                'multiline' => $this->multiline,
+            ]
+        ];
+    }
+
+    /**
+     *
+     * Cast to InputTextField
+     *
+     * @param  mixed  $value
+     * @return InputTextField
+     *
+     */
+    public function castTo(mixed $value): self
+    {
+        return new self(
+            $value->labels,
+            $value->settings->required ?? false,
+            $value->settings->maxLength ?? 0,
+            $value->settings->minLength ?? 0,
+            $value->settings->pattern ?? '',
+            $value->settings->multiline ?? false
+        );
     }
 }

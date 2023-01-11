@@ -51,6 +51,8 @@ abstract class Model implements JsonSerializable
     // Permission group for the permission checks
     protected string $permissionGroup = '';
 
+    protected array $validators = [];
+
     // Sorting
     public const SORT_ASC = 1;
     public const SORT_DESC = -1;
@@ -233,7 +235,6 @@ abstract class Model implements JsonSerializable
      * @param  int     $cacheTTL
      * @return array|static|null
      * @throws DatabaseException
-     * @throws FilesystemException
      *
      */
     protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): static|array|null
@@ -540,6 +541,10 @@ abstract class Model implements JsonSerializable
 
         try {
             $doc = $this->prepareForWrite($doc);
+
+            // Run Validators
+            $this->runValidators((object)$doc);
+
             $id = $this->active_collection->insertOne($doc)->getInsertedId();
 
             $this->clearCacheForModel();
@@ -565,6 +570,9 @@ abstract class Model implements JsonSerializable
 
         try {
             foreach ($docs as $num => $doc) {
+                // Run Validators
+                $this->runValidators((object)$doc);
+
                 $docs[$num] = $this->prepareForWrite($doc);
             }
 
@@ -618,6 +626,9 @@ abstract class Model implements JsonSerializable
 
         try {
             if (isset($update['$set'])) {
+                // Run Validators
+                $this->runValidators((object)$update['$set']);
+
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
@@ -648,6 +659,9 @@ abstract class Model implements JsonSerializable
 
         try {
             if (isset($update['$set'])) {
+                // Run Validators
+                $this->runValidators((object)$update['$set']);
+
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
@@ -856,7 +870,7 @@ abstract class Model implements JsonSerializable
         }
 
         try {
-            return json_encode($doc, JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT);
+            return json_encode($doc, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
             return "{}";
         }
@@ -934,7 +948,6 @@ abstract class Model implements JsonSerializable
      *
      * @param  array|object  $doc
      * @return Model
-     * @throws FilesystemException
      *
      */
     private function transformDocToModel(array|object $doc): self
@@ -1006,7 +1019,7 @@ abstract class Model implements JsonSerializable
             } elseif (is_string($v) && $cast === 'encrypted') {
                 try {
                     $instance->{$k} = Security::decrypt($v);
-                } catch (Exception $e) {
+                } catch (FilesystemException|\SodiumException $e) {
                     // Unable to decrypt, return original
                     $instance->{$k} = $v;
                 }
@@ -1061,6 +1074,10 @@ abstract class Model implements JsonSerializable
         // Handle scalar
         if (is_scalar($obj)) {
             return $obj;
+        }
+
+        if ($obj === null) {
+            return null;
         }
 
         // Handle array
@@ -1133,6 +1150,64 @@ abstract class Model implements JsonSerializable
         }
 
         return $this;
+    }
+
+    /**
+     *
+     * Run Model Validators
+     *
+     * @param $doc
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    private function runValidators($doc): void
+    {
+        foreach ($this->validators as $key => $validator) {
+            if (!str_contains($validator, '::')) {
+                $subValidators = explode(',', $validator);
+
+                foreach ($subValidators as $subValidator) {
+                    switch ($validator) {
+                        case 'not-empty':
+                            if (empty($doc->{$key})) {
+                                throw new DatabaseException("Property {$key} does pass validation, it should not be empty.", 0400);
+                            }
+                            break;
+
+                        case 'string':
+                            if (!is_string($doc->{$key})) {
+                                $type = gettype($doc->{$key});
+                                throw new DatabaseException("Property {$key} does pass validation, it should be a string but is a {$type}.", 0400);
+                            }
+                            break;
+
+                        case 'numeric':
+                            if (!is_numeric($doc->{$key})) {
+                                $type = gettype($doc->{$key});
+                                throw new DatabaseException("Property {$key} does pass validation, it should be a number but is a {$type}.", 0400);
+                            }
+                            break;
+
+                        case 'boolean':
+                            if (!is_bool($doc->{$key})) {
+                                $type = gettype($doc->{$key});
+                                throw new DatabaseException("Property {$key} does pass validation, it should be a boolean but is a {$type}.", 0400);
+                            }
+                            break;
+                    }
+                }
+            } else {
+                // Custom validator
+                $impl = class_implements($validator);
+
+                if (isset($impl[Validator::class])) {
+                    call_user_func([$validator, 'validate'], $key, $doc->{$key});
+                } else {
+                    throw new DatabaseException("Cannot use {$validator} to validate {$key} because it does not implement the Validator Interface", 400);
+                }
+            }
+        }
     }
 
     /**

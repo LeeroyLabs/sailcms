@@ -9,41 +9,26 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Queue\Task;
 use SailCMS\Types\QueryOptions;
 
+/**
+ *
+ * @property string     $name
+ * @property int        $scheduled_at
+ * @property int        $executed_at
+ * @property bool       $executed
+ * @property string     $execution_result
+ * @property bool       $execution_success
+ * @property bool       $locked
+ * @property string     $handler
+ * @property string     $action
+ * @property bool       $retriable
+ * @property int        $retry_count
+ * @property Collection $settings
+ * @property int        $priority
+ *
+ */
 class Queue extends Model
 {
-    public string $name;
-    public int $scheduled_at;
-    public int $executed_at;
-    public bool $executed;
-    public string $execution_result;
-    public bool $execution_success;
-    public bool $locked;
-    public string $handler;
-    public string $action;
-    public bool $retriable;
-    public int $retry_count;
-    public Collection $settings;
-    public int $priority;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return [
-            '_id',
-            'scheduled_at',
-            'locked',
-            'executed',
-            'executed_at',
-            'name',
-            'handler',
-            'action',
-            'settings',
-            'retriable',
-            'retry_count',
-            'priority',
-            'execution_result',
-            'execution_success'
-        ];
-    }
+    protected string $collection = 'queue';
 
     /**
      *
@@ -56,9 +41,7 @@ class Queue extends Model
      */
     public static function add(Task $task): void
     {
-        $instance = new static();
-
-        $instance->insert([
+        self::query()->insert([
             'name' => $task->name,
             'handler' => $task->handler,
             'action' => $task->action,
