@@ -29,9 +29,37 @@ use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
+use stdClass;
 
+/**
+ *
+ *
+ * @property Username          $name
+ * @property Collection        $roles
+ * @property string            $email
+ * @property string            $status
+ * @property string            $password
+ * @property string            $avatar
+ * @property UserMeta|stdClass $meta
+ * @property string            $temporary_token
+ * @property string            $auth_token
+ * @property string            $locale
+ * @property string            $validation_code
+ * @property string            $reset_code
+ * @property bool              $validated
+ * @property int               $created_at
+ *
+ */
 class User extends Model
 {
+    protected string $collection = 'users';
+    protected array $guards = ['password'];
+    protected array $casting = [
+        'name' => Username::class,
+        'roles' => Collection::class,
+        'meta' => UserMeta::class
+    ];
+
     public const EVENT_DELETE = 'event_delete_user';
     public const EVENT_CREATE = 'event_create_user';
     public const EVENT_UPDATE = 'event_update_user';
@@ -40,78 +68,6 @@ class User extends Model
     public static ?User $currentUser = null;
 
     private static Collection $permsCache;
-
-    public Username $name;
-    public Collection $roles;
-    public string $email;
-    public string $status;
-    public string $password;
-    public string $avatar;
-    public UserMeta|\stdClass $meta;
-    public string $temporary_token = '';
-    public string $auth_token = '';
-    public string $locale = 'en';
-    public string $validation_code = '';
-    public string $reset_code;
-    public bool $validated;
-    public int $created_at = 0;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        if ($fetchAllFields) {
-            return [
-                '_id',
-                'name',
-                'roles',
-                'email',
-                'status',
-                'avatar',
-                'meta',
-                'password',
-                'temporary_token',
-                'locale',
-                'validation_code',
-                'validated',
-                'reset_code',
-                'created_at'
-            ];
-        }
-
-        return [
-            '_id',
-            'name',
-            'roles',
-            'email',
-            'status',
-            'avatar',
-            'meta',
-            'temporary_token',
-            'locale',
-            'validation_code',
-            'validated',
-            'reset_code',
-            'created_at'
-        ];
-    }
-
-    public static function initForTest()
-    {
-        self::$currentUser = new User();
-        self::$currentUser->_id = new ObjectId();
-    }
-
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        if ($field === 'name') {
-            return new Username($value->first, $value->last, $value->full);
-        }
-
-        if ($field === 'meta') {
-            return new UserMeta($value);
-        }
-
-        return $value;
-    }
 
     /**
      *
@@ -176,7 +132,7 @@ class User extends Model
 
         foreach ($this->roles->unwrap() as $roleSlug) {
             $role = $roleModel->getByName($roleSlug);
-
+            
             if ($role) {
                 $permissions->push(...$role->permissions);
             }
@@ -238,7 +194,7 @@ class User extends Model
     {
         // Make sure full is assigned
         if (trim($name->full) === '') {
-            $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
+            $name = new Username($name->first, $name->last);
         }
 
         if ($meta === null) {
@@ -365,7 +321,7 @@ class User extends Model
 
         // Make sure full is assigned
         if ($name->full === '') {
-            $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
+            $name = new Username($name->first, $name->last);
         }
 
         if ($meta === null) {

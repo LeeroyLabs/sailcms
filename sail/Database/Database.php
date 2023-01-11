@@ -33,7 +33,7 @@ class Database
                     $api = new ServerApi(ServerApi::V1);
                     self::$clients[$dbIndex] = new Client(env($dsn, ''), [], ['serverApi' => $api]);
                 } else {
-                    self::$clients[$dbIndex] = new Client(env($dsn, ''), []);
+                    self::$clients[$dbIndex] = new Client(env($dsn, ''));
                 }
             } else {
                 throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500);

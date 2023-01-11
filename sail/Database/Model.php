@@ -6,33 +6,57 @@ use Carbon\Carbon;
 use Exception;
 use \JsonException;
 use JsonSerializable;
+use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\BulkWriteResult;
 use MongoDB\Collection;
 use MongoDB\Model\BSONArray;
+use MongoDB\Model\BSONDocument;
 use SailCMS\ACL;
 use SailCMS\Cache;
-use SailCMS\Contracts\DatabaseType;
+use SailCMS\Contracts\Castable;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\User;
+use SailCMS\Security;
 use SailCMS\Text;
 use SailCMS\Types\QueryOptions;
 use stdClass;
 
+/**
+ *
+ * @property ObjectId $_id
+ * @property string   $id
+ *
+ */
 abstract class Model implements JsonSerializable
 {
+    // Connection and Collection
+    protected int $connection = 0;
+    protected string $collection = '';
+
+    // Fields and Guards
+    protected array $fields = ['*'];
+    protected array $guards = [];
+
+    // Automatic Casting of properties 
+    protected array $casting = [];
+
+    // Internal properties
+    protected array $properties = [];
+
+    // Permission group for the permission checks
+    protected string $permissionGroup = '';
+
+    // Sorting
     public const SORT_ASC = 1;
     public const SORT_DESC = -1;
 
-    public ObjectId $_id;
-
-    private Collection $collection;
-
-    private string $_permissionGroup = '';
+    // The collection object
+    private Collection $active_collection;
 
     // Query operation Data
     private bool $currentShowAll = false;
@@ -47,26 +71,44 @@ abstract class Model implements JsonSerializable
     private string $currentCollation = '';
     private bool $isSingle = false;
 
-    abstract public function fields(bool $fetchAllFields = false): array;
-
     /**
+     *
      * @throws DatabaseException
+     *
      */
-    public function __construct(string $collection = '', int $dbIndex = 0)
+    public function __construct()
     {
         // Just in case
         Cache::init();
 
-        // Manual name or detected by class name (plural)
-        $name = array_reverse(explode('\\', get_class($this)))[0];
-        $name = Text::snakeCase(Text::pluralize($name));
+        if ($this->collection === '') {
+            // Setup using name of class
+            $name = array_reverse(explode('\\', get_class($this)))[0];
+            $name = Text::snakeCase(Text::pluralize($name));
+            $this->collection = $name;
+        }
 
-        $collection = ($collection === '') ? $name : $collection;
-        $client = Database::instance($dbIndex);
+        // Connection to use
+        $client = Database::instance($this->connection);
 
-        $this->collection = $client->selectCollection(env('database_db', 'sailcms'), $collection);
+        if (!$client) {
+            throw new DatabaseException('Cannot connect to database, please check your DSN.', 0500);
+        }
 
+        $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $this->collection);
         $this->init();
+    }
+
+    /**
+     *
+     * Create an instance without doing the classic instance first
+     *
+     * @return static
+     *
+     */
+    public static function query(): static
+    {
+        return new static();
     }
 
     /**
@@ -100,6 +142,52 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Get a property dynamically
+     *
+     * @param  string  $name
+     * @return mixed|string|null
+     *
+     */
+    public function __get(string $name)
+    {
+        if ($name === 'id') {
+            return (string)$this->properties['_id'];
+        }
+
+        return $this->properties[$name] ?? null;
+    }
+
+    /**
+     *
+     * Set a properties value
+     *
+     * @param  string  $name
+     * @param          $value
+     * @return void
+     *
+     */
+    public function __set(string $name, $value): void
+    {
+        if ($name !== 'id') {
+            $this->properties[$name] = $value;
+        }
+    }
+
+    /**
+     *
+     * Check if a property is set
+     *
+     * @param  string  $name
+     * @return bool
+     *
+     */
+    public function __isset(string $name): bool
+    {
+        return isset($this->properties[$name]);
+    }
+
+    /**
+     *
      * Set the group to look for in the model
      *
      * @param  string  $group
@@ -108,7 +196,7 @@ abstract class Model implements JsonSerializable
      */
     public function setPermissionGroup(string $group): void
     {
-        $this->_permissionGroup = $group;
+        $this->permissionGroup = $group;
     }
 
     /**
@@ -137,12 +225,6 @@ abstract class Model implements JsonSerializable
         return $output;
     }
 
-    public function allFields(): static
-    {
-        $this->currentShowAll = true;
-        return $this;
-    }
-
     /**
      *
      * Execute a query call (cannot be run with a mutation type method)
@@ -151,6 +233,7 @@ abstract class Model implements JsonSerializable
      * @param  int     $cacheTTL
      * @return array|static|null
      * @throws DatabaseException
+     * @throws FilesystemException
      *
      */
     protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): static|array|null
@@ -171,11 +254,11 @@ abstract class Model implements JsonSerializable
                 if (is_array($cached)) {
                     // Array, CastBack every item
                     foreach ($cached as $num => $cache) {
-                        $cached[$num] = $this->transformDocToModel($cache, false);
+                        $cached[$num] = $this->transformDocToModel($cache);
                     }
                 } elseif (is_object($cached)) {
                     // CastBack
-                    $cached = $this->transformDocToModel($cached, false);
+                    $cached = $this->transformDocToModel($cached);
                 }
             } catch (JsonException $e) {
                 // already null
@@ -203,10 +286,10 @@ abstract class Model implements JsonSerializable
 
         // Single query
         if ($this->isSingle) {
-            $result = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
+            $result = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
 
             if ($result) {
-                $doc = $this->transformDocToModel($result, $this->currentShowAll);
+                $doc = $this->transformDocToModel($result);
 
                 // Run all population requests
                 foreach ($this->currentPopulation as $populate) {
@@ -246,18 +329,18 @@ abstract class Model implements JsonSerializable
         try {
             if ($this->currentOp === 'distinct') {
                 $results = call_user_func([
-                    $this->collection,
+                    $this->active_collection,
                     $this->currentOp
                 ], $this->currentField, $this->currentQuery, $options);
             } else {
-                $results = call_user_func([$this->collection, $this->currentOp], $this->currentQuery, $options);
+                $results = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
             }
         } catch (Exception $e) {
             throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
 
         foreach ($results as $result) {
-            $doc = $this->transformDocToModel($result, $this->currentShowAll);
+            $doc = $this->transformDocToModel($result);
 
             // Run all population requests
             foreach ($this->currentPopulation as $populate) {
@@ -420,6 +503,7 @@ abstract class Model implements JsonSerializable
      * @param  array  $pipeline
      * @return array
      * @throws DatabaseException
+     * @throws FilesystemException
      *
      */
     protected function aggregate(array $pipeline): array
@@ -427,7 +511,7 @@ abstract class Model implements JsonSerializable
         $qt = Debug::startQuery();
 
         try {
-            $results = $this->collection->aggregate($pipeline);
+            $results = $this->active_collection->aggregate($pipeline);
             $docs = [];
 
             foreach ($results as $result) {
@@ -456,7 +540,7 @@ abstract class Model implements JsonSerializable
 
         try {
             $doc = $this->prepareForWrite($doc);
-            $id = $this->collection->insertOne($doc)->getInsertedId();
+            $id = $this->active_collection->insertOne($doc)->getInsertedId();
 
             $this->clearCacheForModel();
             $this->debugCall('insert', $qt);
@@ -484,7 +568,7 @@ abstract class Model implements JsonSerializable
                 $docs[$num] = $this->prepareForWrite($doc);
             }
 
-            $ids = $this->collection->insertMany($docs)->getInsertedIds();
+            $ids = $this->active_collection->insertMany($docs)->getInsertedIds();
 
             $this->clearCacheForModel();
             $this->debugCall('insertMany', $qt);
@@ -508,7 +592,7 @@ abstract class Model implements JsonSerializable
         $qt = Debug::startQuery();
 
         try {
-            $res = $this->collection->bulkWrite($writes);
+            $res = $this->active_collection->bulkWrite($writes);
 
             $this->clearCacheForModel();
             $this->debugCall('bulkWrite', $qt);
@@ -537,7 +621,7 @@ abstract class Model implements JsonSerializable
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
-            $count = $this->collection->updateOne($query, $update)->getModifiedCount();
+            $count = $this->active_collection->updateOne($query, $update)->getModifiedCount();
 
             $this->clearCacheForModel();
             $this->currentLimit = 1;
@@ -567,7 +651,7 @@ abstract class Model implements JsonSerializable
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
-            $count = $this->collection->updateMany($query, $update)->getModifiedCount();
+            $count = $this->active_collection->updateMany($query, $update)->getModifiedCount();
 
             $this->clearCacheForModel();
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
@@ -591,7 +675,7 @@ abstract class Model implements JsonSerializable
         $qt = Debug::startQuery();
 
         try {
-            $count = $this->collection->deleteOne($query)->getDeletedCount();
+            $count = $this->active_collection->deleteOne($query)->getDeletedCount();
 
             $this->clearCacheForModel();
             $this->currentLimit = 1;
@@ -616,7 +700,7 @@ abstract class Model implements JsonSerializable
         $qt = Debug::startQuery();
 
         try {
-            $count = $this->collection->deleteMany($query)->getDeletedCount();
+            $count = $this->active_collection->deleteMany($query)->getDeletedCount();
 
             $this->clearCacheForModel();
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
@@ -645,7 +729,7 @@ abstract class Model implements JsonSerializable
         }
 
         try {
-            $count = $this->collection->deleteOne(['_id' => $_id])->getDeletedCount();
+            $count = $this->active_collection->deleteOne(['_id' => $_id])->getDeletedCount();
 
             $this->clearCacheForModel();
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
@@ -666,7 +750,7 @@ abstract class Model implements JsonSerializable
     protected function count(array $query): int
     {
         $qt = Debug::startQuery();
-        $count = $this->collection->countDocuments($query);
+        $count = $this->active_collection->countDocuments($query);
 
         $this->debugCall('count', $qt, ['query' => $query]);
         return $count;
@@ -684,7 +768,7 @@ abstract class Model implements JsonSerializable
     protected function addIndex(array $index, array $options = []): void
     {
         try {
-            $this->collection->createIndex($index, $options);
+            $this->active_collection->createIndex($index, $options);
         } catch (Exception $e) {
             throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
@@ -702,7 +786,7 @@ abstract class Model implements JsonSerializable
     protected function addIndexes(array $indexes, array $options = []): void
     {
         try {
-            $this->collection->createIndexes($indexes, $options);
+            $this->active_collection->createIndexes($indexes, $options);
         } catch (Exception $e) {
             throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
@@ -719,7 +803,7 @@ abstract class Model implements JsonSerializable
     protected function dropIndex(string $index): void
     {
         try {
-            $this->collection->dropIndex($index);
+            $this->active_collection->dropIndex($index);
         } catch (Exception $e) {
             throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
@@ -736,7 +820,7 @@ abstract class Model implements JsonSerializable
     protected function dropIndexes(array $indexes): void
     {
         try {
-            $this->collection->dropIndexes($indexes);
+            $this->active_collection->dropIndexes($indexes);
         } catch (Exception $e) {
             throw new DatabaseException('0500' . $e->getMessage(), 0500);
         }
@@ -746,20 +830,29 @@ abstract class Model implements JsonSerializable
      *
      * Handle the toString transformation
      *
+     * @param  bool  $toArray
+     * @return string|array
+     * @throws JsonException
+     *
      */
-    public function toJSON(object $obj = null): string
+    public function toJSON(bool $toArray = false): string|array
     {
-        $fields = $this->fields();
         $doc = [];
 
-        foreach ($fields as $field) {
-            if ($field === '_id') {
-                $doc[$field] = (string)$this->{$field};
-            } elseif (is_object($this->{$field}) || is_array($this->{$field})) {
-                $doc[$field] = $this->simplifyEntity($this->{$field});
-            } else {
-                $doc[$field] = $this->{$field};
+        foreach ($this->properties as $key => $value) {
+            if (!in_array($key, $this->guards, true) && (in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
+                if ($key === '_id') {
+                    $doc[$key] = (string)$value;
+                } elseif (!is_scalar($value)) {
+                    $doc[$key] = $this->simplifyObject($value);
+                } else {
+                    $doc[$key] = $value;
+                }
             }
+        }
+
+        if ($toArray) {
+            return $doc;
         }
 
         try {
@@ -778,88 +871,7 @@ abstract class Model implements JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        $fields = $this->fields();
-        $doc = [];
-
-        foreach ($fields as $field) {
-            if ($field === '_id') {
-                $doc[$field] = (string)$this->{$field};
-            } elseif (is_object($this->{$field}) || is_array($this->{$field})) {
-                $doc[$field] = $this->simplifyEntity($this->{$field});
-            } else {
-                $doc[$field] = $this->{$field};
-            }
-        }
-
-        return $doc;
-    }
-
-    /**
-     *
-     * Transform data to php stdClass
-     *
-     * @return stdClass
-     *
-     */
-    public function toPHPObject(): stdClass
-    {
-        $fields = $this->fields();
-        $doc = [];
-
-        foreach ($fields as $field) {
-            if ($field === '_id') {
-                $doc[$field] = (string)$this->{$field};
-            } else {
-                if (is_object($this->{$field}) || is_array($this->{$field})) {
-                    $doc[$field] = $this->simplifyEntity($this->{$field});
-                } else {
-                    $doc[$field] = $this->{$field};
-                }
-            }
-        }
-
-        return (object)$doc;
-    }
-
-    /**
-     *
-     * Turn php timestamp (seconds) to a MongoDB compatible Date object
-     *
-     * @param  int|float  $time
-     * @return UTCDateTime
-     *
-     */
-    protected function timeToDate(int|float $time): UTCDateTime
-    {
-        return new UTCDateTime($time * 1000);
-    }
-
-    /**
-     *
-     * This should be overridden to apply specific changes to fields when they are fetched
-     *
-     * @param  string  $field
-     * @param  mixed   $value
-     * @return mixed
-     *
-     */
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        return $value;
-    }
-
-    /**
-     *
-     * This should be overridden to apply specific changes to fields when they are being written to database
-     *
-     * @param  string  $field
-     * @param  mixed   $value
-     * @return mixed
-     *
-     */
-    protected function processOnStore(string $field, mixed $value): mixed
-    {
-        return $value;
+        return $this->toJSON(true);
     }
 
     /**
@@ -878,12 +890,24 @@ abstract class Model implements JsonSerializable
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
 
         if ($read) {
-            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->_permissionGroup))) {
+            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->permissionGroup))) {
                 throw new PermissionException('0403: ' . $errorMsg, 0403);
             }
-        } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->_permissionGroup))) {
+        } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->permissionGroup))) {
             throw new PermissionException('0403: ' . $errorMsg, 0403);
         }
+    }
+
+    /**
+     *
+     * Clear all cache keys for the model
+     *
+     * @return void
+     *
+     */
+    public function clearCacheForModel(): void
+    {
+        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
     }
 
     /**
@@ -908,36 +932,86 @@ abstract class Model implements JsonSerializable
      *
      * Transform mongodb objects to clean php objects
      *
-     * @param  object  $doc
-     * @param  bool    $fetchAllFields
+     * @param  array|object  $doc
      * @return Model
+     * @throws FilesystemException
      *
      */
-    private function transformDocToModel(object $doc, bool $fetchAllFields = false): self
+    private function transformDocToModel(array|object $doc): self
     {
         $instance = new static();
-        $fields = $instance->fields($fetchAllFields);
 
         foreach ($doc as $k => $v) {
-            // Only take what is declared in fields
-            if (in_array($k, $fields, true)) {
-                if (is_object($v)) {
-                    if ($k !== '_id' && get_class($v) === BSONArray::class) {
-                        $instance->{$k} = new \SailCMS\Collection($this->processOnFetch($k, $v->bsonSerialize()));
-                    } elseif (get_class($v) === UTCDateTime::class) {
-                        $instance->{$k} = $this->processOnFetch($k, new Carbon($v->toDateTime()));
-                    } elseif (get_class($v) !== ObjectId::class) {
-                        $instance->{$k} = $this->processOnFetch($k, $this->parseRegularObject($v));
-                    } else {
-                        $instance->{$k} = $this->processOnFetch($k, $v);
-                    }
-                } elseif (is_array($v)) {
-                    $instance->{$k} = new \SailCMS\Collection($this->processOnFetch($k, $v));
-                } elseif ($k === '_id' && is_string($v)) {
-                    $instance->{$k} = new ObjectId($v);
-                } else {
-                    $instance->{$k} = $this->processOnFetch($k, $v);
+            $cast = $this->casting[$k] ?? '';
+
+            if (is_object($v)) {
+                $type = get_class($v);
+
+                switch ($type) {
+                    // Mongo Date
+                    case UTCDateTime::class:
+                        if ($cast === Carbon::class) {
+                            $instance->{$k} = new Carbon($v->toDateTime());
+                        } elseif ($cast === \DateTime::class) {
+                            $instance->{$k} = $v->toDateTime();
+                        } else {
+                            $instance->{$k} = $v;
+                        }
+                        break;
+
+                    case ObjectId::class:
+                        if ($cast === ObjectId::class) {
+                            $instance->{$k} = $v;
+                        } elseif ($cast === 'string') {
+                            $instance->{$k} = (string)$v;
+                        } else {
+                            $instance->{$k} = $v;
+                        }
+                        break;
+
+                    case BSONArray::class:
+                        if ($cast === \SailCMS\Collection::class) {
+                            $castInstance = new $cast();
+                            $instance->{$k} = $castInstance->castTo($v->bsonSerialize());
+                        } else {
+                            $instance->{$k} = $v->bsonSerialize();
+                        }
+                        break;
+
+                    default:
+                        if ($cast !== '') {
+                            $castInstance = new $cast();
+
+                            if (get_class($v) === BSONDocument::class) {
+                                $v = $this->bsonToPHP($v);
+                            }
+
+                            $instance->{$k} = $castInstance->castTo($v);
+                        } else {
+                            $instance->{$k} = $v;
+                        }
+                        break;
                 }
+            } elseif (is_array($v)) {
+                if ($cast !== '') {
+                    $castInstance = new $cast();
+                    $instance->{$k} = $castInstance->castTo($v);
+                } else {
+                    $instance->{$k} = $v;
+                }
+            } elseif (is_int($v) && $cast === \DateTime::class) {
+                $castInstance = new \DateTime();
+                $castInstance->setTimestamp($v);
+                $instance->{$k} = $castInstance;
+            } elseif (is_string($v) && $cast === 'encrypted') {
+                try {
+                    $instance->{$k} = Security::decrypt($v);
+                } catch (Exception $e) {
+                    // Unable to decrypt, return original
+                    $instance->{$k} = $v;
+                }
+            } else {
+                $instance->{$k} = $v;
             }
         }
 
@@ -946,104 +1020,119 @@ abstract class Model implements JsonSerializable
 
     /**
      *
-     * Process regular variables recursively
+     * Process BSONDocument to basic php document
      *
-     * @param  object  $obj
+     * @param  BSONDocument  $doc
      * @return stdClass
      *
      */
-    private function parseRegularObject(object $obj): stdClass
+    private function bsonToPHP(BSONDocument $doc): stdClass
     {
-        $out = new stdClass;
+        $newDoc = new stdClass();
 
-        foreach ($obj as $k => $v) {
-            if (is_object($v)) {
-                if (get_class($v) === ObjectId::class) {
-                    $out->{$k} = $this->processOnFetch($k, $v);
-                } elseif (get_class($v) === BSONArray::class) {
-                    $out->{$k} = $this->processOnFetch($k, $v->bsonSerialize());
-                } else {
-                    $out->{$k} = $this->processOnFetch($k, $this->parseRegularObject($v));
-                }
+        foreach ($doc as $key => $value) {
+            if (is_object($value)) {
+                $class = get_class($value);
+
+                $newDoc->{$key} = match ($class) {
+                    BSONArray::class => $value->bsonSerialize(),
+                    BSONDocument::class => $this->bsonToPHP($value),
+                    default => $value,
+                };
             } else {
-                $out->{$k} = $this->processOnFetch($k, $v);
+                $newDoc->{$key} = $value;
             }
         }
 
-        return $out;
+        return $newDoc;
     }
 
     /**
      *
-     * Simplify a variable to be easily encoded to json
+     * Simplify an object to json compatible values
      *
-     * @param  mixed  $entity
+     * @param  mixed  $obj
      * @return mixed
+     * @throws JsonException
      *
      */
-    private function simplifyEntity(mixed $entity): mixed
+    private function simplifyObject(mixed $obj): mixed
     {
-        if (is_array($entity)) {
-            foreach ($entity as $num => $item) {
-                $entity[$num] = $this->simplifyEntity($item);
-            }
-
-            return $entity;
+        // Handle scalar
+        if (is_scalar($obj)) {
+            return $obj;
         }
 
-        if (is_object($entity)) {
-            if ($entity instanceof ObjectId) {
-                return (string)$entity;
+        // Handle array
+        if (is_array($obj)) {
+            foreach ($obj as $num => $item) {
+                $obj[$num] = $this->simplifyObject($item);
             }
 
-            $impl = class_implements($entity);
-
-            if (isset($impl[DatabaseType::class])) {
-                return $entity->toDBObject();
-            }
-
-            foreach ($entity as $key => $value) {
-                $entity->{$key} = $this->simplifyEntity($value);
-            }
-
-            return $entity;
+            return $obj;
         }
 
-        return $entity;
+        // stdClass => stdClass
+        if (get_class($obj) === 'stdClass') {
+            return $obj;
+        }
+
+        // Carbon => UTCDateTime
+        if ($obj instanceof Carbon) {
+            return new UTCDateTime($obj->toDateTime()->getTimestamp() * 1000);
+        }
+
+        // DateTime => UTCDateTime
+        if ($obj instanceof \DateTime) {
+            return new UTCDateTime($obj->getTimestamp() * 1000);
+        }
+
+        // ObjectID => String
+        if ($obj instanceof ObjectId) {
+            return (string)$obj;
+        }
+
+        $impl = class_implements($obj);
+
+        if (isset($impl[Castable::class])) {
+            return $this->simplifyObject($obj->castFrom());
+        }
+
+        // Give up
+        return $obj;
     }
 
     /**
      *
-     * Prepare document to be written, transform Carbon dates to MongoDB dates
+     * Prepare document to be written
      *
      * @param  array  $doc
      * @return stdClass|array
+     * @throws JsonException
+     *
      */
     private function prepareForWrite(mixed $doc): stdClass|array
     {
-        if (is_array($doc) || is_iterable($doc)) {
-            foreach ($doc as $key => $value) {
-                if ($value instanceof Carbon) {
-                    $doc[$key] = $this->processOnStore($key, new UTCDateTime($value->toDateTime()->getTimestamp() * 1000));
-                } elseif (is_scalar($value)) {
-                    $doc[$key] = $this->processOnStore($key, $value);
-                } elseif (is_object($value) && get_class($value) === \SailCMS\Collection::class) {
-                    $doc[$key] = $value->unwrap();
-                } elseif (is_array($value) || is_object($value)) {
-                    $doc[$key] = $this->processOnStore($key, $this->prepareForWrite($value));
-                } else {
-                    $doc[$key] = $this->processOnStore($key, $value);
-                }
-            }
-        } elseif (is_object($doc)) {
-            $impl = class_implements(get_class($doc));
+        $instance = new static();
+        $instance->fill($doc);
+        return $instance->toJSON(true);
+    }
 
-            if (isset($impl[DatabaseType::class])) {
-                $doc = $doc->toDBObject();
-            }
+    /**
+     *
+     * Fill an instance with the give object or array of data
+     *
+     * @param  mixed  $doc
+     * @return $this
+     *
+     */
+    protected function fill(mixed $doc): self
+    {
+        foreach ($doc as $key => $value) {
+            $this->properties[$key] = $value;
         }
 
-        return $doc;
+        return $this;
     }
 
     /**
@@ -1066,7 +1155,7 @@ abstract class Model implements JsonSerializable
             'offset' => $this->currentSkip ?? 0,
             'limit' => $this->currentLimit ?? 10_000,
             'model' => get_class($this),
-            'collection' => $this->collection->getCollectionName(),
+            'collection' => $this->active_collection->getCollectionName(),
             'time' => $time,
             'update' => $extra['update'] ?? [],
             'pipeline' => $extra['pipeline'] ?? []
@@ -1086,17 +1175,5 @@ abstract class Model implements JsonSerializable
     private function assembleCacheKey(string $key): string
     {
         return Text::snakeCase(get_class($this)) . ':' . $key;
-    }
-
-    /**
-     *
-     * Clear all cache keys for the model
-     *
-     * @return void
-     *
-     */
-    private function clearCacheForModel(): void
-    {
-        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
     }
 }

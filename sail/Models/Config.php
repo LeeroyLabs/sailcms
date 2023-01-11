@@ -10,16 +10,16 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Security;
 use SodiumException;
 
+/**
+ *
+ * @property string       $name
+ * @property array|object $config
+ * @property bool         $flag
+ *
+ */
 class Config extends Model
 {
-    public string $name;
-    public array|object $config;
-    public bool $flag;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['name', 'config', 'flag'];
-    }
+    protected string $collection = 'configs';
 
     /**
      *

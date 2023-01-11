@@ -8,7 +8,6 @@ use RuntimeException;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
@@ -16,23 +15,23 @@ use SailCMS\Text;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\RoleConfig;
 
+/**
+ *
+ * @property string     $name
+ * @property string     $slug
+ * @property string     $description
+ * @property int        $level
+ * @property Collection $permissions
+ *
+ */
 class Role extends Model
 {
-    public string $name;
-    public string $slug;
-    public string $description;
-    public int $level;
-    public Collection $permissions;
+    protected string $collection = 'roles';
+    protected string $permissionGroup = 'role';
 
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['_id', 'name', 'slug', 'description', 'level', 'permissions'];
-    }
-
-    public function init(): void
-    {
-        $this->setPermissionGroup('role');
-    }
+    protected array $casting = [
+        'permissions' => Collection::class
+    ];
 
     /**
      *
