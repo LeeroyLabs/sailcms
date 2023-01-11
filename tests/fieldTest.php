@@ -15,8 +15,7 @@ use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     $_ENV['SITE_URL'] = 'http://localhost:8888';
     Sail::setAppState(Sail::STATE_CLI);
 
@@ -33,8 +32,7 @@ beforeAll(function ()
     $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
 });
 
-afterAll(function ()
-{
+afterAll(function () {
     $authorModel = new User();
     $authorModel->removeByEmail('testentryfield@leeroy.ca');
 
@@ -42,19 +40,18 @@ afterAll(function ()
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
-    $entryModel->delete($entry->_id, false);
+    $entryModel->delete((string)$entry->_id, false);
 
-    (new EntryType)->hardDelete($entry->entry_type_id);
+    (new EntryType())->hardDelete($entryModel->entry_type_id);
 
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
     ]);
-    $layoutModel->delete($entryLayout->_id, false);
+    $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
-test('Add all fields to the layout', function ()
-{
+test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
@@ -105,8 +102,7 @@ test('Add all fields to the layout', function ()
     }
 });
 
-test('Failed to update the entry content', function ()
-{
+test('Failed to update the entry content', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -130,8 +126,7 @@ test('Failed to update the entry content', function ()
     }
 });
 
-test('Update content with success', function ()
-{
+test('Update content with success', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -142,7 +137,7 @@ test('Update content with success', function ()
             'content' => [
                 'float' => '0.03',
                 'text' => 'Not empty',
-                'description' => 'This text contains line returns 
+                'description' => 'This text contains line returns
 and must keep it through all the process',
                 'phone' => '514-514-5145'
             ]

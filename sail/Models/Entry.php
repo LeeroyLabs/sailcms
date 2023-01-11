@@ -32,20 +32,20 @@ use stdClass;
 
 /**
  *
- * @property string       $entry_type_id
+ * @property string $entry_type_id
  * @property ?EntryParent $parent
- * @property ?string      $site_id
- * @property string       $locale
- * @property Collection   $alternates
- * @property string       $status
- * @property string       $title
- * @property string       $template
- * @property ?string      $slug
- * @property string       $url
- * @property Authors      $authors
- * @property Dates        $dates
- * @property Collection   $categories
- * @property Collection   $content
+ * @property ?string $site_id
+ * @property string $locale
+ * @property Collection $alternates
+ * @property string $status
+ * @property string $title
+ * @property string $template
+ * @property ?string $slug
+ * @property string $url
+ * @property Authors $authors
+ * @property Dates $dates
+ * @property Collection $categories
+ * @property Collection $content
  *
  */
 class Entry extends Model implements Validator
@@ -95,8 +95,8 @@ class Entry extends Model implements Validator
      *
      *  Get the model according to the collection
      *
-     * @param  string          $collection
-     * @param  EntryType|null  $entryType
+     * @param string $collection
+     * @param EntryType|null $entryType
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -139,8 +139,8 @@ class Entry extends Model implements Validator
      *
      * Validate fields
      *
-     * @param  string  $key
-     * @param  mixed   $value
+     * @param string $key
+     * @param mixed $value
      * @return void
      * @throws EntryException
      *
@@ -187,8 +187,7 @@ class Entry extends Model implements Validator
     {
         $parsedContent = Collection::init();
 
-        $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent)
-        {
+        $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
             $parsedContent->push($modelFieldContent);
         });
 
@@ -199,8 +198,8 @@ class Entry extends Model implements Validator
      *
      * Parse the entry into an array for api
      *
-     * @param  object|null  $currentHomepageEntry
-     * @param  bool         $wantSchema
+     * @param object|null $currentHomepageEntry
+     * @param bool $wantSchema
      * @return array
      * @throws ACLException
      * @throws DatabaseException
@@ -243,12 +242,12 @@ class Entry extends Model implements Validator
      *
      * Get all entries by entry type handle
      *
-     * @param  string      $entryTypeHandle
-     * @param  array|null  $filters  if filters is null it is default to ignore trash entries
-     * @param  int         $page
-     * @param  int         $limit
-     * @param  string      $sort
-     * @param  int         $direction
+     * @param string $entryTypeHandle
+     * @param array|null $filters if filters is null it is default to ignore trash entries
+     * @param int $page
+     * @param int $limit
+     * @param string $sort
+     * @param int $direction
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -290,8 +289,8 @@ class Entry extends Model implements Validator
      *
      * Get homepage configs
      *
-     * @param  string       $siteId
-     * @param  string|null  $locale
+     * @param string $siteId
+     * @param string|null $locale
      * @return object|null
      * @throws DatabaseException
      * @throws FilesystemException
@@ -319,9 +318,9 @@ class Entry extends Model implements Validator
      *
      * Get homepage entry !
      *
-     * @param  string  $siteId
-     * @param  string  $locale
-     * @param  bool    $toGraphQL
+     * @param string $siteId
+     * @param string $locale
+     * @param bool $toGraphQL
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -356,8 +355,8 @@ class Entry extends Model implements Validator
      *
      * Find a content by the url
      *
-     * @param  string  $url
-     * @param  bool    $fromRequest
+     * @param string $url
+     * @param bool $fromRequest
      * @return Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -373,8 +372,7 @@ class Entry extends Model implements Validator
         $content = null;
         $url = ltrim($url, "/");
 
-        $availableTypes->each(function ($key, $value) use ($url, $request, &$content)
-        {
+        $availableTypes->each(function ($key, $value) use ($url, $request, &$content) {
             // We already have it, stop!
             if ($content !== null) {
                 return;
@@ -422,8 +420,8 @@ class Entry extends Model implements Validator
      *
      * Find entries of all types by category id
      *
-     * @param  string       $categoryId
-     * @param  string|null  $siteId
+     * @param string $categoryId
+     * @param string|null $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -437,8 +435,7 @@ class Entry extends Model implements Validator
         $allEntries = Collection::init();
         $siteId = $siteId ?? Sail::siteId();
 
-        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries)
-        {
+        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries) {
             $entry = new Entry($entryType->collection_name);
             $entries = $entry->find([
                 'categories' => ['$in' => ['_id', $categoryId]],
@@ -455,12 +452,12 @@ class Entry extends Model implements Validator
      *
      * Get a validated slug that is not already existing in the db
      *
-     * @param  LocaleField      $urlPrefix
-     * @param  string           $slug
-     * @param  string           $siteId
-     * @param  string           $locale
-     * @param  string|null      $currentId
-     * @param  Collection|null  $availableTypes
+     * @param LocaleField $urlPrefix
+     * @param string $slug
+     * @param string $siteId
+     * @param string $locale
+     * @param string|null $currentId
+     * @param Collection|null $availableTypes
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -487,8 +484,7 @@ class Entry extends Model implements Validator
         if (!$availableTypes) {
             $availableTypes = EntryType::getAll();
         }
-        $availableTypes->each(function ($key, $value) use ($filters, &$found)
-        {
+        $availableTypes->each(function ($key, $value) use ($filters, &$found) {
             // We already find one no need to continue the search
             if ($found > 0) {
                 return;
@@ -508,9 +504,9 @@ class Entry extends Model implements Validator
      *
      * Get the relative url of the entry
      *
-     * @param  LocaleField  $urlPrefix
-     * @param  string       $slug
-     * @param  string       $locale
+     * @param LocaleField $urlPrefix
+     * @param string $slug
+     * @param string $locale
      * @return string
      *
      */
@@ -554,7 +550,7 @@ class Entry extends Model implements Validator
      *
      * Process content from graphQL to be able to create/update
      *
-     * @param  Collection|null  $content
+     * @param Collection|null $content
      * @return Collection
      *
      */
@@ -562,8 +558,7 @@ class Entry extends Model implements Validator
     {
         $parsedContent = Collection::init();
 
-        $content?->each(function ($i, $toParse) use (&$parsedContent)
-        {
+        $content?->each(function ($i, $toParse) use (&$parsedContent) {
             $content = $toParse->content;
             if ($toParse->content instanceof Collection) {
                 $content = $toParse->content->unwrap();
@@ -579,15 +574,14 @@ class Entry extends Model implements Validator
      *
      * Process errors for GraphQL
      *
-     * @param  Collection  $errors
+     * @param Collection $errors
      * @return Collection
      *
      */
     public static function processErrorsForGraphQL(Collection $errors): Collection
     {
         $parsedErrors = Collection::init();
-        $errors->each(function ($key, $errors) use (&$parsedErrors)
-        {
+        $errors->each(function ($key, $errors) use (&$parsedErrors) {
             $parsedErrors->push([
                 'key' => $key,
                 'errors' => $errors
@@ -601,7 +595,7 @@ class Entry extends Model implements Validator
      *
      * Get an entry with filters
      *
-     * @param  array  $filters
+     * @param array $filters
      * @return Entry|null
      * @throws DatabaseException
      *
@@ -620,7 +614,7 @@ class Entry extends Model implements Validator
      *
      * Get the count according to given filters
      *
-     * @param  array  $filters
+     * @param array $filters
      * @return int
      *
      */
@@ -633,8 +627,8 @@ class Entry extends Model implements Validator
      *
      * Get all entries of the current type without pagination
      *
-     * @param  bool   $ignoreTrash
-     * @param ?array  $filters
+     * @param bool $ignoreTrash
+     * @param ?array $filters
      * @return Collection
      * @throws DatabaseException
      *
@@ -667,7 +661,7 @@ class Entry extends Model implements Validator
      * Count entries for the current entry type
      *  (according to the __construct method)
      *
-     * @param  EntryStatus|string|null  $status
+     * @param EntryStatus|string|null $status
      * @return int
      *
      */
@@ -694,14 +688,14 @@ class Entry extends Model implements Validator
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     * @param  bool                $isHomepage
-     * @param  string              $locale
-     * @param  EntryStatus|string  $status
-     * @param  string              $title
-     * @param  string              $template
-     * @param  string|null         $slug
-     * @param  array|Collection    $extraData
-     * @param  bool                $throwErrors
+     * @param bool $isHomepage
+     * @param string $locale
+     * @param EntryStatus|string $status
+     * @param string $title
+     * @param string $template
+     * @param string|null $slug
+     * @param array|Collection $extraData
+     * @param bool $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -748,9 +742,9 @@ class Entry extends Model implements Validator
      *
      * Update an entry with a given entry id or entry instance
      *
-     * @param  Entry|string      $entry  or id
-     * @param  array|Collection  $data
-     * @param  bool              $throwErrors
+     * @param Entry|string $entry or id
+     * @param array|Collection $data
+     * @param bool $throwErrors
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -791,7 +785,7 @@ class Entry extends Model implements Validator
      *
      * Update entries url according to an url prefix (normally comes from entry type)
      *
-     * @param  LocaleField  $urlPrefix
+     * @param LocaleField $urlPrefix
      * @return void
      * @throws DatabaseException
      *
@@ -820,8 +814,8 @@ class Entry extends Model implements Validator
      *
      * Update all content keys with a new given key
      *
-     * @param  string  $key
-     * @param  string  $newKey
+     * @param string $key
+     * @param string $newKey
      * @return true
      * @throws DatabaseException
      * @throws EntryException
@@ -832,11 +826,9 @@ class Entry extends Model implements Validator
         $entries = $this->all();
 
         $updates = [];
-        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey)
-        {
+        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey) {
             $newContent = Collection::init();
-            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey)
-            {
+            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey) {
                 if ($currentKey == $key) {
                     $currentKey = $newKey;
                 }
@@ -865,8 +857,8 @@ class Entry extends Model implements Validator
      *
      * Delete an entry in soft mode or definitively
      *
-     * @param  string|ObjectId  $entryId
-     * @param  bool             $soft
+     * @param string|ObjectId $entryId
+     * @param bool $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -908,7 +900,7 @@ class Entry extends Model implements Validator
      * Validate that status is not thrash
      *  because the only to set it to trash is in the delete method
      *
-     * @param  EntryStatus|string  $status
+     * @param EntryStatus|string $status
      * @return void
      * @throws EntryException
      *
@@ -927,7 +919,7 @@ class Entry extends Model implements Validator
      *
      * Validate content from the entry type layout schema
      *
-     * @param  Collection  $content
+     * @param Collection $content
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -954,8 +946,7 @@ class Entry extends Model implements Validator
         }
 
         // Validate content from schema
-        $schema->each(function ($key, $modelField) use ($content, $errors)
-        {
+        $schema->each(function ($key, $modelField) use ($content, $errors) {
             /**
              * @var ModelField $modelField
              */
@@ -978,8 +969,7 @@ class Entry extends Model implements Validator
             }
         });
 
-        $content->each(function ($key, $content) use ($schema)
-        {
+        $content->each(function ($key, $content) use ($schema) {
             if (!$schema->get($key)) {
                 throw new EntryException(sprintf(self::CONTENT_KEY_ERROR, $key));
             }
@@ -992,8 +982,8 @@ class Entry extends Model implements Validator
      *
      * Handle homepage config after update
      *
-     * @param  Entry       $oldEntry
-     * @param  Collection  $newData
+     * @param Entry $oldEntry
+     * @param Collection $newData
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1028,9 +1018,9 @@ class Entry extends Model implements Validator
      *
      * Set the current entry has homepage
      *
-     * @param  string       $siteId
-     * @param  string       $locale
-     * @param  object|null  $currentConfig
+     * @param string $siteId
+     * @param string $locale
+     * @param object|null $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1055,9 +1045,9 @@ class Entry extends Model implements Validator
      *
      * Empty the homepage for the current site
      *
-     * @param  string             $siteId
-     * @param  string             $locale
-     * @param  object|array|null  $currentConfig
+     * @param string $siteId
+     * @param string $locale
+     * @param object|array|null $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1078,8 +1068,8 @@ class Entry extends Model implements Validator
      *
      * Create an entry
      *
-     * @param  Collection  $data
-     * @param  bool        $throwErrors
+     * @param Collection $data
+     * @param bool $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -1147,7 +1137,6 @@ class Entry extends Model implements Validator
                 'categories' => $categories ?? []
             ]);
         } catch (DatabaseException $exception) {
-            echo "HERE?";
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
@@ -1162,9 +1151,9 @@ class Entry extends Model implements Validator
      *
      * Update an entry without permission protection
      *
-     * @param  Entry       $entry
-     * @param  Collection  $data
-     * @param  bool        $throwErrors
+     * @param Entry $entry
+     * @param Collection $data
+     * @param bool $throwErrors
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1205,8 +1194,7 @@ class Entry extends Model implements Validator
             }
         }
 
-        $data->each(function ($key, $value) use (&$update)
-        {
+        $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'template', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
@@ -1232,7 +1220,7 @@ class Entry extends Model implements Validator
      *
      * Put an entry in the trash
      *
-     * @param  Entry  $entry
+     * @param Entry $entry
      * @return bool
      * @throws EntryException
      *
@@ -1264,10 +1252,10 @@ class Entry extends Model implements Validator
      * @throws EntryException
      *
      */
-    private function hardDelete(string|ObjectId $entryTypeId): bool
+    private function hardDelete(string|ObjectId $entryId): bool
     {
         try {
-            $qtyDeleted = $this->deleteById((string)$entryTypeId);
+            $qtyDeleted = $this->deleteById((string)$entryId);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
@@ -1279,7 +1267,7 @@ class Entry extends Model implements Validator
      *
      * Parse and throw the content errors
      *
-     * @param  Collection  $errors
+     * @param Collection $errors
      * @return void
      * @throws EntryException
      *
@@ -1288,8 +1276,7 @@ class Entry extends Model implements Validator
     {
         $errorsStrings = [];
 
-        $errors->each(function ($key, $errorsArray) use (&$errorsStrings)
-        {
+        $errors->each(function ($key, $errorsArray) use (&$errorsStrings) {
             foreach ($errorsArray as $error) {
                 $errorsStrings[] = rtrim($error[0], '.') . ": " . $key;
             }
@@ -1316,8 +1303,8 @@ class Entry extends Model implements Validator
      *
      * Generate cache key from filters
      *
-     * @param  string            $handle
-     * @param  Collection|array  $filters
+     * @param string $handle
+     * @param Collection|array $filters
      * @return string
      *
      */
@@ -1330,7 +1317,7 @@ class Entry extends Model implements Validator
      *
      * Iterate into filters recursively.
      *
-     * @param  mixed  $iterableOrValue
+     * @param mixed $iterableOrValue
      * @return string
      *
      */
