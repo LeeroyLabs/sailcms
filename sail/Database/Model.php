@@ -736,17 +736,13 @@ abstract class Model implements JsonSerializable
     protected function deleteById(string|ObjectId $id): int
     {
         $qt = Debug::startQuery();
-        $_id = $id;
-
-        if (is_string($id)) {
-            $_id = new ObjectId($id);
-        }
+        $id = $this->ensureObjectId($id);
 
         try {
-            $count = $this->active_collection->deleteOne(['_id' => $_id])->getDeletedCount();
+            $count = $this->active_collection->deleteOne(['_id' => $id])->getDeletedCount();
 
             $this->clearCacheForModel();
-            $this->debugCall('deleteById', $qt, ['query' => ['_id' => $_id]]);
+            $this->debugCall('deleteById', $qt, ['query' => ['_id' => $id]]);
             return $count;
         } catch (Exception $e) {
             throw new DatabaseException('0500' . $e->getMessage(), 0500);
@@ -1132,7 +1128,20 @@ abstract class Model implements JsonSerializable
     {
         $instance = new static();
         $instance->fill($doc);
-        return $instance->toJSON(true);
+        $obj = $instance->toJSON(true);
+
+        // Run the casting for encryption
+        foreach ($obj as $key => $value) {
+            if ($this->casting[$key] && $this->casting[$key] === 'encrypted') {
+                try {
+                    $obj[$key] = Security::encrypt($value);
+                } catch (FilesystemException|Exception $e) {
+                    $obj[$key] = $value;
+                }
+            }
+        }
+
+        return $obj;
     }
 
     /**
