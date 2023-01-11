@@ -15,8 +15,8 @@ class LayoutField implements DatabaseType
      */
     public function __construct(
         public readonly LocaleField $labels,
-        public readonly string $handle,
-        public readonly Collection $configs
+        public readonly string      $handle,
+        public readonly Collection  $configs
     )
     {
     }
@@ -32,7 +32,7 @@ class LayoutField implements DatabaseType
     {
         $configs = new Collection();
         $this->configs->each(function ($key, $value) use (&$configs) {
-            $configs->push($value->toDBObject());
+            $configs->pushKeyValue($key, $value->toDBObject());
         });
 
         return (object)[

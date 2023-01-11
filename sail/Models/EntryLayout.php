@@ -11,7 +11,6 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\Entry\Field as ModelField;
-use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\Fields\Field;
@@ -99,7 +98,7 @@ class EntryLayout extends Model
                 throw new FieldException(self::SCHEMA_MUST_CONTAIN_FIELDS);
             }
 
-            $schema->pushKeyValue(Text::slugify($key), $field->toLayoutField());
+            $schema->pushKeyValue($key, $field->toLayoutField());
         });
 
         return $schema;
@@ -182,20 +181,19 @@ class EntryLayout extends Model
      *
      * @param string $fieldKey
      * @param array $toUpdate
-     * @param int $fieldIndex
+     * @param int|string $fieldIndexName
      * @param LocaleField|null $labels
      * @return void
-     *
      */
-    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int $fieldIndex = 0, ?LocaleField $labels = null): void
+    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndex, $labels) {
+        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
             /**
              * @var ModelField $field
              */
             if ($currentFieldKey === $fieldKey) {
-                $currentInput = $field->configs->get((string)$fieldIndex)->toDbObject();
-                $inputClass = $field->configs->get((string)$fieldIndex)::class;
+                $currentInput = $field->configs->get((string)$fieldIndexName)->toDbObject();
+                $inputClass = $field->configs->get((string)$fieldIndexName)::class;
 
                 foreach ($toUpdate as $key => $value) {
                     $currentInput->settings[$key] = $value;
@@ -204,7 +202,7 @@ class EntryLayout extends Model
                 $newLabels = $labels ?? new LocaleField($currentInput->labels);
 
                 $input = new $inputClass($newLabels, ...$currentInput->settings);
-                $field->configs->pushKeyValue('0', $input);
+                $field->configs->pushKeyValue($fieldIndexName, $input);
 
                 $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
             }
@@ -268,9 +266,6 @@ class EntryLayout extends Model
     public function updateSchemaKey(string $key, string $newKey): bool
     {
         $this->hasPermissions();
-
-        // Slugify the new key
-        $newKey = Text::slugify($newKey);
 
         if (!in_array($key, $this->schema->keys()->unwrap())) {
             throw new EntryException(sprintf(self::SCHEMA_KEY_DOES_NOT_EXISTS, $key));
