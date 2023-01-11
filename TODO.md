@@ -23,8 +23,8 @@ TODO before v3.0.0 is complete
         - ✅ Collection supported (supported when typing Collection::class as cast)
         - ✅ Carbon (supported when typing Carbon::class as cast)
         - ✅ DateTime (supported when typing DateTime::class as cast)
-        - ✅ Encrypted (supported when typing encrypted as cast, works only on strings)
-    - ✅ Unit Test all new changes
+            - ✅ Encrypted (supported when typing encrypted as cast, works only on strings)
+    - Unit Test all new changes
 
 - SEO
     - Robots.txt

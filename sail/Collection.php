@@ -117,7 +117,11 @@ class Collection implements \JsonSerializable, \Iterator, Castable
     public function castTo(mixed $value): Collection
     {
         if (!is_array($value)) {
-            throw new CollectionException('Cannot initialize with anything other than an array', 0400);
+            if (is_object($value) && get_class($value) === \stdClass::class) {
+                $value = (array)$value;
+            } else {
+                throw new CollectionException('Cannot initialize with anything other than an array', 0400);
+            }
         }
 
         return new self($value);

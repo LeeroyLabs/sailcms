@@ -357,7 +357,7 @@ test('Update an entry with the default type', function ()
         expect($entry->dates->updated)->toBeGreaterThan($before);
     } catch (Exception $exception) {
         print_r($exception->getMessage());
-        print_r($exception->getTraceAsString());
+        //print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
 });
@@ -558,6 +558,7 @@ test('Hard delete an entry layout', function ()
         $result = $model->delete($entryLayout->_id, false);
         expect($result)->toBe(true);
     } catch (Exception $exception) {
+        echo $exception->getMessage();
         expect(true)->toBe(false);
     }
 });

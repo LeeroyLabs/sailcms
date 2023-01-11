@@ -37,7 +37,7 @@ class EntryType extends Model implements Validator
     public const HANDLE_ALREADY_EXISTS = '4002: Handle already exists.';
     public const HANDLE_USE_RESERVED_WORD = '4003: The "%s" word is reserved to create an entry type.';
     public const TITLE_MISSING = '4004: You must set the entry type title in your data.';
-    public const CANNOT_DELETE = '4005: You must emptied all related entries before deleting an entry type.';
+    public const CANNOT_DELETE = '4005: You must empty all related entries before deleting an entry type.';
     public const DOES_NOT_EXISTS = '4006: Entry type "%s" does not exists.';
     public const DATABASE_ERROR = '4007: Exception when "%s" an entry type.';
     public const CANNOT_UPDATE_DEFAULT_TYPE = '4008: Cannot update default type page, use general settings for that';
@@ -435,11 +435,11 @@ class EntryType extends Model implements Validator
         if (in_array($handle, self::RESERVED_WORDS_FOR_HANDLE)) {
             throw new EntryException(sprintf(self::HANDLE_USE_RESERVED_WORD, $handle));
         }
-        
+
         // Check everytime if the handle is already exists
-        if ($handle === self::DEFAULT_HANDLE || $this->getByHandle($handle) !== null) {
-            throw new EntryException(self::HANDLE_ALREADY_EXISTS);
-        }
+//        if ($handle === self::DEFAULT_HANDLE || $this->getByHandle($handle) !== null) {
+//            throw new EntryException(self::HANDLE_ALREADY_EXISTS);
+//        }
     }
 
     /**
