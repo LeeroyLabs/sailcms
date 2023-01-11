@@ -98,7 +98,11 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            $error = $fieldTypeClass->validate($content);
+            $currentContent = $content;
+            if ($content instanceof Collection) {
+                $currentContent = $content->get($index);
+            }
+            $error = $fieldTypeClass->validate($currentContent);
 
             if ($error->length > 0) {
                 $errors->push($error);

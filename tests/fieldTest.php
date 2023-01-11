@@ -42,7 +42,7 @@ afterAll(function () {
     ]);
     $entryModel->delete($entry->_id, false);
 
-    (new EntryType)->hardDelete($entry->entry_type_id);
+    (new EntryType)->hardDelete($entryModel->entry_type_id);
 
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([

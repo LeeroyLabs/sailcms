@@ -333,6 +333,8 @@ class EntryType extends Model
     {
         $this->hasPermissions();
 
+        $this->checkHandle($handle);
+
         return $this->createWithoutPermission($handle, $title, $urlPrefix, $entryLayoutId);
     }
 
@@ -493,8 +495,6 @@ class EntryType extends Model
      */
     private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
     {
-        $this->checkHandle($handle);
-
         $collectionName = $this->getCollectionName($handle);
 
         // Create the entry type
