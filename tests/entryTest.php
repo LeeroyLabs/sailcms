@@ -101,7 +101,7 @@ test('Update a key of a entry layout schema', function () {
             'titles.fr' => 'Test de disposition'
         ]);
         expect($entryLayout->schema->get('title'))->toBe(null);
-        expect($entryLayout->schema->get('sub-title.handle'))->toBe('text_field');
+        expect($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
@@ -268,7 +268,7 @@ test('Create an entry with an entry type with an existing url', function () {
     try {
         $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test', 'test-de-test', [
             'content' => [
-                'sub-title' => "Textfield content"
+                'sub title' => "Textfield content"
             ]
         ]);
         expect($entry->title)->toBe('Test 2');
@@ -307,7 +307,7 @@ test('Failed to update content because a field does not validate', function () {
     $entry = $entryModel->one([
         'title' => 'Test 2'
     ]);
-    $entry->content->{"sub-title"} = "TooShort";
+    $entry->content->{"sub title"} = "TooShort";
 
     try {
         $entryModel->updateById($entry->_id, [
@@ -316,7 +316,7 @@ test('Failed to update content because a field does not validate', function () {
         expect(true)->toBe(false);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10): sub-title");
+        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10): sub title");
     }
 });
 

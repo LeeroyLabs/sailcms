@@ -15,16 +15,17 @@ class InputSettings implements Castable
      *
      * Structure to replicate a html input properties
      *
-     * @param  string           $name
-     * @param  string           $type
-     * @param  Collection|null  $choices
+     * @param string $name
+     * @param string $type
+     * @param Collection|null $choices
      *
      */
     public function __construct(
-        public readonly string $name = '',
-        public readonly string $type = '',
+        public readonly string      $name = '',
+        public readonly string      $type = '',
         public readonly ?Collection $choices = new Collection([])
-    ) {
+    )
+    {
     }
 
     /**
@@ -47,8 +48,8 @@ class InputSettings implements Castable
      *
      * Cast to InputSettings
      *
-     * @param  mixed  $value
-     * @return mixed
+     * @param mixed $value
+     * @return self
      *
      */
     public function castTo(mixed $value): self

@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Text;
 use SailCMS\Types\FieldInfo;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputSettings;
@@ -32,8 +31,7 @@ abstract class Field
     public function __construct(LocaleField $labels, Collection|array|null $settings = null)
     {
         // TODO Check to avoid duplicate handle
-        $name = array_reverse(explode('\\', get_class($this)))[0];
-        $this->handle = Text::snakeCase($name);
+        $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
 
         $this->defineBaseConfigs();
@@ -63,7 +61,7 @@ abstract class Field
             $currentSetting = $fieldTypeClass::validateSettings($currentSetting);
 
             $fieldInput = new $fieldTypeClass($labels, ...$currentSetting);
-            $this->configs->push($fieldInput);
+            $this->configs->pushKeyValue($key, $fieldInput);
         });
     }
 
@@ -100,7 +98,11 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            $error = $fieldTypeClass->validate($content);
+            $currentContent = $content;
+            if ($content instanceof Collection) {
+                $currentContent = $content->get($index);
+            }
+            $error = $fieldTypeClass->validate($currentContent);
 
             if ($error->length > 0) {
                 $errors->push($error);
@@ -139,7 +141,7 @@ abstract class Field
     public static function fromLayoutField(array|stdClass $data): Field
     {
         $settings = [];
-        $configsData = new Collection($data->configs);
+        $configsData = new Collection((array)$data->configs);
 
         $configsData->each(function ($key, $field) use (&$settings) {
             $settings[$key] = (array)$field->settings;
@@ -162,14 +164,7 @@ abstract class Field
      */
     public static function getClassFromHandle(string $handle): string
     {
-        $handle = explode('_', $handle);
-        $className = __NAMESPACE__ . '\\';
-
-        foreach ($handle as $key => $value) {
-            $className .= ucfirst($value);
-        }
-
-        return $className;
+        return str_replace('-', '\\', $handle);
     }
 
     /**
@@ -194,7 +189,7 @@ abstract class Field
                 /**
                  * @var InputSettings $inputSettings
                  */
-                $inputSettingsList = $inputSettings->toDBObject();
+                $inputSettingsList = $inputSettings->castFrom();
                 $inputSettingsList['value'] = "";
                 $settings->push($inputSettingsList);
             });

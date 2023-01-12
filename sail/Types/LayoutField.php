@@ -15,16 +15,17 @@ class LayoutField implements Castable
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly string $handle = '',
-        public readonly Collection $configs = new Collection([])
-    ) {
+        public readonly string       $handle = '',
+        public readonly Collection   $configs = new Collection([])
+    )
+    {
     }
 
     public function castFrom(): stdClass
     {
         $configs = new Collection();
-        $this->configs->each(function ($key, $value) use (&$configs)
-        {
+
+        $this->configs->each(function ($key, $value) use (&$configs) {
             $configs->push($value->castFrom());
         });
 
