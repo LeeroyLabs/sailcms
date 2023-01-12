@@ -7,6 +7,12 @@ use SailCMS\Errors\DatabaseException;
 
 class Executor extends Model
 {
+    public function __construct(string $collection)
+    {
+        $this->collection = $collection;
+        parent::__construct();
+    }
+
     /**
      *
      * Run update code
@@ -76,11 +82,5 @@ class Executor extends Model
     public function runDropIndex(array $indexes): void
     {
         $this->dropIndexes($indexes);
-    }
-
-    // unused
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return [];
     }
 }
