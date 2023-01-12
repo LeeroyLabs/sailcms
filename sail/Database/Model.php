@@ -190,19 +190,6 @@ abstract class Model implements JsonSerializable
 
     /**
      *
-     * Set the group to look for in the model
-     *
-     * @param  string  $group
-     * @return void
-     *
-     */
-    public function setPermissionGroup(string $group): void
-    {
-        $this->permissionGroup = $group;
-    }
-
-    /**
-     *
      * Make a value safe for querying. You should never query using a value
      * that is not either a string or number, unless you are sure that it's safe.
      *
@@ -541,7 +528,7 @@ abstract class Model implements JsonSerializable
 
         try {
             $doc = $this->prepareForWrite($doc);
-            
+
             // Run Validators
             $this->runValidators((object)$doc);
 

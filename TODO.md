@@ -24,7 +24,7 @@ TODO before v3.0.0 is complete
         - ✅ Carbon (supported when typing Carbon::class as cast)
         - ✅ DateTime (supported when typing DateTime::class as cast)
             - ✅ Encrypted (supported when typing encrypted as cast, works only on strings)
-    - Unit Test all new changes
+    - ✅ Unit Test all new changes
 
 - SEO
     - Robots.txt
