@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+
+$args = $_SERVER['argv'];
+unset($args[0]);
+
+$script = './vendor/bin/pest ' . implode(' ', $args);
+passthru($script);

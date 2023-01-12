@@ -2,12 +2,15 @@
 
 namespace SailCMS\Types;
 
-use SailCMS\Contracts\DatabaseType;
+use SailCMS\Contracts\Castable;
 
-class Username implements DatabaseType
+readonly class Username implements Castable
 {
-    public function __construct(public readonly string $first, public readonly string $last, public readonly string $full)
+    public string $full;
+
+    public function __construct(public string $first = '', public string $last = '')
     {
+        $this->full = $first . ' ' . $last;
     }
 
     /**
@@ -23,12 +26,36 @@ class Username implements DatabaseType
         return new self($name->first, $name->last, $name->first . ' ' . $name->last);
     }
 
-    public function toDBObject(): \stdClass|array
+    /**
+     *
+     * Cast to simpler format from Username
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
     {
         return [
             'first' => $this->first,
             'last' => $this->last,
             'full' => $this->full
         ];
+    }
+
+    /**
+     *
+     * Cast to Username
+     *
+     * @param  mixed  $value
+     * @return Username
+     *
+     */
+    public function castTo(mixed $value): Username
+    {
+        if (is_array($value)) {
+            $value = (object)$value;
+        }
+
+        return new self($value->first ?? '', $value->last ?? '');
     }
 }

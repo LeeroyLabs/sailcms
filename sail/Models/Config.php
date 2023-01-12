@@ -10,16 +10,16 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Security;
 use SodiumException;
 
+/**
+ *
+ * @property string       $name
+ * @property array|object $config
+ * @property bool         $flag
+ *
+ */
 class Config extends Model
 {
-    public string $name;
-    public array|object $config;
-    public bool $flag;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['name', 'config', 'flag'];
-    }
+    protected string $collection = 'configs';
 
     /**
      *
@@ -35,8 +35,7 @@ class Config extends Model
      */
     public static function getByName(string $name): ?static
     {
-        $instance = new static();
-        $item = $instance->findOne(['name' => $name])->exec($name, Cache::TTL_MONTH);
+        $item = self::query()->findOne(['name' => $name])->exec($name, Cache::TTL_MONTH);
 
         if ($item && $item->flag) {
             $item->config = json_decode(Security::decrypt($item->config), false, 512, JSON_THROW_ON_ERROR);

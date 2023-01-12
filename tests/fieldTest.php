@@ -20,7 +20,7 @@ beforeAll(function () {
     Sail::setAppState(Sail::STATE_CLI);
 
     $authorModel = new User();
-    $username = new Username('Test', 'Entry', 'Test Entry');
+    $username = new Username('Test', 'Entry');
     $userId = $authorModel->create($username, 'testentryfield@leeroy.ca', 'Hell0W0rld!', Collection::init());
     User::$currentUser = $authorModel->getById($userId);
 
@@ -40,15 +40,15 @@ afterAll(function () {
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
-    $entryModel->delete($entry->_id, false);
+    $entryModel->delete((string)$entry->_id, false);
 
-    (new EntryType)->hardDelete($entryModel->entry_type_id);
+    (new EntryType())->hardDelete($entryModel->entry_type_id);
 
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
     ]);
-    $layoutModel->delete($entryLayout->_id, false);
+    $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
 test('Add all fields to the layout', function () {
@@ -137,7 +137,7 @@ test('Update content with success', function () {
             'content' => [
                 'float' => '0.03',
                 'text' => 'Not empty',
-                'description' => 'This text contains line returns 
+                'description' => 'This text contains line returns
 and must keep it through all the process',
                 'phone' => '514-514-5145'
             ]

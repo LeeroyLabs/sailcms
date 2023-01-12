@@ -10,21 +10,16 @@ use SailCMS\Security;
 use SodiumException;
 use Ramsey\Uuid\Uuid;
 
+/**
+ *
+ * @property string     $user_id
+ * @property string     $secret
+ * @property Collection $codes
+ *
+ */
 class Tfa extends Model
 {
-    public string $user_id = '';
-    public string $secret = '';
-    public Collection $codes;
-
-    public function __construct()
-    {
-        parent::__construct('tfa_data');
-    }
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['_id', 'user_id', 'secret', 'codes'];
-    }
+    protected string $collection = 'tfa_data';
 
     /**
      *
@@ -44,7 +39,7 @@ class Tfa extends Model
         if (!empty($entry)) {
             $entry->secret = Security::decrypt($entry->secret);
             $entry->codes = new Collection([
-                Security::decrypt($entry->codes->at(0)),
+                Security::decrypt($entry->codes->at()),
                 Security::decrypt($entry->codes->at(1)),
                 Security::decrypt($entry->codes->at(2)),
                 Security::decrypt($entry->codes->at(3))
@@ -99,7 +94,7 @@ class Tfa extends Model
         $record = $this->findOne(['codes' => $codes[0]])->exec();
 
         if ($record) {
-            $code1 = $record->codes->at(0);
+            $code1 = $record->codes->at();
             $code2 = $record->codes->at(1);
             $code3 = $record->codes->at(2);
             $code4 = $record->codes->at(3);

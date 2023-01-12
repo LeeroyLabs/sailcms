@@ -3,11 +3,11 @@
 namespace SailCMS\Types;
 
 use SailCMS\Collection;
-use SailCMS\Contracts\DatabaseType;
+use SailCMS\Contracts\Castable;
 use SailCMS\Text;
 use stdClass;
 
-class UserMeta implements DatabaseType, \JsonSerializable
+class UserMeta implements Castable, \JsonSerializable
 {
     public const TYPE_STRING = 1;
     public const TYPE_INT = 2;
@@ -27,8 +27,12 @@ class UserMeta implements DatabaseType, \JsonSerializable
 
     private static array $registeredFlags = ['use2fa'];
 
-    public function __construct(object $object)
+    public function __construct(object $object = null)
     {
+        if (!$object) {
+            return;
+        }
+
         if (get_class($object) === Collection::class) {
             $object = $object->unwrap();
         }
@@ -88,7 +92,7 @@ class UserMeta implements DatabaseType, \JsonSerializable
      * Set a dynamic property
      *
      * @param  string  $name
-     * @param          $value
+     * @param  mixed   $value
      * @return void
      */
     public function __set(string $name, mixed $value): void
@@ -212,14 +216,40 @@ class UserMeta implements DatabaseType, \JsonSerializable
 
     /**
      *
-     * Return a simple format for the database
+     * Cast to simpler format from UserMeta
      *
-     * @return stdClass
+     * @return array
      *
      */
-    public function toDBObject(): \stdClass
+    public function castFrom(): array
     {
-        return $this->simplify();
+        return [
+            'flags' => $this->flags,
+            ...$this->customMeta
+        ];
+    }
+
+    /**
+     *
+     * Cast to UserMeta
+     *
+     * @param  mixed  $value
+     * @return UserMeta
+     *
+     */
+    public function castTo(mixed $value): UserMeta
+    {
+        if (is_array($value)) {
+            $value = (object)$value;
+        }
+
+        $instance = new self();
+
+        foreach ($value as $key => $v) {
+            $instance->{$key} = $v;
+        }
+
+        return $instance;
     }
 
     /**

@@ -3,16 +3,17 @@
 namespace SailCMS\Types;
 
 use JetBrains\PhpStorm\Pure;
+use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Models\User;
 
-class Authors implements DatabaseType
+readonly class Authors implements Castable
 {
     public function __construct(
-        public readonly ?string $created_by,
-        public readonly ?string $updated_by,
-        public readonly ?string $published_by,
-        public readonly ?string $deleted_by
+        public ?string $created_by = '',
+        public ?string $updated_by = '',
+        public ?string $published_by = '',
+        public ?string $deleted_by = ''
     ) {
     }
 
@@ -25,7 +26,7 @@ class Authors implements DatabaseType
      * @return array
      *
      */
-    static public function init(User $author, bool $published): array
+    public static function init(User $author, bool $published): array
     {
         $publisherId = null;
         if ($published) {
@@ -44,7 +45,7 @@ class Authors implements DatabaseType
      * @param  string   $updateAuthorId
      * @return array
      */
-    static public function updated(Authors $authors, string $updateAuthorId)
+    public static function updated(Authors $authors, string $updateAuthorId)
     {
         $newAuthors = new Authors($authors->created_by, $updateAuthorId, $authors->published_by, $authors->deleted_by);
 
@@ -60,7 +61,7 @@ class Authors implements DatabaseType
      * @return array
      *
      */
-    static public function deleted(Authors $authors, string $deleteAuthorId): array
+    public static function deleted(Authors $authors, string $deleteAuthorId): array
     {
         $newAuthors = new Authors($authors->created_by, $authors->updated_by, $authors->published_by, $deleteAuthorId);
 
@@ -82,5 +83,35 @@ class Authors implements DatabaseType
             'published_by' => $this->published_by ?? '',
             'deleted_by' => $this->deleted_by ?? '',
         ];
+    }
+
+    /**
+     *
+     * Cast to simpler format from Authors
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        return [
+            'created_by' => $this->created_by,
+            'updated_by' => $this->updated_by,
+            'published_by' => $this->published_by ?? '',
+            'deleted_by' => $this->deleted_by ?? '',
+        ];
+    }
+
+    /**
+     *
+     * Cast to Authors
+     *
+     * @param  mixed  $value
+     * @return Authors
+     *
+     */
+    public function castTo(mixed $value): Authors
+    {
+        return new self($value->created_by, $value->updated_by, $value->published_by, $value->deleted_by);
     }
 }

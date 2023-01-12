@@ -75,7 +75,7 @@
         }
     },
     "scripts": {
-        "test": "./vendor/bin/pest",
+        "test": "./vendor/bin/pest --",
         "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
         "testall": "composer test; composer analyze"
     },

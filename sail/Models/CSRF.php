@@ -10,21 +10,16 @@ use SailCMS\Http\Request;
 use SailCMS\Security;
 use SailCMS\Types\QueryOptions;
 
+/**
+ *
+ * @property string $ip
+ * @property string $token
+ * @property int    $expire_at
+ *
+ */
 class CSRF extends Model
 {
-    public string $ip;
-    public string $token;
-    public int $expire_at;
-
-    public function __construct()
-    {
-        parent::__construct('csrf');
-    }
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['ip', 'token', 'expire_at'];
-    }
+    protected string $collection = 'csrf';
 
     /**
      *

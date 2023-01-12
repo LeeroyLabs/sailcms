@@ -29,9 +29,37 @@ use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
+use stdClass;
 
+/**
+ *
+ *
+ * @property Username          $name
+ * @property Collection        $roles
+ * @property string            $email
+ * @property string            $status
+ * @property string            $password
+ * @property string            $avatar
+ * @property UserMeta|stdClass $meta
+ * @property string            $temporary_token
+ * @property string            $auth_token
+ * @property string            $locale
+ * @property string            $validation_code
+ * @property string            $reset_code
+ * @property bool              $validated
+ * @property int               $created_at
+ *
+ */
 class User extends Model
 {
+    protected string $collection = 'users';
+    protected array $guards = ['password'];
+    protected array $casting = [
+        'name' => Username::class,
+        'roles' => Collection::class,
+        'meta' => UserMeta::class
+    ];
+
     public const EVENT_DELETE = 'event_delete_user';
     public const EVENT_CREATE = 'event_create_user';
     public const EVENT_UPDATE = 'event_update_user';
@@ -40,78 +68,6 @@ class User extends Model
     public static ?User $currentUser = null;
 
     private static Collection $permsCache;
-
-    public Username $name;
-    public Collection $roles;
-    public string $email;
-    public string $status;
-    public string $password;
-    public string $avatar;
-    public UserMeta|\stdClass $meta;
-    public string $temporary_token = '';
-    public string $auth_token = '';
-    public string $locale = 'en';
-    public string $validation_code = '';
-    public string $reset_code;
-    public bool $validated;
-    public int $created_at = 0;
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        if ($fetchAllFields) {
-            return [
-                '_id',
-                'name',
-                'roles',
-                'email',
-                'status',
-                'avatar',
-                'meta',
-                'password',
-                'temporary_token',
-                'locale',
-                'validation_code',
-                'validated',
-                'reset_code',
-                'created_at'
-            ];
-        }
-
-        return [
-            '_id',
-            'name',
-            'roles',
-            'email',
-            'status',
-            'avatar',
-            'meta',
-            'temporary_token',
-            'locale',
-            'validation_code',
-            'validated',
-            'reset_code',
-            'created_at'
-        ];
-    }
-
-    public static function initForTest()
-    {
-        self::$currentUser = new User();
-        self::$currentUser->_id = new ObjectId();
-    }
-
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        if ($field === 'name') {
-            return new Username($value->first, $value->last, $value->full);
-        }
-
-        if ($field === 'meta') {
-            return new UserMeta($value);
-        }
-
-        return $value;
-    }
 
     /**
      *
@@ -160,12 +116,11 @@ class User extends Model
      *
      * Get user's permission
      *
-     * @param  bool  $forceLoad
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function permissions(bool $forceLoad = false): Collection
+    public function permissions(): Collection
     {
         if (isset(self::$permsCache)) {
             return self::$permsCache;
@@ -230,15 +185,13 @@ class User extends Model
      * @param  UserMeta|null  $meta
      * @return string
      * @throws DatabaseException
-     * @throws ACLException
-     * @throws PermissionException
      *
      */
     public function createRegularUser(Username $name, string $email, string $password, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
         // Make sure full is assigned
         if (trim($name->full) === '') {
-            $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
+            $name = new Username($name->first, $name->last);
         }
 
         if ($meta === null) {
@@ -288,7 +241,7 @@ class User extends Model
                 $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
                 Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
-            } catch (Exception $e) {
+            } catch (Exception) {
                 Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
@@ -317,7 +270,7 @@ class User extends Model
                 $mail = new Mail();
                 $mail->to($email)->useEmail('new_account', $user->locale, ['verification_code' => $user->validation_code])->send();
                 return true;
-            } catch (Exception $e) {
+            } catch (Exception) {
                 return false;
             }
         }
@@ -365,7 +318,7 @@ class User extends Model
 
         // Make sure full is assigned
         if ($name->full === '') {
-            $name = new Username($name->first, $name->last, $name->first . ' ' . $name->last);
+            $name = new Username($name->first, $name->last);
         }
 
         if ($meta === null) {
@@ -416,7 +369,7 @@ class User extends Model
                     ]
                 )->send();
                 return $id;
-            } catch (Exception $e) {
+            } catch (Exception) {
                 return $id;
             }
         }
@@ -468,7 +421,7 @@ class User extends Model
 
         // Validate email properly
         if ($email !== null && trim($email) !== '') {
-            $valid = $this->validateEmail($email, $id, true);
+            $this->validateEmail($email, $id, true);
             $update['email'] = $email;
         }
 
@@ -669,7 +622,7 @@ class User extends Model
      */
     public function verifyUserPass(string $email, string $password): LoginResult
     {
-        $user = $this->findOne(['email' => $email])->allFields()->exec();
+        $user = $this->findOne(['email' => $email])->exec();
 
         if ($user && !$user->validated) {
             return new LoginResult('', 'not-validated');
@@ -751,7 +704,7 @@ class User extends Model
         $data = new Middleware\Data(Middleware\Login::LogIn, ['email' => $email, 'password' => $password, 'allowed' => false]);
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
 
-        $user = $this->findOne(['email' => $email, 'validated' => true])->allFields()->exec('', 0);
+        $user = $this->findOne(['email' => $email, 'validated' => true])->exec();
         $pass = false;
 
         if (!$mwResult->data['allowed']) {
@@ -1050,13 +1003,11 @@ class User extends Model
      * @param  string  $email
      * @param  string  $id
      * @param  bool    $throw
-     * @return bool
+     * @return void
      * @throws DatabaseException
-     * @throws PermissionException
-     * @throws ACLException
      *
      */
-    private function validateEmail(string $email, string $id = '', bool $throw = false): bool
+    private function validateEmail(string $email, string $id = '', bool $throw = false): void
     {
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
             // Check that it does not exist already
@@ -1068,17 +1019,15 @@ class User extends Model
                     throw new DatabaseException("9001: Cannot use email '{$email}', already in use.", 0403);
                 }
 
-                return false;
+                return;
             }
 
-            return true;
+            return;
         }
 
         if ($throw) {
             throw new DatabaseException("9003: Email '{$email}' is not a valid email.", 0400);
         }
-
-        return false;
     }
 
     /**

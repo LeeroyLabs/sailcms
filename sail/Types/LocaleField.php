@@ -3,13 +3,14 @@
 namespace SailCMS\Types;
 
 use SailCMS\Collection;
+use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\DatabaseType;
 
-class LocaleField implements DatabaseType
+class LocaleField implements Castable
 {
     private Collection $combinations;
 
-    public function __construct(array|\stdClass $combinations)
+    public function __construct(array|\stdClass|null $combinations = null)
     {
         $this->combinations = Collection::init();
 
@@ -39,7 +40,14 @@ class LocaleField implements DatabaseType
         return $this->get($locale);
     }
 
-    public function toDBObject(): \stdClass|array
+    /**
+     *
+     * Cast to simpler format from LocaleField
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
     {
         $out = [];
 
@@ -48,5 +56,22 @@ class LocaleField implements DatabaseType
         }
 
         return $out;
+    }
+
+    /**
+     *
+     * Cast to LocaleField
+     *
+     * @param  mixed  $value
+     * @return LocaleField
+     *
+     */
+    public function castTo(mixed $value): LocaleField
+    {
+        if (is_string($value)) {
+            return new self(['fr' => $value, 'en' => $value]);
+        }
+
+        return new self($value);
     }
 }

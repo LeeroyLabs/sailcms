@@ -15,7 +15,7 @@ test('Cache a scalar value', function ()
     $value = Cache::get('testkey');
 
     expect($value)->toBe('hello world!');
-});
+})->group('cache');
 
 test('Cache an object value', function ()
 {
@@ -23,7 +23,7 @@ test('Cache an object value', function ()
     $value = Cache::get('objectkey');
 
     expect($value)->toBeObject();
-});
+})->group('cache');
 
 test('Cache an array value', function ()
 {
@@ -31,7 +31,7 @@ test('Cache an array value', function ()
     $value = Cache::get('arraykey');
 
     expect($value)->toBeObject();
-});
+})->group('cache');
 
 test('Delete one key', function ()
 {
@@ -39,7 +39,7 @@ test('Delete one key', function ()
     $value = Cache::get('testkey');
 
     expect($value)->toBeNull();
-});
+})->group('cache');
 
 test('Delete many keys', function ()
 {
@@ -48,7 +48,7 @@ test('Delete many keys', function ()
     $value2 = Cache::get('arraykey');
 
     expect($value1)->toBeNull()->and($value2)->toBeNull();
-});
+})->group('cache');
 
 test('Add many keys, delete all keys in namespace "keypref"', function ()
 {
@@ -65,7 +65,7 @@ test('Add many keys, delete all keys in namespace "keypref"', function ()
     $value2 = Cache::get('testkey');
 
     expect($value1)->toBeNull()->and($value2)->not->toBeNull();
-});
+})->group('cache');
 
 test('Flush all', function ()
 {
@@ -73,4 +73,4 @@ test('Flush all', function ()
     $value = Cache::get('testkey');
 
     expect($value)->toBeNull();
-});
+})->group('cache');

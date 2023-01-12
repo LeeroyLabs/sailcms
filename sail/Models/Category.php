@@ -14,33 +14,22 @@ use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\QueryOptions;
 
+/**
+ *
+ * @property LocaleField $name
+ * @property string      $site_id
+ * @property string      $slug
+ * @property int         $order
+ * @property string      $parent_id
+ * @property array       $children
+ *
+ */
 class Category extends Model
 {
-    public LocaleField $name;
-    public string $site_id;
-    public string $slug;
-    public int $order;
-    public string $parent_id;
-    public array $children;
-
-    public function init(): void
-    {
-        $this->setPermissionGroup('categories');
-    }
-
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return ['_id', 'name', 'site_id', 'slug', 'parent_id', 'order'];
-    }
-
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        if ($field === 'name') {
-            return new LocaleField($value);
-        }
-
-        return $value;
-    }
+    protected string $collection = 'categories';
+    protected array $casting = [
+        'name' => LocaleField::class
+    ];
 
     /**
      *
@@ -54,7 +43,7 @@ class Category extends Model
     {
         return [
             "_id" => $this->_id,
-            "name" => $this->name->toDBObject(),
+            "name" => $this->name->castFrom(),
             "slug" => $this->slug,
             "parent_id" => $this->parent_id,
             "order" => $this->order,
@@ -66,39 +55,37 @@ class Category extends Model
      *
      * Get a category by id
      *
-     * @param ObjectId|string $id
+     * @param  ObjectId|string  $id
      * @return Category|null
      * @throws DatabaseException
      *
      */
     public static function getById(ObjectId|string $id): ?Category
     {
-        $instance = new static();
-        return $instance->findById($id)->exec((string)$id);
+        return self::query()->findById($id)->exec((string)$id);
     }
 
     /**
      *
      * Get a category by slug (and site id)
      *
-     * @param string $slug
-     * @param string $site_id
+     * @param  string  $slug
+     * @param  string  $site_id
      * @return Category|null
      * @throws DatabaseException
      *
      */
     public static function getBySlug(string $slug, string $site_id): ?Category
     {
-        $instance = new static();
-        return $instance->findOne(['slug' => $slug, 'site_id' => $site_id])->exec("{$site_id}_{$slug}");
+        return self::query()->findOne(['slug' => $slug, 'site_id' => $site_id])->exec("{$site_id}_{$slug}");
     }
 
     /**
      *
      * Get all entries that are in the given category id
      *
-     * @param ObjectId|string $id
-     * @param string|null $siteId
+     * @param  ObjectId|string  $id
+     * @param  string|null      $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -115,8 +102,8 @@ class Category extends Model
      *
      * Alias for Entry's method for that
      *
-     * @param string $slug
-     * @param string|null $siteId
+     * @param  string       $slug
+     * @param  string|null  $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -142,9 +129,9 @@ class Category extends Model
      *
      * Create a category
      *
-     * @param LocaleField $name
-     * @param string $parentId
-     * @param string $siteId
+     * @param  LocaleField  $name
+     * @param  string       $parentId
+     * @param  string       $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -185,9 +172,9 @@ class Category extends Model
      *
      * Update a category
      *
-     * @param ObjectId|string $id
-     * @param LocaleField $name
-     * @param string $parent_id
+     * @param  ObjectId|string  $id
+     * @param  LocaleField      $name
+     * @param  string           $parent_id
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -229,7 +216,7 @@ class Category extends Model
      *
      * Delete a category (reassign sub categories to top level
      *
-     * @param ObjectId|string $id
+     * @param  ObjectId|string  $id
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -255,8 +242,8 @@ class Category extends Model
      *
      * Delete a category by slug
      *
-     * @param string $slug
-     * @param string $siteId
+     * @param  string  $slug
+     * @param  string  $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -283,8 +270,8 @@ class Category extends Model
      *
      * Update order for all sub categories
      *
-     * @param string $parent
-     * @param string $siteId
+     * @param  string  $parent
+     * @param  string  $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -316,8 +303,8 @@ class Category extends Model
      *
      * Get tree list of categories
      *
-     * @param string $parent
-     * @param string $siteId
+     * @param  string  $parent
+     * @param  string  $siteId
      * @return Collection
      * @throws DatabaseException
      *
@@ -359,7 +346,8 @@ class Category extends Model
         foreach ($basicTree as $id => $children) {
             $childrenList = $this->parseChildrenList($listCollection, $basicTree, $id);
 
-            $item = $listCollection->find(function ($key, $cat) use ($id) {
+            $item = $listCollection->find(function ($key, $cat) use ($id)
+            {
                 return ((string)$cat->_id === $id);
             });
 
@@ -371,7 +359,8 @@ class Category extends Model
         $final = [];
 
         foreach ($structured as $num => $tree) {
-            $item = $listCollection->find(function ($key, $cat) use ($tree) {
+            $item = $listCollection->find(function ($key, $cat) use ($tree)
+            {
                 return ((string)$cat->_id === (string)$tree->_id);
             });
 
@@ -387,9 +376,9 @@ class Category extends Model
      *
      * Parse the tree of children
      *
-     * @param Collection $categories
-     * @param array $tree
-     * @param string $id
+     * @param  Collection  $categories
+     * @param  array       $tree
+     * @param  string      $id
      * @return array
      *
      */
@@ -398,7 +387,8 @@ class Category extends Model
         $children = [];
 
         foreach ($tree[$id] as $_id) {
-            $item = $categories->find(function ($key, $cat) use ($_id) {
+            $item = $categories->find(function ($key, $cat) use ($_id)
+            {
                 return ((string)$cat->_id === $_id);
             });
 

@@ -13,51 +13,32 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 
+/**
+ *
+ * @property string      $name
+ * @property string      $slug
+ * @property LocaleField $subject
+ * @property LocaleField $title
+ * @property LocaleField $content
+ * @property LocaleField $cta
+ * @property LocaleField $cta_title
+ * @property string      $template
+ * @property int         $created_at
+ * @property int         $last_modified
+ *
+ */
 class Email extends Model
 {
-    public string $name;
-    public string $slug;
-    public LocaleField $subject;
-    public LocaleField $title;
-    public LocaleField $content;
-    public LocaleField $cta;
-    public LocaleField $cta_title;
-    public string $template;
-    public int $created_at;
-    public int $last_modified;
+    protected string $collection = 'emails';
+    protected array $casting = [
+        'subject' => LocaleField::class,
+        'title' => LocaleField::class,
+        'content' => LocaleField::class,
+        'cta' => LocaleField::class,
+        'cta_link' => LocaleField::class
+    ];
 
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return [
-            '_id',
-            'name',
-            'slug',
-            'subject',
-            'title',
-            'content',
-            'cta',
-            'cta_title',
-            'template',
-            'created_at',
-            'last_modified'
-        ];
-    }
-
-    public function init(): void
-    {
-        $this->setPermissionGroup('emails');
-    }
-
-    protected function processOnFetch(string $field, mixed $value): mixed
-    {
-        $fields = ['subject', 'title', 'content', 'cta', 'cta_title'];
-
-        if (in_array($field, $fields)) {
-            return new LocaleField($value);
-        }
-
-        return $value;
-    }
+    protected string $permissionGroup = 'emails';
 
     /**
      *
@@ -70,8 +51,7 @@ class Email extends Model
      */
     public static function getBySlug(string $slug): ?Email
     {
-        $instance = new static();
-        return $instance->findOne(['slug' => $slug])->exec();
+        return self::query()->findOne(['slug' => $slug])->exec();
     }
 
     /**

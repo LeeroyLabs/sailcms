@@ -3,31 +3,28 @@
 namespace SailCMS\Types\Fields;
 
 use SailCMS\Collection;
+use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
 
-abstract class Field implements DatabaseType
+abstract class Field implements Castable
 {
     /* Errors from 6100 to 6119 */
     public const FIELD_REQUIRED = "6100: This field is required.";
-
-    // TODO add protected property there
 
     /**
      *
      * Structure to replicate an html input
      *
-     * @param LocaleField $labels
-     * @param bool $required
-     *
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
      */
     public function __construct(
-        public readonly LocaleField $labels,
-        public readonly bool        $required = false
-    )
-    {
+        public readonly ?LocaleField $labels = null,
+        public readonly bool $required = false
+    ) {
     }
 
     public function __toString(): string
@@ -65,7 +62,7 @@ abstract class Field implements DatabaseType
      *
      * Validate the input from a given content
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -75,8 +72,8 @@ abstract class Field implements DatabaseType
      *
      * Valid a value by Field types
      *
-     * @param string $type
-     * @param mixed $value
+     * @param  string  $type
+     * @param  mixed   $value
      * @return bool
      *
      */
@@ -84,7 +81,7 @@ abstract class Field implements DatabaseType
     {
         return match ($type) {
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
-            InputSettings::INPUT_TYPE_NUMBER => is_integer((int)$value),
+            InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
             InputSettings::INPUT_TYPE_REGEX => is_string($value),
             default => false
         };
@@ -94,7 +91,7 @@ abstract class Field implements DatabaseType
      *
      * Validate settings before the schema creation in an entry layout
      *
-     * @param Collection|array|null $settings
+     * @param  Collection|array|null  $settings
      * @return Collection
      *
      */
@@ -102,7 +99,8 @@ abstract class Field implements DatabaseType
     {
         $validSettings = Collection::init();
 
-        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings) {
+        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings)
+        {
             /**
              * @var InputSettings $inputType
              */
@@ -123,15 +121,16 @@ abstract class Field implements DatabaseType
      *
      * Get setting type from a field
      *
-     * @param string $name
-     * @param mixed $value
+     * @param  string  $name
+     * @param  mixed   $value
      * @return string
      *
      */
     public function getSettingType(string $name, mixed $value): string
     {
         $type = StoringType::STRING->value;
-        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value) {
+        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value)
+        {
             if ($setting->name === $name) {
                 $type = match ($setting->type) {
                     "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
@@ -155,10 +154,40 @@ abstract class Field implements DatabaseType
     public function toDBObject(): stdClass
     {
         return (object)[
-            'labels' => $this->labels->toDBObject(),
+            'labels' => $this->labels->castFrom(),
             'settings' => [
                 'required' => $this->required
             ]
         ];
+    }
+
+    /**
+     *
+     * Cast to simpler form from Field
+     *
+     * @return stdClass
+     *
+     */
+    public function castFrom(): stdClass
+    {
+        return (object)[
+            'labels' => $this->labels->castFrom(),
+            'settings' => [
+                'required' => $this->required
+            ]
+        ];
+    }
+
+    /**
+     *
+     * Cast to Field Child
+     *
+     * @param  mixed  $value
+     * @return $this
+     *
+     */
+    public function castTo(mixed $value): self
+    {
+        return new static($value->labels, $value->settings->required);
     }
 }
