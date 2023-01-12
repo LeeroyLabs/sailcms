@@ -189,7 +189,7 @@ abstract class Field
                 /**
                  * @var InputSettings $inputSettings
                  */
-                $inputSettingsList = $inputSettings->toDBObject();
+                $inputSettingsList = $inputSettings->castFrom();
                 $inputSettingsList['value'] = "";
                 $settings->push($inputSettingsList);
             });

@@ -233,7 +233,7 @@ class Entry extends Model implements Validator
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'categories' => $this->categories->castFrom(),
-            'content' => $this->castFrom(),
+            'content' => $this->content->castFrom(),
             'schema' => $schema
         ];
     }
@@ -357,14 +357,13 @@ class Entry extends Model implements Validator
      *
      * @param string $url
      * @param bool $fromRequest
-     * @return Entry|null
+     * @return Entry|array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public static function findByURL(string $url, bool $fromRequest = true): ?Entry
+    public static function findByURL(string $url, bool $fromRequest = true): Entry|array|null
     {
         // Load all entry types before scanning them
         $availableTypes = EntryType::getAll();
@@ -373,11 +372,6 @@ class Entry extends Model implements Validator
         $url = ltrim($url, "/");
 
         $availableTypes->each(function ($key, $value) use ($url, $request, &$content) {
-            // We already have it, stop!
-            if ($content !== null) {
-                return;
-            }
-
             // Search for what collection has this url (if any)
             $entry = new Entry($value->collection_name);
             $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
@@ -410,6 +404,12 @@ class Entry extends Model implements Validator
                         $content = null;
                     }
                 }
+
+                // We already have it, stop!
+                if ($content !== null) {
+                    return;
+                }
+
             }
         });
 

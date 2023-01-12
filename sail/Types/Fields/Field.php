@@ -4,7 +4,6 @@ namespace SailCMS\Types\Fields;
 
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
-use SailCMS\Contracts\DatabaseType;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
@@ -18,13 +17,14 @@ abstract class Field implements Castable
      *
      * Structure to replicate an html input
      *
-     * @param  LocaleField|null  $labels
-     * @param  bool              $required
+     * @param LocaleField|null $labels
+     * @param bool $required
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false
-    ) {
+        public readonly bool         $required = false
+    )
+    {
     }
 
     public function __toString(): string
@@ -62,7 +62,7 @@ abstract class Field implements Castable
      *
      * Validate the input from a given content
      *
-     * @param  mixed  $content
+     * @param mixed $content
      * @return Collection
      *
      */
@@ -72,8 +72,8 @@ abstract class Field implements Castable
      *
      * Valid a value by Field types
      *
-     * @param  string  $type
-     * @param  mixed   $value
+     * @param string $type
+     * @param mixed $value
      * @return bool
      *
      */
@@ -91,7 +91,7 @@ abstract class Field implements Castable
      *
      * Validate settings before the schema creation in an entry layout
      *
-     * @param  Collection|array|null  $settings
+     * @param Collection|array|null $settings
      * @return Collection
      *
      */
@@ -99,8 +99,7 @@ abstract class Field implements Castable
     {
         $validSettings = Collection::init();
 
-        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings)
-        {
+        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
@@ -121,16 +120,15 @@ abstract class Field implements Castable
      *
      * Get setting type from a field
      *
-     * @param  string  $name
-     * @param  mixed   $value
+     * @param string $name
+     * @param mixed $value
      * @return string
      *
      */
     public function getSettingType(string $name, mixed $value): string
     {
         $type = StoringType::STRING->value;
-        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value)
-        {
+        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value) {
             if ($setting->name === $name) {
                 $type = match ($setting->type) {
                     "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
@@ -141,24 +139,6 @@ abstract class Field implements Castable
         });
 
         return $type;
-    }
-
-    /**
-     *
-     * For storing in the database
-     *  > IMPORTANT : the settings must be regrouped in a 'settings' array
-     *
-     * @return stdClass
-     *
-     */
-    public function toDBObject(): stdClass
-    {
-        return (object)[
-            'labels' => $this->labels->castFrom(),
-            'settings' => [
-                'required' => $this->required
-            ]
-        ];
     }
 
     /**
@@ -182,12 +162,12 @@ abstract class Field implements Castable
      *
      * Cast to Field Child
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return $this
      *
      */
-    public function castTo(mixed $value): self
+    public function castTo(mixed $value): Field
     {
-        return new static($value->labels, $value->settings->required);
+        return $this;
     }
 }
