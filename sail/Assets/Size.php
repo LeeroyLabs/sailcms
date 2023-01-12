@@ -4,7 +4,7 @@ namespace SailCMS\Assets;
 
 use SailCMS\Contracts\Castable;
 
-readonly class Size implements Castable
+class Size implements Castable
 {
     public function __construct(public int $width = 0, public int $height = 0) { }
 
