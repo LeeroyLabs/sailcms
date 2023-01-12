@@ -120,27 +120,6 @@ class InputTextField extends Field
 
     /**
      *
-     * When it's stored in the database
-     *
-     * @return stdClass
-     *
-     */
-    public function toDBObject(): stdClass
-    {
-        return (object)[
-            'labels' => $this->labels->castFrom(),
-            'settings' => [
-                'required' => $this->required,
-                'maxLength' => $this->maxLength,
-                'minLength' => $this->minLength,
-                'pattern' => $this->pattern,
-                'multiline' => $this->multiline,
-            ]
-        ];
-    }
-
-    /**
-     *
      * Cast to simpler form from InputTextField
      *
      * @return stdClass

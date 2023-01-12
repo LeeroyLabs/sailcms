@@ -34,7 +34,7 @@ class Authors implements Castable
         }
 
         $authors = new Authors($author->_id, $author->_id, $publisherId, null);
-        return $authors->toDBObject();
+        return $authors->castFrom();
     }
 
     /**
@@ -49,7 +49,7 @@ class Authors implements Castable
     {
         $newAuthors = new Authors($authors->created_by, $updateAuthorId, $authors->published_by, $authors->deleted_by);
 
-        return $newAuthors->toDBObject();
+        return $newAuthors->castFrom();
     }
 
     /**
@@ -65,24 +65,7 @@ class Authors implements Castable
     {
         $newAuthors = new Authors($authors->created_by, $authors->updated_by, $authors->published_by, $deleteAuthorId);
 
-        return $newAuthors->toDBObject();
-    }
-
-    /**
-     *
-     * Transform class to an array
-     *
-     * @return array
-     *
-     */
-    public function toDBObject(): array
-    {
-        return [
-            'created_by' => $this->created_by,
-            'updated_by' => $this->updated_by,
-            'published_by' => $this->published_by ?? '',
-            'deleted_by' => $this->deleted_by ?? '',
-        ];
+        return $newAuthors->castFrom();
     }
 
     /**
