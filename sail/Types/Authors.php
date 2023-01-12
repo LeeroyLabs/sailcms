@@ -7,7 +7,7 @@ use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\DatabaseType;
 use SailCMS\Models\User;
 
-readonly class Authors implements Castable
+class Authors implements Castable
 {
     public function __construct(
         public ?string $created_by = '',

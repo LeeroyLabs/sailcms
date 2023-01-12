@@ -4,7 +4,7 @@ namespace SailCMS\Types;
 
 use SailCMS\Contracts\Castable;
 
-readonly class EntryParent implements Castable
+class EntryParent implements Castable
 {
     public function __construct(
         public string $handle = '',

@@ -4,7 +4,7 @@ namespace SailCMS\Types;
 
 use SailCMS\Contracts\Castable;
 
-readonly class Username implements Castable
+class Username implements Castable
 {
     public string $full;
 

@@ -4,7 +4,7 @@ namespace SailCMS\Types;
 
 use SailCMS\Contracts\Castable;
 
-readonly class Dates implements Castable
+class Dates implements Castable
 {
     public function __construct(
         public ?int $created = 0,
