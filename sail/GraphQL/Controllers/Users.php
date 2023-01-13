@@ -235,7 +235,8 @@ class Users
             $args->get('password'),
             $args->get('locale', 'en'),
             $args->get('avatar', ''),
-            $meta
+            $meta,
+            $args->get('createWithSetPassword', false)
         );
 
         return (!empty($id));

@@ -2,6 +2,7 @@
 
 namespace SailCMS;
 
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Search\Adapter;
 use SailCMS\Search\Database;
 use SailCMS\Types\SearchResults;
@@ -46,6 +47,7 @@ final class Search
      * @param  array   $meta
      * @param  string  $dataIndex
      * @return SearchResults
+     * @throws DatabaseException
      *
      */
     public function search(string $search, array $meta = [], string $dataIndex = ''): SearchResults
@@ -60,6 +62,7 @@ final class Search
      * @param  array|object  $document
      * @param  string        $dataIndex
      * @return void
+     * @throws DatabaseException
      *
      */
     public function store(array|object $document, string $dataIndex = ''): void
@@ -67,6 +70,16 @@ final class Search
         self::$adapter->store($document, $dataIndex);
     }
 
+    /**
+     *
+     * Remove document from search
+     *
+     * @param  string  $id
+     * @param  string  $dataIndex
+     * @return void
+     * @throws DatabaseException
+     *
+     */
     public function remove(string $id, string $dataIndex = ''): void
     {
         self::$adapter->remove($id, $dataIndex);

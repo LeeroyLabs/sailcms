@@ -12,6 +12,13 @@ beforeAll(function ()
     Sail::setAppState(Sail::STATE_CLI);
 });
 
+test('Test Fetch global context setting', function ()
+{
+    $setting = setting('emails.globalContext.locales.fr');
+
+    expect($setting)->not->toBeNull()->and($setting->get('defaultWho', null))->toBeNull();
+})->group('setting');
+
 test('Create a user', function ()
 {
     $model = new User();
