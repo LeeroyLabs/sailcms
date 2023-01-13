@@ -1277,13 +1277,23 @@ class Entry extends Model implements Validator
         $errorsStrings = [];
 
         $errors->each(function ($key, $errorsArray) use (&$errorsStrings) {
-            foreach ($errorsArray as $error) {
-                $errorsStrings[] = rtrim($error[0], '.') . ": " . $key;
+            foreach ($errorsArray as $fieldKey => $error) {
+                if (is_array($error)) {
+                    foreach ($error as $fieldError) {
+                        $keyDisplay = $key;
+                        if (!is_int($fieldKey)) {
+                            $keyDisplay .= "." . $fieldKey;
+                        }
+                        $errorsStrings[] = rtrim($fieldError, '.') . " (" . $keyDisplay . ")";
+                    }
+                } else {
+                    $errorsStrings[] = rtrim($error, '.') . "(" . $key . ")";
+                }
             }
         });
 
         if (count($errorsStrings) > 0) {
-            throw new EntryException(self::CONTENT_ERROR . implode('\t,' . PHP_EOL, $errorsStrings));
+            throw new EntryException(self::CONTENT_ERROR . implode("\t," . PHP_EOL, $errorsStrings));
         }
     }
 

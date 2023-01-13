@@ -18,28 +18,29 @@ class InputTextField extends Field
      *
      * Input text field from html input:text attributes
      *
-     * @param  LocaleField|null  $labels
-     * @param  bool              $required
-     * @param  int               $maxLength
-     * @param  int               $minLength
-     * @param  string            $pattern
-     * @param  bool              $multiline
+     * @param LocaleField|null $labels
+     * @param bool $required
+     * @param int $maxLength
+     * @param int $minLength
+     * @param string $pattern
+     * @param bool $multiline
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-        public readonly int $maxLength = 0,
-        public readonly int $minLength = 0,
-        public readonly string $pattern = '',
-        public readonly bool $multiline = false,
-    ) {
+        public readonly bool         $required = false,
+        public readonly int          $maxLength = 0,
+        public readonly int          $minLength = 0,
+        public readonly string       $pattern = '',
+        public readonly bool         $multiline = false,
+    )
+    {
     }
 
     /**
      *
      * Define default settings for a Input Text Field
      *
-     * @param  bool  $multiline
+     * @param bool $multiline
      * @return Collection
      *
      */
@@ -87,7 +88,7 @@ class InputTextField extends Field
      *
      * Input text field validation
      *
-     * @param  mixed  $content
+     * @param mixed $content
      * @return Collection
      *
      */
@@ -99,19 +100,21 @@ class InputTextField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
-            $errors->push(sprintf(self::FIELD_TOO_LONG, $this->maxLength));
-        }
+        if ($content) {
+            if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
+                $errors->push(sprintf(self::FIELD_TOO_LONG, $this->maxLength));
+            }
 
-        if ($this->minLength > 0 && strlen($content) < $this->minLength) {
-            $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->minLength));
-        }
+            if ($this->minLength > 0 && strlen($content) < $this->minLength) {
+                $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->minLength));
+            }
 
-        // The pattern is not used when it is a multiline input
-        if ($this->pattern && !$this->multiline) {
-            preg_match("/$this->pattern/", $content, $matches);
-            if (empty($matches[0])) {
-                $errors->push(sprintf(self::FIELD_PATTERN_NO_MATCH, $this->pattern));
+            // The pattern is not used when it is a multiline input
+            if ($this->pattern && !$this->multiline) {
+                preg_match("/$this->pattern/", $content, $matches);
+                if (empty($matches[0])) {
+                    $errors->push(sprintf(self::FIELD_PATTERN_NO_MATCH, $this->pattern));
+                }
             }
         }
 
@@ -143,7 +146,7 @@ class InputTextField extends Field
      *
      * Cast to InputTextField
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return InputTextField
      *
      */
