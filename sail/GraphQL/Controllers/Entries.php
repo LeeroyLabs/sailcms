@@ -565,7 +565,6 @@ class Entries
      * @param Collection $args
      * @param Context $context
      * @return Collection
-     * @throws FilesystemException
      *
      */
     public function fields(mixed $obj, Collection $args, Context $context): Collection
@@ -611,22 +610,9 @@ class Entries
         $parsedFilters = [];
 
         $filters?->each(function ($i, $filter) use (&$parsedFilters) {
-            if ($filter->get('value') === null && !in_array($filter->get('operation'), ['isnull', 'notnull'])) {
-                throw new EntryException(Entry::INVALID_FILTER_VALUE);
-            }
-
-            if ($filter->get('value') && (!$filter->get('type') || $filter->get('value') === 'array')) {
-                throw new EntryException(Entry::INVALID_FILTER_TYPE);
-            }
-
             $logic = '$' . $filter->get('logic', 'and');
 
-            $value = match ($filter->get('type')) {
-                "float" => (float)$filter->get('value'),
-                "integer" => (integer)$filter->get('value'),
-                "boolean" => (boolean)$filter->get('value'),
-                default => (string)$filter->get('value')
-            };
+            $value = $this->cleanFilterValue($filter);
 
             $filterValue = [$filter->get('field') => match ($filter->get('operation')) {
                 "like" => new Regex($value, 'gi'),
@@ -645,5 +631,36 @@ class Entries
         });
 
         return $parsedFilters;
+    }
+
+    /**
+     *
+     * @param Collection $filter
+     * @return string
+     * @throws EntryException
+     *
+     */
+    private function cleanFilterValue(Collection $filter): string
+    {
+        if ($filter->get('value') === null && !in_array($filter->get('operation'), ['isnull', 'notnull'])) {
+            throw new EntryException(Entry::INVALID_FILTER_VALUE);
+        }
+
+        if (!is_scalar($filter->get('value'))) {
+            throw new EntryException(Entry::INVALID_FILTER_VALUE);
+        }
+
+        if ($filter->get('value') && (!$filter->get('type') || $filter->get('value') === 'array')) {
+            throw new EntryException(Entry::INVALID_FILTER_TYPE);
+        }
+
+        $value = match ($filter->get('type')) {
+            "float" => (float)$filter->get('value'),
+            "integer" => (integer)$filter->get('value'),
+            "boolean" => (boolean)$filter->get('value'),
+            default => (string)$filter->get('value')
+        };
+
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }
