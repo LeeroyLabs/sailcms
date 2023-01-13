@@ -26,20 +26,12 @@ return [
                 // You can add your own static context variables
                 'locales' => [
                     'fr' => [
-                        'follow' => 'Suivez-nous',
-                        'privacy' => 'Politique de confidentialité',
-                        'contact' => 'Contactez nous',
-                        'faq' => 'FAQ',
-                        'team' => "L'équipe Cubeler",
-                        'thanks' => 'Merci'
+                        'thanks' => 'Merci',
+                        'defaultWho' => "Quelqu'un que vous connaissez"
                     ],
                     'en' => [
-                        'follow' => 'Follow Us',
-                        'privacy' => 'Privacy Policy',
-                        'contact' => 'Contact Us',
-                        'faq' => 'FAQ',
-                        'team' => 'The Cubeler Team',
-                        'thanks' => 'Thank'
+                        'thanks' => 'Thanks',
+                        "defaultWho" => 'Someone you know'
                     ]
                 ]
             ]
@@ -153,10 +145,12 @@ return [
                 // You can add your own static context variables
                 'locales' => [
                     'fr' => [
-                        // Strings that are not dynamic are translated here
+                        'thanks' => 'Merci',
+                        'defaultWho' => "Quelqu'un que vous connaissez"
                     ],
                     'en' => [
-                        // Strings that are not dynamic are translated here
+                        'thanks' => 'Thanks',
+                        "defaultWho" => 'Someone you know'
                     ]
                 ]
             ]
@@ -254,10 +248,12 @@ return [
                 // You can add your own static context variables
                 'locales' => [
                     'fr' => [
-                        // Strings that are not dynamic are translated here
+                        'thanks' => 'Merci',
+                        'defaultWho' => "Quelqu'un que vous connaissez"
                     ],
                     'en' => [
-                        // Strings that are not dynamic are translated here
+                        'thanks' => 'Thanks',
+                        "defaultWho" => 'Someone you know'
                     ]
                 ]
             ]

@@ -187,8 +187,15 @@ class User extends Model
      * @throws DatabaseException
      *
      */
-    public function createRegularUser(Username $name, string $email, string $password, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
-    {
+    public function createRegularUser(
+        Username $name,
+        string $email,
+        string $password,
+        string $locale = 'en',
+        string $avatar = '',
+        ?UserMeta $meta = null,
+        bool $createWithSetPassword = false
+    ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
@@ -207,16 +214,21 @@ class User extends Model
         $this->validateEmail($email, '', true);
 
         // Validate password
-        $valid = Security::validatePassword($password);
+        if ($createWithSetPassword) {
+            $valid = Security::validatePassword($password);
 
-        if (!$valid) {
-            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            if (!$valid) {
+                throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            }
+        } else {
+            $password = Uuid::uuid4()->toString();
         }
 
         $role = setting('users.baseRole', 'general-user');
         $validate = setting('users.requireValidation', true);
 
         $code = Security::generateVerificationCode();
+        $passCode = substr(Security::generateVerificationCode(), 5, 16);
 
         $id = $this->insert([
             'name' => $name,
@@ -230,7 +242,7 @@ class User extends Model
             'locale' => $locale,
             'validation_code' => $code,
             'validated' => !$validate,
-            'reset_code' => '',
+            'reset_code' => ($createWithSetPassword) ? $passCode : '',
             'created_at' => time()
         ]);
 
@@ -238,7 +250,23 @@ class User extends Model
             // Send a nice email to greet
             try {
                 $mail = new Mail();
-                $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
+
+                if ($createWithSetPassword) {
+                    $settings = settings('emails.globalContext.locales.' . $locale);
+                    $defaultWho = $settings->defaultWho;
+
+                    $mail->to($email)
+                         ->useEmail('new_account_by_proxy', $locale, [
+                             'verification_code' => $code,
+                             'reset_pass_code' => $passCode,
+                             'name' => $name->first,
+                             'who' => (self::$currentUser) ? self::$currentUser->name->full : $defaultWho
+                         ])
+                         ->send();
+                } else {
+                    $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
+                }
+
                 Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             } catch (Exception) {
