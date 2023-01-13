@@ -105,7 +105,7 @@ abstract class Field
             $error = $fieldTypeClass->validate($currentContent);
 
             if ($error->length > 0) {
-                $errors->push($error);
+                $errors->pushKeyValue($index, $error);
             }
         });
 

@@ -12,6 +12,7 @@ parameters:
         - "#^Access to an undefined property SailCMS\\\\Collection::\\$empty.$#"
         - "#^Method SailCMS\\\\Database\\\\Model::exec\\(\\) should return array\\|static\\(SailCMS\\\\Database\\\\Model\\)\\|null but returns SailCMS\\\\Database\\\\Model.$#"
         - "#^Parameter \\#1 \\$encrypted of static method SailCMS\\\\Security::decrypt\\(\\) expects string, array\\|object given.$#"
+        - "#^Parameter \\#1 \\$contents of static method Lcobucci\\\\JWT\\\\Signer\\\\Key\\\\InMemory::plainText\\(\\) expects non-empty-string, string given.$#"
     paths:
         - sail
     scanFiles:
