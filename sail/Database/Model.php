@@ -16,6 +16,7 @@ use MongoDB\Model\BSONDocument;
 use SailCMS\ACL;
 use SailCMS\Cache;
 use SailCMS\Contracts\Castable;
+use SailCMS\Contracts\Validator;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -1107,11 +1108,11 @@ abstract class Model implements JsonSerializable
      * Prepare document to be written
      *
      * @param  array  $doc
-     * @return stdClass|array
+     * @return array
      * @throws JsonException
      *
      */
-    private function prepareForWrite(mixed $doc): stdClass|array
+    private function prepareForWrite(mixed $doc): array
     {
         $instance = new static();
         $instance->fill($doc);
