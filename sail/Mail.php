@@ -320,9 +320,9 @@ class Mail
             $cta = $superContext->get('cta');
             $cta_title = $superContext->get('cta_title');
 
-            $raw = $superContext->unwrap();
+            $replacements = $superContext->get('replacements');
 
-            foreach ($raw as $key => $value) {
+            foreach ($replacements as $key => $value) {
                 $title = str_replace("{" . $key . "}", $value, $title);
                 $subject = str_replace("{" . $key . "}", $value, $subject);
                 $content = str_replace("{" . $key . "}", $value, $content);
@@ -335,7 +335,7 @@ class Mail
             $superContext->setFor('content', $content);
             $superContext->setFor('cta', $cta);
             $superContext->setFor('cta_title', $cta_title);
-      
+
             return $this
                 ->from($settings->get('from'))
                 ->subject($template->subject->{$locale})
