@@ -307,10 +307,35 @@ class Mail
                     $superContext->get('cta_link')
                 ));
             }
-            
+
             // Replace locale variable in template name to the actual locale
             $template->template = str_replace('{locale}', $locale, $template->template);
 
+            // Go through the context's title, subject, content and cta title to parse any replacement variable
+            // Replacement variables are {xx} format (different to twigs {{xx}} format)
+
+            $title = $superContext->get('title');
+            $subject = $superContext->get('subject');
+            $content = $superContext->get('content');
+            $cta = $superContext->get('cta');
+            $cta_title = $superContext->get('cta_title');
+
+            $raw = $superContext->unwrap();
+
+            foreach ($raw as $key => $value) {
+                $title = str_replace("{" . $key . "}", $value, $title);
+                $subject = str_replace("{" . $key . "}", $value, $subject);
+                $content = str_replace("{" . $key . "}", $value, $content);
+                $cta = str_replace("{" . $key . "}", $value, $cta);
+                $cta_title = str_replace("{" . $key . "}", $value, $cta_title);
+            }
+
+            $superContext->setFor('title', $title);
+            $superContext->setFor('subject', $subject);
+            $superContext->setFor('content', $content);
+            $superContext->setFor('cta', $cta);
+            $superContext->setFor('cta_title', $cta_title);
+      
             return $this
                 ->from($settings->get('from'))
                 ->subject($template->subject->{$locale})
