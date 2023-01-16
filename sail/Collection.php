@@ -647,15 +647,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable
 
         foreach ($parts as $num => $part) {
             if ($value instanceof static) {
-                $slice = array_slice($parts, $num, count($parts), false);
-
-                if (count($slice) === 1) {
-                    // We are at the end
-                    $last = $parts[0];
-                    return $this->_internal[$last] ?? $defaultValue;
-                }
-
-                $value = $value->get(implode('.', $slice));
+                $value = $value->get($part);
             } elseif (is_object($value)) {
                 $value = $value->{$part} ?? $defaultValue;
             } elseif (is_array($value)) {

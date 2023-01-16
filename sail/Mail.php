@@ -314,26 +314,24 @@ class Mail
             // Go through the context's title, subject, content and cta title to parse any replacement variable
             // Replacement variables are {xx} format (different to twigs {{xx}} format)
 
-            $title = $superContext->get('title');
-            $subject = $superContext->get('subject');
-            $content = $superContext->get('content');
-            $cta = $superContext->get('cta');
+            $title = $superContext->get('email_title');
+
+            $content = $superContext->get('email_content');
+            $cta = $superContext->get('cta_link');
             $cta_title = $superContext->get('cta_title');
 
             $replacements = $superContext->get('replacements');
 
             foreach ($replacements as $key => $value) {
                 $title = str_replace("{" . $key . "}", $value, $title);
-                $subject = str_replace("{" . $key . "}", $value, $subject);
                 $content = str_replace("{" . $key . "}", $value, $content);
                 $cta = str_replace("{" . $key . "}", $value, $cta);
                 $cta_title = str_replace("{" . $key . "}", $value, $cta_title);
             }
 
-            $superContext->setFor('title', $title);
-            $superContext->setFor('subject', $subject);
-            $superContext->setFor('content', $content);
-            $superContext->setFor('cta', $cta);
+            $superContext->setFor('email_title', $title);
+            $superContext->setFor('email_content', $content);
+            $superContext->setFor('cta_link', $cta);
             $superContext->setFor('cta_title', $cta_title);
 
             return $this
