@@ -223,11 +223,42 @@ class Users
      */
     public function createUser(mixed $obj, Collection $args, Context $context): bool
     {
+        $id = $this->createUserShared($args);
+        return (!empty($id));
+    }
+
+    /**
+     *
+     * Create a regular user and return its id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return string
+     * @throws DatabaseException
+     *
+     */
+    public function createUserGetId(mixed $obj, Collection $args, Context $context): string
+    {
+        return $this->createUserShared($args);
+    }
+
+    /**
+     *
+     * Create a user
+     *
+     * @param  Collection  $args
+     * @return string
+     * @throws DatabaseException
+     *
+     */
+    private function createUserShared(Collection $args): string
+    {
         $user = new User();
         $name = Username::initWith($args->get('name'));
         $meta = ($args->get('meta')) ? new UserMeta($args->get('meta', Collection::init())) : null;
 
-        $id = $user->createRegularUser(
+        return $user->createRegularUser(
             $name,
             $args->get('email'),
             $args->get('password'),
@@ -237,8 +268,6 @@ class Users
             $args->get('role', ''),
             $args->get('createWithSetPassword', false)
         );
-
-        return (!empty($id));
     }
 
     /**

@@ -56,12 +56,12 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a query from anything other than the graphql method in an AppContainer.', 0403);
         }
 
         Register::registerGraphQLQuery($operationName, $className, $method, $class);
-        static::$queries[$operationName] = (object)['class' => $className, 'method' => $method];
+        self::$queries[$operationName] = (object)['class' => $className, 'method' => $method];
     }
 
     /**
@@ -81,12 +81,12 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a mutation from anything other than the graphql method in an AppContainer.', 0403);
         }
 
         Register::registerGraphQLMutation($operationName, $className, $method, $class);
-        static::$mutations[$operationName] = (object)['class' => $className, 'method' => $method];
+        self::$mutations[$operationName] = (object)['class' => $className, 'method' => $method];
     }
 
     /**
@@ -106,12 +106,12 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== static::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a resolver from anything other than the graphql method in an AppContainer.', 0403);
         }
 
         Register::registerGraphQLResolver($type, $className, $method, $class);
-        static::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
+        self::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
     /**
@@ -124,7 +124,7 @@ final class GraphQL
      */
     public static function addQuerySchema(string $content): void
     {
-        static::$querySchemaParts[] = $content;
+        self::$querySchemaParts[] = $content;
     }
 
     /**
@@ -137,7 +137,7 @@ final class GraphQL
      */
     public static function addMutationSchema(string $content): void
     {
-        static::$mutationSchemaParts[] = $content;
+        self::$mutationSchemaParts[] = $content;
     }
 
     /**
@@ -150,7 +150,7 @@ final class GraphQL
      */
     public static function addTypeSchema(string $content): void
     {
-        static::$typeSchemaParts[] = $content;
+        self::$typeSchemaParts[] = $content;
     }
 
     /**
@@ -165,7 +165,7 @@ final class GraphQL
      */
     public static function init(): mixed
     {
-        static::initSystem();
+        self::initSystem();
 
         try {
             $pathAST = 'cache://graphql.ast';
@@ -176,15 +176,15 @@ final class GraphQL
                 $mutations = [];
                 $types = [];
 
-                foreach (static::$querySchemaParts as $file) {
+                foreach (self::$querySchemaParts as $file) {
                     $queries[] = file_get_contents($file);
                 }
 
-                foreach (static::$mutationSchemaParts as $file) {
+                foreach (self::$mutationSchemaParts as $file) {
                     $mutations[] = file_get_contents($file);
                 }
 
-                foreach (static::$typeSchemaParts as $file) {
+                foreach (self::$typeSchemaParts as $file) {
                     $types[] = file_get_contents($file);
                 }
 
@@ -287,91 +287,92 @@ final class GraphQL
     private static function initSystem(): void
     {
         // General
-        static::addQueryResolver('version', Basics::class, 'version');
+        self::addQueryResolver('version', Basics::class, 'version');
 
         // User
-        static::addQueryResolver('user', Users::class, 'user');
-        static::addQueryResolver('users', Users::class, 'users');
-        static::addQueryResolver('resendValidationEmail', Users::class, 'resendValidationEmail');
-        static::addMutationResolver('createUser', Users::class, 'createUser');
-        static::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
-        static::addMutationResolver('updateUser', Users::class, 'updateUser');
-        static::addMutationResolver('deleteUser', Users::class, 'deleteUser');
-        static::addMutationResolver('validateAccount', Users::class, 'validateAccount');
+        self::addQueryResolver('user', Users::class, 'user');
+        self::addQueryResolver('users', Users::class, 'users');
+        self::addQueryResolver('resendValidationEmail', Users::class, 'resendValidationEmail');
+        self::addMutationResolver('createUser', Users::class, 'createUser');
+        self::addMutationResolver('createUserGetId', Users::class, 'createUserGetId');
+        self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
+        self::addMutationResolver('updateUser', Users::class, 'updateUser');
+        self::addMutationResolver('deleteUser', Users::class, 'deleteUser');
+        self::addMutationResolver('validateAccount', Users::class, 'validateAccount');
 
         // Authentication
-        static::addQueryResolver('authenticate', Users::class, 'authenticate');
-        static::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
-        static::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
-        static::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
-        static::addQueryResolver('userWithToken', Users::class, 'userWithToken');
-        static::addMutationResolver('changePassword', Users::class, 'changePassword');
+        self::addQueryResolver('authenticate', Users::class, 'authenticate');
+        self::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
+        self::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+        self::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
+        self::addQueryResolver('userWithToken', Users::class, 'userWithToken');
+        self::addMutationResolver('changePassword', Users::class, 'changePassword');
 
         // Roles & ACL
-        static::addQueryResolver('role', Roles::class, 'role');
-        static::addQueryResolver('roles', Roles::class, 'roles');
-        static::addQueryResolver('acls', Roles::class, 'acls');
-        static::addMutationResolver('deleteRole', Roles::class, 'delete');
+        self::addQueryResolver('role', Roles::class, 'role');
+        self::addQueryResolver('roles', Roles::class, 'roles');
+        self::addQueryResolver('acls', Roles::class, 'acls');
+        self::addMutationResolver('deleteRole', Roles::class, 'delete');
 
         // Assets
-        static::addQueryResolver('asset', Assets::class, 'asset');
-        static::addQueryResolver('assets', Assets::class, 'assets');
-        static::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
-        static::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
-        static::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
-        static::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+        self::addQueryResolver('asset', Assets::class, 'asset');
+        self::addQueryResolver('assets', Assets::class, 'assets');
+        self::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
+        self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
+        self::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
+        self::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
 
         // Emails
-        static::addQueryResolver('email', Emails::class, 'email');
-        static::addQueryResolver('emails', Emails::class, 'emails');
-        static::addMutationResolver('createEmail', Emails::class, 'createEmail');
-        static::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
-        static::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
-        static::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
+        self::addQueryResolver('email', Emails::class, 'email');
+        self::addQueryResolver('emails', Emails::class, 'emails');
+        self::addMutationResolver('createEmail', Emails::class, 'createEmail');
+        self::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
+        self::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
+        self::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
 
         // Entries
-        static::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
+        self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
 
-        static::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
-        static::addQueryResolver('entryType', Entries::class, 'entryType');
-        static::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
-        static::addMutationResolver('updateEntryType', Entries::class, 'updateEntryType');
-        static::addMutationResolver('deleteEntryType', Entries::class, 'deleteEntryType');
+        self::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
+        self::addQueryResolver('entryType', Entries::class, 'entryType');
+        self::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
+        self::addMutationResolver('updateEntryType', Entries::class, 'updateEntryType');
+        self::addMutationResolver('deleteEntryType', Entries::class, 'deleteEntryType');
 
-        static::addQueryResolver('entries', Entries::class, 'entries');
-        static::addQueryResolver('entry', Entries::class, 'entry');
-        static::addMutationResolver('createEntry', Entries::class, 'createEntry');
-        static::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
-        static::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
+        self::addQueryResolver('entries', Entries::class, 'entries');
+        self::addQueryResolver('entry', Entries::class, 'entry');
+        self::addMutationResolver('createEntry', Entries::class, 'createEntry');
+        self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
+        self::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
-        static::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
-        static::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
-        static::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
-        static::addMutationResolver('updateEntryLayoutSchema', Entries::class, 'updateEntryLayoutSchema');
-        static::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
-        static::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
+        self::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
+        self::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
+        self::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
+        self::addMutationResolver('updateEntryLayoutSchema', Entries::class, 'updateEntryLayoutSchema');
+        self::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
+        self::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
 
-        static::addQueryResolver('fields', Entries::class, 'fields');
+        self::addQueryResolver('fields', Entries::class, 'fields');
 
         // Register
-        static::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
+        self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
 
         // Categories
-        static::addQueryResolver('category', Categories::class, 'category');
-        static::addQueryResolver('categoryBySlug', Categories::class, 'categoryBySlug');
-        static::addQueryResolver('categoryFullTree', Categories::class, 'categoryFullTree');
-        static::addQueryResolver('categoryEntries', Categories::class, 'categoryEntries');
-        static::addMutationResolver('createCategory', Categories::class, 'createCategory');
-        static::addMutationResolver('updateCategory', Categories::class, 'updateCategory');
-        static::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
-        static::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
-        static::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
+        self::addQueryResolver('category', Categories::class, 'category');
+        self::addQueryResolver('categoryBySlug', Categories::class, 'categoryBySlug');
+        self::addQueryResolver('categoryFullTree', Categories::class, 'categoryFullTree');
+        self::addQueryResolver('categoryEntries', Categories::class, 'categoryEntries');
+        self::addMutationResolver('createCategory', Categories::class, 'createCategory');
+        self::addMutationResolver('updateCategory', Categories::class, 'updateCategory');
+        self::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
+        self::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
+        self::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
 
         // Types and Resolvers
-        static::addResolver('User', Users::class, 'resolver');
+        self::addResolver('User', Users::class, 'resolver');
     }
 
     /**
@@ -406,7 +407,7 @@ final class GraphQL
         }
 
         if (isset($property)) {
-            foreach (static::$resolvers as $name => $resolver) {
+            foreach (self::$resolvers as $name => $resolver) {
                 if ($type === $name) {
                     return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                 }
@@ -416,7 +417,7 @@ final class GraphQL
         }
 
         if ($type === 'Query') {
-            foreach (static::$queries as $name => $query) {
+            foreach (self::$queries as $name => $query) {
                 if ($fieldName === $name) {
                     return (new $query->class())->{$query->method}($objectValue, new Collection($args), $contextValue);
                 }
@@ -426,7 +427,7 @@ final class GraphQL
         }
 
         if ($type === 'Mutation') {
-            foreach (static::$mutations as $name => $mutation) {
+            foreach (self::$mutations as $name => $mutation) {
                 if ($fieldName === $name) {
                     return (new $mutation->class())->{$mutation->method}($objectValue, new Collection($args), $contextValue);
                 }
@@ -436,7 +437,7 @@ final class GraphQL
         }
 
         // One last try on the resolvers
-        foreach (static::$resolvers as $name => $resolver) {
+        foreach (self::$resolvers as $name => $resolver) {
             if ($type === $name) {
                 return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
             }
