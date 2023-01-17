@@ -179,9 +179,14 @@ class EntryType extends Model implements Validator
         }
 
         // Get default values for default type
+        $urlPrefixConfig = $_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', self::DEFAULT_URL_PREFIX);
+        if ($urlPrefixConfig instanceof Collection) {
+            $urlPrefixConfig = $urlPrefixConfig->unwrap();
+        }
+
         $defaultHandle = self::DEFAULT_HANDLE;
         $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title', self::DEFAULT_TITLE);
-        $defaultUrlPrefix = new LocaleField($_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', self::DEFAULT_URL_PREFIX));
+        $defaultUrlPrefix = new LocaleField($urlPrefixConfig);
         $defaultEntryLayoutId = $_ENV['SETTINGS']->get('entry.defaultType.entryLayoutId', false);
 
         $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
