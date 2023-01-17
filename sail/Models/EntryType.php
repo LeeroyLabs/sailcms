@@ -472,10 +472,8 @@ class EntryType extends Model implements Validator
      * @param string|ObjectId|null $entryLayoutId
      * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
-     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException
      *
      */
     private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null

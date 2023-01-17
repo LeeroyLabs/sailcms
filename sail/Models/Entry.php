@@ -50,7 +50,7 @@ use stdClass;
  */
 class Entry extends Model implements Validator
 {
-    protected string $collection = 'entries';
+    protected string $collection = '';
     protected array $casting = [
         'parent' => EntryParent::class,
         'alternates' => Collection::class,
