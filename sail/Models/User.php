@@ -183,6 +183,8 @@ class User extends Model
      * @param  string         $locale
      * @param  string         $avatar
      * @param  UserMeta|null  $meta
+     * @param  string         $role
+     * @param  bool           $createWithSetPassword
      * @return string
      * @throws DatabaseException
      *
@@ -194,6 +196,7 @@ class User extends Model
         string $locale = 'en',
         string $avatar = '',
         ?UserMeta $meta = null,
+        string $role = '',
         bool $createWithSetPassword = false
     ): string {
         // Make sure full is assigned
@@ -224,7 +227,12 @@ class User extends Model
             $password = Uuid::uuid4()->toString();
         }
 
-        $role = setting('users.baseRole', 'general-user');
+        if ($role !== '') {
+            $role = [$role];
+        } else {
+            $role = setting('users.baseRole', 'general-user');
+        }
+
         $validate = setting('users.requireValidation', true);
 
         $code = Security::generateVerificationCode();

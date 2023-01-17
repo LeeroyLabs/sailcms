@@ -218,9 +218,7 @@ class Users
      * @param  Collection  $args
      * @param  Context     $context
      * @return bool
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
      *
      */
     public function createUser(mixed $obj, Collection $args, Context $context): bool
@@ -236,6 +234,7 @@ class Users
             $args->get('locale', 'en'),
             $args->get('avatar', ''),
             $meta,
+            $args->get('role', ''),
             $args->get('createWithSetPassword', false)
         );
 
