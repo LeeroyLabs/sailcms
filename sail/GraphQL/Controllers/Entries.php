@@ -289,7 +289,6 @@ class Entries
         $entryTypeHandle = $args->get('entry_type_handle');
         $parent = $args->get('parent');
         $locale = $args->get('locale');
-        $alternates = $args->get('alternates');
         $status = $args->get('status');
         $title = $args->get('title');
         $template = $args->get('template');
@@ -302,7 +301,6 @@ class Entries
 
         $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $template, $slug, [
             'parent' => $parent,
-            'alternates' => $alternates,
             'categories' => $categories,
             'content' => $content,
             'site_id' => $siteId

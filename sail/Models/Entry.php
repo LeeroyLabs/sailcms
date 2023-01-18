@@ -36,7 +36,6 @@ use stdClass;
  * @property ?EntryParent $parent
  * @property ?string $site_id
  * @property string $locale
- * @property Collection $alternates
  * @property string $status
  * @property string $title
  * @property string $template
@@ -53,7 +52,6 @@ class Entry extends Model implements Validator
     protected string $collection = '';
     protected array $casting = [
         'parent' => EntryParent::class,
-        'alternates' => Collection::class,
         'authors' => Authors::class,
         'dates' => Dates::class,
         'categories' => Collection::class,
@@ -224,7 +222,6 @@ class Entry extends Model implements Validator
             'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
-            'alternates' => $this->alternates,
             'status' => $this->status,
             'title' => $this->title,
             'template' => $this->template ?? "", // Temporary because it's a new field
@@ -1086,7 +1083,6 @@ class Entry extends Model implements Validator
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser;
-        $alternates = new Collection($data->get('alternates', []));
         $parent = $data->get('parent');
         $content = $data->get('content');
         $categories = $data->get('categories');
@@ -1125,7 +1121,6 @@ class Entry extends Model implements Validator
                 'parent' => $parent,
                 'site_id' => $site_id,
                 'locale' => $locale,
-                'alternates' => $alternates,
                 'status' => $status,
                 'title' => $title,
                 'template' => $template,
@@ -1195,7 +1190,7 @@ class Entry extends Model implements Validator
         }
 
         $data->each(function ($key, $value) use (&$update) {
-            if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'template', 'categories', 'content', 'alternates'])) {
+            if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'template', 'categories', 'content'])) {
                 $update[$key] = $value;
             }
         });

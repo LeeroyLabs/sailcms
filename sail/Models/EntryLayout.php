@@ -47,7 +47,7 @@ class EntryLayout extends Model implements Castable
     public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
-    private const ACL_HANDLE = "entrylayout";
+    private const ACL_HANDLE = "entrylayout"; // TODO remove that
     protected string $permissionGroup = self::ACL_HANDLE;
 
     /**
