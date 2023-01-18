@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
@@ -30,6 +31,7 @@ beforeAll(function () {
     $entryType = (new EntryType)->create('field-test', 'Field Test', new LocaleField(['en' => 'field-test', 'fr' => 'test-de-champs']), $entryLayout->_id);
 
     $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
 });
 
 afterAll(function () {
@@ -39,6 +41,10 @@ afterAll(function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
+    ]);
+    $entryModel->delete((string)$entry->_id, false);
+    $entry = $entryModel->one([
+        'title' => 'Related Page Test'
     ]);
     $entryModel->delete((string)$entry->_id, false);
 
@@ -84,12 +90,15 @@ test('Add all fields to the layout', function () {
         ]
     ], 2);
 
+    $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
         "description" => $descriptionField,
         "integer" => $numberFieldInteger,
-        "float" => $numberFieldFloat
+        "float" => $numberFieldFloat,
+        "related" => $entryField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -107,18 +116,26 @@ test('Failed to update the entry content', function () {
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
+    $relatedEntry = $entryModel->one([
+        'title' => 'Related Page Test'
+    ]);
 
     try {
         $errors = $entryModel->updateById($entry, [
             'content' => [
                 'float' => '0',
-                'phone' => '514-3344344'
+                'phone' => '514-3344344',
+                'related' => [
+                    'id' => (string)$relatedEntry->_id
+                ]
             ]
         ], false);
+//        print_r($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
+        expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -130,6 +147,9 @@ test('Update content with success', function () {
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
+    $relatedEntry = $entryModel->one([
+        'title' => 'Related Page Test'
+    ]);
 
     try {
         $errors = $entryModel->updateById($entry, [
@@ -138,7 +158,11 @@ test('Update content with success', function () {
                 'text' => 'Not empty',
                 'description' => 'This text contains line returns
 and must keep it through all the process',
-                'phone' => '514-514-5145'
+                'phone' => '514-514-5145',
+                'related' => [
+                    'id' => (string)$relatedEntry->_id,
+                    'typeHandle' => 'field-test'
+                ]
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -148,8 +172,10 @@ and must keep it through all the process',
         expect($entry->content->get('float'))->toBe('0.03');
         expect($entry->content->get('text'))->toBe('Not empty');
         expect($entry->content->get('description'))->toContain(PHP_EOL);
+        expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
+//        print_r($errors);
         expect(true)->toBe(false);
     }
 });

@@ -13,9 +13,12 @@ use SailCMS\Types\StoringType;
 
 class EntryField extends Field
 {
+    // TODO : change input field for a select field that choices are entry and entry type
+
     /* Error */
     const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
     const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';
+    const ENTRY_ID_AND_HANDLE = '6161: Entry id and entry type handle must be set both or none';
 
     public function description(): string
     {
@@ -29,29 +32,27 @@ class EntryField extends Field
 
     public function defaultSettings(): Collection
     {
-        // Force to be required in the default settings
-        $requiredTextDefault = InputTextField::defaultSettings();
-        // $requiredTextDefault['required'] = true;
-
+        // The only settings available is "required"
+        $defaultSettings = new Collection(['required' => true]);
         return new Collection([
-            'entryId' => $requiredTextDefault,
-            'entryTypeHandle' => $requiredTextDefault
+            'id' => $defaultSettings,
+            'typeHandle' => $defaultSettings
         ]);
     }
 
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            'entryId' => InputTextField::class,
-            'entryTypeHandle' => InputTextField::class
+            'id' => InputTextField::class,
+            'typeHandle' => InputTextField::class
         ]);
     }
 
     /**
      *
+     * Entry validation
      *
-     *
-     * @param  Collection  $content
+     * @param Collection $content
      * @return Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -63,17 +64,21 @@ class EntryField extends Field
     {
         $errors = Collection::init();
 
-        $entryId = $content->get('entryId');
-        $entryTypeHandle = $content->get('entryTypeHandle');
+        $entryId = $content->get('id');
+        $entryTypeHandle = $content->get('typeHandle');
 
-        $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
+        if (!$entryId && $entryTypeHandle || !$entryTypeHandle && $entryId) {
+            $errors->push(self::ENTRY_ID_AND_HANDLE);
+        } else if ($entryId && $entryTypeHandle) {
+            $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
-        if (!$entryModel->entry_type_id) {
-            $errors->push(sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle));
-        }
+            if (!$entryModel->entry_type_id) {
+                $errors->push(sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle));
+            }
 
-        if ($entryModel->getCount(['_id' => $entryId]) !== 1) {
-            $errors->push(self::ENTRY_DOES_NOT_EXISTS);
+            if (!$entryModel->one(['_id' => $entryId])) {
+                $errors->push(self::ENTRY_DOES_NOT_EXISTS);
+            }
         }
 
         return $errors;
