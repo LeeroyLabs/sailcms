@@ -217,7 +217,7 @@ class User extends Model
         $this->validateEmail($email, '', true);
 
         // Validate password
-        if ($createWithSetPassword) {
+        if (!$createWithSetPassword) {
             $valid = Security::validatePassword($password);
 
             if (!$valid) {

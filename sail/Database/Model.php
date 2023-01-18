@@ -836,9 +836,15 @@ abstract class Model implements JsonSerializable
     public function toJSON(bool $toArray = false): string|array
     {
         $doc = [];
+        $guards = $this->guards;
+
+        // Cancel guards in array situation
+        if ($toArray) {
+            $guards = [];
+        }
 
         foreach ($this->properties as $key => $value) {
-            if (!in_array($key, $this->guards, true) && (in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
+            if (!in_array($key, $guards, true) && (in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
                 if ($key === '_id') {
                     $doc[$key] = (string)$value;
                 } elseif (!is_scalar($value)) {
@@ -1116,8 +1122,9 @@ abstract class Model implements JsonSerializable
     {
         $instance = new static();
         $instance->fill($doc);
-        $obj = $instance->toJSON(true);
 
+        $obj = $instance->toJSON(true);
+        
         // Run the casting for encryption
         foreach ($obj as $key => $value) {
             if (isset($this->casting[$key]) && $this->casting[$key] === 'encrypted') {

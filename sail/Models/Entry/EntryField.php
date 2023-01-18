@@ -31,7 +31,7 @@ class EntryField extends Field
     {
         // Force to be required in the default settings
         $requiredTextDefault = InputTextField::defaultSettings();
-        $requiredTextDefault['required'] = true;
+        // $requiredTextDefault['required'] = true;
 
         return new Collection([
             'entryId' => $requiredTextDefault,
@@ -51,7 +51,7 @@ class EntryField extends Field
      *
      *
      *
-     * @param Collection $content
+     * @param  Collection  $content
      * @return Collection|null
      * @throws ACLException
      * @throws DatabaseException
