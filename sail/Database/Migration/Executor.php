@@ -7,10 +7,17 @@ use SailCMS\Errors\DatabaseException;
 
 class Executor extends Model
 {
-    public function __construct(string $collection)
+    /**
+     *
+     * Set Collection
+     *
+     * @param  string  $collection
+     * @return void
+     *
+     */
+    public function setCollection(string $collection)
     {
         $this->collection = $collection;
-        parent::__construct();
     }
 
     /**

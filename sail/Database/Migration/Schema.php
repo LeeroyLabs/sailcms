@@ -8,9 +8,13 @@ final class Schema
 {
     private Executor $executor;
 
+    /**
+     * @throws DatabaseException
+     */
     public function __construct(string $collection)
     {
-        $this->executor = new Executor($collection);
+        $this->executor = new Executor();
+        $this->executor->setCollection($collection);
     }
 
     /**
