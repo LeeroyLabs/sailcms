@@ -21,7 +21,7 @@ return [
         ],
         'emails' => [
             'from' => 'no-reply@leeroy.ca',
-            'sendNewAccount' => false,
+            'sendNewAccount' => true,
             'globalContext' => [
                 // You can add your own static context variables
                 'locales' => [

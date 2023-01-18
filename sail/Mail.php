@@ -320,7 +320,7 @@ class Mail
             $cta = $superContext->get('cta_link');
             $cta_title = $superContext->get('cta_title');
 
-            $replacements = $superContext->get('replacements');
+            $replacements = $superContext->get('replacements', []);
 
             foreach ($replacements as $key => $value) {
                 $title = str_replace("{" . $key . "}", $value, $title);

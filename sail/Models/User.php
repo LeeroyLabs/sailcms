@@ -30,6 +30,7 @@ use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 use stdClass;
+use \SailCMS\Log;
 
 /**
  *
@@ -277,7 +278,15 @@ class User extends Model
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
-            } catch (Exception) {
+            } catch (Exception $e) {
+                Log::warning(
+                    'Mailing Error ' . $e->getMessage(),
+                    [
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine()
+                    ]
+                );
+
                 Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
@@ -404,8 +413,20 @@ class User extends Model
                         'name' => $name->first
                     ]
                 )->send();
+
+                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
-            } catch (Exception) {
+            } catch (Exception $e) {
+                // Logging error
+                Log::warning(
+                    'Mailing Error ' . $e->getMessage(),
+                    [
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine()
+                    ]
+                );
+
+                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
         }
