@@ -660,6 +660,10 @@ class User extends Model
     {
         $user = $this->findOne(['email' => $email])->exec();
 
+        if (!$user) {
+            return new LoginResult('', 'error');
+        }
+
         if ($user && !$user->validated) {
             return new LoginResult('', 'not-validated');
         }
