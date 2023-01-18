@@ -12,7 +12,7 @@ beforeAll(function () {
 });
 
 test('Test Fetch global context setting', function () {
-    // TODO MARC Why it's null when we have more than two layer...
+    // TODO MARC Why it's null when we have more than two layer... What do you think about that?
     $itsNull = setting('emails.globalContext.locales.fr');
     expect($itsNull)->toBeNull();
 
