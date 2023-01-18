@@ -30,6 +30,7 @@ use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 use stdClass;
+use \SailCMS\Log;
 
 /**
  *
@@ -405,7 +406,15 @@ class User extends Model
                     ]
                 )->send();
                 return $id;
-            } catch (Exception) {
+            } catch (Exception $e) {
+                // Logging error
+                Log::warning(
+                    'Mailing Error ' . $e->getMessage(),
+                    [
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine()
+                    ]
+                );
                 return $id;
             }
         }

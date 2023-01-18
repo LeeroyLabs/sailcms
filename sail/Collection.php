@@ -640,15 +640,13 @@ class Collection implements \JsonSerializable, \Iterator, Castable
      * @return mixed
      *
      */
-    public function get(string $dotNotation, mixed $defaultValue = null): mixed
+    public function get(string $dotNotation, mixed $defaultValue = null, ?array $workingCopy = null): mixed
     {
         $parts = explode('.', $dotNotation);
-        $value = $this->_internal;
+        $value = $this->unwrap();
 
         foreach ($parts as $num => $part) {
-            if ($value instanceof static) {
-                $value = $value->get($part);
-            } elseif (is_object($value)) {
+            if (is_object($value)) {
                 $value = $value->{$part} ?? $defaultValue;
             } elseif (is_array($value)) {
                 if (is_numeric($part)) {
@@ -657,6 +655,10 @@ class Collection implements \JsonSerializable, \Iterator, Castable
                     $value = $value[$part] ?? $defaultValue;
                 }
             }
+        }
+
+        if (is_array($value)) {
+            return new Collection($value);
         }
 
         return $value ?? $defaultValue;

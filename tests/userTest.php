@@ -16,7 +16,7 @@ test('Test Fetch global context setting', function ()
 {
     $setting = setting('emails.globalContext.locales.fr');
 
-    expect($setting)->not->toBeNull()->and($setting->get('defaultWho', null))->toBeNull();
+    expect($setting)->not->toBeNull()->and($setting->get('defaultWho', null))->not->toBeNull();
 })->group('setting');
 
 test('Create a user', function ()
@@ -28,7 +28,7 @@ test('Create a user', function ()
     $meta = null;
 
     try {
-        $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
+        $id = $model->create($name, 'marc+johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
         expect($id)->not->toBeEmpty();
     } catch (Exception $e) {
         //print_r($e->getMessage());
@@ -45,7 +45,7 @@ test('Fail at creating a user with email already in use', function ()
     $meta = null;
 
     try {
-        $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
+        $model->create($name, 'marc+johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
         expect(true)->toBeFalse();
     } catch (Exception $e) {
         expect(true)->toBeTrue();
@@ -61,7 +61,7 @@ test('Fail at creating a user with an invalid email', function ()
     $meta = null;
 
     try {
-        $model->create($name, 'johndoe@leeroy', 'Hell0W0rld!', $roles, 'en', '', $meta);
+        $model->create($name, 'marc+johndoe@leeroy', 'Hell0W0rld!', $roles, 'en', '', $meta);
         expect(true)->toBe(false);
     } catch (Exception $e) {
         expect(true)->toBe(true);
@@ -77,7 +77,7 @@ test('Fail at creating a user with an unsecure password', function ()
     $meta = null;
 
     try {
-        $model->create($name, 'johndoe@leeroy.ca', 'hello123', $roles, 'en', '', $meta);
+        $model->create($name, 'marc+johndoe@leeroy.ca', 'hello123', $roles, 'en', '', $meta);
         expect(true)->toBe(false);
     } catch (Exception $e) {
         expect(true)->toBe(true);
@@ -87,7 +87,7 @@ test('Fail at creating a user with an unsecure password', function ()
 test('Update user johndoe@leeroy.ca', function ()
 {
     $model = new User();
-    $user = $model->getByEmail('johndoe@leeroy.ca');
+    $user = $model->getByEmail('marc+johndoe@leeroy.ca');
     $name = new Username('John', 'DoeDoe');
 
     try {
@@ -101,14 +101,14 @@ test('Update user johndoe@leeroy.ca', function ()
 test('Fetch a user by email', function ()
 {
     $model = new User();
-    $user = $model->getByEmail('johndoe@leeroy.ca');
+    $user = $model->getByEmail('marc+johndoe@leeroy.ca');
     expect($user)->not->toBe(null);
 })->group('users');
 
 test('Fetch a user by email and his permissions', function ()
 {
     $model = new User();
-    $user = $model->getByEmail('johndoe@leeroy.ca');
+    $user = $model->getByEmail('marc+johndoe@leeroy.ca');
 
     expect($user)->not->toBe(null)->and($user->permissions()->length)->not->toBe(0);
 })->group('users');
@@ -116,7 +116,7 @@ test('Fetch a user by email and his permissions', function ()
 test('Check if user has flag "use2fa"', function ()
 {
     $model = new User();
-    $user = $model->getByEmail('johndoe@leeroy.ca');
+    $user = $model->getByEmail('marc+johndoe@leeroy.ca');
 
     if ($user) {
         expect($user->has('use2fa'))->toBe(false);
@@ -126,7 +126,7 @@ test('Check if user has flag "use2fa"', function ()
 test('Set the flag "us2fa" to true', function ()
 {
     $model = new User();
-    $user = $model->getByEmail('johndoe@leeroy.ca');
+    $user = $model->getByEmail('marc+johndoe@leeroy.ca');
 
     if ($user) {
         $user->flag('use2fa');
@@ -151,7 +151,7 @@ test('Delete a user', function ()
     $model = new User();
 
     try {
-        $result = $model->removeByEmail('johndoe@leeroy.ca');
+        $result = $model->removeByEmail('marc+johndoe@leeroy.ca');
         expect($result)->toBe(true);
     } catch (Exception $e) {
         expect(true)->toBe(false);
@@ -167,7 +167,7 @@ test('Create a user and delete it by the instance', function ()
     $meta = null;
 
     try {
-        $id = $model->create($name, 'johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
+        $id = $model->create($name, 'marc+johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
 
         $user = $model->getById($id);
 
