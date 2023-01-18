@@ -37,6 +37,6 @@ class EntrySeo extends Model
 
     private function createWithoutPermission(string $title, string $description = "", string $keywords = "", string $alternates = ""): EntrySeo
     {
-
+        return $this;
     }
 }
