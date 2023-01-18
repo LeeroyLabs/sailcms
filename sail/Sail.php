@@ -617,6 +617,7 @@ final class Sail
             }
 
             ACL::init();
+            Log::init();
 
             self::loadAndDetectSites();
             Filesystem::mountCore($forceIOPath);
