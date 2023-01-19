@@ -438,6 +438,11 @@ class Users
             return $obj->roles->unwrap();
         }
 
+        // This fixes the "expecting String but got instance of"
+        if ($info->fieldName === 'meta') {
+            return $obj->meta->castFrom();
+        }
+
         return $obj->{$info->fieldName};
     }
 }
