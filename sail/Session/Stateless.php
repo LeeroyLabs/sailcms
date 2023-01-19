@@ -37,11 +37,15 @@ final class Stateless implements AppSession
 
         $mins = (setting('session.ttl', 21_600) / 60);
 
+        $ttl = setting('session.ttl', 21_600);
+        $tz = setting('timezone', 'America/New_York');
+        $exp = Carbon::now($tz)->addSeconds($ttl)->toDateTimeImmutable();
+
         $this->builder
             ->issuedBy(setting('session.jwt.issuer', 'SailCMS'))
             ->identifiedBy(bin2hex(random_bytes(12)))
             ->canOnlyBeUsedAfter($now)
-            ->expiresAt($now->modify('+ ' . $mins . ' minutes'))
+            ->expiresAt($exp)
             ->permittedFor(setting('session.jwt.domain', 'localhost'));
     }
 
@@ -96,10 +100,6 @@ final class Stateless implements AppSession
         // Set cookie for token
         $expire = time() + setting('session.ttl', 21_600);
         $domain = setting('session.jwt.domain', 'localhost');
-
-        // Set expiration from the TTL setting
-        $this->builder->expiresAt(Carbon::createFromTimestamp($expire)->toDateTimeImmutable());
-
         $token = $this->builder->getToken($algo, $genkey)->toString();
 
         setcookie('sc_jwt', $token, [
