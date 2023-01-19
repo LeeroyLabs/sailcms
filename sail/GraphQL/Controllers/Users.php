@@ -5,6 +5,7 @@ namespace SailCMS\GraphQL\Controllers;
 use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
@@ -440,7 +441,11 @@ class Users
 
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
-            return $obj->meta->castFrom();
+            if (is_a($obj, Castable::class, true)) {
+                return $obj->meta->castFrom();
+            }
+
+            return $obj->meta;
         }
 
         return $obj->{$info->fieldName};
