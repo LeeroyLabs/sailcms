@@ -115,7 +115,10 @@ return [
                 ],
                 'entryLayoutId' => null
             ],
-            'cacheTtl' => \SailCMS\Cache::TTL_WEEK
+            'cacheTtl' => \SailCMS\Cache::TTL_WEEK,
+            'seo' => [
+                'defaultDescription' => 'SailCMS site',
+            ]
         ],
         'users' => [
             'requireValidation' => true,
