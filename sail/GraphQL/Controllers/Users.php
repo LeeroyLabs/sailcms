@@ -441,7 +441,7 @@ class Users
 
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
-            if (is_a($obj, Castable::class, true)) {
+            if (is_a($obj, Castable::class, true) || is_a($obj, UserMeta::class, true)) {
                 return $obj->meta->castFrom();
             }
 
