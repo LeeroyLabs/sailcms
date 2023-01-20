@@ -90,6 +90,7 @@ class Entry extends Model implements Validator
 
     private EntryType $entryType;
     private EntryLayout $entryLayout;
+    private EntrySeo $entrySeo;
 
     /**
      *
@@ -192,6 +193,41 @@ class Entry extends Model implements Validator
         });
 
         return $parsedContent;
+    }
+
+    /**
+     *
+     * Get All SEO data for this entry
+     *
+     * @param bool $refresh
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function getSEO(bool $refresh = false): Collection
+    {
+        $seo = Collection::init();
+
+        // TODO SEE IF WE NEED THAT
+//        if (!isset($this->_id)) {
+//            throw new EntryException();
+//        }
+
+        // TODO ask marc does it work as cache runtime
+        if (!isset($this->entrySeo) || $refresh) {
+            $this->entrySeo = (new EntrySeo())->getOrCreateByEntryId($this->_id, $this->title);
+        }
+
+        $seo->pushKeyValue('locale', $this->locale);
+        $seo->pushKeyValue('url', $this->url);
+        $seo->pushKeyValue('alternates', $this->alternates);
+
+        $seo->pushSpreadKeyValue(...$this->entrySeo->toGraphQL());
+
+        return $seo;
     }
 
     /**
@@ -769,7 +805,7 @@ class Entry extends Model implements Validator
         }
 
         if (!$entry) {
-            throw new EntryException(sprintf(Entry::DOES_NOT_EXISTS, 'id = ' . $entryId));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryId));
         }
 
         $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors);
@@ -1053,6 +1089,7 @@ class Entry extends Model implements Validator
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
+     *
      */
     private function emptyHomepage(string $siteId, string $locale, object|array $currentConfig = null): void
     {

@@ -31,6 +31,7 @@ use stdClass;
 class EntryLayout extends Model implements Castable
 {
     protected string $collection = 'entry_layouts';
+    protected string $permissionGroup = 'entrylayout';
     protected array $casting = [
         'titles' => LocaleField::class,
         'schema' => self::class,
@@ -47,8 +48,30 @@ class EntryLayout extends Model implements Castable
     public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
-    private const ACL_HANDLE = "entrylayout"; // TODO remove that
-    protected string $permissionGroup = self::ACL_HANDLE;
+    /**
+     *
+     * Simplify schema
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        return $this->schema->unwrap();
+    }
+
+    /**
+     *
+     * Process Schema
+     *
+     * @param mixed $value
+     * @return array|Collection
+     *
+     */
+    public function castTo(mixed $value): array|Collection
+    {
+        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
+    }
 
     /**
      *
@@ -695,30 +718,5 @@ class EntryLayout extends Model implements Castable
         }
 
         return $qtyDeleted === 1;
-    }
-
-    /**
-     *
-     * Simplify schema
-     *
-     * @return array
-     *
-     */
-    public function castFrom(): array
-    {
-        return $this->schema->unwrap();
-    }
-
-    /**
-     *
-     * Process Schema
-     *
-     * @param mixed $value
-     * @return array|Collection
-     *
-     */
-    public function castTo(mixed $value): array|Collection
-    {
-        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
     }
 }
