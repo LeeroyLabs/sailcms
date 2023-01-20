@@ -7,6 +7,7 @@ return [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'timezone' => 'America/New_York',
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
@@ -129,6 +130,7 @@ return [
         'devMode' => true,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'timezone' => 'America/New_York',
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
@@ -232,6 +234,7 @@ return [
         'devMode' => false,
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
+        'timezone' => 'America/New_York',
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
