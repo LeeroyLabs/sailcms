@@ -154,9 +154,20 @@ class Locale
     private static function loadAll(): void
     {
         $fs = Filesystem::manager();
+        $filepath = 'root://locales/' . self::$current . '.yaml';
+
+        // Create missing document
+        if ($fs->directoryExists(dirname($filepath))) {
+            $fs->createDirectory(dirname($filepath));
+        }
+
+        // Create missing file
+        if (!$fs->fileExists($filepath)) {
+            $fs->write($filepath, '');
+        }
 
         // Load global locale file
-        $file = $fs->read('root://locales/' . self::$current . '.yaml');
+        $file = $fs->read($filepath);
         $yaml = Yaml::parse($file);
 
         if (!empty($yaml)) {
