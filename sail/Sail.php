@@ -97,7 +97,7 @@ final class Sail
 
         // Register the error handler
         self::$errorHandler = new Run();
-        $ct = getallheaders()['Content-Type'];
+        $ct = getallheaders()['Content-Type'] ?? 'text/html';
         $isWeb = false;
 
         if (!empty($ct) && stripos($ct, 'application/json') !== false) {

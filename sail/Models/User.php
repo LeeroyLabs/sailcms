@@ -229,9 +229,7 @@ class User extends Model
             $password = Uuid::uuid4()->toString();
         }
 
-        if ($role !== '') {
-            $role = [$role];
-        } else {
+        if ($role === '') {
             $role = setting('users.baseRole', 'general-user');
         }
 
