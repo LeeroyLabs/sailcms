@@ -13,6 +13,7 @@ use SailCMS\CLI\Migrate;
 use SailCMS\CLI\Migrations;
 use SailCMS\CLI\Model;
 use SailCMS\CLI\Schema;
+use SailCMS\CLI\Test;
 use SailCMS\CLI\Version;
 use SailCMS\CLI\Module;
 use SailCMS\CLI\Queue;
@@ -29,7 +30,7 @@ final class CLI
 
     public function __construct(string $path)
     {
-        static::$workingDirectory = $path;
+        self::$workingDirectory = $path;
     }
 
     /**
@@ -41,7 +42,7 @@ final class CLI
      */
     public static function getWorkingDirectory(): string
     {
-        return static::$workingDirectory;
+        return self::$workingDirectory;
     }
 
     /**
@@ -58,7 +59,7 @@ final class CLI
     public function run(): void
     {
         // Load Sail Basics
-        Sail::initForCli(static::$workingDirectory);
+        Sail::initForCli(self::$workingDirectory);
 
         $application = new Application();
 
@@ -75,13 +76,14 @@ final class CLI
         $application->add(new Schema());
         $application->add(new Migrate());
         $application->add(new Migrations());
+        $application->add(new Test());
 
         // Custom commands
-        if (!isset(static::$registeredCommands)) {
-            static::$registeredCommands = Collection::init();
+        if (!isset(self::$registeredCommands)) {
+            self::$registeredCommands = Collection::init();
         }
 
-        foreach (static::$registeredCommands->unwrap() as $commands) {
+        foreach (self::$registeredCommands->unwrap() as $commands) {
             foreach ($commands as $command) {
                 $application->add(new $command());
             }
