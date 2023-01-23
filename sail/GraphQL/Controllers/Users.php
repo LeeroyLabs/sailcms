@@ -447,6 +447,10 @@ class Users
                 return $meta->castTo($obj->meta)->castFrom();
             }
 
+            if (is_object($obj->meta) && get_class($obj->meta) === UserMeta::class) {
+                return $obj->meta->castFrom();
+            }
+
             return $obj->meta;
         }
 
