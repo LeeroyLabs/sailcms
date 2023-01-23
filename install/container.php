@@ -46,7 +46,7 @@ class Container extends AppContainer
 
     public function fields(): Collection
     {
-        // register for custom fields
+        return Collection::init();
     }
 
     public function cli(): Collection
