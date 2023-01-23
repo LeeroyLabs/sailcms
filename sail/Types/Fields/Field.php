@@ -95,16 +95,16 @@ abstract class Field implements Castable
      * @return Collection
      *
      */
-    public static function validateSettings(Collection|array|null $settings): Collection
+    public static function validateSettings(Collection|array|null $settings, Collection $defaultSettings): Collection
     {
         $validSettings = Collection::init();
 
-        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings) {
+        static::availableProperties()->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
             $settingValue = $settings?->get($inputType->name);
-            $defaultValue = static::defaultSettings()->get($inputType->name); // TODO problem with multiline
+            $defaultValue = $defaultSettings->get($inputType->name);
 
             if (isset($settingValue) && static::validByType($inputType->type, $settingValue)) {
                 $validSettings->pushKeyValue($inputType->name, $settingValue);

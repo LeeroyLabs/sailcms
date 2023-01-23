@@ -58,7 +58,8 @@ abstract class Field
 
         $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings) {
             $currentSetting = $settings->get($key);
-            $currentSetting = $fieldTypeClass::validateSettings($currentSetting);
+            $defaultSettings = $this::class::defaultSettings()->get($key);
+            $currentSetting = $fieldTypeClass::validateSettings($currentSetting, $defaultSettings);
 
             $fieldInput = new $fieldTypeClass($labels, ...$currentSetting);
             $this->configs->pushKeyValue($key, $fieldInput);
