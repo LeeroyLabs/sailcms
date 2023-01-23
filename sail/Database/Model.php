@@ -306,7 +306,29 @@ abstract class Model implements JsonSerializable
                 foreach ($this->currentPopulation as $populate) {
                     $instance = new $populate['class']();
                     $field = $populate['field'];
-                    $doc->{$field} = $instance->findById($doc->{$field})->exec();
+                    $target = $populate['targetField'];
+
+                    $list = [];
+                    $targetList = [];
+                    $is_array = false;
+
+                    if (is_object($doc->{$target}) && get_class($doc->{$target}) === \SailCMS\Collection::class) {
+                        $targetList = $doc->{$target}->unwrap();
+                        $is_array = true;
+                    } elseif (is_array($doc->{$target})) {
+                        $targetList = $doc->{$target};
+                        $is_array = true;
+                    }
+
+                    if ($is_array) {
+                        foreach ($targetList as $item) {
+                            $list[] = $instance->findById($item)->exec();
+                        }
+
+                        $doc->{$field} = new \SailCMS\Collection($list);
+                    } else {
+                        $doc->{$field} = $instance->findById($doc->{$target})->exec();
+                    }
                 }
 
                 $this->debugCall('', $qt);
@@ -361,7 +383,27 @@ abstract class Model implements JsonSerializable
 
                 // Make sure to run only if field is not null and not empty string
                 if ($doc->{$field} !== null && $doc->{$field} !== '') {
-                    $doc->{$target} = $instance->findById($doc->{$field})->exec();
+                    $list = [];
+                    $targetList = [];
+                    $is_array = false;
+
+                    if (is_object($doc->{$target}) && get_class($doc->{$target}) === \SailCMS\Collection::class) {
+                        $targetList = $doc->{$target}->unwrap();
+                        $is_array = true;
+                    } elseif (is_array($doc->{$target})) {
+                        $targetList = $doc->{$target};
+                        $is_array = true;
+                    }
+
+                    if ($is_array) {
+                        foreach ($targetList as $item) {
+                            $list[] = $instance->findById($item)->exec();
+                        }
+
+                        $doc->{$field} = new \SailCMS\Collection($list);
+                    } else {
+                        $doc->{$field} = $instance->findById($doc->{$target})->exec();
+                    }
                 } else {
                     // Nullify the field, most probably going to be called from GraphQL
                     $doc->{$target} = null;
