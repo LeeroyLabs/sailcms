@@ -157,7 +157,7 @@ class Locale
         $filepath = 'root://locales/' . self::$current . '.yaml';
 
         // Create missing document
-        if ($fs->directoryExists(dirname($filepath))) {
+        if (!$fs->directoryExists(dirname($filepath))) {
             $fs->createDirectory(dirname($filepath));
         }
 
