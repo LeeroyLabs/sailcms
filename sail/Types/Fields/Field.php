@@ -80,7 +80,7 @@ abstract class Field implements Castable
     protected static function validByType(string $type, mixed $value): bool
     {
         return match ($type) {
-            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
+            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false, "1", "0", 1, 0, "true", "false"], true),
             InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
             InputSettings::INPUT_TYPE_REGEX => is_string($value),
             default => false
@@ -104,9 +104,9 @@ abstract class Field implements Castable
              * @var InputSettings $inputType
              */
             $settingValue = $settings?->get($inputType->name);
-            $defaultValue = static::defaultSettings()->get($inputType->name);
+            $defaultValue = static::defaultSettings()->get($inputType->name); // TODO problem with multiline
 
-            if ($settingValue && static::validByType($inputType->type, $settingValue)) {
+            if (isset($settingValue) && static::validByType($inputType->type, $settingValue)) {
                 $validSettings->pushKeyValue($inputType->name, $settingValue);
             } else {
                 $validSettings->pushKeyValue($inputType->name, $defaultValue);

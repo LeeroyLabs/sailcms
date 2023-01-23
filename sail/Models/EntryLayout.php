@@ -383,13 +383,18 @@ class EntryLayout extends Model implements Castable
             }
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs) {
+            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
                 $settings = Collection::init();
-                $fields->each(function ($key, $setting) use (&$settings) {
+                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
                     $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
                 });
 
-                $parsedConfigs->pushKeyValue($index, $settings);
+                $inputKey = $index;
+                if (isset($fieldsData->inputKey)) {
+                    $inputKey = $fieldsData->inputKey;
+                }
+
+                $parsedConfigs->pushKeyValue($inputKey, $settings);
             });
 
             /**
@@ -582,6 +587,7 @@ class EntryLayout extends Model implements Castable
              * @var LayoutField $layoutField
              */
             $layoutField = $layoutField->castFrom();
+
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;

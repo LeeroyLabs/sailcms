@@ -282,16 +282,21 @@ input FieldConfigsInput {
     labels: LocaleFieldInput
     key: String!
     handle: String!
-    inputSettings: [[InputSettingsInput]]!
+    inputSettings: [InputSettingsInput]!
 }
 
 input SchemaUpdateInput {
     key: String!
     labels: LocaleFieldInput
-    inputSettings: [[InputSettingsInput]]
+    inputSettings: [InputSettingsInput]!
 }
 
 input InputSettingsInput {
+    inputKey: String
+    settings: [SettingsInput]
+}
+
+input SettingsInput {
     name: String!
     value: String!
     type: InputType!
