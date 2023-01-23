@@ -170,20 +170,20 @@ class UserMeta implements Castable, \JsonSerializable
         foreach (self::$registered as $key => $options) {
             switch ($options['type']) {
                 case self::TYPE_BOOL:
-                    $graphql .= $key . ": Boolean!\n";
+                    $graphql .= $key . ": Boolean\n";
                     break;
 
                 case self::TYPE_FLOAT:
-                    $graphql .= $key . ": Float!\n";
+                    $graphql .= $key . ": Float\n";
                     break;
 
                 case self::TYPE_INT:
-                    $graphql .= $key . ": Int!\n";
+                    $graphql .= $key . ": Int\n";
                     break;
 
                 default:
                 case self::TYPE_STRING:
-                    $graphql .= $key . ": String!\n";
+                    $graphql .= $key . ": String\n";
                     break;
 
                 case self::TYPE_CUSTOM:
