@@ -263,12 +263,17 @@ type FieldConfigs {
     handle: String!
     inputSettings: [[InputSettings]]!
 }
-
+#TODO change settings for that v
 type InputSettings {
+    inputKey: String!
+    settings: [Settings]!
+}
+
+type Settings {
     name: String!
     value: String
     choices: [String]
-    type: String!
+    type: String!z
 }
 
 type ModelFieldContent {
