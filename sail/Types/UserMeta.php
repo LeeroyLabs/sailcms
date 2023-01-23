@@ -223,9 +223,25 @@ class UserMeta implements Castable, \JsonSerializable
      */
     public function castFrom(): array
     {
+        $fields = self::$registered;
+        $fieldSet = [];
+
+        foreach ($fields as $key => $settings) {
+            $type = $settings['type'];
+
+            $defaultValue = match ($type) {
+                self::TYPE_STRING => '',
+                self::TYPE_INT, self::TYPE_FLOAT => 0,
+                self::TYPE_BOOL => false,
+                default => null,
+            };
+
+            $fieldSet[$key] = $this->customMeta[$key] ?? $defaultValue;
+        }
+
         return [
             'flags' => $this->flags,
-            ...$this->customMeta
+            ...$fieldSet
         ];
     }
 
@@ -256,11 +272,11 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Automatically simplify when you serialize
      *
-     * @return stdClass
+     * @return array
      *
      */
-    public function jsonSerialize(): \stdClass
+    public function jsonSerialize(): array
     {
-        return $this->simplify();
+        return $this->castFrom();
     }
 }

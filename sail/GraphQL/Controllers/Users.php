@@ -25,6 +25,7 @@ use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 use SodiumException;
+use stdClass;
 
 class Users
 {
@@ -441,8 +442,9 @@ class Users
 
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
-            if (is_a($obj->meta, Castable::class, true)) {
-                return $obj->meta->castFrom();
+            if (is_object($obj->meta) && get_class($obj->meta) === stdClass::class) {
+                $meta = new UserMeta();
+                return $meta->castTo($obj->meta)->castFrom();
             }
 
             return $obj->meta;
