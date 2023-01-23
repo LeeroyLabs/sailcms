@@ -2,6 +2,7 @@
 
 namespace SailCMS\CLI;
 
+use League\Flysystem\FilesystemException;
 use SailCMS\Filesystem;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -13,6 +14,16 @@ class Test extends Command
     protected static $defaultDescription = 'Create a new test suite';
     protected static $defaultName = 'create:test';
 
+    /**
+     *
+     * Run the command
+     *
+     * @param  InputInterface   $input
+     * @param  OutputInterface  $output
+     * @return int
+     * @throws FilesystemException
+     *
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         Tools::testFlight();
@@ -31,6 +42,8 @@ class Test extends Command
         // Make sure the mock folder exists
         if (!$fs->directoryExists($path . '/mock')) {
             $mockPath = $path . '/mock';
+            $xmlContent = $fs->read('install://test.xml');
+
             $fs->createDirectory($mockPath);
             $fs->createDirectory($mockPath . '/asset');
             $fs->createDirectory($mockPath . '/config');
@@ -46,6 +59,7 @@ class Test extends Command
             $fs->createDirectory($mockPath . '/storage/fs');
             $fs->createDirectory($mockPath . '/storage/fs/logs');
             $fs->createDirectory($mockPath . '/storage/fs/vault');
+            $fs->write('root://phpunit.xml', $xmlContent);
         }
 
         // Create test
