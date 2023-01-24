@@ -261,9 +261,9 @@ type LayoutField {
 type FieldConfigs {
     labels: LocaleField!
     handle: String!
-    inputSettings: [[InputSettings]]!
+    inputSettings: [InputSettings]!
 }
-#TODO change settings for that v
+
 type InputSettings {
     inputKey: String!
     settings: [Settings]!
@@ -273,7 +273,7 @@ type Settings {
     name: String!
     value: String
     choices: [String]
-    type: String!z
+    type: String!
 }
 
 type ModelFieldContent {
@@ -417,7 +417,8 @@ type FieldInputInfo {
     name: String!
     fullname: String!
     type: String!
-    availableSettings: [InputSettings!]!
+    inputKey: String
+    availableSettings: [Settings!]!
 }
 
 type LocaleField {

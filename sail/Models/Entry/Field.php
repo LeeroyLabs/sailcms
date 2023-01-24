@@ -200,6 +200,7 @@ abstract class Field
                 'name' => $className,
                 'fullname' => (string)$inputFieldClass,
                 'type' => $inputFieldClass::storingType(),
+                'inputKey' => $i,
                 'availableSettings' => $settings->unwrap()
             ]);
         });

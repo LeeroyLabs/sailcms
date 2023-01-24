@@ -203,7 +203,7 @@ class EntryLayout extends Model implements Castable
             /**
              * @var ModelField $field
              */
-            if ($currentFieldKey === $fieldKey) {
+            if ($currentFieldKey === $fieldKey && $field->configs->get((string)$fieldIndexName)) {
                 $currentInput = $field->configs->get((string)$fieldIndexName)->castFrom();
                 $inputClass = $field->configs->get((string)$fieldIndexName)::class;
 
@@ -217,6 +217,8 @@ class EntryLayout extends Model implements Castable
                 $field->configs->pushKeyValue($fieldIndexName, $input);
 
                 $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
+            } else {
+                $this->schema->pushKeyValue($currentFieldKey, $field->toLayoutField());
             }
         });
     }
@@ -425,7 +427,10 @@ class EntryLayout extends Model implements Castable
                  */
                 $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
                     $settings = [];
-                    $toUpdate->each(function ($k, $setting) use (&$settings) {
+
+                    $inputKey = $toUpdate->inputKey ?? $index;
+
+                    $toUpdate->settings->each(function ($k, $setting) use (&$settings) {
                         $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
                     });
 
@@ -433,7 +438,7 @@ class EntryLayout extends Model implements Castable
                     if (isset($updateInput->labels)) {
                         $labels = new LocaleField($updateInput->labels->unwrap());
                     }
-                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $index, $labels);
+                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $inputKey, $labels);
                 });
             } else {
                 if (isset($updateInput->labels)) {
@@ -484,7 +489,10 @@ class EntryLayout extends Model implements Castable
                     ]);
                 });
 
-                $layoutFieldSettings->push($fieldSettings);
+                $layoutFieldSettings->push([
+                    'inputKey' => $fieldIndex,
+                    'settings' => $fieldSettings
+                ]);
             });
             $layoutFieldConfigs->push([
                 'handle' => $layoutField->handle,
