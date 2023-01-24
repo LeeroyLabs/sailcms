@@ -370,7 +370,7 @@ class Entry extends Model implements Validator
     public static function getHomepageEntry(string $siteId, string $locale, bool $toGraphQL = false): array|Entry|null
     {
         $currentHomepageEntry = self::getHomepage($siteId, $locale);
-        if (!$currentHomepageEntry) {
+        if (!$currentHomepageEntry || !isset($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY})) {
             return null;
         }
 
