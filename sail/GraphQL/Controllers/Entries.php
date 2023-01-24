@@ -213,7 +213,7 @@ class Entries
         $direction = $args->get('direction', 1);
 
         // For filtering
-        $parsedFilters = $this->parseFilterInput($args->get('filters', []));
+        $parsedFilters = $this->parseFilterInput($args->get('filters', Collection::init()));
 
         // Get the result!
         $result = Entry::getList($entryTypeHandle, $parsedFilters, $page, $limit, $sort, $direction); // By entry type instead

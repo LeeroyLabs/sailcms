@@ -177,6 +177,11 @@ class Entry extends Model implements Validator
         return $this->entryLayout;
     }
 
+    private function getSchema()
+    {
+        // TODO
+    }
+
     /**
      *
      * Parse content
@@ -193,6 +198,11 @@ class Entry extends Model implements Validator
         });
 
         return $parsedContent;
+    }
+
+    public function getContentForGraphQL(): array
+    {
+        // TODO
     }
 
     /**
@@ -269,7 +279,7 @@ class Entry extends Model implements Validator
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'categories' => $this->categories->castFrom(),
-            'content' => $this->content->castFrom(),
+            'content' => $this->getContent()->castFrom(),
             'schema' => $schema
         ];
     }
@@ -970,6 +980,18 @@ class Entry extends Model implements Validator
         if ($this->entryType->entry_layout_id) {
             $entryLayoutModel = new EntryLayout();
             $entryLayout = $entryLayoutModel->one(['_id' => $this->entryType->entry_layout_id]);
+
+            if (!$entryLayout) {
+
+                $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
+
+                if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
+                    $errorMessage .= PHP_EOL . "Check your configuration value for entry/defaultType/entryLayoutId.";
+                }
+
+                throw new EntryException($errorMessage);
+            }
+
             $schema = $entryLayout->schema;
         }
 

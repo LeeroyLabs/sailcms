@@ -72,7 +72,7 @@ class EntryType extends Model implements Validator
     ];
 
     /* default entry type */
-    private const DEFAULT_HANDLE = "page";
+    public const DEFAULT_HANDLE = "page";
     private const DEFAULT_TITLE = "Page";
     private const DEFAULT_URL_PREFIX = ['en' => '', 'fr' => ''];
 
