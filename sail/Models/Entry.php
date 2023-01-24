@@ -15,6 +15,7 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
+use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Text;
@@ -27,6 +28,7 @@ use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
+use SailCMS\Types\StoringType;
 use SodiumException;
 use stdClass;
 
@@ -177,32 +179,41 @@ class Entry extends Model implements Validator
         return $this->entryLayout;
     }
 
-    private function getSchema()
-    {
-        // TODO
-    }
-
     /**
      *
-     * Parse content
+     * Get content with Model Field data
      *
      * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function getContent(): Collection
     {
         $parsedContent = Collection::init();
 
-        $this->content->each(function ($key, $modelFieldContent) use (&$parsedContent) {
-            $parsedContent->push($modelFieldContent);
+        $schema = $this->getSchema();
+
+        $schema->each(function ($key, $modelField) use (&$parsedContent) {
+            /**
+             * @var Field $modelField
+             */
+            $content = $this->content->get($key);
+            if ($modelField->storingType() === StoringType::ARRAY->value) {
+                $content = json_encode($content ?? []);
+            }
+
+            $parsedContent->pushKeyValue($key, [
+                'type' => $modelField->storingType(),
+                'handle' => $modelField->handle,
+                'content' => $content ?? '',
+                'key' => $key
+            ]);
         });
 
         return $parsedContent;
-    }
-
-    public function getContentForGraphQL(): array
-    {
-        // TODO
     }
 
     /**
@@ -605,15 +616,45 @@ class Entry extends Model implements Validator
         $parsedContent = Collection::init();
 
         $content?->each(function ($i, $toParse) use (&$parsedContent) {
-            $content = $toParse->content;
-            if ($toParse->content instanceof Collection) {
-                $content = $toParse->content->unwrap();
+            $content = json_decode($toParse->content);
+
+            if (is_array($content) || $content instanceof stdClass) {
+                $parsed = new Collection((array)$content);
+            } else {
+                $parsed = $toParse->content;
             }
 
-            $parsedContent->pushKeyValue($toParse->key, $content);
+            $parsedContent->pushKeyValue($toParse->key, $parsed);
         });
 
         return $parsedContent;
+    }
+
+    /**
+     *
+     * Combine and update content for GraphQL
+     *
+     * @param string $entryId
+     * @param Collection $newContent
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public function updateContentForGraphQL(string $entryId, Collection $newContent): Collection
+    {
+        $entry = $this->findById($entryId)->exec();
+
+        if (isset($entry->_id)) {
+            $newContent = $newContent->merge($entry->content, true);
+        }
+
+        $newContent->each(function ($key, &$content) use (&$newContent) {
+            if ($content instanceof stdClass) {
+                $newContent->pushKeyValue($key, (array)$content);
+            }
+        });
+
+        return $newContent;
     }
 
     /**
@@ -943,6 +984,34 @@ class Entry extends Model implements Validator
 
     /**
      *
+     * Get schema from entryLayout
+     *
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    private function getSchema(): Collection
+    {
+        $entryLayout = $this->getEntryLayout();
+
+        if (!$entryLayout) {
+            $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
+
+            if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
+                $errorMessage .= PHP_EOL . "Check your configuration value for entry/defaultType/entryLayoutId.";
+            }
+
+            throw new EntryException($errorMessage);
+        }
+
+        return $entryLayout->schema;
+    }
+
+    /**
+     *
      * Validate that status is not thrash
      *  because the only to set it to trash is in the delete method
      *
@@ -978,21 +1047,7 @@ class Entry extends Model implements Validator
 
         $schema = null;
         if ($this->entryType->entry_layout_id) {
-            $entryLayoutModel = new EntryLayout();
-            $entryLayout = $entryLayoutModel->one(['_id' => $this->entryType->entry_layout_id]);
-
-            if (!$entryLayout) {
-
-                $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
-
-                if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
-                    $errorMessage .= PHP_EOL . "Check your configuration value for entry/defaultType/entryLayoutId.";
-                }
-
-                throw new EntryException($errorMessage);
-            }
-
-            $schema = $entryLayout->schema;
+            $schema = $this->getSchema();
         }
 
         if ($content->length > 0 && !$schema) {

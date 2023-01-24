@@ -570,7 +570,7 @@ class EntryLayout extends Model implements Castable
 
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
-// TODO check for sending inputKey also.
+
         $schemaFromDb->each(function ($key, $value) use (&$schema) {
             $valueParsed = ModelField::fromLayoutField($value);
             $schema->pushKeyValue($key, $valueParsed);

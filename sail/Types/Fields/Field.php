@@ -92,6 +92,7 @@ abstract class Field implements Castable
      * Validate settings before the schema creation in an entry layout
      *
      * @param Collection|array|null $settings
+     * @param Collection $defaultSettings
      * @return Collection
      *
      */
