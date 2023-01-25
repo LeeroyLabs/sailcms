@@ -15,6 +15,7 @@ use SailCMS\Field;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
@@ -203,6 +204,7 @@ class Entries
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
+     *
      */
     public function entries(mixed $obj, Collection $args, Context $context): Listing
     {
@@ -263,6 +265,7 @@ class Entries
         $entry = $entryModel->one(['_id' => $id]);
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
+
         return $entry->toGraphQL($homepage);
     }
 
@@ -359,6 +362,22 @@ class Entries
         $errors = $entryModel->updateById($id, $args, false);
 
         return Entry::processErrorsForGraphQL($errors);
+    }
+
+    public function updateEntrySeo(mixed $obj, Collection $args, Context $context): bool
+    {
+        $entryId = $args->get('id');
+        $title = $args->get('title');
+
+        $entrySeoModel = new EntrySeo();
+        if (!$title) {
+            $seo = $entrySeoModel->getOrCreateByEntryId($entryId, "");
+            $title = $seo->title;
+        }
+
+        $entrySeo = $entrySeoModel->createOrUpdate($entryId, $title, $args);
+
+        return isset($entrySeo->entry_id);
     }
 
     /**

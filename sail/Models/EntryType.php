@@ -42,9 +42,7 @@ class EntryType extends Model implements Validator
     public const DATABASE_ERROR = '4007: Exception when "%s" an entry type.';
     public const CANNOT_UPDATE_DEFAULT_TYPE = '4008: Cannot update default type page, use general settings for that';
 
-    private const ACL_HANDLE = "entrytype";
-
-    protected string $permissionGroup = self::ACL_HANDLE;
+    protected string $permissionGroup = "entrytype";
 
     private const RESERVED_WORDS_FOR_HANDLE = [
         'entry',

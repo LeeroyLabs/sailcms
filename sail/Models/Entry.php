@@ -260,6 +260,7 @@ class Entry extends Model implements Validator
      * @return array
      * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
      * @throws PermissionException
      *
      */
@@ -291,6 +292,7 @@ class Entry extends Model implements Validator
             'dates' => $this->dates->castFrom(),
             'categories' => $this->categories->castFrom(),
             'content' => $this->getContent()->castFrom(),
+            'seo' => $this->getSEO()->castFrom(),
             'schema' => $schema
         ];
     }
@@ -1363,6 +1365,8 @@ class Entry extends Model implements Validator
      *
      * Delete an entry definitively
      *
+     * @param string|ObjectId $entryId
+     * @return bool
      * @throws EntryException
      *
      */
@@ -1372,6 +1376,13 @@ class Entry extends Model implements Validator
             $qtyDeleted = $this->deleteById((string)$entryId);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+        }
+
+        // Must delete seo data too
+        try {
+            (new EntrySeo())->deleteByEntryId((string)$entryId, false);
+        } catch (Exception $e) {
+            // Do nothing because there is no entry seo for this entry
         }
 
         return $qtyDeleted === 1;
