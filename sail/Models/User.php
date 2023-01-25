@@ -199,7 +199,8 @@ class User extends Model
         string $avatar = '',
         ?UserMeta $meta = null,
         string $role = '',
-        bool $createWithSetPassword = false
+        bool $createWithSetPassword = false,
+        string $emailTemplate = ''
     ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
@@ -261,9 +262,10 @@ class User extends Model
 
                 if ($createWithSetPassword) {
                     $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
+                    $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
 
                     $mail->to($email)
-                         ->useEmail('new_account_by_proxy', $locale, [
+                         ->useEmail($emailName, $locale, [
                              'verification_code' => $code,
                              'reset_pass_code' => $passCode,
                              'name' => $name->first,
@@ -271,7 +273,8 @@ class User extends Model
                          ])
                          ->send();
                 } else {
-                    $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
+                    $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
+                    $mail->to($email)->useEmail($emailName, $locale, ['verification_code' => $code])->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
