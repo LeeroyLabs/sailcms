@@ -171,7 +171,7 @@ test('Create an entry with the default type', function () {
     $model = new Entry();
 
     try {
-        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home', null, []);
+        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home');
 
         expect($entry->title)->toBe('Home')
             -> and($entry->status)
@@ -185,6 +185,15 @@ test('Create an entry with the default type', function () {
 //        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
+});
+
+test('Access to default SEO data', function () {
+    $entry = (new Entry())->one(['title' => 'Home']);
+
+    $seo = $entry->getSEO();
+
+    expect($seo->title)->toBe($entry->title);
+    expect($seo->entry_seo_id)->not->toBeNull();
 });
 
 test('Create an entry with an entry type', function () {

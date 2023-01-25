@@ -9,7 +9,6 @@ use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;

@@ -31,6 +31,7 @@ use stdClass;
 class EntryLayout extends Model implements Castable
 {
     protected string $collection = 'entry_layouts';
+    protected string $permissionGroup = 'entrylayout';
     protected array $casting = [
         'titles' => LocaleField::class,
         'schema' => self::class,
@@ -47,8 +48,30 @@ class EntryLayout extends Model implements Castable
     public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
-    private const ACL_HANDLE = "entrylayout";
-    protected string $permissionGroup = self::ACL_HANDLE;
+    /**
+     *
+     * Simplify schema
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        return $this->schema->unwrap();
+    }
+
+    /**
+     *
+     * Process Schema
+     *
+     * @param mixed $value
+     * @return array|Collection
+     *
+     */
+    public function castTo(mixed $value): array|Collection
+    {
+        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
+    }
 
     /**
      *
@@ -180,7 +203,7 @@ class EntryLayout extends Model implements Castable
             /**
              * @var ModelField $field
              */
-            if ($currentFieldKey === $fieldKey) {
+            if ($currentFieldKey === $fieldKey && $field->configs->get((string)$fieldIndexName)) {
                 $currentInput = $field->configs->get((string)$fieldIndexName)->castFrom();
                 $inputClass = $field->configs->get((string)$fieldIndexName)::class;
 
@@ -194,6 +217,8 @@ class EntryLayout extends Model implements Castable
                 $field->configs->pushKeyValue($fieldIndexName, $input);
 
                 $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
+            } else {
+                $this->schema->pushKeyValue($currentFieldKey, $field->toLayoutField());
             }
         });
     }
@@ -360,13 +385,18 @@ class EntryLayout extends Model implements Castable
             }
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs) {
+            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
                 $settings = Collection::init();
-                $fields->each(function ($key, $setting) use (&$settings) {
+                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
                     $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
                 });
 
-                $parsedConfigs->pushKeyValue($index, $settings);
+                $inputKey = $index;
+                if (isset($fieldsData->inputKey)) {
+                    $inputKey = $fieldsData->inputKey;
+                }
+
+                $parsedConfigs->pushKeyValue($inputKey, $settings);
             });
 
             /**
@@ -397,7 +427,10 @@ class EntryLayout extends Model implements Castable
                  */
                 $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
                     $settings = [];
-                    $toUpdate->each(function ($k, $setting) use (&$settings) {
+
+                    $inputKey = $toUpdate->inputKey ?? $index;
+
+                    $toUpdate->settings->each(function ($k, $setting) use (&$settings) {
                         $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
                     });
 
@@ -405,7 +438,7 @@ class EntryLayout extends Model implements Castable
                     if (isset($updateInput->labels)) {
                         $labels = new LocaleField($updateInput->labels->unwrap());
                     }
-                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $index, $labels);
+                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $inputKey, $labels);
                 });
             } else {
                 if (isset($updateInput->labels)) {
@@ -456,7 +489,10 @@ class EntryLayout extends Model implements Castable
                     ]);
                 });
 
-                $layoutFieldSettings->push($fieldSettings);
+                $layoutFieldSettings->push([
+                    'inputKey' => $fieldIndex,
+                    'settings' => $fieldSettings
+                ]);
             });
             $layoutFieldConfigs->push([
                 'handle' => $layoutField->handle,
@@ -559,6 +595,7 @@ class EntryLayout extends Model implements Castable
              * @var LayoutField $layoutField
              */
             $layoutField = $layoutField->castFrom();
+
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
@@ -695,30 +732,5 @@ class EntryLayout extends Model implements Castable
         }
 
         return $qtyDeleted === 1;
-    }
-
-    /**
-     *
-     * Simplify schema
-     *
-     * @return array
-     *
-     */
-    public function castFrom(): array
-    {
-        return $this->schema->unwrap();
-    }
-
-    /**
-     *
-     * Process Schema
-     *
-     * @param mixed $value
-     * @return array|Collection
-     *
-     */
-    public function castTo(mixed $value): array|Collection
-    {
-        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
     }
 }

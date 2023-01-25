@@ -261,10 +261,15 @@ type LayoutField {
 type FieldConfigs {
     labels: LocaleField!
     handle: String!
-    inputSettings: [[InputSettings]]!
+    inputSettings: [InputSettings]!
 }
 
 type InputSettings {
+    inputKey: String!
+    settings: [Settings]!
+}
+
+type Settings {
     name: String!
     value: String
     choices: [String]
@@ -282,16 +287,21 @@ input FieldConfigsInput {
     labels: LocaleFieldInput
     key: String!
     handle: String!
-    inputSettings: [[InputSettingsInput]]!
+    inputSettings: [InputSettingsInput]!
 }
 
 input SchemaUpdateInput {
     key: String!
     labels: LocaleFieldInput
-    inputSettings: [[InputSettingsInput]]
+    inputSettings: [InputSettingsInput]!
 }
 
 input InputSettingsInput {
+    inputKey: String
+    settings: [SettingsInput]
+}
+
+input SettingsInput {
     name: String!
     value: String!
     type: InputType!
@@ -407,7 +417,8 @@ type FieldInputInfo {
     name: String!
     fullname: String!
     type: String!
-    availableSettings: [InputSettings!]!
+    inputKey: String
+    availableSettings: [Settings!]!
 }
 
 type LocaleField {

@@ -213,7 +213,7 @@ class Entries
         $direction = $args->get('direction', 1);
 
         // For filtering
-        $parsedFilters = $this->parseFilterInput($args->get('filters', []));
+        $parsedFilters = $this->parseFilterInput($args->get('filters', Collection::init()));
 
         // Get the result!
         $result = Entry::getList($entryTypeHandle, $parsedFilters, $page, $limit, $sort, $direction); // By entry type instead
@@ -347,12 +347,14 @@ class Entries
         $entryTypeHandle = $args->get('entry_type_handle');
         $content = $args->get('content');
 
+        $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
+
         if ($content) {
             // Process the content to be able to save it
-            $args->pushKeyValue('content', Entry::processContentFromGraphQL($content));
+            $processedContent = Entry::processContentFromGraphQL($content);
+            $newContent = $entryModel->updateContentForGraphQL($id, $processedContent);
+            $args->pushKeyValue('content', $newContent);
         }
-
-        $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         $errors = $entryModel->updateById($id, $args, false);
 

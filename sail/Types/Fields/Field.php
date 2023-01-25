@@ -80,7 +80,7 @@ abstract class Field implements Castable
     protected static function validByType(string $type, mixed $value): bool
     {
         return match ($type) {
-            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false], true),
+            InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false, "1", "0", 1, 0, "true", "false"], true),
             InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
             InputSettings::INPUT_TYPE_REGEX => is_string($value),
             default => false
@@ -92,21 +92,22 @@ abstract class Field implements Castable
      * Validate settings before the schema creation in an entry layout
      *
      * @param Collection|array|null $settings
+     * @param Collection $defaultSettings
      * @return Collection
      *
      */
-    public static function validateSettings(Collection|array|null $settings): Collection
+    public static function validateSettings(Collection|array|null $settings, Collection $defaultSettings): Collection
     {
         $validSettings = Collection::init();
 
-        static::availableProperties()->each(function ($key, $inputType) use ($settings, &$validSettings) {
+        static::availableProperties()->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
             $settingValue = $settings?->get($inputType->name);
-            $defaultValue = static::defaultSettings()->get($inputType->name);
+            $defaultValue = $defaultSettings->get($inputType->name);
 
-            if ($settingValue && static::validByType($inputType->type, $settingValue)) {
+            if (isset($settingValue) && static::validByType($inputType->type, $settingValue)) {
                 $validSettings->pushKeyValue($inputType->name, $settingValue);
             } else {
                 $validSettings->pushKeyValue($inputType->name, $defaultValue);
