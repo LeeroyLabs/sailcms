@@ -268,7 +268,8 @@ class Users
             $args->get('avatar', ''),
             $meta,
             $args->get('role', ''),
-            $args->get('createWithSetPassword', false)
+            $args->get('createWithSetPassword', false),
+            $args->get('useEmailTemplate', '')
         );
     }
 

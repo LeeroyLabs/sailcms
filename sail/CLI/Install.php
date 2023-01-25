@@ -46,6 +46,7 @@ class Install extends Command
             'modules',
             'containers',
             'locales',
+            'serverless_crons'
         ];
 
         // Files to create (dest => src)
@@ -66,7 +67,8 @@ class Install extends Command
             'storage/cache/.gitkeep' => '',
             'storage/debug/.gitkeep' => '',
             'locales/en.yaml' => '',
-            'templates/default/email/account.twig' => 'account.email.twig'
+            'templates/default/email/account.twig' => 'account.email.twig',
+            'serverless_crons/.gitkeep' => ''
         ];
 
         Tools::showTitle('Installing SailCMS v' . Sail::SAIL_VERSION);
