@@ -143,6 +143,10 @@ final class Register
      */
     public static function registerGraphQLQuery(string $name, string $handler, string $method, string $container): void
     {
+        if (!self::$containers) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
@@ -167,6 +171,10 @@ final class Register
      */
     public static function registerGraphQLMutation(string $name, string $handler, string $method, string $container): void
     {
+        if (!self::$containers) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
