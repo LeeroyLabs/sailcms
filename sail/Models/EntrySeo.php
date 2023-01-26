@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use SailCMS\Collection;
+use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -23,10 +24,13 @@ use SailCMS\Types\SocialMeta;
  * @property SocialMeta[] $social_metas
  *
  */
-class EntrySeo extends Model // implements Castable
+class EntrySeo extends Model
 {
     protected string $collection = 'entry_seo';
     protected string $permissionGroup = 'entryseo';
+    protected array $casting = [
+
+    ];
 
     public const DATABASE_ERROR = '5100: Exception when "%s" an entry seo.';
     public const DOES_NOT_EXISTS = '5101: Entry SEO with entry id "%s" does not exist.';
@@ -129,7 +133,7 @@ class EntrySeo extends Model // implements Castable
             $robots = $data->get('robots');
             $sitemap = $data->get('sitemap');
             $default_image = $data->get('default_image');
-            $social_metas = $data->get('social_metas');
+            $social_metas = $data->get('social_metas', []);
 
             $entrySeo = $this->createWithoutPermission($entryId, $title, $description, $keywords, $robots, $sitemap, $default_image, $social_metas);
         } else {
@@ -216,7 +220,7 @@ class EntrySeo extends Model // implements Castable
                 'robots' => $robots,
                 'sitemap' => $sitemap,
                 'default_image' => $defaultImage,
-                'social_metas' => $socialMetas
+                'social_metas' => $this->castSocialMetas($socialMetas)
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -239,6 +243,10 @@ class EntrySeo extends Model // implements Castable
     {
         $update = [];
 
+        if ($data->get('social_metas')) {
+            $update['social_metas'] = $this->castSocialMetas($data->get('social_metas'));
+        }
+
         // Property check
         $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['title', 'description', 'keywords', 'robots', 'sitemap', 'default_image', 'social_metas'])) {
@@ -255,5 +263,20 @@ class EntrySeo extends Model // implements Castable
         }
 
         return $qtyUpdated === 1;
+    }
+
+    private function castSocialMetas(array|Collection $socialMetas): array {
+        if (is_array($socialMetas)) {
+            $socialMetas = new Collection($socialMetas);
+        }
+
+        $castedSocialMetas = [];
+        $socialMetas->each(function($key, $socialMeta) use (&$castedSocialMetas) {
+            if ($socialMeta instanceof SocialMeta) {
+                $castedSocialMetas[] = $socialMeta->castFrom();
+            } // Else it's an invalid value so we ignore it
+        });
+
+        return $castedSocialMetas;
     }
 }
