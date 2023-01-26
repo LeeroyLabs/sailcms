@@ -29,7 +29,7 @@ class EntrySeo extends Model // implements Castable
     protected string $permissionGroup = 'entryseo';
 
     public const DATABASE_ERROR = '5100: Exception when "%s" an entry seo.';
-    public const DOES_NOT_EXISTS = '5101: Entry "%s" does not exist.';
+    public const DOES_NOT_EXISTS = '5101: Entry SEO with entry id "%s" does not exist.';
 
 //    public function castFrom(): mixed
 //    {
@@ -70,7 +70,7 @@ class EntrySeo extends Model // implements Castable
             $this->hasPermissions(true);
         }
 
-        $entrySeo = $this->findOne(['entry_id' => $entryId]);
+        $entrySeo = $this->findOne(['entry_id' => $entryId])->exec();
 
         return isset($entrySeo->_id) ? $entrySeo : null;
     }
@@ -125,7 +125,7 @@ class EntrySeo extends Model // implements Castable
 
         if (!$entrySeo) {
             $description = $data->get('description');
-            $keywords = $data->get('keyworkds');
+            $keywords = $data->get('keywords');
             $robots = $data->get('robots');
             $sitemap = $data->get('sitemap');
             $default_image = $data->get('default_image');
@@ -133,6 +133,7 @@ class EntrySeo extends Model // implements Castable
 
             $entrySeo = $this->createWithoutPermission($entryId, $title, $description, $keywords, $robots, $sitemap, $default_image, $social_metas);
         } else {
+            print_r('update' . PHP_EOL);
             $data->pushKeyValue('title', $title);
             $updated = $this->updateWithoutPermission($entrySeo->_id, $data);
 
@@ -151,7 +152,7 @@ class EntrySeo extends Model // implements Castable
      *
      * Delete entry SEO data for a given entry id
      *
-     * @param $entryId
+     * @param string $entryId
      * @param bool $api
      * @return bool
      * @throws ACLException
@@ -160,14 +161,13 @@ class EntrySeo extends Model // implements Castable
      * @throws PermissionException
      *
      */
-    public function deleteByEntryId($entryId, bool $api = true): bool
+    public function deleteByEntryId(string $entryId, bool $api = true): bool
     {
         if ($api) {
             $this->hasPermissions();
         }
 
         $entrySeo = $this->getByEntryId($entryId, $api);
-
         if (!$entrySeo) {
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryId));
         }
@@ -187,30 +187,30 @@ class EntrySeo extends Model // implements Castable
      *
      * @param string $entryId
      * @param string $title
-     * @param string $description
-     * @param string $keywords
-     * @param bool $robots
-     * @param bool $sitemap
-     * @param string $defaultImage
-     * @param array $socialMetas
+     * @param ?string $description
+     * @param ?string $keywords
+     * @param ?bool $robots
+     * @param ?bool $sitemap
+     * @param ?string $defaultImage
+     * @param ?array $socialMetas
      * @return EntrySeo
      * @throws DatabaseException
      * @throws EntryException
      *
      */
     private function createWithoutPermission(
-        string $entryId,
-        string $title,
-        string $description = "",
-        string $keywords = "",
-        bool   $robots = false,
-        bool   $sitemap = true,
-        string $defaultImage = "",
-        array  $socialMetas = []): EntrySeo
+        string      $entryId,
+        string      $title,
+        string|null $description = "",
+        string|null $keywords = "",
+        bool|null   $robots = false,
+        bool|null   $sitemap = true,
+        string|null $defaultImage = "",
+        array|null  $socialMetas = []): EntrySeo
     {
         try {
             $entrySeoId = $this->insert([
-                'entryId' => $entryId,
+                'entry_id' => $entryId,
                 'title' => $title,
                 'description' => $description,
                 'keywords' => $keywords,
@@ -246,6 +246,7 @@ class EntrySeo extends Model // implements Castable
                 $update[$key] = $value;
             }
         });
+        print_r($entrySeoId);
 
         try {
             $qtyUpdated = $this->updateOne(['_id' => $entrySeoId], [
@@ -254,7 +255,7 @@ class EntrySeo extends Model // implements Castable
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
-
+        print_r($qtyUpdated);
         return $qtyUpdated === 1;
     }
 }

@@ -5,6 +5,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
@@ -174,7 +175,7 @@ test('Create an entry with the default type', function () {
         $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home');
 
         expect($entry->title)->toBe('Home')
-            -> and($entry->status)
+            ->and($entry->status)
             ->toBe(EntryStatus::LIVE->value)
             ->and($entry->locale)
             ->toBe('fr')
@@ -189,12 +190,32 @@ test('Create an entry with the default type', function () {
 
 test('Access to default SEO data', function () {
     $entry = (new Entry())->one(['title' => 'Home']);
-
+    print_r('allo' . PHP_EOL);
     $seo = $entry->getSEO();
 
-    expect($seo->title)->toBe($entry->title);
-    expect($seo->entry_seo_id)->not->toBeNull();
+    expect($seo->title)->toBe($entry->title)->and($seo->entry_seo_id)->not->toBeNull();
 });
+
+//test('Update seo data for an entry', function () {
+//    $entry = (new Entry())->one(['title' => 'Home']);
+//
+//    $entrySeoModel = new EntrySeo();
+//
+//    try {
+//        $entrySeoModel->createOrUpdate($entry->_id, "New Title", new Collection([
+//            'description' => "This is a really good description for a page",
+//            'keywords' => "Good, CMS"
+//        ]));
+//        $entrySeo = $entry->getSEO(true);
+//        print_r('yp' . PHP_EOL);
+//        expect($entrySeo->get('title'))->toBe("New Title")
+//            ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
+//            ->and($entrySeo->get('keywords'))->toBe("Good, CMS");
+//    } catch (Exception $exception) {
+//        print_r($exception->getMessage());
+//        expect(true)->toBe(false);
+//    }
+//});
 
 test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -286,7 +307,7 @@ test('Create an entry with an entry type with an existing url', function () {
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+        // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -476,6 +497,10 @@ test('Hard Delete an entry with the default type', function () {
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }
+
+    // Check if seo has been deleted
+    $entrySeo = (new EntrySeo())->getByEntryId($entry->_id, false);
+    expect($entrySeo)->toBeNull();
 });
 
 test('Fail to delete an entry layout because it is used', function () {
