@@ -18,6 +18,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Filesystem;
 use SailCMS\Locale;
 use SailCMS\Sail;
+use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
@@ -175,7 +176,7 @@ class Asset extends Model
         $ext = end($info);
 
         // Add the unique id to the asset now
-        $the_name = basename($filename);
+        $the_name = Text::slugify(basename($filename));
         $filename = str_replace(".{$ext}", "-{$upload_id}.{$ext}", $filename);
 
         // Check support formats for post-processing
