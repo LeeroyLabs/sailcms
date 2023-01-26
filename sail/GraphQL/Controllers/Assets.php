@@ -83,9 +83,10 @@ class Assets
     {
         $asset = new Asset();
         $src = $args->get('src', '');
+        $folder = $args->get('folder', 'root');
         $filename = $args->get('filename', 'name.jpg');
 
-        return $asset->upload(base64_decode($src), $filename);
+        return $asset->upload(base64_decode($src), $filename, $folder);
     }
 
     /**

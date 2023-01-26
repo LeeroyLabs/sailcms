@@ -63,7 +63,7 @@ type Mutation {
     deleteRole(id: ID!): Boolean!
 
     # Assets
-    uploadAsset(src: String!, filename: String!): String!
+    uploadAsset(src: String!, filename: String!, folder: String): String!
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
     deleteAsset(id: ID!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
