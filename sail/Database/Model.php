@@ -312,11 +312,11 @@ abstract class Model implements JsonSerializable
                     $targetList = [];
                     $is_array = false;
 
-                    if (is_object($doc->{$target}) && get_class($doc->{$target}) === \SailCMS\Collection::class) {
-                        $targetList = $doc->{$target}->unwrap();
+                    if (is_object($doc->{$field}) && get_class($doc->{$field}) === \SailCMS\Collection::class) {
+                        $targetList = $doc->{$field}->unwrap();
                         $is_array = true;
-                    } elseif (is_array($doc->{$target})) {
-                        $targetList = $doc->{$target};
+                    } elseif (is_array($doc->{$field})) {
+                        $targetList = $doc->{$field};
                         $is_array = true;
                     }
 
@@ -325,9 +325,9 @@ abstract class Model implements JsonSerializable
                             $list[] = $instance->findById($item)->exec();
                         }
 
-                        $doc->{$field} = new \SailCMS\Collection($list);
+                        $doc->{$target} = new \SailCMS\Collection($list);
                     } else {
-                        $doc->{$field} = $instance->findById($doc->{$target})->exec();
+                        $doc->{$target} = $instance->findById($doc->{$field})->exec();
                     }
                 }
 
@@ -387,11 +387,11 @@ abstract class Model implements JsonSerializable
                     $targetList = [];
                     $is_array = false;
 
-                    if (is_object($doc->{$target}) && get_class($doc->{$target}) === \SailCMS\Collection::class) {
-                        $targetList = $doc->{$target}->unwrap();
+                    if (is_object($doc->{$field}) && get_class($doc->{$field}) === \SailCMS\Collection::class) {
+                        $targetList = $doc->{$field}->unwrap();
                         $is_array = true;
-                    } elseif (is_array($doc->{$target})) {
-                        $targetList = $doc->{$target};
+                    } elseif (is_array($doc->{$field})) {
+                        $targetList = $doc->{$field};
                         $is_array = true;
                     }
 
@@ -400,9 +400,9 @@ abstract class Model implements JsonSerializable
                             $list[] = $instance->findById($item)->exec();
                         }
 
-                        $doc->{$field} = new \SailCMS\Collection($list);
+                        $doc->{$target} = new \SailCMS\Collection($list);
                     } else {
-                        $doc->{$field} = $instance->findById($doc->{$target})->exec();
+                        $doc->{$target} = $instance->findById($doc->{$field})->exec();
                     }
                 } else {
                     // Nullify the field, most probably going to be called from GraphQL
