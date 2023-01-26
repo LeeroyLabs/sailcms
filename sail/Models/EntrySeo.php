@@ -133,7 +133,6 @@ class EntrySeo extends Model // implements Castable
 
             $entrySeo = $this->createWithoutPermission($entryId, $title, $description, $keywords, $robots, $sitemap, $default_image, $social_metas);
         } else {
-            print_r('update' . PHP_EOL);
             $data->pushKeyValue('title', $title);
             $updated = $this->updateWithoutPermission($entrySeo->_id, $data);
 
@@ -246,16 +245,15 @@ class EntrySeo extends Model // implements Castable
                 $update[$key] = $value;
             }
         });
-        print_r($entrySeoId);
 
         try {
-            $qtyUpdated = $this->updateOne(['_id' => $entrySeoId], [
+            $qtyUpdated = $this->updateOne(['_id' => $this->ensureObjectId($entrySeoId)], [
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
-        print_r($qtyUpdated);
+
         return $qtyUpdated === 1;
     }
 }

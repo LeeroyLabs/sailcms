@@ -366,7 +366,7 @@ class Entries
 
     public function updateEntrySeo(mixed $obj, Collection $args, Context $context): bool
     {
-        $entryId = $args->get('id');
+        $entryId = $args->get('entry_id');
         $title = $args->get('title');
 
         $entrySeoModel = new EntrySeo();

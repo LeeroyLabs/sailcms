@@ -1329,6 +1329,7 @@ class Entry extends Model implements Validator
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
 
+        // Return no errors
         return Collection::init();
     }
 

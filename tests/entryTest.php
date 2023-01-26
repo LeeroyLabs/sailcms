@@ -190,32 +190,32 @@ test('Create an entry with the default type', function () {
 
 test('Access to default SEO data', function () {
     $entry = (new Entry())->one(['title' => 'Home']);
-    print_r('allo' . PHP_EOL);
+
     $seo = $entry->getSEO();
 
     expect($seo->title)->toBe($entry->title)->and($seo->entry_seo_id)->not->toBeNull();
 });
 
-//test('Update seo data for an entry', function () {
-//    $entry = (new Entry())->one(['title' => 'Home']);
-//
-//    $entrySeoModel = new EntrySeo();
-//
-//    try {
-//        $entrySeoModel->createOrUpdate($entry->_id, "New Title", new Collection([
-//            'description' => "This is a really good description for a page",
-//            'keywords' => "Good, CMS"
-//        ]));
-//        $entrySeo = $entry->getSEO(true);
-//        print_r('yp' . PHP_EOL);
-//        expect($entrySeo->get('title'))->toBe("New Title")
-//            ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
-//            ->and($entrySeo->get('keywords'))->toBe("Good, CMS");
-//    } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        expect(true)->toBe(false);
-//    }
-//});
+test('Update seo data for an entry', function () {
+    $entry = (new Entry())->one(['title' => 'Home']);
+
+    $entrySeoModel = new EntrySeo();
+
+    try {
+        $entrySeoModel->createOrUpdate($entry->_id, "New Title", new Collection([
+            'description' => "This is a really good description for a page",
+            'keywords' => "Good, CMS"
+        ]));
+        $entrySeo = $entry->getSEO(true);
+
+        expect($entrySeo->get('title'))->toBe("New Title")
+            ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
+            ->and($entrySeo->get('keywords'))->toBe("Good, CMS");
+    } catch (Exception $exception) {
+        print_r($exception->getMessage());
+        expect(true)->toBe(false);
+    }
+});
 
 test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
