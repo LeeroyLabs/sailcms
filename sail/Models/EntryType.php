@@ -102,7 +102,7 @@ class EntryType extends Model implements Validator
      * @return array
      *
      */
-    public function toGraphQL(): array
+    public function simplify(): array
     {
         return [
             '_id' => $this->_id,

@@ -21,38 +21,59 @@ use SailCMS\Types\SocialMeta;
  * @property bool $robots = false
  * @property bool $sitemap = true
  * @property string $default_image
- * @property SocialMeta[] $social_metas
+ * @property Collection|array $social_metas
  *
  */
-class EntrySeo extends Model
+class EntrySeo extends Model implements Castable
 {
     protected string $collection = 'entry_seo';
     protected string $permissionGroup = 'entryseo';
     protected array $casting = [
-
+        'social_metas' => self::class
     ];
 
     public const DATABASE_ERROR = '5100: Exception when "%s" an entry seo.';
     public const DOES_NOT_EXISTS = '5101: Entry SEO with entry id "%s" does not exist.';
 
-//    public function castFrom(): mixed
-//    {
-//        // TODO: Implement castFrom() method.
-//    }
-//
-//    public function castTo(mixed $value): mixed
-//    {
-//        // TODO: Implement castTo() method.
-//    }
-
-    public function toGraphQL(): array
+    public function castFrom(): array
     {
-        // TODO add social data
+        if (is_array($this->social_metas)) {
+            $this->social_metas = new Collection($this->social_metas);
+        }
+
+        $castedSocialMetas = [];
+        $this->social_metas->each(function ($key, $socialMeta) use (&$castedSocialMetas) {
+            if ($socialMeta instanceof SocialMeta) {
+                $castedSocialMetas[] = $socialMeta->castFrom();
+            } // Else it's not a SocialMeta object, so we ignore it
+        });
+        return $castedSocialMetas;
+    }
+
+    public function castTo(mixed $value): Collection
+    {
+        $socialMetas = new Collection();
+        foreach ($value as $socialMeta) {
+            if ($socialMeta instanceof SocialMeta) {
+                $socialMetas->push($socialMeta->castTo($socialMeta));
+            }
+        }
+        return $socialMetas;
+    }
+
+    public function simplify(bool $all = false): array
+    {
+        $socialMetas = $all ? $this->castFrom() : $this->social_metas;
+
         return [
-            'entry_seo_id' => $this->_id, // TODO is it useful ?
+            'entry_seo_id' => $this->_id,
             'title' => $this->title,
             'description' => $this->description,
             'keywords' => $this->keywords,
+            'robots' => $this->robots,
+            'sitemap' => $this->sitemap,
+            'default_image' => $this->default_image,
+            'social_metas' => $socialMetas
         ];
     }
 
@@ -133,7 +154,7 @@ class EntrySeo extends Model
             $robots = $data->get('robots');
             $sitemap = $data->get('sitemap');
             $default_image = $data->get('default_image');
-            $social_metas = $data->get('social_metas', []);
+            $social_metas = $data->get('social_metas', Collection::init());
 
             $entrySeo = $this->createWithoutPermission($entryId, $title, $description, $keywords, $robots, $sitemap, $default_image, $social_metas);
         } else {
@@ -195,21 +216,21 @@ class EntrySeo extends Model
      * @param ?bool $robots
      * @param ?bool $sitemap
      * @param ?string $defaultImage
-     * @param ?array $socialMetas
+     * @param Collection|null $socialMetas
      * @return EntrySeo
      * @throws DatabaseException
      * @throws EntryException
      *
      */
     private function createWithoutPermission(
-        string      $entryId,
-        string      $title,
-        string|null $description = "",
-        string|null $keywords = "",
-        bool|null   $robots = false,
-        bool|null   $sitemap = true,
-        string|null $defaultImage = "",
-        array|null  $socialMetas = []): EntrySeo
+        string          $entryId,
+        string          $title,
+        string|null     $description = "",
+        string|null     $keywords = "",
+        bool|null       $robots = false,
+        bool|null       $sitemap = true,
+        string|null     $defaultImage = "",
+        Collection|null $socialMetas = null): EntrySeo
     {
         try {
             $entrySeoId = $this->insert([
@@ -220,7 +241,7 @@ class EntrySeo extends Model
                 'robots' => $robots,
                 'sitemap' => $sitemap,
                 'default_image' => $defaultImage,
-                'social_metas' => $this->castSocialMetas($socialMetas)
+                'social_metas' => $socialMetas ?? Collection::init()
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -243,10 +264,6 @@ class EntrySeo extends Model
     {
         $update = [];
 
-        if ($data->get('social_metas')) {
-            $update['social_metas'] = $this->castSocialMetas($data->get('social_metas'));
-        }
-
         // Property check
         $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['title', 'description', 'keywords', 'robots', 'sitemap', 'default_image', 'social_metas'])) {
@@ -263,20 +280,5 @@ class EntrySeo extends Model
         }
 
         return $qtyUpdated === 1;
-    }
-
-    private function castSocialMetas(array|Collection $socialMetas): array {
-        if (is_array($socialMetas)) {
-            $socialMetas = new Collection($socialMetas);
-        }
-
-        $castedSocialMetas = [];
-        $socialMetas->each(function($key, $socialMeta) use (&$castedSocialMetas) {
-            if ($socialMeta instanceof SocialMeta) {
-                $castedSocialMetas[] = $socialMeta->castFrom();
-            } // Else it's an invalid value so we ignore it
-        });
-
-        return $castedSocialMetas;
     }
 }

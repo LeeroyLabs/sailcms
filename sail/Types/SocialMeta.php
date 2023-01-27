@@ -18,6 +18,12 @@ class SocialMeta implements Castable
 
     public function __construct(object $object = null)
     {
+        // Default values to avoid initialization errors
+        $this->handle = "";
+        $this->title = "";
+        $this->description = "";
+        $this->image = "";
+
         if (!$object) {
             return;
         }
@@ -38,7 +44,7 @@ class SocialMeta implements Castable
         $this->customMeta = $customMeta;
     }
 
-    public function __get(string $name):mixed
+    public function __get(string $name): mixed
     {
         if (in_array($name, $this->defaultProperty)) {
             return $this->{$name} ?? null;

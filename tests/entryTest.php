@@ -12,6 +12,7 @@ use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\SocialMeta;
 use SailCMS\Types\Username;
 
 beforeAll(function () {
@@ -80,10 +81,10 @@ test('Update the config of an entry layout', function () {
         $updatedEntryLayout = $model->one([
             '_id' => $entryLayout->_id
         ]);
-        expect($result)->toBe(true);
-        expect($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255);
-        expect($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10);
-        expect($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
+        expect($result)->toBe(true)
+            ->and($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255)
+            ->and($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10)
+            ->and($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
@@ -102,8 +103,8 @@ test('Update a key of a entry layout schema', function () {
         $entryLayout = $model->one([
             'titles.fr' => 'Test de disposition'
         ]);
-        expect($entryLayout->schema->get('title'))->toBe(null);
-        expect($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
+        expect($entryLayout->schema->get('title'))->toBe(null)
+            ->and($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
@@ -149,7 +150,6 @@ test('Fail to create an entry type because the handle use a reserved word', func
         $id = $model->create('entry', 'Entry', $url_prefix, null, false);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
-        expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(sprintf(EntryType::HANDLE_USE_RESERVED_WORD, 'entry'));
     }
 });
@@ -175,15 +175,11 @@ test('Create an entry with the default type', function () {
         $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home');
 
         expect($entry->title)->toBe('Home')
-            ->and($entry->status)
-            ->toBe(EntryStatus::LIVE->value)
-            ->and($entry->locale)
-            ->toBe('fr')
-            ->and($entry->slug)
-            ->toBe(Text::slugify($entry->title, "fr"));
+            ->and($entry->status)->toBe(EntryStatus::LIVE->value)
+            ->and($entry->locale)->toBe('fr')
+            ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
-//        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
 });
@@ -201,16 +197,35 @@ test('Update seo data for an entry', function () {
 
     $entrySeoModel = new EntrySeo();
 
+    $socialMetas = Collection::init();
+    $socialMetas->push(new SocialMeta((object)[
+        'handle' => 'facebook',
+        'type' => 'article',
+        'app_id' => 'fake-id-0123456'
+    ]));
+    $socialMetas->push(new SocialMeta((object)[
+        'handle' => 'twitter',
+        'card' => 'summary',
+        'image' => 'fake/path',
+        'image:alt' => 'Fake image',
+    ]));
+
     try {
         $entrySeoModel->createOrUpdate($entry->_id, "New Title", new Collection([
             'description' => "This is a really good description for a page",
-            'keywords' => "Good, CMS"
+            'keywords' => "Good, CMS",
+            'social_metas' => $socialMetas
         ]));
         $entrySeo = $entry->getSEO(true);
 
         expect($entrySeo->get('title'))->toBe("New Title")
             ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
-            ->and($entrySeo->get('keywords'))->toBe("Good, CMS");
+            ->and($entrySeo->get('keywords'))->toBe("Good, CMS")
+            ->and($entrySeo->get('social_metas.0.handle'))->toBe('facebook')
+            ->and($entrySeo->get('social_metas.0.app_id'))->toBe('fake-id-0123456')
+            ->and($entrySeo->get('social_metas.1.handle'))->toBe('twitter')
+            ->and($entrySeo->get('social_metas.1.image:alt'))->toBe('Fake image');
+
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -250,8 +265,8 @@ test('Update an entry type', function () {
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
-        expect($entryType->title)->toBe('Test Pages');
-        expect($entryType->url_prefix->en)->toBe('test-pages');
+        expect($entryType->title)->toBe('Test Pages')
+            ->and($entryType->url_prefix->en)->toBe('test-pages');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -278,9 +293,9 @@ test('Update an entry with an entry type', function () {
         $entry = $entryModel->one([
             'title' => 'Test'
         ]);
-        expect($result->length)->toBe(0);
-        expect($entry)->not->toBe(null);
-        expect($entry->slug)->toBe('test-de-test');
+        expect($result->length)->toBe(0)
+            ->and($entry)->not->toBe(null)
+            ->and($entry->slug)->toBe('test-de-test');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -302,10 +317,10 @@ test('Create an entry with an entry type with an existing url', function () {
                 'sub title' => "Textfield content"
             ]
         ]);
-        expect($entry->title)->toBe('Test 2');
-        expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
-        expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('pages-de-test/test-de-test-2');
+        expect($entry->title)->toBe('Test 2')
+            ->and($entry->status)->toBe(EntryStatus::INACTIVE->value)
+            ->and($entry->locale)->toBe('fr')
+            ->and($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -366,8 +381,8 @@ test('Update an entry with the default type', function () {
         $entry = $model->one([
             'title' => 'Home page'
         ]);
-        expect($result->length)->toBe(0);
-        expect($entry)->not->toBe(null);
+        expect($result->length)->toBe(0)
+            ->and($entry)->not->toBe(null);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         //print_r($exception->getTraceAsString());
@@ -392,7 +407,6 @@ test('Fail to update an entry to trash', function () {
         ]);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
-        expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
 });
@@ -418,7 +432,6 @@ test('Failed to delete an entry type with related entries in it', function () {
         expect($result)->toBe(false);
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::CANNOT_DELETE);
-        expect(true)->toBe(true);
     }
 });
 
@@ -433,8 +446,8 @@ test('Soft Delete an entry with the default type', function () {
         $entry = $model->one([
             'title' => 'Home page'
         ]);
-        expect($result)->toBe(true);
-        expect($entry->status)->toBe(EntryStatus::TRASH->value);
+        expect($result)->toBe(true)
+            ->and($entry->status)->toBe(EntryStatus::TRASH->value);
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }
@@ -447,10 +460,10 @@ test('Get all entries with ignoring trash and not', function () {
         $ignoredTrash = $model->all();
         $notIgnoreTrash = $model->all(false);
 
-        expect($ignoredTrash->length)->toBe(1);
-        expect($notIgnoreTrash->length)->toBe(0);
+        expect($ignoredTrash->length)->toBe(1)
+            ->and($notIgnoreTrash->length)->toBe(0);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -513,7 +526,6 @@ test('Fail to delete an entry layout because it is used', function () {
         $result = $model->delete($entryLayout->_id);
         expect($result)->toBe(false);
     } catch (Exception $exception) {
-        expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(EntryLayout::SCHEMA_IS_USED);
     }
 });
@@ -526,7 +538,7 @@ test('Delete an entry type', function () {
         $result = $model->hardDelete($entryType->_id);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
     $entryType = $model->getByHandle('test');
@@ -544,8 +556,8 @@ test('Soft delete an entry layout', function () {
         $deletedEntryLayout = $model->one([
             'titles.fr' => 'Test de disposition'
         ]);
-        expect($result)->toBe(true);
-        expect($deletedEntryLayout->is_trashed)->toBe(true);
+        expect($result)->toBe(true)
+            ->and($deletedEntryLayout->is_trashed)->toBe(true);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -561,7 +573,6 @@ test('Hard delete an entry layout', function () {
         $result = $model->delete($entryLayout->_id, false);
         expect($result)->toBe(true);
     } catch (Exception $exception) {
-        echo $exception->getMessage();
         expect(true)->toBe(false);
     }
 });

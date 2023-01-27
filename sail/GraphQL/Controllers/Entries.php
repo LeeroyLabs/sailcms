@@ -67,7 +67,10 @@ class Entries
 
         $parsedResult = Collection::init();
         $result->each(function ($key, &$entryType) use ($parsedResult) {
-            $parsedResult->push($entryType->toGraphQL());
+            /**
+             * @var EntryType $entryType
+             */
+            $parsedResult->push($entryType->simplify());
         });
 
         return $parsedResult;
@@ -106,7 +109,7 @@ class Entries
             throw new EntryException(sprintf(EntryType::DOES_NOT_EXISTS, $msg));
         }
 
-        return $result->toGraphQL();
+        return $result->simplify();
     }
 
     /**
@@ -138,7 +141,7 @@ class Entries
             $result->entry_layout_id = "";
         }
 
-        return $result->toGraphQL();
+        return $result->simplify();
     }
 
     /**
@@ -231,7 +234,7 @@ class Entries
              * @var Entry $entry
              */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $entry->toGraphQL($homepage);
+            $entryArray = $entry->simplify($homepage);
             $data->push($entryArray);
         });
 
@@ -266,7 +269,7 @@ class Entries
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
 
-        return $entry->toGraphQL($homepage);
+        return $entry->simplify($homepage);
     }
 
     /**
@@ -318,7 +321,7 @@ class Entries
             'errors' => []
         ];
         if ($entryOrErrors instanceof Entry) {
-            $result['entry'] = $entryOrErrors->toGraphQL($homepage);
+            $result['entry'] = $entryOrErrors->simplify($homepage);
         } else {
             $result['errors'] = $entryOrErrors;
         }
@@ -430,7 +433,7 @@ class Entries
             '_id' => $entryLayoutId
         ]);
 
-        return $entryLayout?->toGraphQL();
+        return $entryLayout?->simplify();
     }
 
     /**
@@ -455,7 +458,7 @@ class Entries
             /**
              * @var EntryLayout $entryLayout
              */
-            $entryLayouts->push($entryLayout->toGraphQL());
+            $entryLayouts->push($entryLayout->simplify());
         });
 
         return $entryLayouts->unwrap();
@@ -489,7 +492,7 @@ class Entries
         $entryLayoutModel = new EntryLayout();
         $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
 
-        return $entryLayout->toGraphQL();
+        return $entryLayout->simplify();
     }
 
     /**

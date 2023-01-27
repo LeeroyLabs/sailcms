@@ -246,7 +246,7 @@ class Entry extends Model implements Validator
         $seo->pushKeyValue('url', $this->url);
         $seo->pushKeyValue('alternates', $this->alternates);
 
-        $seo->pushSpreadKeyValue(...$this->entrySeo->toGraphQL());
+        $seo->pushSpreadKeyValue(...$this->entrySeo->simplify());
 
         return $seo;
     }
@@ -264,14 +264,14 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function toGraphQL(object|null $currentHomepageEntry, bool $wantSchema = true): array
+    public function simplify(object|null $currentHomepageEntry, bool $wantSchema = true): array
     {
         $schema = Collection::init();
         if ($wantSchema) {
             $entryLayout = $this->getEntryLayout();
 
             if ($entryLayout) {
-                $schema = $entryLayout->processSchemaToGraphQL();
+                $schema = $entryLayout->simplifySchema();
             }
         }
 
@@ -379,7 +379,7 @@ class Entry extends Model implements Validator
      *
      * @param string $siteId
      * @param string $locale
-     * @param bool $toGraphQL
+     * @param bool $simplify
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -390,21 +390,21 @@ class Entry extends Model implements Validator
      * @throws SodiumException
      *
      */
-    public static function getHomepageEntry(string $siteId, string $locale, bool $toGraphQL = false): array|Entry|null
+    public static function getHomepageEntry(string $siteId, string $locale, bool $simplify = false): array|Entry|null
     {
         $currentHomepageEntry = self::getHomepage($siteId, $locale);
         if (!$currentHomepageEntry || !isset($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY})) {
             return null;
         }
 
-        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY}, $toGraphQL);
+        $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY}, $simplify);
 
         $cacheHandle = self::HOMEPAGE_CACHE . $siteId . "_" . $locale;
         $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
         $entry = $entryModel->findById($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY})->exec($cacheHandle, $cacheTtl);
 
-        if ($toGraphQL) {
-            return $entry->toGraphQL($currentHomepageEntry);
+        if ($simplify) {
+            return $entry->simplify($currentHomepageEntry);
         }
 
         return $entry;
