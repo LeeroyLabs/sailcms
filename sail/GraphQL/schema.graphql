@@ -79,7 +79,7 @@ type Mutation {
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String): Boolean
+    updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: SocialMetaInput): Boolean
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
@@ -270,11 +270,8 @@ type EntrySeo {
 }
 
 type SocialMeta {
-    handle: String
-    title: String
-    description: String
-    image: String
-    metas: Json
+    name: String!
+    content: String
 }
 
 type LayoutField {
@@ -307,12 +304,9 @@ type ModelFieldContent {
     type: Json!
 }
 
-type SocialMetasInput {
-    handle: String!
-    title: String
-    description: String
-    image: String
-    metas: Json
+input SocialMetaInput {
+    name: String!
+    content: String
 }
 
 input FieldConfigsInput {
