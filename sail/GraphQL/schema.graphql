@@ -266,6 +266,15 @@ type EntrySeo {
     robots: Boolean
     sitemap: Boolean
     default_image: String
+    social_metas: [SocialMeta]!
+}
+
+type SocialMeta {
+    handle: String
+    title: String
+    description: String
+    image: String
+    metas: Json
 }
 
 type LayoutField {
@@ -296,6 +305,14 @@ type ModelFieldContent {
     content: Json
     handle: String!
     type: Json!
+}
+
+type SocialMetasInput {
+    handle: String!
+    title: String
+    description: String
+    image: String
+    metas: Json
 }
 
 input FieldConfigsInput {
