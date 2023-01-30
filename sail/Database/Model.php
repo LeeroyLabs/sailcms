@@ -307,6 +307,7 @@ abstract class Model implements JsonSerializable
                     $instance = new $populate['class']();
                     $field = $populate['field'];
                     $target = $populate['targetField'];
+                    $subpop = $populate['subpopulates'];
 
                     $list = [];
                     $targetList = [];
@@ -322,12 +323,28 @@ abstract class Model implements JsonSerializable
 
                     if ($is_array) {
                         foreach ($targetList as $item) {
-                            $list[] = $instance->findById($item)->exec();
+                            $obj = $instance->findById($item);
+
+                            if (count($subpop) > 0) {
+                                foreach ($subpop as $pop) {
+                                    $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                                }
+                            }
+
+                            $list[] = $obj->exec();
                         }
 
                         $doc->{$target} = new \SailCMS\Collection($list);
                     } else {
-                        $doc->{$target} = $instance->findById($doc->{$field})->exec();
+                        $obj = $instance->findById($doc->{$field});
+
+                        if (count($subpop) > 0) {
+                            foreach ($subpop as $pop) {
+                                $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                            }
+                        }
+
+                        $doc->{$target} = $obj->exec();
                     }
                 }
 
@@ -380,6 +397,7 @@ abstract class Model implements JsonSerializable
                 $instance = new $populate['class']();
                 $field = $populate['field'];
                 $target = $populate['targetField'];
+                $subpop = $populate['subpopulates'];
 
                 // Make sure to run only if field is not null and not empty string
                 if ($doc->{$field} !== null && $doc->{$field} !== '') {
@@ -397,12 +415,28 @@ abstract class Model implements JsonSerializable
 
                     if ($is_array) {
                         foreach ($targetList as $item) {
-                            $list[] = $instance->findById($item)->exec();
+                            $obj = $instance->findById($item);
+
+                            if (count($subpop) > 1) {
+                                foreach ($subpop as $pop) {
+                                    $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                                }
+                            }
+
+                            $list[] = $obj->exec();
                         }
 
                         $doc->{$target} = new \SailCMS\Collection($list);
                     } else {
-                        $doc->{$target} = $instance->findById($doc->{$field})->exec();
+                        $obj = $instance->findById($doc->{$field});
+
+                        if (count($subpop) > 1) {
+                            foreach ($subpop as $pop) {
+                                $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                            }
+                        }
+
+                        $doc->{$target} = $obj->exec();
                     }
                 } else {
                     // Nullify the field, most probably going to be called from GraphQL
@@ -428,21 +462,23 @@ abstract class Model implements JsonSerializable
 
     /**
      *
-     * Auto-populate a field when it is fetched from the database
+     * Automatically populate a field when it is fetched from the database
      * (must be an ObjectId or a string representation)
      *
      * @param  string  $field
      * @param  string  $target
      * @param  string  $model
+     * @param  array   $subpopulate
      * @return $this
      *
      */
-    protected function populate(string $field, string $target, string $model): Model
+    protected function populate(string $field, string $target, string $model, array $subpopulate = []): Model
     {
         $this->currentPopulation[] = [
             'field' => $field,
             'targetField' => $target,
-            'class' => $model
+            'class' => $model,
+            'subpopulates' => $subpopulate
         ];
 
         return $this;
