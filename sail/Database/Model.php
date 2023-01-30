@@ -1037,9 +1037,31 @@ abstract class Model implements JsonSerializable
                         break;
 
                     case BSONArray::class:
-                        if ($cast === \SailCMS\Collection::class) {
+                        // If an array and we are casting into Collection<Type>
+                        if (is_array($cast)) {
+                            if ($cast[0] === \SailCMS\Collection::class) {
+                                $list = [];
+
+                                foreach ($v->bsonSerialize() as $_value) {
+                                    $casted = new $cast[1]();
+                                    $list[] = $casted->castTo($_value);
+                                }
+
+                                $castInstance = new $cast[0]($list);
+                                $instance->{$k} = $castInstance;
+                            }
+                        } elseif ($cast === \SailCMS\Collection::class) {
                             $castInstance = new $cast();
                             $instance->{$k} = $castInstance->castTo($v->bsonSerialize());
+                        } elseif ($cast !== '') {
+                            $list = [];
+
+                            foreach ($v->bsonSerialize() as $_value) {
+                                $castInstance = new $cast();
+                                $list[] = $castInstance->castTo($_value);
+                            }
+
+                            $instance->{$k} = $list;
                         } else {
                             $instance->{$k} = $v->bsonSerialize();
                         }
