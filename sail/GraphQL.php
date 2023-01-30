@@ -43,9 +43,9 @@ final class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -68,9 +68,9 @@ final class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -93,9 +93,9 @@ final class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param string $type
-     * @param string $className
-     * @param string $method
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -118,7 +118,7 @@ final class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -131,7 +131,7 @@ final class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -144,7 +144,7 @@ final class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -165,7 +165,9 @@ final class GraphQL
      */
     public static function init(): mixed
     {
-        self::initSystem();
+        if (!setting('graphql.hideCMS', false)) {
+            self::initSystem();
+        }
 
         try {
             $pathAST = 'cache://graphql.ast';
@@ -195,28 +197,45 @@ final class GraphQL
                     $localeString .= "{$locale}: String\n";
                 }
 
-                $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
-                $schemaContent = str_replace(
-                    [
-                        '#{CUSTOM_QUERIES}#',
-                        '#{CUSTOM_MUTATIONS}#',
-                        '#{CUSTOM_TYPES}#',
-                        '#{CUSTOM_FLAGS}#',
-                        '#{CUSTOM_META}#',
-                        '#{CUSTOM_META_INPUT}#',
-                        '#{LOCALE_FIELDS}#'
-                    ],
-                    [
-                        implode("\n", $queries),
-                        implode("\n", $mutations),
-                        implode("\n", $types),
-                        UserMeta::getAvailableFlags(),
-                        UserMeta::getAvailableMeta(),
-                        UserMeta::getAvailableMeta(true),
-                        $localeString
-                    ],
-                    $schemaContent
-                );
+                if (!setting('graphql.hideCMS', false)) {
+                    $schemaContent = file_get_contents(__DIR__ . '/GraphQL/schema.graphql');
+                    $schemaContent = str_replace(
+                        [
+                            '#{CUSTOM_QUERIES}#',
+                            '#{CUSTOM_MUTATIONS}#',
+                            '#{CUSTOM_TYPES}#',
+                            '#{CUSTOM_FLAGS}#',
+                            '#{CUSTOM_META}#',
+                            '#{CUSTOM_META_INPUT}#',
+                            '#{LOCALE_FIELDS}#'
+                        ],
+                        [
+                            implode("\n", $queries),
+                            implode("\n", $mutations),
+                            implode("\n", $types),
+                            UserMeta::getAvailableFlags(),
+                            UserMeta::getAvailableMeta(),
+                            UserMeta::getAvailableMeta(true),
+                            $localeString
+                        ],
+                        $schemaContent
+                    );
+                } else {
+                    $schemaContent = file_get_contents(__DIR__ . '/GraphQL/empty_schema.graphql');
+                    $schemaContent = str_replace(
+                        [
+                            '#{CUSTOM_QUERIES}#',
+                            '#{CUSTOM_MUTATIONS}#',
+                            '#{CUSTOM_TYPES}#'
+                        ],
+                        [
+                            implode("\n", $queries),
+                            implode("\n", $mutations),
+                            implode("\n", $types),
+                        ],
+                        $schemaContent
+                    );
+                }
 
                 // Parse schema
                 $document = Parser::parse($schemaContent);
@@ -383,9 +402,9 @@ final class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param array $args
+     * @param  array        $args
      * @param               $contextValue
-     * @param ResolveInfo $info
+     * @param  ResolveInfo  $info
      * @return ArrayAccess|mixed
      *
      */
