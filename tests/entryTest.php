@@ -60,7 +60,7 @@ test('Create an entry layout', function () {
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
 test('Update the config of an entry layout', function () {
     $model = new EntryLayout();
@@ -90,7 +90,7 @@ test('Update the config of an entry layout', function () {
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
 test('Update a key of a entry layout schema', function () {
     $model = new EntryLayout();
@@ -110,7 +110,7 @@ test('Update a key of a entry layout schema', function () {
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
 test('Failed to update a key of a entry layout schema', function () {
     $model = new EntryLayout();
@@ -126,7 +126,7 @@ test('Failed to update a key of a entry layout schema', function () {
 //        print_r($exception->getTraceAsString());
         expect($exception->getMessage())->toBe('6005: The given key "title" does not exists in the schema.');
     }
-});
+})->group('entry-layout');
 
 test('Create an entry type', function () {
     $model = new EntryType();
@@ -139,7 +139,7 @@ test('Create an entry type', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-type');
 
 test('Fail to create an entry type because the handle use a reserved word', function () {
     $model = new EntryType();
@@ -152,7 +152,7 @@ test('Fail to create an entry type because the handle use a reserved word', func
     } catch (Exception $exception) {
         expect($exception->getMessage())->toBe(sprintf(EntryType::HANDLE_USE_RESERVED_WORD, 'entry'));
     }
-});
+})->group('entry-type');
 
 test('Failed to create an entry type because the handle is already in use', function () {
     $model = new EntryType();
@@ -166,7 +166,7 @@ test('Failed to create an entry type because the handle is already in use', func
     } catch (Exception $otherException) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-type');
 
 test('Create an entry with the default type', function () {
     $model = new Entry();
@@ -182,7 +182,7 @@ test('Create an entry with the default type', function () {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Access to default SEO data', function () {
     $entry = (new Entry())->one(['title' => 'Home']);
@@ -217,7 +217,7 @@ test('Update seo data for an entry', function () {
             'social_metas' => $socialMetas
         ]));
         $entrySeo = $entry->getSEO(true);
-        
+
         expect($entrySeo->get('title'))->toBe("New Title")
             ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
             ->and($entrySeo->get('keywords'))->toBe("Good, CMS")
@@ -230,7 +230,7 @@ test('Update seo data for an entry', function () {
         print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-seo');
 
 test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -245,7 +245,7 @@ test('Create an entry with an entry type', function () {
         //print_r($exception);
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Update an entry type', function () {
     $model = new EntryType();
@@ -270,13 +270,13 @@ test('Update an entry type', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
 test('Get homepage entry', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry->title)->toBe('Test');
-});
+})->group('entry');
 
 test('Update an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -300,13 +300,13 @@ test('Update an entry with an entry type', function () {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Fail to get homepage entry', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
-});
+})->group('entry');
 
 test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -325,7 +325,7 @@ test('Create an entry with an entry type with an existing url', function () {
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Fail to create an entry that is trashed', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -337,7 +337,7 @@ test('Fail to create an entry that is trashed', function () {
         expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
-});
+})->group('entry');
 
 test('Get a validated slug for an existing slug', function () {
     $newSlug = Entry::getValidatedSlug(new LocaleField([
@@ -346,7 +346,7 @@ test('Get a validated slug for an existing slug', function () {
     ]), 'test-de-test', Sail::siteId(), 'fr');
 
     expect($newSlug)->toBe('test-de-test-3');
-});
+})->group('entry');
 
 test('Failed to update content because a field does not validate', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -364,7 +364,7 @@ test('Failed to update content because a field does not validate', function () {
 //        print_r($exception->getMessage());
         expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
     }
-});
+})->group('entry');
 
 test('Update an entry with the default type', function () {
     $model = new Entry();
@@ -388,12 +388,12 @@ test('Update an entry with the default type', function () {
         //print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Get homepage entry after update', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
     expect($entry->title)->toBe('Home page');
-});
+})->group('entry');
 
 test('Fail to update an entry to trash', function () {
     $model = new Entry();
@@ -409,19 +409,19 @@ test('Fail to update an entry to trash', function () {
     } catch (Exception $exception) {
         expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
-});
+})->group('entry');
 
 test('Find the entry by url', function () {
     $entry = Entry::findByURL('pages-de-test/test-de-test', false);
 
     expect($entry->title)->toBe('Test');
-});
+})->group('entry');
 
 test('Failed to find the entry by url', function () {
     $entry = Entry::findByURL('pages-de-test/test-de-test-2', false);
 
     expect($entry)->toBe(null);
-});
+})->group('entry');
 
 test('Failed to delete an entry type with related entries in it', function () {
     $model = new EntryType();
@@ -433,7 +433,7 @@ test('Failed to delete an entry type with related entries in it', function () {
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::CANNOT_DELETE);
     }
-});
+})->group('entry-type');
 
 test('Soft Delete an entry with the default type', function () {
     $model = new Entry();
@@ -451,7 +451,7 @@ test('Soft Delete an entry with the default type', function () {
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-type');
 
 test('Get all entries with ignoring trash and not', function () {
     $model = new Entry();
@@ -466,7 +466,7 @@ test('Get all entries with ignoring trash and not', function () {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Hard delete an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -481,7 +481,7 @@ test('Hard delete an entry with an entry type', function () {
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Hard delete an entry with an entry type 2', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
@@ -496,7 +496,7 @@ test('Hard delete an entry with an entry type 2', function () {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
 test('Hard Delete an entry with the default type', function () {
     $model = new Entry();
@@ -514,7 +514,7 @@ test('Hard Delete an entry with the default type', function () {
     // Check if seo has been deleted
     $entrySeo = (new EntrySeo())->getByEntryId($entry->_id, false);
     expect($entrySeo)->toBeNull();
-});
+})->group('entry');
 
 test('Fail to delete an entry layout because it is used', function () {
     $model = new EntryLayout();
@@ -528,7 +528,7 @@ test('Fail to delete an entry layout because it is used', function () {
     } catch (Exception $exception) {
         expect($exception->getMessage())->toBe(EntryLayout::SCHEMA_IS_USED);
     }
-});
+})->group('entry-layout');
 
 test('Delete an entry type', function () {
     $model = new EntryType();
@@ -543,7 +543,7 @@ test('Delete an entry type', function () {
     }
     $entryType = $model->getByHandle('test');
     expect($entryType)->toBe(null);
-});
+})->group('entry-type');
 
 test('Soft delete an entry layout', function () {
     $model = new EntryLayout();
@@ -561,7 +561,7 @@ test('Soft delete an entry layout', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
 test('Hard delete an entry layout', function () {
     $model = new EntryLayout();
@@ -575,10 +575,10 @@ test('Hard delete an entry layout', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
 test('Fail to get homepage entry after deletion', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
-});
+})->group('entry');
