@@ -41,7 +41,7 @@ final class Register
         if (!isset(self::$containers)) {
             self::$containers = Collection::init();
         }
-        
+
         self::$containers->push((object)[
             'name' => $info->name,
             'info' => $info,

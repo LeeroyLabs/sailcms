@@ -52,7 +52,8 @@ return [
         'graphql' => [
             'active' => true,
             'trigger' => 'graphql',
-            'depthLimit' => 5
+            'depthLimit' => 5,
+            'hideCMS' => false
         ],
         'cors' => [
             'use' => true,
@@ -175,7 +176,8 @@ return [
         'graphql' => [
             'active' => true,
             'trigger' => 'graphql',
-            'depthLimit' => 5
+            'depthLimit' => 5,
+            'hideCMS' => false
         ],
         'session' => [
             'mode' => 'standard' // or stateless (JWT)
@@ -279,7 +281,8 @@ return [
         'graphql' => [
             'active' => true,
             'trigger' => 'graphql',
-            'depthLimit' => 5
+            'depthLimit' => 5,
+            'hideCMS' => false
         ],
         'session' => [
             'mode' => 'standard', // or stateless (JWT)

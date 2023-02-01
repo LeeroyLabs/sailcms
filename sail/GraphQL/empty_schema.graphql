@@ -1,0 +1,9 @@
+type Query {
+    #{CUSTOM_QUERIES}#
+}
+
+type Mutation {
+    #{CUSTOM_MUTATIONS}#
+}
+
+#{CUSTOM_TYPES}#

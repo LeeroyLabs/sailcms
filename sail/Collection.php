@@ -3,7 +3,6 @@
 namespace SailCMS;
 
 use JsonException;
-use MongoDB\Model\BSONArray;
 use SailCMS\Contracts\Castable;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Types\Sorting;
@@ -11,7 +10,7 @@ use SailCMS\Types\Sorting;
 /**
  * @property mixed $length
  */
-class Collection implements \JsonSerializable, \Iterator, Castable
+class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 {
     private array $_internal;
 
@@ -675,7 +674,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable
      */
     public function diff(Collection|array $collection, bool $assoc = false): self
     {
-        if ($collection instanceof Collection) {
+        if ($collection instanceof self) {
             $collection = $collection->unwrap();
         }
 
@@ -700,7 +699,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable
      */
     public function intersect(Collection|array $collection, bool $assoc = false): self
     {
-        if ($collection instanceof Collection) {
+        if ($collection instanceof self) {
             $collection = $collection->unwrap();
         }
 
@@ -726,7 +725,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable
      */
     public function merge(Collection|array $collection, bool $recursive = false): Collection
     {
-        if ($collection instanceof Collection) {
+        if ($collection instanceof self) {
             $collection = $collection->unwrap();
         }
 
@@ -849,10 +848,10 @@ class Collection implements \JsonSerializable, \Iterator, Castable
      *
      * Get the current key
      *
-     * @return mixed
+     * @return string|int|null
      *
      */
-    public function key(): mixed
+    public function key(): string|int|null
     {
         return key($this->_internal);
     }
@@ -1321,5 +1320,62 @@ class Collection implements \JsonSerializable, \Iterator, Castable
         });
 
         return max($map->unwrap());
+    }
+
+    /**
+     *
+     * Determine if an item exists at an offset
+     *
+     * @param  mixed  $offset
+     * @return bool
+     *
+     */
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->_internal[$offset]);
+    }
+
+    /**
+     *
+     * Get a value at given offset
+     *
+     * @param  mixed  $offset
+     * @return mixed
+     *
+     */
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->_internal[$offset];
+    }
+
+    /**
+     *
+     * Set the item at a given offset.
+     *
+     * @param  mixed  $offset
+     * @param  mixed  $value
+     * @return void
+     *
+     */
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        if (is_null($offset)) {
+            $this->_internal[] = $value;
+        } else {
+            $this->_internal[$offset] = $value;
+        }
+    }
+
+    /**
+     *
+     * Unset the item at a given offset
+     *
+     * @param  mixed  $offset
+     * @return void
+     *
+     */
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->_internal[$offset]);
     }
 }
