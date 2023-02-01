@@ -16,6 +16,13 @@ class SocialMeta implements Castable
 
     private array $defaultProperty = ['handle', 'title', 'description', 'image'];
 
+    /**
+     *
+     * Class to handle Social Meta
+     *
+     * @param object|null $object
+     *
+     */
     public function __construct(object $object = null)
     {
         // Default values to avoid initialization errors
@@ -44,6 +51,14 @@ class SocialMeta implements Castable
         $this->customMeta = $customMeta;
     }
 
+    /**
+     *
+     * Magic getter
+     *
+     * @param string $name
+     * @return mixed
+     *
+     */
     public function __get(string $name): mixed
     {
         if (in_array($name, $this->defaultProperty)) {
@@ -53,6 +68,15 @@ class SocialMeta implements Castable
         return $this->customMeta[$name] ?? "";
     }
 
+    /**
+     *
+     * Magic setter
+     *
+     * @param string $name
+     * @param mixed $value
+     * @return void
+     *
+     */
     public function __set(string $name, mixed $value): void
     {
         if (in_array($name, $this->defaultProperty)) {
@@ -63,6 +87,13 @@ class SocialMeta implements Castable
         $this->customMeta[$name] = $value;
     }
 
+    /**
+     *
+     * Cast from, when saving
+     *
+     * @return array
+     *
+     */
     public function castFrom(): array
     {
         return [
@@ -74,6 +105,14 @@ class SocialMeta implements Castable
         ];
     }
 
+    /**
+     *
+     * Cast to, when fetching
+     *
+     * @param mixed $value
+     * @return SocialMeta
+     *
+     */
     public function castTo(mixed $value): SocialMeta
     {
         if (is_array($value)) {
