@@ -217,7 +217,7 @@ test('Update seo data for an entry', function () {
             'social_metas' => $socialMetas
         ]));
         $entrySeo = $entry->getSEO(true);
-
+        
         expect($entrySeo->get('title'))->toBe("New Title")
             ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
             ->and($entrySeo->get('keywords'))->toBe("Good, CMS")

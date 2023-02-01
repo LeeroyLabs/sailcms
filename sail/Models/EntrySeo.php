@@ -35,6 +35,13 @@ class EntrySeo extends Model implements Castable
     public const DATABASE_ERROR = '5100: Exception when "%s" an entry seo.';
     public const DOES_NOT_EXISTS = '5101: Entry SEO with entry id "%s" does not exist.';
 
+    /**
+     *
+     * Cast from for SocialMetas collection
+     *
+     * @return array
+     *
+     */
     public function castFrom(): array
     {
         if (is_array($this->social_metas)) {
@@ -50,17 +57,28 @@ class EntrySeo extends Model implements Castable
         return $castedSocialMetas;
     }
 
-    public function castTo(mixed $value): Collection
+    /**
+     *
+     * Cast to for SocialMeta elements
+     *
+     * @param mixed $value
+     * @return SocialMeta
+     *
+     */
+    public function castTo(mixed $value): SocialMeta
     {
-        $socialMetas = new Collection();
-        foreach ($value as $socialMeta) {
-            if ($socialMeta instanceof SocialMeta) {
-                $socialMetas->push($socialMeta->castTo($socialMeta));
-            }
-        }
-        return $socialMetas;
+        $socialMetaInstance = new SocialMeta();
+        return $socialMetaInstance->castTo($value);
     }
 
+    /**
+     *
+     * Simplify data for API, dbs and more
+     *
+     * @param bool $all
+     * @return array
+     *
+     */
     public function simplify(bool $all = false): array
     {
         $socialMetas = $all ? $this->castFrom() : $this->social_metas;
