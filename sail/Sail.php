@@ -551,6 +551,19 @@ final class Sail
 
     /**
      *
+     * Force set the template directory
+     *
+     * @param  string  $path
+     * @return void
+     *
+     */
+    public static function setTemplateDirectory(string $path): void
+    {
+        self::$templateDirectory = $path;
+    }
+
+    /**
+     *
      * Get the cache directory for the site
      *
      * @return string
