@@ -22,6 +22,10 @@ return [
         ],
         'emails' => [
             'from' => 'no-reply@leeroy.ca',
+            'fromName' => [
+                'fr' => 'SailCMS',
+                'en' => 'SailCMS'
+            ],
             'sendNewAccount' => true,
             'globalContext' => [
                 // You can add your own static context variables

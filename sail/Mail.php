@@ -264,6 +264,7 @@ class Mail
             }
 
             $providedContent = new Collection([
+                'email_subject' => $template->subject->{$locale},
                 'email_title' => $template->title->{$locale},
                 'email_content' => $template->content->{$locale},
                 'cta_link' => $template->cta->{$locale},
@@ -335,7 +336,7 @@ class Mail
             $superContext->setFor('cta_title', $cta_title);
 
             return $this
-                ->from($settings->get('from'))
+                ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))
                 ->subject($template->subject->{$locale})
                 ->template($template->template, $superContext);
         }
