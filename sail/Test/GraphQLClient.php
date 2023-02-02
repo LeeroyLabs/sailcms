@@ -53,8 +53,9 @@ class GraphQLClient
 
         $json = json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 
+        // Handle SailCMS thrown Errors
         if (!isset($json->data)) {
-            return new GraphQLResponse('failed', "Error thrown", (object)$json->errors);
+            return new GraphQLResponse('failed', "SailCMS Error thrown, check data", (object)$json->errors);
         }
 
         return new GraphQLResponse('ok', '', $json->data);
