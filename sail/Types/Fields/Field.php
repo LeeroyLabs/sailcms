@@ -45,10 +45,10 @@ abstract class Field implements Castable
      *
      * Must define the available properties
      *
+     * @param array|null $options
      * @return Collection
-     *
      */
-    abstract public static function availableProperties(): Collection;
+    abstract public static function availableProperties(?array $options = null): Collection;
 
     /**
      *

@@ -18,8 +18,8 @@ use SailCMS\Models\Entry\Field as ModelField;
  * HtmlField
  * UrlField
  *
- * ChoiceField // option radio / check
- * SelectField // search...
+ * SelectField // search...                         => Errors 6180 to 6199
+ * SelectMultipleField // search...                 => Errors 6200 to 6219
  *
  * AssetField
  * EntryField                                       => Errors 6160 to 6179

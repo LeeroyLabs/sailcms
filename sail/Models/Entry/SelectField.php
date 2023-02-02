@@ -1,0 +1,62 @@
+<?php
+
+namespace SailCMS\Models\Entry;
+
+use SailCMS\Collection;
+use SailCMS\Types\Fields\InputSelectField;
+use SailCMS\Types\LocaleField;
+use SailCMS\Types\StoringType;
+
+class SelectField extends Field
+{
+    /**
+     *
+     * Override the constructor to pass a precision to the number
+     *
+     * @param LocaleField $labels
+     * @param array|Collection|null $settings
+     * @param array $options
+     */
+    public function __construct(LocaleField $labels, array|Collection|null $settings, array $options = [])
+    {
+        $settings['options'] = $options;
+        parent::__construct($labels, $settings);
+    }
+
+    public function description(): string
+    {
+        return "Field to add a select";
+    }
+
+    public function storingType(): string
+    {
+        return StoringType::ARRAY->name;
+    }
+
+    public function defaultSettings(): Collection
+    {
+        return new Collection([
+            InputSelectField::defaultSettings()
+        ]);
+    }
+
+    protected function defineBaseConfigs(): void
+    {
+        $this->baseConfigs = new Collection([
+            InputSelectField::class
+        ]);
+    }
+
+    /**
+     *
+     * Select validation
+     *
+     * @param Collection $content
+     * @return Collection|null
+     *
+     */
+    protected function validate(Collection $content): ?Collection
+    {
+        return null;
+    }
+}

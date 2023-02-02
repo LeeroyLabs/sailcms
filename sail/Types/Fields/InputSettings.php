@@ -10,6 +10,7 @@ class InputSettings implements Castable
     public const INPUT_TYPE_CHECKBOX = 'checkbox';
     public const INPUT_TYPE_NUMBER = 'number';
     public const INPUT_TYPE_REGEX = 'regex';
+    public const INPUT_TYPE_OPTION = 'option';
 
     /**
      *

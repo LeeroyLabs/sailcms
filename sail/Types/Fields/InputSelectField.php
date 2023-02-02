@@ -3,34 +3,29 @@
 namespace SailCMS\Types\Fields;
 
 use SailCMS\Collection;
+use SailCMS\Models\Entry\SelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
 
-class InputNumberField extends Field
+class InputSelectField extends Field
 {
-    /* Errors from 6141 to 6159 */
-    public const FIELD_TOO_BIG = '6141: The value is too big (%s)';
-    public const FIELD_TOO_SMALL = '6142: The value is too small (%s)';
-
+    /* Errors from 6180 to 6199 */
     /**
      *
      *
-     * Input text field from html input:number attributes
+     * Input text field from html input:select attributes
      *
-     * @param  LocaleField|null  $labels
-     * @param  bool              $required
-     * @param  float             $min
-     * @param  float             $max
-     * @param  float|int         $step
-     *
+     * @param LocaleField|null $labels
+     * @param bool $required
+     * @param bool $multiple
+     * @param array $options
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
         public readonly bool $required = false,
-        public readonly float $min = 0,
-        public readonly float $max = 0,
-        public readonly float|int $step = 1
+        public readonly bool $multiple = false,
+        public readonly array $options = []
     ) {
     }
 
@@ -45,9 +40,8 @@ class InputNumberField extends Field
     {
         return new Collection([
             'required' => false,
-            'min' => 0,
-            'max' => 0,
-            'step' => 1
+            'multiple' => false,
+            'options' => []
         ]);
     }
 
@@ -62,9 +56,8 @@ class InputNumberField extends Field
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('min', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('max', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('step', InputSettings::INPUT_TYPE_NUMBER)
+            new InputSettings('multiple', InputSettings::INPUT_TYPE_CHECKBOX),
+            new InputSettings('options', InputSettings::INPUT_TYPE_OPTION, new Collection($options))
         ]);
     }
 
@@ -77,7 +70,7 @@ class InputNumberField extends Field
      */
     public static function storingType(): string
     {
-        return StoringType::INTEGER->value . " or " . StoringType::FLOAT->value;
+        return StoringType::ARRAY->value;
     }
 
     /**
@@ -92,19 +85,9 @@ class InputNumberField extends Field
     {
         $errors = Collection::init();
 
-        $contentCasted = is_float($this->step) ? (float)$content : (integer)$content;
-
         // Since "0" is treat as false, the condition for empty is stricter
         if ($this->required && $content === "") {
             $errors->push(self::FIELD_REQUIRED);
-        }
-
-        if ($contentCasted < $this->min) {
-            $errors->push(sprintf(self::FIELD_TOO_SMALL, $this->min));
-        }
-
-        if ($this->max > 0 && $contentCasted > $this->max) {
-            $errors->push(sprintf(self::FIELD_TOO_BIG, $this->max));
         }
 
         return $errors;
@@ -123,9 +106,7 @@ class InputNumberField extends Field
             'labels' => $this->labels->castFrom(),
             'settings' => [
                 'required' => $this->required,
-                'min' => $this->min,
-                'max' => $this->max,
-                'step' => $this->step
+                'multiple' => $this->multiple
             ]
         ];
     }
@@ -143,9 +124,7 @@ class InputNumberField extends Field
         return new self(
             $value->labels,
             $value->settings->required,
-            $value->settings->min,
-            $value->settings->max,
-            $value->settings->step
+            $value->settings->multiple
         );
     }
 }
