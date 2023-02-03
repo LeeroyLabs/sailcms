@@ -213,6 +213,10 @@ final class Stateless implements AppSession
             return false;
         }
 
+        if (substr_count($cookie, '.') !== 2) {
+            return false;
+        }
+
         $_ENV['JWT'] = $cookie;
 
         $parser = new Parser(new JoseEncoder());
