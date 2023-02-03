@@ -4,6 +4,7 @@ use SailCMS\Collection;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
+use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
@@ -91,6 +92,22 @@ test('Add all fields to the layout', function () {
         ]
     ], 2);
 
+    $selectField = new SelectField(
+        new LocaleField(['en' => 'Select', 'fr' => 'Selection']),
+        [
+            [
+                'required' => true,
+                'multiple' => true,
+                'options' => new Collection([
+                    [
+                        'value' => 'test',
+                        'label' => 'Big test'
+                    ]
+                ])
+            ]
+        ],
+    );
+
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
     $fields = new Collection([
@@ -99,7 +116,8 @@ test('Add all fields to the layout', function () {
         "description" => $descriptionField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
-        "related" => $entryField
+        "related" => $entryField,
+        "select" => $selectField,
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);

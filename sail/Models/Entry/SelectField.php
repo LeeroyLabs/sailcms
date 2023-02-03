@@ -15,11 +15,9 @@ class SelectField extends Field
      *
      * @param LocaleField $labels
      * @param array|Collection|null $settings
-     * @param array $options
      */
-    public function __construct(LocaleField $labels, array|Collection|null $settings, array $options = [])
+    public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
-        $settings['options'] = $options;
         parent::__construct($labels, $settings);
     }
 
