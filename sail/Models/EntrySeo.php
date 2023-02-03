@@ -14,6 +14,8 @@ use SailCMS\Types\SocialMeta;
 
 /**
  *
+ * TODO handle default value
+ *
  * @property string $entry_id
  * @property string $title
  * @property string $description
@@ -67,7 +69,7 @@ class EntrySeo extends Model implements Castable
      */
     public function castTo(mixed $value): SocialMeta
     {
-        $socialMetaInstance = new SocialMeta();
+        $socialMetaInstance = new SocialMeta('');
         return $socialMetaInstance->castTo($value);
     }
 

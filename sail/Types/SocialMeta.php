@@ -20,27 +20,33 @@ class SocialMeta implements Castable
      *
      * Class to handle Social Meta
      *
-     * @param object|null $object
+     * @param string $handle
+     * @param object|null $content
      *
      */
-    public function __construct(object $object = null)
+    public function __construct(string $handle, object $content = null)
     {
+        $this->handle = $handle;
+
         // Default values to avoid initialization errors
-        $this->handle = "";
         $this->title = "";
         $this->description = "";
         $this->image = "";
 
-        if (!$object) {
+        if (!$content) {
             return;
         }
 
-        if ($object instanceof Collection) {
-            $object = $object->unwrap();
+        if ($content instanceof Collection) {
+            $content = $content->unwrap();
         }
 
         $customMeta = [];
-        foreach ($object as $key => $value) {
+        foreach ($content as $key => $value) {
+            if ($key == "handle") {
+                continue;
+            }
+
             if (in_array($key, $this->defaultProperty)) {
                 $this->{$key} = (string)$value;
             } else {
@@ -98,10 +104,12 @@ class SocialMeta implements Castable
     {
         return [
             'handle' => $this->handle,
-            'title' => $this->title,
-            'description' => $this->description,
-            'image' => $this->image,
-            ...$this->customMeta
+            'content' => [
+                'title' => $this->title,
+                'description' => $this->description,
+                'image' => $this->image,
+                ...$this->customMeta
+            ]
         ];
     }
 
@@ -119,6 +127,6 @@ class SocialMeta implements Castable
             $value = (object)$value;
         }
 
-        return new self($value);
+        return new self($value->handle, $value->content);
     }
 }

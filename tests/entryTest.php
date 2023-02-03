@@ -198,13 +198,11 @@ test('Update seo data for an entry', function () {
     $entrySeoModel = new EntrySeo();
 
     $socialMetas = Collection::init();
-    $socialMetas->push(new SocialMeta((object)[
-        'handle' => 'facebook',
+    $socialMetas->push(new SocialMeta('facebook', (object)[
         'type' => 'article',
         'app_id' => 'fake-id-0123456'
     ]));
-    $socialMetas->push(new SocialMeta((object)[
-        'handle' => 'twitter',
+    $socialMetas->push(new SocialMeta('twitter', (object)[
         'card' => 'summary',
         'image' => 'fake/path',
         'image:alt' => 'Fake image',

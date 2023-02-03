@@ -20,6 +20,7 @@ use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\SocialMeta;
 use SodiumException;
 
 class Entries
@@ -367,15 +368,41 @@ class Entries
         return Entry::processErrorsForGraphQL($errors);
     }
 
+    /**
+     *
+     * Update entry SEO
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function updateEntrySeo(mixed $obj, Collection $args, Context $context): bool
     {
         $entryId = $args->get('entry_id');
         $title = $args->get('title');
+        $socialMetas = $args->get('social_metas');
 
         $entrySeoModel = new EntrySeo();
         if (!$title) {
             $seo = $entrySeoModel->getOrCreateByEntryId($entryId, "");
             $title = $seo->title;
+        }
+
+        // Parse social metas
+        if ($socialMetas) {
+            $parsedSocialMetas = Collection::init();
+            $socialMetaInstance = new SocialMeta('');
+            foreach ($socialMetas as $socialMeta) {
+                $parsedSocialMetas->push($socialMetaInstance->castTo($socialMeta));
+            }
+            // Override social metas to send SocialMeta classes
+            $args->pushKeyValue('social_metas', $parsedSocialMetas);
         }
 
         $entrySeo = $entrySeoModel->createOrUpdate($entryId, $title, $args);

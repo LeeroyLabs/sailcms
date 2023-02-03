@@ -2,8 +2,9 @@
 
 use SailCMS\Test\GraphQLClient;
 
+$graphqlUrl = "";
 
-beforeEach(function () use (&$token) {
+beforeEach(function () use (&$graphqlUrl) {
     $graphqlUrl = env('GRAPHQL_URL');
     if ($graphqlUrl) {
         $this->client = new GraphQLClient($graphqlUrl);
@@ -31,10 +32,11 @@ beforeEach(function () use (&$token) {
     }
 });
 
-test('Get a page and modify his SEO', function () use (&$token) {
-    if ($this->token) {
+test('Get a page and modify his SEO', function () use ($graphqlUrl) {
+    print_r($graphqlUrl);
+    if (isset($this->token)) {
         $entryResponse = $this->client->run('
-            query {
+            query { 
                 entries(entry_type_handle: "page") {
                     list {
                         _id
@@ -47,14 +49,25 @@ test('Get a page and modify his SEO', function () use (&$token) {
 
         $response = $this->client->run('
             mutation {
-              updateEntrySeo(
-                entry_id: "' . $id . '"
-                title: "Another page seo"
-                description: "This is a description"
-                keywords: "Sail, CMS"
-                robots: true
-                sitemap: true
-              )
+                updateEntrySeo(
+                    entry_id: "' . $id . '"
+                    title: "Another page seo"
+                    description: "This is a description"
+                    keywords: "Sail, CMS"
+                    robots: true
+                    sitemap: true
+                            social_metas: [
+                        {handle: "facebook", content: [
+                            {name: "app_id", content: "fake-id-0123456"},
+                            {name: "type", content: "article"},
+                        ]},
+                        {handle: "twitter", content: [
+                            {name: "card", content: "summary"},
+                            {name: "image", content: "fake-path"},
+                            {name: "image:alt", content: "Fake image"},
+                        ]}
+                    ]
+                )
             }
         ', [], $this->token);
 
@@ -68,12 +81,20 @@ test('Get a page and modify his SEO', function () use (&$token) {
                             keywords
                             robots
                             sitemap
+                            social_metas {
+                                handle
+                                content {
+                                    name
+                                    content
+                                }
+                            }
                         }
                     }
                 }
             ', [], $this->token);
 
             $entrySeo = $checkResponse->data->entry->seo;
+            print_r($entrySeo->social_metas);
 
             expect($entrySeo->title)->toBe("Another page seo")
                 ->and($entrySeo->description)->toBe("This is a description")
@@ -83,7 +104,5 @@ test('Get a page and modify his SEO', function () use (&$token) {
         } else {
             expect(true)->toBe(false);
         }
-    } else {
-        expect(true)->toBe(true);
     }
 })->group('graphql');
