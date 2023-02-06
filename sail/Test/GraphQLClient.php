@@ -51,7 +51,7 @@ class GraphQLClient
 
         $json = json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 
-        if ($json->errors) {
+        if (isset($json->errors)) {
             throw new GraphqlException('An Error Occurred: ' . $json->errors[0]->message);
         }
 
