@@ -2,8 +2,6 @@
 
 use SailCMS\Test\GraphQLClient;
 
-$graphqlUrl = "";
-
 beforeEach(function () use (&$graphqlUrl) {
     $graphqlUrl = env('GRAPHQL_URL');
     if ($graphqlUrl) {
@@ -33,7 +31,6 @@ beforeEach(function () use (&$graphqlUrl) {
 });
 
 test('Get a page and modify his SEO', function () use ($graphqlUrl) {
-    print_r($graphqlUrl);
     if (isset($this->token)) {
         $entryResponse = $this->client->run('
             query { 
@@ -94,13 +91,18 @@ test('Get a page and modify his SEO', function () use ($graphqlUrl) {
             ', [], $this->token);
 
             $entrySeo = $checkResponse->data->entry->seo;
-            print_r($entrySeo->social_metas);
 
             expect($entrySeo->title)->toBe("Another page seo")
                 ->and($entrySeo->description)->toBe("This is a description")
                 ->and($entrySeo->keywords)->toBe("Sail, CMS")
                 ->and($entrySeo->robots)->toBeTrue()
-                ->and($entrySeo->sitemap)->toBeTrue();
+                ->and($entrySeo->sitemap)->toBeTrue()
+                ->and($entrySeo->social_metas[0]->handle)->toBe('facebook')
+                ->and($entrySeo->social_metas[0]->content[3]->name)->toBe('app_id')
+                ->and($entrySeo->social_metas[0]->content[4]->content)->toBe('article')
+                ->and($entrySeo->social_metas[1]->handle)->toBe('twitter')
+                ->and($entrySeo->social_metas[1]->content[3]->name)->toBe('card')
+                ->and($entrySeo->social_metas[1]->content[4]->content)->toBe('Fake image');
         } else {
             expect(true)->toBe(false);
         }

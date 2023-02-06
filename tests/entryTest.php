@@ -220,9 +220,9 @@ test('Update seo data for an entry', function () {
             ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
             ->and($entrySeo->get('keywords'))->toBe("Good, CMS")
             ->and($entrySeo->get('social_metas.0.handle'))->toBe('facebook')
-            ->and($entrySeo->get('social_metas.0.app_id'))->toBe('fake-id-0123456')
+            ->and($entrySeo->get('social_metas.0.content.app_id'))->toBe('fake-id-0123456')
             ->and($entrySeo->get('social_metas.1.handle'))->toBe('twitter')
-            ->and($entrySeo->get('social_metas.1.image:alt'))->toBe('Fake image');
+            ->and($entrySeo->get('social_metas.1.content.image:alt'))->toBe('Fake image');
 
     } catch (Exception $exception) {
         print_r($exception->getMessage());

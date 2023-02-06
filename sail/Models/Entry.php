@@ -232,11 +232,6 @@ class Entry extends Model implements Validator
     {
         $seo = Collection::init();
 
-        // TODO SEE IF WE NEED THAT
-//        if (!isset($this->_id)) {
-//            throw new EntryException();
-//        }
-
         // TODO ask marc does it work as cache runtime
         if (!isset($this->entrySeo) || $refresh) {
             $this->entrySeo = (new EntrySeo())->getOrCreateByEntryId($this->_id, $this->title);
@@ -246,7 +241,7 @@ class Entry extends Model implements Validator
         $seo->pushKeyValue('url', $this->url);
         $seo->pushKeyValue('alternates', $this->alternates);
 
-        $seo->pushSpreadKeyValue(...$this->entrySeo->simplify());
+        $seo->pushSpreadKeyValue(...$this->entrySeo->simplify(true));
 
         return $seo;
     }
