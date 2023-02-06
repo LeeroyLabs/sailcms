@@ -16,9 +16,7 @@ use SailCMS\Types\SocialMeta;
 use SailCMS\Types\Username;
 
 beforeAll(function () {
-    $_ENV['SITE_URL'] = 'http://localhost:8888';
-    Sail::setWorkingDirectory(__DIR__ . '/mock');
-    Sail::setAppState(Sail::STATE_CLI);
+    Sail::setupForTests(__DIR__);
 
     $authorModel = new User();
     $username = new Username('Test', 'Entry');
@@ -223,7 +221,6 @@ test('Update seo data for an entry', function () {
             ->and($entrySeo->get('social_metas.0.content.app_id'))->toBe('fake-id-0123456')
             ->and($entrySeo->get('social_metas.1.handle'))->toBe('twitter')
             ->and($entrySeo->get('social_metas.1.content.image:alt'))->toBe('Fake image');
-
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);

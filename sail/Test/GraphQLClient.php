@@ -2,6 +2,8 @@
 
 namespace SailCMS\Test;
 
+use JsonException;
+use SailCMS\Errors\GraphqlException;
 use SailCMS\Test\Response\GraphQLResponse;
 
 class GraphQLClient
@@ -18,7 +20,8 @@ class GraphQLClient
      * @param array $variables
      * @param string $token
      * @return object
-     * @throws \JsonException
+     * @throws JsonException
+     * @throws GraphqlException
      *
      */
     public function run(string $query, array $variables, string $token = ''): object
@@ -53,9 +56,8 @@ class GraphQLClient
 
         $json = json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 
-        // Handle SailCMS thrown Errors
-        if (!isset($json->data)) {
-            return new GraphQLResponse('failed', "SailCMS Error thrown, check data", (object)$json->errors);
+        if (isset($json->errors)) {
+            throw new GraphqlException('An Error Occurred: ' . $json->errors[0]->message);
         }
 
         return new GraphQLResponse('ok', '', $json->data);

@@ -16,10 +16,9 @@ use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
-beforeAll(function () {
-    $_ENV['SITE_URL'] = 'http://localhost:8888';
-    Sail::setWorkingDirectory(__DIR__ . '/mock');
-    Sail::setAppState(Sail::STATE_CLI);
+beforeAll(function ()
+{
+    Sail::setupForTests(__DIR__);
 
     $authorModel = new User();
     $username = new Username('Test', 'Entry');
@@ -35,7 +34,8 @@ beforeAll(function () {
     $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
 });
 
-afterAll(function () {
+afterAll(function ()
+{
     $authorModel = new User();
     $authorModel->removeByEmail('testentryfield@leeroy.ca');
 
@@ -58,7 +58,8 @@ afterAll(function () {
     $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
-test('Add all fields to the layout', function () {
+test('Add all fields to the layout', function ()
+{
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
@@ -112,7 +113,8 @@ test('Add all fields to the layout', function () {
     }
 });
 
-test('Failed to update the entry content', function () {
+test('Failed to update the entry content', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -143,7 +145,8 @@ test('Failed to update the entry content', function () {
     }
 });
 
-test('Update content with success', function () {
+test('Update content with success', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
