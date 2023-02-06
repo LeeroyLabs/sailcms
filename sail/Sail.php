@@ -700,6 +700,30 @@ final class Sail
 
     /**
      *
+     * Run bare minimum for tests to work
+     *
+     * @param  string  $rootDir
+     * @param  string  $templatePath
+     * @return void
+     * @throws DatabaseException
+     * @throws FilesystemException
+     *
+     */
+    public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
+    {
+        $_ENV['SITE_URL'] = 'http://localhost:8888';
+        self::setWorkingDirectory($rootDir . '/mock');
+        self::setAppState(Sail::STATE_CLI, 'dev', $rootDir . '/mock');
+
+        if ($templatePath !== '') {
+            self::setTemplateDirectory($templatePath);
+        } else {
+            self::setTemplateDirectory(dirname($rootDir) . '/templates');
+        }
+    }
+
+    /**
+     *
      * Setup CORS headers
      *
      * @return void
