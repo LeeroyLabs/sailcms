@@ -20,6 +20,7 @@ use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\SocialMeta;
 use SodiumException;
 
 class Entries
@@ -67,7 +68,10 @@ class Entries
 
         $parsedResult = Collection::init();
         $result->each(function ($key, &$entryType) use ($parsedResult) {
-            $parsedResult->push($entryType->toGraphQL());
+            /**
+             * @var EntryType $entryType
+             */
+            $parsedResult->push($entryType->simplify());
         });
 
         return $parsedResult;
@@ -106,7 +110,7 @@ class Entries
             throw new EntryException(sprintf(EntryType::DOES_NOT_EXISTS, $msg));
         }
 
-        return $result->toGraphQL();
+        return $result->simplify();
     }
 
     /**
@@ -138,7 +142,7 @@ class Entries
             $result->entry_layout_id = "";
         }
 
-        return $result->toGraphQL();
+        return $result->simplify();
     }
 
     /**
@@ -231,7 +235,7 @@ class Entries
              * @var Entry $entry
              */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $entry->toGraphQL($homepage);
+            $entryArray = $this->parseEntry($entry->simplify($homepage));
             $data->push($entryArray);
         });
 
@@ -266,7 +270,7 @@ class Entries
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
 
-        return $entry->toGraphQL($homepage);
+        return $this->parseEntry($entry->simplify($homepage));
     }
 
     /**
@@ -318,7 +322,7 @@ class Entries
             'errors' => []
         ];
         if ($entryOrErrors instanceof Entry) {
-            $result['entry'] = $entryOrErrors->toGraphQL($homepage);
+            $result['entry'] = $this->parseEntry($entryOrErrors->simplify($homepage));
         } else {
             $result['errors'] = $entryOrErrors;
         }
@@ -364,15 +368,46 @@ class Entries
         return Entry::processErrorsForGraphQL($errors);
     }
 
+    /**
+     *
+     * Update entry SEO
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function updateEntrySeo(mixed $obj, Collection $args, Context $context): bool
     {
         $entryId = $args->get('entry_id');
         $title = $args->get('title');
+        $socialMetas = $args->get('social_metas');
 
         $entrySeoModel = new EntrySeo();
         if (!$title) {
             $seo = $entrySeoModel->getOrCreateByEntryId($entryId, "");
             $title = $seo->title;
+        }
+
+        // Parse social metas
+        if ($socialMetas) {
+            $parsedSocialMetas = Collection::init();
+            $socialMetaInstance = new SocialMeta('');
+            foreach ($socialMetas as $socialMeta) {
+                $contentParsed = [];
+                foreach ($socialMeta['content'] as $content) {
+                    $contentParsed[$content['name']] = $content['content'];
+                }
+                $socialMeta->content = (object)$contentParsed;
+                $parsedSocialMetas->push($socialMetaInstance->castTo($socialMeta));
+            }
+            // Override social metas to send SocialMeta classes
+            $args->pushKeyValue('social_metas', $parsedSocialMetas);
         }
 
         $entrySeo = $entrySeoModel->createOrUpdate($entryId, $title, $args);
@@ -430,7 +465,7 @@ class Entries
             '_id' => $entryLayoutId
         ]);
 
-        return $entryLayout?->toGraphQL();
+        return $entryLayout?->simplify();
     }
 
     /**
@@ -455,7 +490,7 @@ class Entries
             /**
              * @var EntryLayout $entryLayout
              */
-            $entryLayouts->push($entryLayout->toGraphQL());
+            $entryLayouts->push($entryLayout->simplify());
         });
 
         return $entryLayouts->unwrap();
@@ -489,7 +524,7 @@ class Entries
         $entryLayoutModel = new EntryLayout();
         $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
 
-        return $entryLayout->toGraphQL();
+        return $entryLayout->simplify();
     }
 
     /**
@@ -615,6 +650,37 @@ class Entries
         }
 
         return $entryModel;
+    }
+
+    /**
+     *
+     * Parse simplified entry for graphQL
+     *
+     * @param $simplifiedEntry
+     * @return array
+     */
+    private function parseEntry($simplifiedEntry)
+    {
+        // Override SEO social metas
+        if (isset($simplifiedEntry['seo']) && isset($simplifiedEntry['seo']['social_metas'])) {
+            $socialMetas = [];
+            foreach ($simplifiedEntry['seo']['social_metas'] as $socialMeta) {
+                $contentParsed = [];
+                foreach ($socialMeta['content'] as $key => $value) {
+                    $contentParsed[] = [
+                        "name" => $key,
+                        "content" => $value
+                    ];
+                }
+                $socialMetas[] = [
+                    'handle' => $socialMeta['handle'],
+                    'content' => $contentParsed
+                ];
+            }
+            $simplifiedEntry['seo']['social_metas'] = $socialMetas;
+        }
+
+        return $simplifiedEntry;
     }
 
     /**

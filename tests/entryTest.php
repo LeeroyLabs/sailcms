@@ -12,10 +12,10 @@ use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\SocialMeta;
 use SailCMS\Types\Username;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     Sail::setupForTests(__DIR__);
 
     $authorModel = new User();
@@ -27,14 +27,12 @@ beforeAll(function ()
     EntryType::getDefaultType();
 });
 
-afterAll(function ()
-{
+afterAll(function () {
     $authorModel = new User();
     $authorModel->removeByEmail('testentry@leeroy.ca');
 });
 
-test('Create an entry layout', function ()
-{
+test('Create an entry layout', function () {
     $model = new EntryLayout();
 
     $labels = new LocaleField([
@@ -60,10 +58,9 @@ test('Create an entry layout', function ()
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
-test('Update the config of an entry layout', function ()
-{
+test('Update the config of an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
@@ -82,19 +79,18 @@ test('Update the config of an entry layout', function ()
         $updatedEntryLayout = $model->one([
             '_id' => $entryLayout->_id
         ]);
-        expect($result)->toBe(true);
-        expect($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255);
-        expect($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10);
-        expect($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
+        expect($result)->toBe(true)
+            ->and($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255)
+            ->and($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10)
+            ->and($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
-test('Update a key of a entry layout schema', function ()
-{
+test('Update a key of a entry layout schema', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
@@ -105,17 +101,16 @@ test('Update a key of a entry layout schema', function ()
         $entryLayout = $model->one([
             'titles.fr' => 'Test de disposition'
         ]);
-        expect($entryLayout->schema->get('title'))->toBe(null);
-        expect($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
+        expect($entryLayout->schema->get('title'))->toBe(null)
+            ->and($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
-test('Failed to update a key of a entry layout schema', function ()
-{
+test('Failed to update a key of a entry layout schema', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
@@ -129,10 +124,9 @@ test('Failed to update a key of a entry layout schema', function ()
 //        print_r($exception->getTraceAsString());
         expect($exception->getMessage())->toBe('6005: The given key "title" does not exists in the schema.');
     }
-});
+})->group('entry-layout');
 
-test('Create an entry type', function ()
-{
+test('Create an entry type', function () {
     $model = new EntryType();
 
     $url_prefix = new LocaleField(['fr' => 'test', 'en' => 'test']);
@@ -143,10 +137,9 @@ test('Create an entry type', function ()
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-type');
 
-test('Fail to create an entry type because the handle use a reserved word', function ()
-{
+test('Fail to create an entry type because the handle use a reserved word', function () {
     $model = new EntryType();
 
     $url_prefix = new LocaleField(['fr' => 'entrée', 'en' => 'entry']);
@@ -155,13 +148,11 @@ test('Fail to create an entry type because the handle use a reserved word', func
         $id = $model->create('entry', 'Entry', $url_prefix, null, false);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
-        expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(sprintf(EntryType::HANDLE_USE_RESERVED_WORD, 'entry'));
     }
-});
+})->group('entry-type');
 
-test('Failed to create an entry type because the handle is already in use', function ()
-{
+test('Failed to create an entry type because the handle is already in use', function () {
     $model = new EntryType();
     $url_prefix = new LocaleField(['fr' => 'test', 'en' => 'test']);
 
@@ -173,31 +164,25 @@ test('Failed to create an entry type because the handle is already in use', func
     } catch (Exception $otherException) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-type');
 
-test('Create an entry with the default type', function ()
-{
+test('Create an entry with the default type', function () {
     $model = new Entry();
 
     try {
         $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home');
 
         expect($entry->title)->toBe('Home')
-                             ->and($entry->status)
-                             ->toBe(EntryStatus::LIVE->value)
-                             ->and($entry->locale)
-                             ->toBe('fr')
-                             ->and($entry->slug)
-                             ->toBe(Text::slugify($entry->title, "fr"));
+            ->and($entry->status)->toBe(EntryStatus::LIVE->value)
+            ->and($entry->locale)->toBe('fr')
+            ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
-//        print_r($exception->getTrace());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Access to default SEO data', function ()
-{
+test('Access to default SEO data', function () {
     $entry = (new Entry())->one(['title' => 'Home']);
 
     $seo = $entry->getSEO();
@@ -205,30 +190,44 @@ test('Access to default SEO data', function ()
     expect($seo->title)->toBe($entry->title)->and($seo->entry_seo_id)->not->toBeNull();
 });
 
-test('Update seo data for an entry', function ()
-{
+test('Update seo data for an entry', function () {
     $entry = (new Entry())->one(['title' => 'Home']);
 
     $entrySeoModel = new EntrySeo();
 
+    $socialMetas = Collection::init();
+    $socialMetas->push(new SocialMeta('facebook', (object)[
+        'type' => 'article',
+        'app_id' => 'fake-id-0123456'
+    ]));
+    $socialMetas->push(new SocialMeta('twitter', (object)[
+        'card' => 'summary',
+        'image' => 'fake/path',
+        'image:alt' => 'Fake image',
+    ]));
+
     try {
         $entrySeoModel->createOrUpdate($entry->_id, "New Title", new Collection([
             'description' => "This is a really good description for a page",
-            'keywords' => "Good, CMS"
+            'keywords' => "Good, CMS",
+            'social_metas' => $socialMetas
         ]));
         $entrySeo = $entry->getSEO(true);
 
         expect($entrySeo->get('title'))->toBe("New Title")
-                                       ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
-                                       ->and($entrySeo->get('keywords'))->toBe("Good, CMS");
+            ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
+            ->and($entrySeo->get('keywords'))->toBe("Good, CMS")
+            ->and($entrySeo->get('social_metas.0.handle'))->toBe('facebook')
+            ->and($entrySeo->get('social_metas.0.content.app_id'))->toBe('fake-id-0123456')
+            ->and($entrySeo->get('social_metas.1.handle'))->toBe('twitter')
+            ->and($entrySeo->get('social_metas.1.content.image:alt'))->toBe('Fake image');
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry-seo');
 
-test('Create an entry with an entry type', function ()
-{
+test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
@@ -241,10 +240,9 @@ test('Create an entry with an entry type', function ()
         //print_r($exception);
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Update an entry type', function ()
-{
+test('Update an entry type', function () {
     $model = new EntryType();
 
     $entryLayout = (new EntryLayout())->one([
@@ -262,22 +260,20 @@ test('Update an entry type', function ()
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
-        expect($entryType->title)->toBe('Test Pages');
-        expect($entryType->url_prefix->en)->toBe('test-pages');
+        expect($entryType->title)->toBe('Test Pages')
+            ->and($entryType->url_prefix->en)->toBe('test-pages');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
-test('Get homepage entry', function ()
-{
+test('Get homepage entry', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry->title)->toBe('Test');
-});
+})->group('entry');
 
-test('Update an entry with an entry type', function ()
-{
+test('Update an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test'
@@ -292,24 +288,22 @@ test('Update an entry with an entry type', function ()
         $entry = $entryModel->one([
             'title' => 'Test'
         ]);
-        expect($result->length)->toBe(0);
-        expect($entry)->not->toBe(null);
-        expect($entry->slug)->toBe('test-de-test');
+        expect($result->length)->toBe(0)
+            ->and($entry)->not->toBe(null)
+            ->and($entry->slug)->toBe('test-de-test');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Fail to get homepage entry', function ()
-{
+test('Fail to get homepage entry', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
-});
+})->group('entry');
 
-test('Create an entry with an entry type with an existing url', function ()
-{
+test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
@@ -318,18 +312,17 @@ test('Create an entry with an entry type with an existing url', function ()
                 'sub title' => "Textfield content"
             ]
         ]);
-        expect($entry->title)->toBe('Test 2');
-        expect($entry->status)->toBe(EntryStatus::INACTIVE->value);
-        expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('pages-de-test/test-de-test-2');
+        expect($entry->title)->toBe('Test 2')
+            ->and($entry->status)->toBe(EntryStatus::INACTIVE->value)
+            ->and($entry->locale)->toBe('fr')
+            ->and($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Fail to create an entry that is trashed', function ()
-{
+test('Fail to create an entry that is trashed', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
@@ -339,20 +332,18 @@ test('Fail to create an entry that is trashed', function ()
         expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
-});
+})->group('entry');
 
-test('Get a validated slug for an existing slug', function ()
-{
+test('Get a validated slug for an existing slug', function () {
     $newSlug = Entry::getValidatedSlug(new LocaleField([
         'en' => 'test-pages',
         'fr' => 'pages-de-test'
     ]), 'test-de-test', Sail::siteId(), 'fr');
 
     expect($newSlug)->toBe('test-de-test-3');
-});
+})->group('entry');
 
-test('Failed to update content because a field does not validate', function ()
-{
+test('Failed to update content because a field does not validate', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test 2'
@@ -368,10 +359,9 @@ test('Failed to update content because a field does not validate', function ()
 //        print_r($exception->getMessage());
         expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
     }
-});
+})->group('entry');
 
-test('Update an entry with the default type', function ()
-{
+test('Update an entry with the default type', function () {
     $model = new Entry();
     $entry = $model->one([
         'title' => 'Home'
@@ -386,23 +376,21 @@ test('Update an entry with the default type', function ()
         $entry = $model->one([
             'title' => 'Home page'
         ]);
-        expect($result->length)->toBe(0);
-        expect($entry)->not->toBe(null);
+        expect($result->length)->toBe(0)
+            ->and($entry)->not->toBe(null);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         //print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Get homepage entry after update', function ()
-{
+test('Get homepage entry after update', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
     expect($entry->title)->toBe('Home page');
-});
+})->group('entry');
 
-test('Fail to update an entry to trash', function ()
-{
+test('Fail to update an entry to trash', function () {
     $model = new Entry();
     $entry = $model->one([
         'title' => 'Home page'
@@ -414,27 +402,23 @@ test('Fail to update an entry to trash', function ()
         ]);
         expect(true)->toBe(false);
     } catch (Exception $exception) {
-        expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
-});
+})->group('entry');
 
-test('Find the entry by url', function ()
-{
+test('Find the entry by url', function () {
     $entry = Entry::findByURL('pages-de-test/test-de-test', false);
 
     expect($entry->title)->toBe('Test');
-});
+})->group('entry');
 
-test('Failed to find the entry by url', function ()
-{
+test('Failed to find the entry by url', function () {
     $entry = Entry::findByURL('pages-de-test/test-de-test-2', false);
 
     expect($entry)->toBe(null);
-});
+})->group('entry');
 
-test('Failed to delete an entry type with related entries in it', function ()
-{
+test('Failed to delete an entry type with related entries in it', function () {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
 
@@ -443,12 +427,10 @@ test('Failed to delete an entry type with related entries in it', function ()
         expect($result)->toBe(false);
     } catch (EntryException $exception) {
         expect($exception->getMessage())->toBe(EntryType::CANNOT_DELETE);
-        expect(true)->toBe(true);
     }
-});
+})->group('entry-type');
 
-test('Soft Delete an entry with the default type', function ()
-{
+test('Soft Delete an entry with the default type', function () {
     $model = new Entry();
     $entry = $model->one([
         'title' => 'Home page'
@@ -459,31 +441,29 @@ test('Soft Delete an entry with the default type', function ()
         $entry = $model->one([
             'title' => 'Home page'
         ]);
-        expect($result)->toBe(true);
-        expect($entry->status)->toBe(EntryStatus::TRASH->value);
+        expect($result)->toBe(true)
+            ->and($entry->status)->toBe(EntryStatus::TRASH->value);
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-type');
 
-test('Get all entries with ignoring trash and not', function ()
-{
+test('Get all entries with ignoring trash and not', function () {
     $model = new Entry();
 
     try {
         $ignoredTrash = $model->all();
         $notIgnoreTrash = $model->all(false);
 
-        expect($ignoredTrash->length)->toBe(1);
-        expect($notIgnoreTrash->length)->toBe(0);
+        expect($ignoredTrash->length)->toBe(1)
+            ->and($notIgnoreTrash->length)->toBe(0);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Hard delete an entry with an entry type', function ()
-{
+test('Hard delete an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test'
@@ -496,10 +476,9 @@ test('Hard delete an entry with an entry type', function ()
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Hard delete an entry with an entry type 2', function ()
-{
+test('Hard delete an entry with an entry type 2', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test 2'
@@ -512,10 +491,9 @@ test('Hard delete an entry with an entry type 2', function ()
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
-});
+})->group('entry');
 
-test('Hard Delete an entry with the default type', function ()
-{
+test('Hard Delete an entry with the default type', function () {
     $model = new Entry();
     $entry = $model->one([
         'title' => 'Home page'
@@ -531,10 +509,9 @@ test('Hard Delete an entry with the default type', function ()
     // Check if seo has been deleted
     $entrySeo = (new EntrySeo())->getByEntryId($entry->_id, false);
     expect($entrySeo)->toBeNull();
-});
+})->group('entry');
 
-test('Fail to delete an entry layout because it is used', function ()
-{
+test('Fail to delete an entry layout because it is used', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
@@ -544,13 +521,11 @@ test('Fail to delete an entry layout because it is used', function ()
         $result = $model->delete($entryLayout->_id);
         expect($result)->toBe(false);
     } catch (Exception $exception) {
-        expect(true)->toBe(true);
         expect($exception->getMessage())->toBe(EntryLayout::SCHEMA_IS_USED);
     }
-});
+})->group('entry-layout');
 
-test('Delete an entry type', function ()
-{
+test('Delete an entry type', function () {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
 
@@ -558,15 +533,14 @@ test('Delete an entry type', function ()
         $result = $model->hardDelete($entryType->_id);
         expect($result)->toBe(true);
     } catch (EntryException $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
     $entryType = $model->getByHandle('test');
     expect($entryType)->toBe(null);
-});
+})->group('entry-type');
 
-test('Soft delete an entry layout', function ()
-{
+test('Soft delete an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
@@ -577,15 +551,14 @@ test('Soft delete an entry layout', function ()
         $deletedEntryLayout = $model->one([
             'titles.fr' => 'Test de disposition'
         ]);
-        expect($result)->toBe(true);
-        expect($deletedEntryLayout->is_trashed)->toBe(true);
+        expect($result)->toBe(true)
+            ->and($deletedEntryLayout->is_trashed)->toBe(true);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
-test('Hard delete an entry layout', function ()
-{
+test('Hard delete an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->one([
         'titles.fr' => 'Test de disposition'
@@ -595,14 +568,12 @@ test('Hard delete an entry layout', function ()
         $result = $model->delete($entryLayout->_id, false);
         expect($result)->toBe(true);
     } catch (Exception $exception) {
-        echo $exception->getMessage();
         expect(true)->toBe(false);
     }
-});
+})->group('entry-layout');
 
-test('Fail to get homepage entry after deletion', function ()
-{
+test('Fail to get homepage entry after deletion', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
 
     expect($entry)->toBe(null);
-});
+})->group('entry');
