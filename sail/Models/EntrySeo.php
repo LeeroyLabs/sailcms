@@ -294,6 +294,7 @@ class EntrySeo extends Model implements Castable
             }
         });
 
+        // Add default value to social metas
         if (isset($update['social_metas'])) {
             $entrySeo = $this;
             if (!isset($this->_id)) {
