@@ -214,6 +214,8 @@ test('Update seo data for an entry', function () {
         ]));
         $entrySeo = $entry->getSEO(true);
 
+        print_r($entrySeo);
+
         expect($entrySeo->get('title'))->toBe("New Title")
             ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
             ->and($entrySeo->get('keywords'))->toBe("Good, CMS")
