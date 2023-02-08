@@ -656,10 +656,10 @@ class Entries
      *
      * Parse simplified entry for graphQL
      *
-     * @param $simplifiedEntry
+     * @param array $simplifiedEntry
      * @return array
      */
-    private function parseEntry($simplifiedEntry)
+    private function parseEntry(array $simplifiedEntry): array
     {
         // Override SEO social metas
         if (isset($simplifiedEntry['seo']) && isset($simplifiedEntry['seo']['social_metas'])) {

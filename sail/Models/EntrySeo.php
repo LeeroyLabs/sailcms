@@ -14,8 +14,6 @@ use SailCMS\Types\SocialMeta;
 
 /**
  *
- * TODO handle default value
- *
  * @property string $entry_id
  * @property string $title
  * @property string $description
@@ -252,6 +250,11 @@ class EntrySeo extends Model implements Castable
         string|null     $defaultImage = "",
         Collection|null $socialMetas = null): EntrySeo
     {
+        $socialMetasFinal = Collection::init();
+        if (isset($socialMetas)) {
+            $socialMetasFinal = $this->setSocialMetasDefault($socialMetas, $title, $description, $defaultImage);
+        }
+
         try {
             $entrySeoId = $this->insert([
                 'entry_id' => $entryId,
@@ -261,7 +264,7 @@ class EntrySeo extends Model implements Castable
                 'robots' => $robots,
                 'sitemap' => $sitemap,
                 'default_image' => $defaultImage,
-                'social_metas' => $socialMetas ?? Collection::init()
+                'social_metas' => $socialMetasFinal
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -291,6 +294,19 @@ class EntrySeo extends Model implements Castable
             }
         });
 
+        if (isset($update['social_metas'])) {
+            $entrySeo = $this;
+            if (!isset($this->_id)) {
+                $entrySeo = $this->findById($this->ensureObjectId($entrySeoId));
+            }
+
+            $defaultTitle = $update['title'] ?? $entrySeo->title ?? "";
+            $defaultDescription = $update['description'] ?? $entrySeo->description ?? "";
+            $defaultImage = $update['default_image'] ?? $entrySeo->default_image ?? "";
+
+            $update['social_metas'] = $this->setSocialMetasDefault($update['social_metas'], $defaultTitle, $defaultDescription, $defaultImage);
+        }
+
         try {
             $qtyUpdated = $this->updateOne(['_id' => $this->ensureObjectId($entrySeoId)], [
                 '$set' => $update
@@ -300,5 +316,37 @@ class EntrySeo extends Model implements Castable
         }
 
         return $qtyUpdated === 1;
+    }
+
+    /**
+     *
+     * Set social metas default value for title, description and image
+     *
+     * @param Collection|array $socialMetas
+     * @param string $defaultTitle
+     * @param string $defaultDescription
+     * @param string $defaultImage
+     * @return Collection
+     *
+     */
+    private static function setSocialMetasDefault(Collection|array $socialMetas, string $defaultTitle, string $defaultDescription, string $defaultImage): Collection
+    {
+        if (is_array($socialMetas)) {
+            $socialMetas = new Collection($socialMetas);
+        }
+
+        $socialMetas->each(function ($index, &$socialMeta) use ($defaultTitle, $defaultDescription, $defaultImage) {
+            if (empty($socialMeta->title)) {
+                $socialMeta->title = $defaultTitle;
+            }
+            if (empty($socialMeta->description)) {
+                $socialMeta->description = $defaultDescription;
+            }
+            if (empty($socialMeta->image)) {
+                $socialMeta->image = $defaultImage;
+            }
+        });
+
+        return $socialMetas;
     }
 }

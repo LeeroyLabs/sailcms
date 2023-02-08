@@ -1,8 +1,11 @@
 <?php
 
+use SailCMS\Sail;
 use SailCMS\Test\GraphQLClient;
 
-beforeEach(function () use (&$graphqlUrl) {
+beforeEach(function () {
+    Sail::setupForTests(__DIR__);
+
     $graphqlUrl = env('GRAPHQL_URL');
     if ($graphqlUrl) {
         $this->client = new GraphQLClient($graphqlUrl);
@@ -26,12 +29,14 @@ beforeEach(function () use (&$graphqlUrl) {
             }
         ', ['token' => $tmpToken]);
 
-        $this->token = $authResponse->data->verifyAuthenticationToken->auth_token;
+        $_ENV['test-token'] = $authResponse->data->verifyAuthenticationToken->auth_token;
     }
 });
 
-test('Get a page and modify his SEO', function () use ($graphqlUrl) {
-    if (isset($this->token)) {
+// TODO Must create a page
+
+test('Get a page and modify his SEO', function () {
+    if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('
             query { 
                 entries(entry_type_handle: "page") {
@@ -40,7 +45,7 @@ test('Get a page and modify his SEO', function () use ($graphqlUrl) {
                     }
                 }
             }
-        ', [], $this->token);
+        ', [], $_ENV['test-token']);
 
         $id = $entryResponse->data->entries->list[0]->_id;
 
@@ -66,7 +71,7 @@ test('Get a page and modify his SEO', function () use ($graphqlUrl) {
                     ]
                 )
             }
-        ', [], $this->token);
+        ', [], $_ENV['test-token']);
 
         if ($response->status === 'ok' && $response->data->updateEntrySeo) {
             $checkResponse = $this->client->run('
@@ -88,7 +93,7 @@ test('Get a page and modify his SEO', function () use ($graphqlUrl) {
                         }
                     }
                 }
-            ', [], $this->token);
+            ', [], $_ENV['test-token']);
 
             $entrySeo = $checkResponse->data->entry->seo;
 
@@ -98,8 +103,10 @@ test('Get a page and modify his SEO', function () use ($graphqlUrl) {
                 ->and($entrySeo->robots)->toBeTrue()
                 ->and($entrySeo->sitemap)->toBeTrue()
                 ->and($entrySeo->social_metas[0]->handle)->toBe('facebook')
+                ->and($entrySeo->social_metas[0]->content[0]->content)->toBe('Another page seo')
                 ->and($entrySeo->social_metas[0]->content[3]->name)->toBe('app_id')
                 ->and($entrySeo->social_metas[0]->content[4]->content)->toBe('article')
+                ->and($entrySeo->social_metas[1]->content[1]->content)->toBe('This is a description')
                 ->and($entrySeo->social_metas[1]->handle)->toBe('twitter')
                 ->and($entrySeo->social_metas[1]->content[3]->name)->toBe('card')
                 ->and($entrySeo->social_metas[1]->content[4]->content)->toBe('Fake image');
