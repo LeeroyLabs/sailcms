@@ -726,7 +726,7 @@ abstract class Model implements JsonSerializable
 
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
-
+            
             $count = $this->active_collection->updateOne($query, $update)->getModifiedCount();
 
             $this->clearCacheForModel();
@@ -1260,7 +1260,12 @@ abstract class Model implements JsonSerializable
      */
     private function prepareForWrite(mixed $doc): array
     {
-        $instance = static::fill($doc);
+        $instance = new static();
+
+        foreach ($doc as $key => $value) {
+            $instance->properties[$key] = $value;
+        }
+
         $obj = $instance->toJSON(true);
 
         // Run the casting for encryption
