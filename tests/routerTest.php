@@ -14,9 +14,7 @@ beforeEach(function ()
     Router::init();
     \SailCMS\Locale::setCurrent('en', true);
 
-    $_ENV['SITE_URL'] = 'http://localhost:8888';
-    Sail::setWorkingDirectory(__DIR__ . '/mock');
-    Sail::setAppState(Sail::STATE_CLI, 'dev', __DIR__ . '/mock');
+    Sail::setupForTests(__DIR__);
 });
 
 test('Create a route', function ()

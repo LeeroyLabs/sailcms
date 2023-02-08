@@ -80,12 +80,12 @@ class EntryLayout extends Model implements Castable
      * @return array
      *
      */
-    public function toGraphQL(): array
+    public function simplify(): array
     {
         return [
             '_id' => $this->_id,
             'titles' => $this->titles->castFrom(),
-            'schema' => $this->processSchemaToGraphQL(),
+            'schema' => $this->simplifySchema(),
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
@@ -459,7 +459,7 @@ class EntryLayout extends Model implements Castable
      * @return Collection
      *
      */
-    public function processSchemaToGraphQL(): Collection
+    public function simplifySchema(): Collection
     {
         $apiSchema = Collection::init();
 

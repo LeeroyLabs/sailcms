@@ -7,6 +7,7 @@ use GraphQL\Error\DebugFlag;
 use GraphQL\Error\InvariantViolation;
 use GraphQL\Error\SyntaxError;
 use GraphQL\GraphQL as GQL;
+use GraphQL\Language\AST\TypeDefinitionNode;
 use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Utils\AST;
@@ -34,6 +35,7 @@ final class GraphQL
     private static array $queries = [];
     private static array $mutations = [];
     private static array $resolvers = [];
+    private static array $typeResolvers = [];
 
     public static array $querySchemaParts = [];
     public static array $mutationSchemaParts = [];
@@ -112,6 +114,20 @@ final class GraphQL
 
         Register::registerGraphQLResolver($type, $className, $method, $class);
         self::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
+    }
+
+    public static function addCustomTypeResolver(string $type, string $className, string $method): void
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
+        $class = $trace[1]['class'];
+        $func = $trace[1]['function'];
+
+        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+            throw new GraphqlException('Cannot add a type resolver from anything other than the graphql method in an AppContainer.', 0403);
+        }
+
+        //Register::registerGraphQLResolver($type, $className, $method, $class);
+        self::$typeResolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
     /**
@@ -244,7 +260,7 @@ final class GraphQL
                 $document = AST::fromArray($ast);
             }
 
-            $schema = BuildSchema::build($document);
+            $schema = BuildSchema::build($document, [self::class, 'handleCustomTypes']);
 
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true, setting('graphql.depthLimit', 5), JSON_THROW_ON_ERROR); // N+1 protection
@@ -466,5 +482,33 @@ final class GraphQL
         }
 
         return $objectValue;
+    }
+
+    /**
+     *
+     * Run custom types on possible resolver for them
+     *
+     * @param  array               $typeConfig
+     * @param  TypeDefinitionNode  $typeDefinitionNode
+     * @return array
+     *
+     */
+    public static function handleCustomTypes(array $typeConfig, TypeDefinitionNode $typeDefinitionNode): array
+    {
+        $name = $typeConfig['name'];
+
+        $resolver = self::$typeResolvers[$name] ?? null;
+
+        if (!$resolver) {
+            // Nothing to do
+            return $typeConfig;
+        }
+
+        $typeConfig['resolveType'] = function ($obj) use ($resolver)
+        {
+            return call_user_func([$resolver->class, $resolver->method], $obj);
+        };
+
+        return $typeConfig;
     }
 }

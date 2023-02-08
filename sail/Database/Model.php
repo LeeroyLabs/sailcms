@@ -323,7 +323,23 @@ abstract class Model implements JsonSerializable
 
                     if ($is_array) {
                         foreach ($targetList as $item) {
-                            $obj = $instance->findById($item);
+                            if (!empty($item) && !is_object($item)) {
+                                $obj = $instance->findById($item);
+
+                                if (count($subpop) > 0) {
+                                    foreach ($subpop as $pop) {
+                                        $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                                    }
+                                }
+
+                                $list[] = $obj->exec();
+                            }
+                        }
+
+                        $doc->{$target} = new \SailCMS\Collection($list);
+                    } else {
+                        if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
+                            $obj = $instance->findById($doc->{$field});
 
                             if (count($subpop) > 0) {
                                 foreach ($subpop as $pop) {
@@ -331,20 +347,8 @@ abstract class Model implements JsonSerializable
                                 }
                             }
 
-                            $list[] = $obj->exec();
+                            $doc->{$target} = $obj->exec();
                         }
-
-                        $doc->{$target} = new \SailCMS\Collection($list);
-                    } else {
-                        $obj = $instance->findById($doc->{$field});
-
-                        if (count($subpop) > 0) {
-                            foreach ($subpop as $pop) {
-                                $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
-                            }
-                        }
-
-                        $doc->{$target} = $obj->exec();
                     }
                 }
 
@@ -415,7 +419,23 @@ abstract class Model implements JsonSerializable
 
                     if ($is_array) {
                         foreach ($targetList as $item) {
-                            $obj = $instance->findById($item);
+                            if (!empty($item) && !is_object($item)) {
+                                $obj = $instance->findById($item);
+
+                                if (count($subpop) > 1) {
+                                    foreach ($subpop as $pop) {
+                                        $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                                    }
+                                }
+
+                                $list[] = $obj->exec();
+                            }
+                        }
+
+                        $doc->{$target} = new \SailCMS\Collection($list);
+                    } else {
+                        if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
+                            $obj = $instance->findById($doc->{$field});
 
                             if (count($subpop) > 1) {
                                 foreach ($subpop as $pop) {
@@ -423,20 +443,8 @@ abstract class Model implements JsonSerializable
                                 }
                             }
 
-                            $list[] = $obj->exec();
+                            $doc->{$target} = $obj->exec();
                         }
-
-                        $doc->{$target} = new \SailCMS\Collection($list);
-                    } else {
-                        $obj = $instance->findById($doc->{$field});
-
-                        if (count($subpop) > 1) {
-                            foreach ($subpop as $pop) {
-                                $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
-                            }
-                        }
-
-                        $doc->{$target} = $obj->exec();
                     }
                 } else {
                     // Nullify the field, most probably going to be called from GraphQL
@@ -1080,6 +1088,17 @@ abstract class Model implements JsonSerializable
 
                                 foreach ($v->bsonSerialize() as $_value) {
                                     $casted = new $cast[1]();
+
+                                    if (is_object($_value) && get_class($_value) === BSONDocument::class) {
+                                        foreach ($_value as $_k => $_v) {
+                                            if (is_object($_v) && get_class($_v) === BSONArray::class) {
+                                                $_value->{$_k} = $_v->bsonSerialize();
+                                            } else {
+                                                $_value->{$_k} = $_v;
+                                            }
+                                        }
+                                    }
+
                                     $list[] = $casted->castTo($_value);
                                 }
 

@@ -551,6 +551,19 @@ final class Sail
 
     /**
      *
+     * Force set the template directory
+     *
+     * @param  string  $path
+     * @return void
+     *
+     */
+    public static function setTemplateDirectory(string $path): void
+    {
+        self::$templateDirectory = $path;
+    }
+
+    /**
+     *
      * Get the cache directory for the site
      *
      * @return string
@@ -683,6 +696,30 @@ final class Sail
         }
 
         return null;
+    }
+
+    /**
+     *
+     * Run bare minimum for tests to work
+     *
+     * @param  string  $rootDir
+     * @param  string  $templatePath
+     * @return void
+     * @throws DatabaseException
+     * @throws FilesystemException
+     *
+     */
+    public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
+    {
+        $_ENV['SITE_URL'] = 'http://localhost:8888';
+        self::setWorkingDirectory($rootDir . '/mock');
+        self::setAppState(Sail::STATE_CLI, 'dev', $rootDir . '/mock');
+
+        if ($templatePath !== '') {
+            self::setTemplateDirectory($templatePath);
+        } else {
+            self::setTemplateDirectory(dirname($rootDir) . '/templates');
+        }
     }
 
     /**
