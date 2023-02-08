@@ -235,7 +235,7 @@ class Entries
              * @var Entry $entry
              */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $this->parseEntry($entry->simplify($homepage));
+            $entryArray = $this->parseEntry($entry->simplify($homepage, true));
             $data->push($entryArray);
         });
 
@@ -270,7 +270,8 @@ class Entries
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
 
-        return $this->parseEntry($entry->simplify($homepage));
+        // TODO handle wantSchema
+        return $this->parseEntry($entry->simplify($homepage, true));
     }
 
     /**
@@ -322,7 +323,7 @@ class Entries
             'errors' => []
         ];
         if ($entryOrErrors instanceof Entry) {
-            $result['entry'] = $this->parseEntry($entryOrErrors->simplify($homepage));
+            $result['entry'] = $this->parseEntry($entryOrErrors->simplify($homepage, true));
         } else {
             $result['errors'] = $entryOrErrors;
         }

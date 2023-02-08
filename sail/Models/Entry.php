@@ -194,7 +194,7 @@ class Entry extends Model implements Validator
     {
         $parsedContent = Collection::init();
 
-        $schema = $this->getSchema();
+        $schema = $this->getSchema(true);
 
         $schema->each(function ($key, $modelField) use (&$parsedContent) {
             /**
@@ -259,9 +259,9 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function simplify(object|null $currentHomepageEntry, bool $wantSchema = true): array
+    public function simplify(object|null $currentHomepageEntry, bool $wantSchema = false): array
     {
-        $schema = Collection::init();
+        $schema = [];
         if ($wantSchema) {
             $entryLayout = $this->getEntryLayout();
 
@@ -983,6 +983,7 @@ class Entry extends Model implements Validator
      *
      * Get schema from entryLayout
      *
+     * @param bool $silent
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -990,11 +991,11 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    private function getSchema(): Collection
+    private function getSchema(bool $silent = false): Collection
     {
         $entryLayout = $this->getEntryLayout();
 
-        if (!$entryLayout) {
+        if (!$entryLayout && !$silent) {
             $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
 
             if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
@@ -1004,7 +1005,13 @@ class Entry extends Model implements Validator
             throw new EntryException($errorMessage);
         }
 
-        return $entryLayout->schema;
+        $result = $entryLayout ? $entryLayout->schema : Collection::init();
+
+        if (is_array($result)) {
+            $result = new Collection($result);
+        }
+
+        return $result;
     }
 
     /**
@@ -1255,6 +1262,8 @@ class Entry extends Model implements Validator
         // The query has the good entry type
         $entry->entryType = $this->entryType;
 
+        (new EntryVersion)->create($author, $entry->simplify(null, false));
+
         return $entry;
     }
 
@@ -1380,6 +1389,8 @@ class Entry extends Model implements Validator
         } catch (Exception $e) {
             // Do nothing because there is no entry seo for this entry
         }
+
+        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
 
         return $qtyDeleted === 1;
     }
