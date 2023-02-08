@@ -287,7 +287,7 @@ type InputSettings {
 type Settings {
     name: String!
     value: String
-    choices: [String]
+    options: [Options!]
     type: String!
 }
 
@@ -552,6 +552,11 @@ type Category {
     order: Int!
     parent_id: String!
     children: [Category!]!
+}
+
+type Options {
+    value: String!
+    label: String!
 }
 
 #{CUSTOM_TYPES}#
