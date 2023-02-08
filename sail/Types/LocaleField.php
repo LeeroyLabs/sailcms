@@ -14,7 +14,7 @@ class LocaleField implements Castable
     {
         $this->combinations = Collection::init();
 
-        if (is_object($combinations) && get_clas($combinations) === __CLASS__) {
+        if (is_object($combinations) && get_class($combinations) === __CLASS__) {
             $combinations = $combinations->castFrom();
         }
 
