@@ -265,6 +265,9 @@ class User extends Model
 
                     $mail->to($email)
                          ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first
+                             ],
                              'verification_code' => $code,
                              'reset_pass_code' => $passCode,
                              'name' => $name->first,
@@ -408,6 +411,9 @@ class User extends Model
                     'new_admin_account',
                     $locale,
                     [
+                        'replacements' => [
+                            'name' => $name->first
+                        ],
                         'verification_code' => $code,
                         'reset_pass_code' => $passCode,
                         'name' => $name->first
