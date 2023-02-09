@@ -640,7 +640,6 @@ abstract class Model implements JsonSerializable
 
             // Run Validators
             $this->runValidators((object)$doc);
-
             $id = $this->active_collection->insertOne($doc)->getInsertedId();
 
             $this->clearCacheForModel();
@@ -727,7 +726,7 @@ abstract class Model implements JsonSerializable
 
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
-
+            
             $count = $this->active_collection->updateOne($query, $update)->getModifiedCount();
 
             $this->clearCacheForModel();
@@ -1221,7 +1220,7 @@ abstract class Model implements JsonSerializable
         }
 
         // stdClass => stdClass
-        if (get_class($obj) === 'stdClass') {
+        if ($obj instanceof \stdClass) {
             return $obj;
         }
 
@@ -1262,7 +1261,10 @@ abstract class Model implements JsonSerializable
     private function prepareForWrite(mixed $doc): array
     {
         $instance = new static();
-        $instance->fill($doc);
+
+        foreach ($doc as $key => $value) {
+            $instance->properties[$key] = $value;
+        }
 
         $obj = $instance->toJSON(true);
 
@@ -1288,13 +1290,10 @@ abstract class Model implements JsonSerializable
      * @return $this
      *
      */
-    protected function fill(mixed $doc): self
+    protected static function fill(mixed $doc): self
     {
-        foreach ($doc as $key => $value) {
-            $this->properties[$key] = $value;
-        }
-
-        return $this;
+        $instance = new static();
+        return $instance->transformDocToModel($doc);
     }
 
     /**

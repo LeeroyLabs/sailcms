@@ -118,6 +118,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         if (!is_array($value)) {
             if (is_object($value) && get_class($value) === \stdClass::class) {
                 $value = (array)$value;
+            } elseif (is_object($value) && get_class($value) === __CLASS__) {
+                return $value;
             } else {
                 throw new CollectionException('Cannot initialize with anything other than an array', 0400);
             }
