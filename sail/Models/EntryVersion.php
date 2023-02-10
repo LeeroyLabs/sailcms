@@ -52,7 +52,15 @@ class EntryVersion extends Model
         return (string)$entryVersionId;
     }
 
-
+    /**
+     *
+     * Delete all version by entry id
+     *
+     * @param string $entry_id
+     * @return bool
+     * @throws EntryException
+     *
+     */
     public function deleteAllByEntryId(string $entry_id): bool
     {
         try {
@@ -62,5 +70,14 @@ class EntryVersion extends Model
         }
 
         return $result > 0;
+    }
+
+    public function applyVersion(string $entry_version_id)
+    {
+        $entryVersion = $this->findById($entry_version_id);
+
+        if (!$entryVersion) {
+            return false;
+        }
     }
 }
