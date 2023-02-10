@@ -94,7 +94,7 @@ class InputSelectField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if (!array_key_exists($content, (array)$this->options)) {
+        if (!array_key_exists($content, $this->options->unwrap())) {
             $errors->push(self::OPTIONS_INVALID);
         }
 
@@ -115,7 +115,7 @@ class InputSelectField extends Field
             'settings' => [
                 'required' => $this->required,
                 'multiple' => $this->multiple,
-                'options' => $this->options
+                'options' => $this->options->unwrap()
             ]
         ];
     }
