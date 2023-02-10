@@ -726,7 +726,7 @@ abstract class Model implements JsonSerializable
 
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
-            
+
             $count = $this->active_collection->updateOne($query, $update)->getModifiedCount();
 
             $this->clearCacheForModel();
@@ -1208,6 +1208,11 @@ abstract class Model implements JsonSerializable
 
         if ($obj === null) {
             return null;
+        }
+
+        // Process Collection first, because it will pass the is_array test
+        if (is_object($obj) && get_class($obj) === \SailCMS\Collection::class) {
+            return $obj->unwrap();
         }
 
         // Handle array
