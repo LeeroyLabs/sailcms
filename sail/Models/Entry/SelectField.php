@@ -28,7 +28,7 @@ class SelectField extends Field
 
     public function storingType(): string
     {
-        return StoringType::ARRAY->name;
+        return StoringType::STRING->name;
     }
 
     public function defaultSettings(): Collection
@@ -49,11 +49,11 @@ class SelectField extends Field
      *
      * Select validation
      *
-     * @param Collection $content
+     * @param mixed $content
      * @return Collection|null
      *
      */
-    protected function validate(Collection $content): ?Collection
+    protected function validate(mixed $content): ?Collection
     {
         return null;
     }

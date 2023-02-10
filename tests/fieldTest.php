@@ -14,6 +14,7 @@ use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
@@ -93,21 +94,16 @@ test('Add all fields to the layout', function ()
         ]
     ], 2);
 
-    $selectField = new SelectField(
-        new LocaleField(['en' => 'Select', 'fr' => 'Selection']),
+    $selectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
         [
-            [
-                'required' => true,
-                'multiple' => true,
-                'options' => new Collection([
-                    [
-                        'value' => 'test',
-                        'label' => 'Big test'
-                    ]
-                ])
-            ]
-        ],
-    );
+            'required' => true,
+            'multiple' => false,
+            'options' => new Collection([
+                'test' => 'Big test',
+                'test2' => 'The real big test'
+            ])
+        ]
+    ]);
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
@@ -148,15 +144,17 @@ test('Failed to update the entry content', function ()
                 'phone' => '514-3344344',
                 'related' => [
                     'id' => (string)$relatedEntry->_id
-                ]
+                ],
+                'select' => 'test-failed'
             ]
         ], false);
-//        print_r($errors);
+        //print_r($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
+        expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);

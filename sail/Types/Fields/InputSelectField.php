@@ -11,10 +11,12 @@ use stdClass;
 class InputSelectField extends Field
 {
     /* Errors from 6180 to 6199 */
+    public const OPTIONS_INVALID = '6180: Option not valid';
+
     /**
      *
      *
-     * Input text field from html input:select attributes
+     * Input select field from html select attributes
      *
      * @param LocaleField|null $labels
      * @param bool $required
@@ -31,7 +33,7 @@ class InputSelectField extends Field
 
     /**
      *
-     * Define default settings for a Input Text Field
+     * Define default settings for a select field
      *
      * @return Collection
      *
@@ -68,18 +70,17 @@ class InputSelectField extends Field
     /**
      *
      * Get the type of how it's store in the database
-     *  > it could be an integer or a float
      *
      * @return string
      */
     public static function storingType(): string
     {
-        return StoringType::ARRAY->value;
+        return StoringType::STRING->value;
     }
 
     /**
      *
-     * Input text field validation
+     * Select field validation
      *
      * @param  mixed  $content
      * @return Collection
@@ -89,9 +90,12 @@ class InputSelectField extends Field
     {
         $errors = Collection::init();
 
-        // Since "0" is treat as false, the condition for empty is stricter
         if ($this->required && $content === "") {
             $errors->push(self::FIELD_REQUIRED);
+        }
+
+        if (!array_key_exists($content, (array)$this->options)) {
+            $errors->push(self::OPTIONS_INVALID);
         }
 
         return $errors;
@@ -99,7 +103,7 @@ class InputSelectField extends Field
 
     /**
      *
-     * Cast to simpler form from InputNumberField
+     * Cast to simpler form from InputSelectField
      *
      * @return stdClass
      *
@@ -118,7 +122,7 @@ class InputSelectField extends Field
 
     /**
      *
-     * Cast to InputNumberField
+     * Cast to InputSelectField
      *
      * @param  mixed  $value
      * @return Field

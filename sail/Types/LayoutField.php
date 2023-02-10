@@ -26,6 +26,10 @@ class LayoutField implements Castable
         $configs = new Collection();
 
         $this->configs->each(function ($key, $value) use (&$configs) {
+            if ($value->get('options') instanceof Collection) {
+                $value->pushKeyValue('options', $value->get('options')->castFrom());
+            }
+
             $configs->pushKeyValue($key, $value->castFrom());
         });
 
@@ -38,6 +42,10 @@ class LayoutField implements Castable
 
     public function castTo(mixed $value): self
     {
+        if (is_array($value->configs->get('options'))) {
+            $options = new Collection($value->configs->get('options'));
+            $value->configs->pushKeyValue('options', $options);
+        }
         return new self($value->labels, $value->handle, $value->configs);
     }
 }
