@@ -1210,6 +1210,11 @@ abstract class Model implements JsonSerializable
             return null;
         }
 
+        // Process Collection first, because it will pass the is_array test
+        if (is_object($obj) && get_class($obj) === \SailCMS\Collection::class) {
+            return $obj->unwrap();
+        }
+
         // Handle array
         if (is_array($obj)) {
             foreach ($obj as $num => $item) {
