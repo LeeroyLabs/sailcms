@@ -38,7 +38,7 @@ class InputSelectField extends Field
      * @return Collection
      *
      */
-    public static function defaultSettings(bool $multiple = null): Collection
+    public static function defaultSettings(bool $multiple = false): Collection
     {
         return new Collection([
             'required' => false,

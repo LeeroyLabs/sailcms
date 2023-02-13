@@ -98,7 +98,6 @@ test('Add all fields to the layout', function ()
     $selectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
         [
             'required' => true,
-            'multiple' => false,
             'options' => new Collection([
                 'test' => 'Big test',
                 'test2' => 'The real big test'
@@ -109,7 +108,6 @@ test('Add all fields to the layout', function ()
     $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Multiple Select', 'fr' => 'Selection multiple']), [
         [
             'required' => true,
-            'multiple' => true,
             'options' => new Collection([
                 'test' => 'Big test',
                 'test2' => 'The real big test',
@@ -173,7 +171,7 @@ test('Failed to update the entry content', function ()
         expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
         expect($errors->get('multipleSelect')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -213,8 +211,8 @@ and must keep it through all the process',
         expect($entry->content->get('description'))->toContain(PHP_EOL);
         expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
-//        print_r($errors);
+        //print_r($exception->getMessage());
+        //print_r($errors);
         expect(true)->toBe(false);
     }
 });
