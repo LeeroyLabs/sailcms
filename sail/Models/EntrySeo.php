@@ -250,9 +250,8 @@ class EntrySeo extends Model implements Castable
         string|null     $defaultImage = "",
         Collection|null $socialMetas = null): EntrySeo
     {
-        $socialMetasFinal = Collection::init();
         if (isset($socialMetas)) {
-            $socialMetasFinal = $this->setSocialMetasDefault($socialMetas, $title, $description, $defaultImage);
+            $this->social_metas = $this->setSocialMetasDefault($socialMetas, $title, $description, $defaultImage);
         }
 
         try {
@@ -264,7 +263,7 @@ class EntrySeo extends Model implements Castable
                 'robots' => $robots,
                 'sitemap' => $sitemap,
                 'default_image' => $defaultImage,
-                'social_metas' => $socialMetasFinal
+                'social_metas' => $this->social_metas ?? Collection::init()
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -305,6 +304,7 @@ class EntrySeo extends Model implements Castable
             $defaultImage = $update['default_image'] ?? $entrySeo->default_image ?? "";
 
             $update['social_metas'] = $this->setSocialMetasDefault($update['social_metas'], $defaultTitle, $defaultDescription, $defaultImage);
+            $this->social_metas = $update['social_metas'];
         }
 
         try {
