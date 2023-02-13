@@ -2,6 +2,7 @@
 
 use SailCMS\Collection;
 use SailCMS\Models\Entry\EntryField;
+use SailCMS\Models\Entry\MultipleSelectField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\SelectField;
@@ -105,6 +106,19 @@ test('Add all fields to the layout', function ()
         ]
     ]);
 
+    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Multiple Select', 'fr' => 'Selection multiple']), [
+        [
+            'required' => true,
+            'multiple' => true,
+            'options' => new Collection([
+                'test' => 'Big test',
+                'test2' => 'The real big test',
+                'test3' => 'BIG TEST OF DOOM',
+                'test4' => 'It\' just a flesh wound'
+            ])
+        ]
+    ]);
+
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
     $fields = new Collection([
@@ -115,6 +129,7 @@ test('Add all fields to the layout', function ()
         "float" => $numberFieldFloat,
         "related" => $entryField,
         "select" => $selectField,
+        "multipleSelect" => $multipleSelectField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -145,7 +160,8 @@ test('Failed to update the entry content', function ()
                 'related' => [
                     'id' => (string)$relatedEntry->_id
                 ],
-                'select' => 'test-failed'
+                'select' => 'test-failed',
+                'multipleSelect' => ['test3', 'test4', 'test-failed']
             ]
         ], false);
         //print_r($errors);
@@ -155,6 +171,7 @@ test('Failed to update the entry content', function ()
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
         expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
+        expect($errors->get('multipleSelect')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
     } catch (Exception $exception) {
         print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -182,7 +199,9 @@ and must keep it through all the process',
                 'related' => [
                     'id' => (string)$relatedEntry->_id,
                     'typeHandle' => 'field-test'
-                ]
+                ],
+                'select' => 'test',
+                'multipleSelect' => ['test3', 'test4']
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -194,7 +213,7 @@ and must keep it through all the process',
         expect($entry->content->get('description'))->toContain(PHP_EOL);
         expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
+        print_r($exception->getMessage());
 //        print_r($errors);
         expect(true)->toBe(false);
     }

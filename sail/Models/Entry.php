@@ -1041,7 +1041,6 @@ class Entry extends Model implements Validator
     private function validateContent(Collection $content): Collection
     {
         $errors = Collection::init();
-
         $schema = null;
         if ($this->entryType->entry_layout_id) {
             $schema = $this->getSchema();
@@ -1071,7 +1070,6 @@ class Entry extends Model implements Validator
                     return;
                 }
             }
-
             $modelFieldErrors = $modelField->validateContent($modelFieldContent);
 
             if ($modelFieldErrors->length > 0) {
@@ -1292,7 +1290,6 @@ class Entry extends Model implements Validator
         if (in_array('status', $data->keys()->unwrap())) {
             self::validateStatus($data->get('status'));
         }
-
         if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
             $errors = $this->validateContent($data->get('content'));
 

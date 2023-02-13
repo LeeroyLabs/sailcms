@@ -38,11 +38,11 @@ class InputSelectField extends Field
      * @return Collection
      *
      */
-    public static function defaultSettings(): Collection
+    public static function defaultSettings(bool $multiple = null): Collection
     {
         return new Collection([
             'required' => false,
-            'multiple' => false,
+            'multiple' => $multiple,
             'options' => new Collection([])
         ]);
     }
@@ -75,7 +75,7 @@ class InputSelectField extends Field
      */
     public static function storingType(): string
     {
-        return StoringType::STRING->value;
+        return StoringType::STRING->value . " or " . StoringType::ARRAY->value;
     }
 
     /**
@@ -90,14 +90,21 @@ class InputSelectField extends Field
     {
         $errors = Collection::init();
 
-        if ($this->required && $content === "") {
+        if ($this->required && ($content === "" || $content === [])) {
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if (!array_key_exists($content, $this->options->unwrap())) {
-            $errors->push(self::OPTIONS_INVALID);
+        if (is_string($content)) {
+            if (!array_key_exists($content, $this->options->unwrap())) {
+                $errors->push(self::OPTIONS_INVALID);
+            }
+        }else{
+            foreach ($content->unwrap() as $option) {
+                if (!array_key_exists($option, $this->options->unwrap())) {
+                    $errors->push(self::OPTIONS_INVALID);
+                }
+            }
         }
-
         return $errors;
     }
 

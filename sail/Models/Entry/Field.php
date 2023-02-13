@@ -104,7 +104,7 @@ abstract class Field
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
             $currentContent = $content;
-            if ($content instanceof Collection) {
+            if ($content instanceof Collection && !property_exists($fieldTypeClass, 'options')) {
                 $currentContent = $content->get($index);
             }
             $error = $fieldTypeClass->validate($currentContent);
