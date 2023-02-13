@@ -366,7 +366,7 @@ input FilterInput {
     operation: FilterOperation!
     logic: FilterLogic
     value: String
-    type: InputType
+    type: InputType # TODO remove that to cast from entry model (Nich)
 }
 
 enum FilterOperation {

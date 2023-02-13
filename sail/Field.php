@@ -26,8 +26,6 @@ use SailCMS\Models\Entry\Field as ModelField;
  * EntryListField
  * CategoryField // to talk about
  *
- * ObjectField
- *
  */
 class Field
 {

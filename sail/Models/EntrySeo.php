@@ -250,9 +250,8 @@ class EntrySeo extends Model implements Castable
         string|null     $defaultImage = "",
         Collection|null $socialMetas = null): EntrySeo
     {
-        $socialMetasFinal = Collection::init();
         if (isset($socialMetas)) {
-            $socialMetasFinal = $this->setSocialMetasDefault($socialMetas, $title, $description, $defaultImage);
+            $this->social_metas = $this->setSocialMetasDefault($socialMetas, $title, $description, $defaultImage);
         }
 
         try {
@@ -264,7 +263,7 @@ class EntrySeo extends Model implements Castable
                 'robots' => $robots,
                 'sitemap' => $sitemap,
                 'default_image' => $defaultImage,
-                'social_metas' => $socialMetasFinal
+                'social_metas' => $this->social_metas ?? Collection::init()
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
@@ -305,6 +304,7 @@ class EntrySeo extends Model implements Castable
             $defaultImage = $update['default_image'] ?? $entrySeo->default_image ?? "";
 
             $update['social_metas'] = $this->setSocialMetasDefault($update['social_metas'], $defaultTitle, $defaultDescription, $defaultImage);
+            $this->social_metas = $update['social_metas'];
         }
 
         try {
@@ -329,13 +329,18 @@ class EntrySeo extends Model implements Castable
      * @return Collection
      *
      */
-    private static function setSocialMetasDefault(Collection|array $socialMetas, string $defaultTitle, string $defaultDescription, string $defaultImage): Collection
+    private static function setSocialMetasDefault(Collection|array $socialMetas, string $defaultTitle, string $defaultDescription, string $defaultImage): array
     {
         if (is_array($socialMetas)) {
             $socialMetas = new Collection($socialMetas);
         }
 
-        $socialMetas->each(function ($index, &$socialMeta) use ($defaultTitle, $defaultDescription, $defaultImage) {
+        $socialMetaDefaulted = [];
+        $socialMetas->each(function ($index, &$socialMeta) use ($defaultTitle, $defaultDescription, $defaultImage, &$socialMetaDefaulted) {
+            /**
+             * @var SocialMeta $socialMeta
+             */
+
             if (empty($socialMeta->title)) {
                 $socialMeta->title = $defaultTitle;
             }
@@ -345,8 +350,9 @@ class EntrySeo extends Model implements Castable
             if (empty($socialMeta->image)) {
                 $socialMeta->image = $defaultImage;
             }
+            $socialMetaDefaulted[] = $socialMeta->castFrom();
         });
 
-        return $socialMetas;
+        return $socialMetaDefaulted;
     }
 }

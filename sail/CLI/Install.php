@@ -66,6 +66,7 @@ class Install extends Command
             'storage/fs/logs/.gitkeep' => '',
             'storage/cache/.gitkeep' => '',
             'storage/debug/.gitkeep' => '',
+            'storage/fs/vault/basic_auth' => '',
             'locales/en.yaml' => '',
             'templates/default/email/account.twig' => 'account.email.twig',
             'serverless_crons/.gitkeep' => ''

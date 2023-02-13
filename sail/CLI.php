@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use Exception;
 use JsonException;
+use SailCMS\CLI\BasicAuth;
 use SailCMS\CLI\Cache;
 use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
@@ -24,7 +25,7 @@ use Symfony\Component\Console\Application;
 
 final class CLI
 {
-    public const CLI_VERSION = '1.0.0-next.2';
+    public const CLI_VERSION = '1.0.0';
     private static string $workingDirectory = '';
     public static Collection $registeredCommands;
 
@@ -77,6 +78,7 @@ final class CLI
         $application->add(new Migrate());
         $application->add(new Migrations());
         $application->add(new Test());
+        $application->add(new BasicAuth());
 
         // Custom commands
         if (!isset(self::$registeredCommands)) {

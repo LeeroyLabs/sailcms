@@ -24,7 +24,7 @@ class SocialMeta implements Castable
      * @param object|null $content
      *
      */
-    public function __construct(string $handle, object $content = null)
+    public function __construct(string $handle = "", object $content = null)
     {
         $this->handle = $handle;
 
@@ -108,7 +108,7 @@ class SocialMeta implements Castable
                 'title' => $this->title,
                 'description' => $this->description,
                 'image' => $this->image,
-                ...$this->customMeta
+                ...$this->customMeta ?? []
             ]
         ];
     }
@@ -126,7 +126,6 @@ class SocialMeta implements Castable
         if (is_array($value)) {
             $value = (object)$value;
         }
-
-        return new self($value->handle, $value->content);
+        return new self($value->handle, $value->content ?? null);
     }
 }

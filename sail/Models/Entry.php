@@ -325,7 +325,7 @@ class Entry extends Model implements Validator
 
         // Set up cache
         $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters);
-        $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
 
         // Actual query
         $results = $entryModel->find($filters, $options)->exec($cacheKey, $cacheTtl);
@@ -395,7 +395,7 @@ class Entry extends Model implements Validator
         $entryModel = EntryType::getEntryModelByHandle($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY}, $simplify);
 
         $cacheHandle = self::HOMEPAGE_CACHE . $siteId . "_" . $locale;
-        $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
         $entry = $entryModel->findById($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY})->exec($cacheHandle, $cacheTtl);
 
         if ($simplify) {
@@ -432,7 +432,7 @@ class Entry extends Model implements Validator
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+                $cache_ttl = setting('entry.cacheTtl', Cache::TTL_WEEK);
                 $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(self::FIND_BY_URL_CACHE . $url, $cache_ttl);
 
                 $preview = false;
@@ -463,7 +463,6 @@ class Entry extends Model implements Validator
                 if ($content !== null) {
                     return;
                 }
-
             }
         });
 
@@ -687,7 +686,7 @@ class Entry extends Model implements Validator
     public function one(array $filters): Entry|null
     {
         if (isset($filters['_id'])) {
-            $cache_ttl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+            $cache_ttl = setting('entry.cacheTtl', Cache::TTL_WEEK);
             return $this->findById($filters['_id'])->exec(self::ONE_CACHE_BY_ID . $filters['_id'], $cache_ttl);
         }
 
@@ -733,7 +732,7 @@ class Entry extends Model implements Validator
         }
 
         // Cache Time To Live value from setting or default
-        $cacheTtl = $_ENV['SETTINGS']->get('entry.cacheTtl', Cache::TTL_WEEK);
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
 
         // Actual query!!!
         $result = $this->find($filters)->exec($cacheKey, $cacheTtl);
