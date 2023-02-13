@@ -7,7 +7,7 @@ include_once dirname(__DIR__) . '/Globals.php';
 use Clockwork\Support\Vanilla\Clockwork;
 use Dotenv\Dotenv;
 use Exception;
-use JsonException;
+use \JsonException;
 use League\Flysystem\FilesystemException;
 use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Errors\ACLException;
@@ -33,7 +33,7 @@ use Whoops\Handler\PlainTextHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
-final class Sail
+class Sail
 {
     public const SAIL_VERSION = '3.0.0-next.25';
     public const STATE_WEB = 10001;
@@ -63,6 +63,9 @@ final class Sail
 
     public static bool $isServerless = false;
 
+    private static Collection $environmentData;
+    private static bool $encryptedEnv = false;
+
     /**
      *
      * Initialize the CMS
@@ -73,7 +76,7 @@ final class Sail
      * @throws Errors\RouteReturnException
      * @throws FileException
      * @throws FilesystemException
-     * @throws JsonException
+     * @throws \JsonException
      * @throws LoaderError
      * @throws RuntimeError
      * @throws SiteException
@@ -118,6 +121,11 @@ final class Sail
         self::$errorHandler->register();
 
         self::bootBasics($securitySettings);
+
+        // Run Basic Authentication
+        if (setting('useBasicAuthentication')) {
+            self::handleBasicAuthentication();
+        }
 
         // CORS setup
         self::setupCORS();
@@ -218,7 +226,7 @@ final class Sail
 
         $settings = new Collection($config);
 
-        $_ENV['SETTINGS'] = $settings->get(env('environment', 'dev'));
+        self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
 
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
@@ -274,14 +282,15 @@ final class Sail
 
     /**
      *
-     * Setup the .env
+     * Set up the .env
      *
      * @return void
+     * @throws FileException
      *
      */
     private static function setupEnv(): void
     {
-        // Create .env file if does not exist
+        // Create .env file if it does not exist
         if (!file_exists(self::$workingDirectory . '/.env')) {
             file_put_contents(
                 self::$workingDirectory . '/.env',
@@ -290,8 +299,14 @@ final class Sail
         }
 
         // Load .env file
-        $dotenv = Dotenv::createImmutable(self::$workingDirectory, '.env');
-        $dotenv->load();
+        try {
+            $envData = file_get_contents(self::$workingDirectory . '/.env');
+            $env = Dotenv::parse($envData);
+
+            self::$environmentData = new Collection($env);
+        } catch (Exception $e) {
+            throw new FileException('Cannot read/find the .env file');
+        }
 
         // Setup Clockwork for debugging info
         if (env('debug', 'off') === 'on') {
@@ -454,6 +469,7 @@ final class Sail
      * @throws FileException
      * @throws ACLException
      * @throws PermissionException
+     * @throws  FilesystemException
      *
      */
     public static function initForCron(string $execPath): void
@@ -481,11 +497,13 @@ final class Sail
      *
      * @param  string  $execPath
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws FileException
+     * @throws FilesystemException
      * @throws JsonException
+     * @throws PermissionException
      * @throws SiteException
-     * @throws ACLException
      *
      */
     public static function initForCli(string $execPath): void
@@ -609,6 +627,7 @@ final class Sail
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
+     * @throws FileException
      *
      */
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
@@ -623,11 +642,12 @@ final class Sail
             self::setupEnv();
 
             $config = include dirname(__DIR__) . '/install/config/general.php';
+            $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
-                $_ENV['SETTINGS'] = new Collection($config[$env]);
+                self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
             } else {
-                $_ENV['SETTINGS'] = new Collection($config['dev']);
+                self::$environmentData->setFor('SETTINGS', $settings->get('dev'));
             }
 
             ACL::init();
@@ -707,19 +727,34 @@ final class Sail
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
+     * @throws FileException
      *
      */
     public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
     {
-        $_ENV['SITE_URL'] = 'http://localhost:8888';
         self::setWorkingDirectory($rootDir . '/mock');
-        self::setAppState(Sail::STATE_CLI, 'dev', $rootDir . '/mock');
+        self::setAppState(self::STATE_CLI, 'dev', $rootDir . '/mock');
+
+        self::$environmentData->setFor('SITE_URL', 'http://localhost:8888');
 
         if ($templatePath !== '') {
             self::setTemplateDirectory($templatePath);
         } else {
             self::setTemplateDirectory(dirname($rootDir) . '/templates');
         }
+    }
+
+    /**
+     *
+     * Get an environment variable in safe way (cannot be dumped)
+     *
+     * @param  string  $key
+     * @return mixed
+     *
+     */
+    public static function getEnvironmentVariable(string $key): mixed
+    {
+        return self::$environmentData->get($key, null);
     }
 
     /**
@@ -896,5 +931,37 @@ final class Sail
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($names, JSON_THROW_ON_ERROR);
         exit();
+    }
+
+    /**
+     *
+     * Handle the Basic Authentication feature
+     *
+     * @return void
+     *
+     */
+    private static function handleBasicAuthentication(): void
+    {
+        $u = $_SERVER['PHP_AUTH_USER'] ?? '';
+        $p = $_SERVER['PHP_AUTH_PW'] ?? '';
+
+        // Validate if not empty
+        $userpasses = file_get_contents(self::$workingDirectory . '/storage/fs/vault/basic_auth');
+        $pairs = explode(PHP_EOL, $userpasses);
+
+        foreach ($pairs as $pair) {
+            [$user, $pass] = explode(':', $pair);
+            $validPass = Security::verifyPassword($p, $pass);
+
+            if ($u !== $user || !$validPass) {
+                $u = '';
+                $p = '';
+            }
+        }
+
+        if ($u === '' && $p === '') {
+            header('WWW-Authenticate: Basic realm="Secure Area"');
+            header('HTTP/1.0 401 Unauthorized');
+        }
     }
 }

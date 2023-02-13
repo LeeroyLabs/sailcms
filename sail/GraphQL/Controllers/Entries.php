@@ -685,6 +685,7 @@ class Entries
     }
 
     /**
+     * TODO do we need that ? AKA use the search instead!
      *
      * Parse filter input
      *

@@ -214,8 +214,6 @@ test('Update seo data for an entry', function () {
         ]));
         $entrySeo = $entry->getSEO(true);
 
-        // print_r($entrySeo);
-
         expect($entrySeo->get('title'))->toBe("New Title")
             ->and($entrySeo->get('description'))->toBe("This is a really good description for a page")
             ->and($entrySeo->get('keywords'))->toBe("Good, CMS")
@@ -224,7 +222,7 @@ test('Update seo data for an entry', function () {
             ->and($entrySeo->get('social_metas.1.handle'))->toBe('twitter')
             ->and($entrySeo->get('social_metas.1.content.image:alt'))->toBe('Fake image');
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
     }
 })->group('entry-seo');
