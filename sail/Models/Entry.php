@@ -1283,6 +1283,7 @@ class Entry extends Model implements Validator
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true): Collection
     {
         $update = [];
+        $author = User::$currentUser;
         $slug = $entry->slug;
         $locale = $entry->locale;
         $site_id = $entry->site_id;
@@ -1321,7 +1322,7 @@ class Entry extends Model implements Validator
 
         // Automatic attributes
         $update['url'] = self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale);
-        $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
+        $update['authors'] = Authors::updated($entry->authors, $author->_id);
         $update['dates'] = Dates::updated($entry->dates);
 
         try {
@@ -1331,6 +1332,8 @@ class Entry extends Model implements Validator
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
+
+        (new EntryVersion)->create($author, $entry->simplify(null, false));
 
         // Return no errors
         return Collection::init();
@@ -1382,14 +1385,15 @@ class Entry extends Model implements Validator
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
 
-        // Must delete seo data too
+        // Must delete seo data
         try {
             (new EntrySeo())->deleteByEntryId((string)$entryId, false);
         } catch (Exception $e) {
             // Do nothing because there is no entry seo for this entry
         }
 
-        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
+        // And entry versions too
+//        (new EntryVersion)->deleteAllByEntryId((string)$entryId);
 
         return $qtyDeleted === 1;
     }

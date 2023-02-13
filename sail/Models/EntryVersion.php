@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
@@ -23,6 +24,11 @@ class EntryVersion extends Model
     protected string $permissionGroup = 'entryversion'; // Usage only in get methods
 
     public const DATABASE_ERROR = '5100: Exception when "%s" an entry seo.';
+
+    public function getVersionByEntryId(string|ObjectId $entryId)
+    {
+        return $this->find(['entry_id' => (string)$entryId])->exec();
+    }
 
     /**
      *
@@ -76,8 +82,26 @@ class EntryVersion extends Model
     {
         $entryVersion = $this->findById($entry_version_id);
 
-        if (!$entryVersion) {
+        if (!isset($entryVersion->_id)) {
             return false;
         }
+
+        $data = [
+            'parent' => $entryVersion->entry->get('parent'),
+            'site_id' => $entryVersion->entry->get('site_id'),
+            'locale' => $entryVersion->entry->get('locale'),
+            'status' => $entryVersion->entry->get('status'),
+            'title' => $entryVersion->entry->get('title'),
+            'slug' => $entryVersion->entry->get('slug'),
+            'template' => $entryVersion->entry->get('template'),
+            'categories' => $entryVersion->entry->get('categories'),
+            'content' => $entryVersion->entry->get('content'),
+            'alternates' => $entryVersion->entry->get('alternates'),
+        ];
+
+        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'));
+        $entryModel = $entryType->getEntryModel($entryType);
+
+        $entryModel->updateById($entryVersion->entry->get('_id'), $data);
     }
 }

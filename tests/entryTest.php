@@ -418,6 +418,21 @@ test('Failed to find the entry by url', function () {
     expect($entry)->toBe(null);
 })->group('entry');
 
+// TODO finish that! --- when update must have new data... instead of old data. QUERY EACH TIME ?
+//test('Get entry versions and apply one', function () {
+//    $entryModel = new Entry();
+//    $entry = $entryModel->one([
+//        'title' => 'Home page'
+//    ]);
+//
+//    $entryVersions = (new EntryVersion())->getVersionByEntryId($entry->_id);
+//
+//    foreach ($entryVersions as $version) {
+//        print_r($version->created_at);
+//        print_r((new Collection((array)$version->entry))->get('title'));
+//    }
+//});
+
 test('Failed to delete an entry type with related entries in it', function () {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
@@ -462,6 +477,7 @@ test('Get all entries with ignoring trash and not', function () {
         expect(true)->toBe(false);
     }
 })->group('entry');
+
 
 test('Hard delete an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
