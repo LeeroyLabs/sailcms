@@ -8,6 +8,7 @@ return [
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
         'timezone' => 'America/New_York',
+        'useBasicAuthentication' => true,
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
@@ -136,6 +137,7 @@ return [
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
         'timezone' => 'America/New_York',
+        'useBasicAuthentication' => false,
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
@@ -241,6 +243,7 @@ return [
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
         'timezone' => 'America/New_York',
+        'useBasicAuthentication' => false,
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
