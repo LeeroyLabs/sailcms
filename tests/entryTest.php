@@ -451,7 +451,8 @@ test('Get entry versions failed to apply the last version and apply one', functi
             'title' => 'Test'
         ]);
         // The first versions has empty content
-        expect($entry->content->length)->toBe(0);
+        expect($entry->content->length)->toBe(0)
+            ->and($entry->slug)->toBe('test');
 
     } catch (EntryException $e) {
 //        print_r($e->getMessage());
