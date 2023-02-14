@@ -194,7 +194,7 @@ class Entry extends Model implements Validator
     {
         $parsedContent = Collection::init();
 
-        $schema = $this->getSchema();
+        $schema = $this->getSchema(true);
 
         $schema->each(function ($key, $modelField) use (&$parsedContent) {
             /**
@@ -259,15 +259,19 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function simplify(object|null $currentHomepageEntry, bool $wantSchema = true): array
+    public function simplify(object|null $currentHomepageEntry, bool $wantSchema = false, bool $parseContent = true): array
     {
-        $schema = Collection::init();
+        $schema = [];
         if ($wantSchema) {
             $entryLayout = $this->getEntryLayout();
 
             if ($entryLayout) {
                 $schema = $entryLayout->simplifySchema();
             }
+        }
+        $content = $this->content;
+        if ($parseContent) {
+            $content = $this->getContent()->castFrom();
         }
 
         return [
@@ -286,7 +290,7 @@ class Entry extends Model implements Validator
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'categories' => $this->categories->castFrom(),
-            'content' => $this->getContent()->castFrom(),
+            'content' => $content,
             'seo' => $this->getSEO()->castFrom(),
             'schema' => $schema
         ];
@@ -828,6 +832,7 @@ class Entry extends Model implements Validator
      * @param Entry|string $entry or id
      * @param array|Collection $data
      * @param bool $throwErrors
+     * @param bool $bypassContentValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -838,7 +843,7 @@ class Entry extends Model implements Validator
      * @throws SodiumException
      *
      */
-    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true): Collection
+    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
     {
         $this->hasPermissions();
 
@@ -855,7 +860,7 @@ class Entry extends Model implements Validator
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryId));
         }
 
-        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors);
+        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors, $bypassContentValidation);
 
         if ($updateErrors->length <= 0) {
             $this->handleHomepageUpdate($entry, $data);
@@ -982,6 +987,7 @@ class Entry extends Model implements Validator
      *
      * Get schema from entryLayout
      *
+     * @param bool $silent
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -989,11 +995,11 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    private function getSchema(): Collection
+    private function getSchema(bool $silent = false): Collection
     {
         $entryLayout = $this->getEntryLayout();
 
-        if (!$entryLayout) {
+        if (!$entryLayout && !$silent) {
             $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
 
             if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
@@ -1003,7 +1009,13 @@ class Entry extends Model implements Validator
             throw new EntryException($errorMessage);
         }
 
-        return $entryLayout->schema;
+        $result = $entryLayout ? $entryLayout->schema : Collection::init();
+
+        if (is_array($result)) {
+            $result = new Collection($result);
+        }
+
+        return $result;
     }
 
     /**
@@ -1070,7 +1082,6 @@ class Entry extends Model implements Validator
                     return;
                 }
             }
-
             $modelFieldErrors = $modelField->validateContent($modelFieldContent);
 
             if ($modelFieldErrors->length > 0) {
@@ -1254,6 +1265,8 @@ class Entry extends Model implements Validator
         // The query has the good entry type
         $entry->entryType = $this->entryType;
 
+        (new EntryVersion)->create($author, $entry->simplify(null, false, false));
+
         return $entry;
     }
 
@@ -1264,6 +1277,7 @@ class Entry extends Model implements Validator
      * @param Entry $entry
      * @param Collection $data
      * @param bool $throwErrors
+     * @param bool $bypassContentValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1271,9 +1285,10 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true): Collection
+    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
     {
         $update = [];
+        $author = User::$currentUser;
         $slug = $entry->slug;
         $locale = $entry->locale;
         $site_id = $entry->site_id;
@@ -1292,7 +1307,8 @@ class Entry extends Model implements Validator
             self::validateStatus($data->get('status'));
         }
 
-        if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
+        // We bypass content validation when we apply a version
+        if (!$bypassContentValidation && in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
             $errors = $this->validateContent($data->get('content'));
 
             if ($errors->length > 0) {
@@ -1312,7 +1328,7 @@ class Entry extends Model implements Validator
 
         // Automatic attributes
         $update['url'] = self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale);
-        $update['authors'] = Authors::updated($entry->authors, User::$currentUser->_id);
+        $update['authors'] = Authors::updated($entry->authors, $author->_id);
         $update['dates'] = Dates::updated($entry->dates);
 
         try {
@@ -1322,6 +1338,13 @@ class Entry extends Model implements Validator
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
         }
+
+        // Could we avoid to get the entry ?
+        $entry = $this->findById($entry->_id)->exec();
+        // The query has the good entry type
+        $entry->entryType = $this->entryType;
+
+        (new EntryVersion)->create($author, $entry->simplify(null, false, false));
 
         // Return no errors
         return Collection::init();
@@ -1373,12 +1396,15 @@ class Entry extends Model implements Validator
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
         }
 
-        // Must delete seo data too
+        // Must delete seo data
         try {
             (new EntrySeo())->deleteByEntryId((string)$entryId, false);
         } catch (Exception $e) {
             // Do nothing because there is no entry seo for this entry
         }
+
+        // And entry versions too
+        (new EntryVersion)->deleteAllByEntryId((string)$entryId);
 
         return $qtyDeleted === 1;
     }
