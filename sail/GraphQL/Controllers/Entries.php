@@ -444,6 +444,21 @@ class Entries
         return $entryModel->delete($id, $soft);
     }
 
+    public function entryVersion(mixed $obj, Collection $args, Context $context): bool
+    {
+        return false;
+    }
+
+    public function entryVersions(mixed $obj, Collection $args, Context $context): bool
+    {
+        return false;
+    }
+
+    public function applyVersion(mixed $obj, Collection $args, Context $context): bool
+    {
+        return false;
+    }
+
     /**
      *
      * Get an entry layout by id

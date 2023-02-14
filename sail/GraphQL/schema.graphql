@@ -33,7 +33,7 @@ type Query {
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout!]
-    #entryVersions(entry_id: ID!): [EntryVersion!]
+    entryVersions(entry_id: ID!): [EntryVersion!]
     fields: [FieldInfo]
 
     # Registers
@@ -82,7 +82,7 @@ type Mutation {
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
-    #applyVersion(entry_version_id: ID!): Boolean
+    applyVersion(entry_version_id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
@@ -271,13 +271,13 @@ type EntrySeo {
     social_metas: [SocialMeta]!
 }
 
-#type EntryVersion {
-#    created_at: Int!
-#    user_id: ID!
-#    user_full_name: String!
-#    user_email: String!
-#    entry_id: ID!
-#}
+type EntryVersion {
+    created_at: Int!
+    user_id: ID!
+    user_full_name: String!
+    user_email: String!
+    entry_id: ID!
+}
 
 type SocialMeta {
     handle: String!

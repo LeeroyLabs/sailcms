@@ -34,6 +34,9 @@ use stdClass;
 
 /**
  *
+ * TODO apply cache to all entry queries
+ * TODO implement populate and resolver in graphql
+ *
  * @property string $entry_type_id
  * @property ?EntryParent $parent
  * @property ?string $site_id

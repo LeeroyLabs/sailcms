@@ -37,6 +37,24 @@ class EntryVersion extends Model
 
     /**
      *
+     * Get an entry version by id
+     *
+     * @param string|ObjectId $entryVersionId
+     * @return array|Model|EntryVersion|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getById(string|ObjectId $entryVersionId)
+    {
+        $this->hasPermissions(true);
+
+        return $this->findById($entryVersionId)->exec();
+    }
+
+    /**
+     *
      * Get entry versions for a given entry id
      *
      * @param string|ObjectId $entryId
