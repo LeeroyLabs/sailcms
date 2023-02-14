@@ -2,12 +2,17 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
+use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Types\QueryOptions;
+use SodiumException;
 
 /**
  *
@@ -83,7 +88,22 @@ class EntryVersion extends Model
         return $result > 0;
     }
 
-    public function applyVersion(string $entry_version_id)
+    /**
+     *
+     * Apply a version to an entry
+     *
+     * @param string $entry_version_id
+     * @return bool
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws JsonException
+     * @throws FilesystemException
+     * @throws ACLException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function applyVersion(string $entry_version_id): bool
     {
         $entryVersion = $this->findById($entry_version_id)->exec();
 

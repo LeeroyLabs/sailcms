@@ -327,7 +327,7 @@ class EntrySeo extends Model implements Castable
      * @param string $defaultTitle
      * @param string $defaultDescription
      * @param string $defaultImage
-     * @return Collection
+     * @return array
      *
      */
     private static function setSocialMetasDefault(Collection|array $socialMetas, string $defaultTitle, string $defaultDescription, string $defaultImage): array

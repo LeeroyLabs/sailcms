@@ -7,7 +7,7 @@ include_once dirname(__DIR__) . '/Globals.php';
 use Clockwork\Support\Vanilla\Clockwork;
 use Dotenv\Dotenv;
 use Exception;
-use \JsonException;
+use JsonException;
 use League\Flysystem\FilesystemException;
 use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Errors\ACLException;
@@ -64,13 +64,13 @@ class Sail
     public static bool $isServerless = false;
 
     private static Collection $environmentData;
-    private static bool $encryptedEnv = false;
+//    private static bool $encryptedEnv = false; // No usage for that @Marc ?
 
     /**
      *
      * Initialize the CMS
      *
-     * @param  string  $execPath
+     * @param string $execPath
      * @return void
      * @throws DatabaseException
      * @throws Errors\RouteReturnException
@@ -446,8 +446,7 @@ class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value)
-        {
+        $models->each(function ($key, $value) {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -461,7 +460,7 @@ class Sail
      *
      * Launch Sail for Cron execution
      *
-     * @param  string  $execPath
+     * @param string $execPath
      * @return void
      * @throws SiteException
      * @throws JsonException
@@ -495,7 +494,7 @@ class Sail
      *
      * Launch Sail for CLI execution
      *
-     * @param  string  $execPath
+     * @param string $execPath
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -546,7 +545,7 @@ class Sail
      *
      * Set the working directory
      *
-     * @param  string  $path
+     * @param string $path
      * @return void
      *
      */
@@ -571,7 +570,7 @@ class Sail
      *
      * Force set the template directory
      *
-     * @param  string  $path
+     * @param string $path
      * @return void
      *
      */
@@ -621,9 +620,9 @@ class Sail
      * Set app state (either web or cli) for some very specific use cases
      * NOTE: DO NOT USE FOR ANYTHING, THIS IS RESERVED FOR UNIT TEST
      *
-     * @param  int     $state
-     * @param  string  $env
-     * @param  string  $forceIOPath
+     * @param int $state
+     * @param string $env
+     * @param string $forceIOPath
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -722,8 +721,8 @@ class Sail
      *
      * Run bare minimum for tests to work
      *
-     * @param  string  $rootDir
-     * @param  string  $templatePath
+     * @param string $rootDir
+     * @param string $templatePath
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -748,7 +747,7 @@ class Sail
      *
      * Get an environment variable in safe way (cannot be dumped)
      *
-     * @param  string  $key
+     * @param string $key
      * @return mixed
      *
      */
