@@ -7,6 +7,7 @@ use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
+use SailCMS\Types\QueryOptions;
 
 /**
  *
@@ -14,16 +15,20 @@ use SailCMS\Errors\EntryException;
  * @property string $user_id
  * @property string $user_full_name
  * @property string $user_email
- * @property string $entry_id // for delete query
- * @property Collection $entry // result of Entry castFrom, and it'll be used in the applyVersion method
+ * @property string $entry_id
+ * @property Collection $entry
  *
  */
 class EntryVersion extends Model
 {
     protected string $collection = 'entry_version';
     protected string $permissionGroup = 'entryversion'; // Usage only in get methods
+    protected array $casting = [
+        "entry" => Collection::class
+    ];
 
-    public const DATABASE_ERROR = '5100: Exception when "%s" an entry seo.';
+    public const DATABASE_ERROR = '5200: Exception when "%s" an entry version.';
+    public const CANNOT_APPLY_LAST_VERSION = '5201: Cannot apply last version, it is the same as the current version.';
 
     public function getVersionByEntryId(string|ObjectId $entryId)
     {
@@ -44,7 +49,7 @@ class EntryVersion extends Model
     {
         try {
             $entryVersionId = $this->insert([
-                'create_at' => time(),
+                'created_at' => time(),
                 'user_id' => (string)$user->_id,
                 'user_full_name' => $user->name->full,
                 'user_email' => $user->email,
@@ -80,10 +85,19 @@ class EntryVersion extends Model
 
     public function applyVersion(string $entry_version_id)
     {
-        $entryVersion = $this->findById($entry_version_id);
+        $entryVersion = $this->findById($entry_version_id)->exec();
 
         if (!isset($entryVersion->_id)) {
             return false;
+        }
+
+        // Check if not the last version
+        $lastVersion = $this->findOne([
+            "entry_id" => $entryVersion->entry_id
+        ], QueryOptions::initWithSort(['_id' => -1]))->exec();
+
+        if ((string)$lastVersion->_id === (string)$entryVersion->_id) {
+            throw new EntryException(self::CANNOT_APPLY_LAST_VERSION);
         }
 
         $data = [
@@ -99,9 +113,15 @@ class EntryVersion extends Model
             'alternates' => $entryVersion->entry->get('alternates'),
         ];
 
-        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'));
+        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'))->exec();
         $entryModel = $entryType->getEntryModel($entryType);
 
-        $entryModel->updateById($entryVersion->entry->get('_id'), $data);
+        try {
+            $result = $entryModel->updateById($entryVersion->entry->get('_id'), $data, true, true);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'applying') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $result->length === 0;
     }
 }
