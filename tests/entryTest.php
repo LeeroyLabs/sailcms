@@ -429,7 +429,7 @@ test('Get entry versions failed to apply the last version and apply one', functi
     ]);
 
     $entryVersionModel = new EntryVersion();
-    $entryVersions = $entryVersionModel->getVersionByEntryId($entry->_id);
+    $entryVersions = $entryVersionModel->getVersionsByEntryId($entry->_id);
 
     expect(count($entryVersions))->toBe(2);
 

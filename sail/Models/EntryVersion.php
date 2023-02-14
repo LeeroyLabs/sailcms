@@ -35,8 +35,21 @@ class EntryVersion extends Model
     public const DATABASE_ERROR = '5200: Exception when "%s" an entry version.';
     public const CANNOT_APPLY_LAST_VERSION = '5201: Cannot apply last version, it is the same as the current version.';
 
-    public function getVersionByEntryId(string|ObjectId $entryId)
+    /**
+     *
+     * Get entry versions for a given entry id
+     *
+     * @param string|ObjectId $entryId
+     * @return array|Model|EntryVersion|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getVersionsByEntryId(string|ObjectId $entryId): array|Model|EntryVersion|null
     {
+        $this->hasPermissions(true);
+
         return $this->find(['entry_id' => (string)$entryId])->exec();
     }
 
@@ -105,6 +118,8 @@ class EntryVersion extends Model
      */
     public function applyVersion(string $entry_version_id): bool
     {
+        $this->hasPermissions();
+
         $entryVersion = $this->findById($entry_version_id)->exec();
 
         if (!isset($entryVersion->_id)) {
