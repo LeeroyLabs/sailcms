@@ -847,6 +847,16 @@ class Entry extends Model implements Validator
             $entryId = (string)$entry;
             $entry = $this->findById($entryId)->exec();
         }
+
+        /* TODO: Validate with Phil */
+        if (isset($data['content'])) {
+            foreach($data['content'] as $key => $content) {
+                if (is_string($content) && $content !== strip_tags($content)) {
+                    $data[$key] = htmlspecialchars($content, ENT_HTML5);
+                }
+            }
+        }
+
         if (is_array($data)) {
             $data = new Collection($data);
         }
