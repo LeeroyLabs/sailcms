@@ -36,4 +36,23 @@ class HTMLField extends TextField
             InputTextField::defaultSettings(true),
         ]);
     }
+
+    /**
+     *
+     * There is nothing extra to validate for the text field
+     *
+     * @param mixed $content
+     * @return Collection|null
+     *
+     */
+    protected function validate(mixed $content): ?Collection
+    {
+        $errors = Collection::init();
+
+        if (preg_match("/\<script(.*?)?\>(.|\\n)*?\<\/script\>?|\/\<iframe(.*?)?\>(.|\\n)*?\<\/iframe\>/i", $content)) {
+            $errors->push(self::INVALID_TAGS);
+        }
+
+        return $errors;
+    }
 }

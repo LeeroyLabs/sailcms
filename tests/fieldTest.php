@@ -158,7 +158,7 @@ test('Failed to update the entry content', function ()
             'content' => [
                 'float' => '0',
                 'phone' => '514-3344344',
-                'wysiwyg' => '<script>console.log("hacked")</script><p><strong>Test</strong></p>',
+                'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'related' => [
                     'id' => (string)$relatedEntry->_id
                 ],
