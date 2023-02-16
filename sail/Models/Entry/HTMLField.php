@@ -49,14 +49,6 @@ class HTMLField extends TextField
     {
         $errors = Collection::init();
 
-        //$invalidTags = ['script', 'noscript', 'iframe', 'aside', 'audio', 'video', 'canvas', 'html', 'header', 'head', 'footer', 'style'];
-//        foreach ($invalidTags as $tag) {
-//            if (preg_match("/\<" . $tag . "(.*?)?\>(.|\\n)*?\<\/" . $tag . "\>/i", $content)) {
-//                $errors->push(self::INVALID_TAGS);
-//                break;
-//            }
-//        }
-
         $validTags = ['p', 'a', 'div', 'i', 'strong'];
         preg_match_all('~<(?P<tag>[^\/][^>]*?)>~', $content, $htmlTags);
 
