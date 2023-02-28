@@ -216,6 +216,7 @@ class User extends Model
         }
 
         // Validate email properly
+        $email = strtolower($email);
         $this->validateEmail($email, '', true);
 
         // Validate password
@@ -379,6 +380,7 @@ class User extends Model
         }
 
         // Validate email properly
+        $email = strtolower($email);
         $this->validateEmail($email, '', true);
 
         $pass = Uuid::uuid4();
@@ -489,6 +491,7 @@ class User extends Model
 
         // Validate email properly
         if ($email !== null && trim($email) !== '') {
+            $email = strtolower($email);
             $this->validateEmail($email, $id, true);
             $update['email'] = $email;
         }
