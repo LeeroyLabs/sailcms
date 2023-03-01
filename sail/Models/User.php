@@ -999,7 +999,7 @@ class User extends Model
                     $record->locale,
                     [
                         'replacements' => [
-                            'email' => $email,
+                            'user_email' => $email,
                         ],
                         'reset_code' => $code,
                         'user_email' => $email,

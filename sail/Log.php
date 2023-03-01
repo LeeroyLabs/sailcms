@@ -12,8 +12,7 @@ final class Log
 
     public static function init()
     {
-        $handlers = setting('logging.adapters');
-
+        $handlers = setting('logging.adapters', []);
         self::$logger = new Logger(setting('logging.loggerName', 'sailcms'));
 
         foreach ($handlers as $handler) {
