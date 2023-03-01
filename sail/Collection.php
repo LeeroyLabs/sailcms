@@ -666,7 +666,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         foreach ($parts as $num => $part) {
             if (is_object($value) && get_class($value) === self::class) {
                 $next = implode('.', array_slice($parts, $num, 1));
-                $value = $value->get($next, $defaultValue, $debug);
+                $value = $value->get($next, $defaultValue);
             } elseif (isset($value[$part])) {
                 $value = $value[$part];
             } else {
