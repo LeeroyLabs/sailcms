@@ -995,7 +995,11 @@ class User extends Model
                     'reset_password',
                     $record->locale,
                     [
+                        'replacements' => [
+                            'email' => $email,
+                        ],
                         'reset_code' => $code,
+                        'email' => $email,
                         'name' => $record->name->first
                     ]
                 )->send();
