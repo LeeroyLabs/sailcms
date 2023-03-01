@@ -271,6 +271,7 @@ class User extends Model
                              ],
                              'verification_code' => $code,
                              'reset_pass_code' => $passCode,
+                             'user_email' => $email,
                              'name' => $name->first,
                              'who' => (self::$currentUser) ? self::$currentUser->name->full : $defaultWho
                          ])
@@ -281,6 +282,7 @@ class User extends Model
                         'replacements' => [
                             'name' => $name->first
                         ],
+                        'user_email' => $email,
                         'verification_code' => $code
                     ])->send();
                 }
@@ -423,6 +425,7 @@ class User extends Model
                         ],
                         'verification_code' => $code,
                         'reset_pass_code' => $passCode,
+                        'user_email' => $email,
                         'name' => $name->first
                     ]
                 )->send();
@@ -999,7 +1002,7 @@ class User extends Model
                             'email' => $email,
                         ],
                         'reset_code' => $code,
-                        'email' => $email,
+                        'user_email' => $email,
                         'name' => $record->name->first
                     ]
                 )->send();
