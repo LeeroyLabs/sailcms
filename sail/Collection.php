@@ -23,8 +23,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Initialize a static with a root array
      *
-     * @param  array  $baseValue
-     * @param  bool   $recursive
+     * @param array $baseValue
+     * @param bool $recursive
      *
      */
     public function __construct(array $baseValue = [], bool $recursive = true)
@@ -108,7 +108,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Cast the given array to Collection
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return Collection
      * @throws CollectionException
      *
@@ -156,7 +156,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Check if collection has given value in (works only on simple key/value pairs)
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return bool
      *
      */
@@ -182,7 +182,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Push a new element at the end of the collection
      *
-     * @param  mixed  $element
+     * @param mixed $element
      * @return Collection
      *
      */
@@ -196,8 +196,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Push a key/value to the collection
      *
-     * @param  string  $key
-     * @param  mixed   $value
+     * @param string $key
+     * @param mixed $value
      * @return Collection
      *
      */
@@ -246,7 +246,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Add an element to the beginning of the collection
      *
-     * @param  mixed  $element
+     * @param mixed $element
      * @return Collection
      */
     public function prepend(mixed $element): self
@@ -259,8 +259,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Add an element to associative collection with given key
      *
-     * @param  string  $key
-     * @param  mixed   $element
+     * @param string $key
+     * @param mixed $element
      * @return Collection
      *
      */
@@ -287,8 +287,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get a slice of the collection
      *
-     * @param  int  $start
-     * @param  int  $end
+     * @param int $start
+     * @param int $end
      * @return static
      *
      */
@@ -302,7 +302,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get and remove the last N items from the collection
      *
-     * @param  int  $count
+     * @param int $count
      * @return Collection
      *
      */
@@ -343,7 +343,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get element at index
      *
-     * @param  int  $index
+     * @param int $index
      * @return mixed
      *
      */
@@ -356,7 +356,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get element at given key
      *
-     * @param  string  $key
+     * @param string $key
      * @return mixed
      *
      */
@@ -369,7 +369,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Alias for at method
      *
-     * @param  int  $index
+     * @param int $index
      * @return mixed
      *
      */
@@ -382,7 +382,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Alias for at method
      *
-     * @param  int  $index
+     * @param int $index
      * @return mixed
      *
      */
@@ -395,7 +395,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Run a function on every item in the static
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return static
      *
      */
@@ -409,7 +409,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Run a filter callback on every item in the static
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return static
      *
      */
@@ -423,8 +423,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Remove part of a collection
      *
-     * @param  int       $offset
-     * @param  int|null  $length
+     * @param int $offset
+     * @param int|null $length
      * @return Collection
      *
      */
@@ -441,8 +441,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Split static in chunks
      *
-     * @param  int   $size
-     * @param  bool  $preserveKeys
+     * @param int $size
+     * @param bool $preserveKeys
      * @return static
      *
      */
@@ -475,7 +475,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Check if static contains given value
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return bool
      *
      */
@@ -489,7 +489,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Remove duplicates from the static (only for core types)
      *
-     * @param  int  $mode
+     * @param int $mode
      * @return static
      */
     public function dedup(int $mode = SORT_REGULAR): self
@@ -502,7 +502,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Run each loop on the static
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return void
      *
      */
@@ -517,7 +517,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Find value in the static
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return mixed
      *
      */
@@ -540,7 +540,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Find index of the value (should really only be used for 0 based arrays)
      *
-     * @param  callable  $callback
+     * @param callable $callback
      * @return int
      *
      */
@@ -563,8 +563,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Reduce the static to a single value
      *
-     * @param  callable  $callback
-     * @param  mixed     $initial
+     * @param callable $callback
+     * @param mixed $initial
      * @return int
      *
      */
@@ -577,9 +577,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Basic value sorting with options
      *
-     * @param  int   $sort
-     * @param  int   $flag
-     * @param  bool  $maintain
+     * @param int $sort
+     * @param int $flag
+     * @param bool $maintain
      * @return Collection
      *
      */
@@ -604,14 +604,13 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Sort by given object key. Only works on collection of objects where key resides.
      *
-     * @param  string  $key
+     * @param string $key
      * @return Collection
      *
      */
     public function sortBy(string $key): self
     {
-        usort($this->_internal, static function ($a, $b) use ($key)
-        {
+        usort($this->_internal, static function ($a, $b) use ($key) {
             if (is_string($a->{$key})) {
                 return strcasecmp(Text::deburr($a->{$key}), Text::deburr($b->{$key}));
             }
@@ -649,8 +648,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * A Nice way to traverse static and contained array/objects
      *
-     * @param  string      $dotNotation
-     * @param  mixed|null  $defaultValue
+     * @param string $dotNotation
+     * @param mixed|null $defaultValue
      * @return mixed
      *
      */
@@ -667,7 +666,11 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
             if (is_object($value) && get_class($value) === self::class) {
                 $next = implode('.', array_slice($parts, $num, 1));
                 $value = $value->get($next, $defaultValue);
-            } elseif (isset($value[$part])) {
+                // Add the object handling
+            } elseif (is_object($value) && isset($value->{$part})) {
+                $value = $value->{$part};
+                // Add is_array to be sure it's okay
+            } elseif (is_array($value) && isset($value[$part])) {
                 $value = $value[$part];
             } else {
                 $value = $defaultValue;
@@ -712,8 +715,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * Get the differences between 2 collections
      * Note that the returned differences come from the first collection
      *
-     * @param  Collection|array  $collection
-     * @param  bool              $assoc
+     * @param Collection|array $collection
+     * @param bool $assoc
      * @return Collection
      *
      */
@@ -737,8 +740,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * Return a collection with all the values that intersect between this collection and the
      * provided one
      *
-     * @param  Collection|array  $collection
-     * @param  bool              $assoc
+     * @param Collection|array $collection
+     * @param bool $assoc
      * @return Collection
      *
      */
@@ -763,8 +766,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Recursive only works on associative arrays/collections
      *
-     * @param  Collection|array  $collection
-     * @param  bool              $recursive
+     * @param Collection|array $collection
+     * @param bool $recursive
      * @return Collection
      *
      */
@@ -787,8 +790,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Pull a value out of the collection and return it
      *
-     * @param  int|string  $index
-     * @param  bool        $keepIndexes
+     * @param int|string $index
+     * @param bool $keepIndexes
      * @return mixed
      *
      */
@@ -825,8 +828,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Set new value for given index
      *
-     * @param  int    $index
-     * @param  mixed  $value
+     * @param int $index
+     * @param mixed $value
      * @return Collection
      *
      */
@@ -840,8 +843,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Set new value for given key
      *
-     * @param  string  $key
-     * @param  mixed   $value
+     * @param string $key
+     * @param mixed $value
      * @return Collection
      *
      */
@@ -930,8 +933,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Flatten a simple array to a string
      *
-     * @param  string  $separator
-     * @param  bool    $wrapInQuotes
+     * @param string $separator
+     * @param bool $wrapInQuotes
      * @return string
      */
     public function flatten(string $separator, bool $wrapInQuotes = false): string
@@ -949,8 +952,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * This does not keep indexes
      *
-     * @param  string  $key
-     * @param  mixed   $value
+     * @param string $key
+     * @param mixed $value
      * @return Collection
      *
      */
@@ -989,9 +992,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Does not keep indexes and evaluates loosely
      *
-     * @param  string            $key
-     * @param  array|Collection  $values
-     * @param  bool              $strict
+     * @param string $key
+     * @param array|Collection $values
+     * @param bool $strict
      * @return Collection
      *
      */
@@ -1032,8 +1035,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Shorthand for whereIn with strict set to true
      *
-     * @param  string            $key
-     * @param  array|Collection  $values
+     * @param string $key
+     * @param array|Collection $values
      * @return Collection
      *
      */
@@ -1048,9 +1051,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Does not keep indexes and evaluates loosely
      *
-     * @param  string            $key
-     * @param  array|Collection  $values
-     * @param  bool              $strict
+     * @param string $key
+     * @param array|Collection $values
+     * @param bool $strict
      * @return Collection
      *
      */
@@ -1091,8 +1094,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Shorthand for whereNotIn with strict set to true
      *
-     * @param  string            $key
-     * @param  array|Collection  $values
+     * @param string $key
+     * @param array|Collection $values
      * @return Collection
      *
      */
@@ -1105,9 +1108,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get items where given key's value is between the two given numbers
      *
-     * @param  string     $key
-     * @param  int|float  $low
-     * @param  int|float  $high
+     * @param string $key
+     * @param int|float $low
+     * @param int|float $high
      * @return Collection
      *
      */
@@ -1144,9 +1147,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get items where given key's value is not between the two given numbers
      *
-     * @param  string     $key
-     * @param  int|float  $low
-     * @param  int|float  $high
+     * @param string $key
+     * @param int|float $low
+     * @param int|float $high
      * @return Collection
      *
      */
@@ -1183,7 +1186,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get items where the given key's value is null
      *
-     * @param  string  $key
+     * @param string $key
      * @return Collection
      *
      */
@@ -1220,7 +1223,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get items where the given key's value is not null
      *
-     * @param  string  $key
+     * @param string $key
      * @return Collection
      *
      */
@@ -1257,8 +1260,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get elements that key's value is an object of the given type
      *
-     * @param  string  $key
-     * @param  string  $className
+     * @param string $key
+     * @param string $className
      * @return Collection
      *
      */
@@ -1295,8 +1298,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get elements that key's value is an object not of the given type
      *
-     * @param  string  $key
-     * @param  string  $className
+     * @param string $key
+     * @param string $className
      * @return Collection
      *
      */
@@ -1345,14 +1348,13 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Return highest value from a collection of array/collection/object by the given key
      *
-     * @param  string  $key
+     * @param string $key
      * @return mixed
      *
      */
     public function maxBy(string $key): mixed
     {
-        $map = $this->map(function ($value) use ($key)
-        {
+        $map = $this->map(function ($value) use ($key) {
             if (is_array($value)) {
                 return $value[$key];
             }
@@ -1371,7 +1373,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Determine if an item exists at an offset
      *
-     * @param  mixed  $offset
+     * @param mixed $offset
      * @return bool
      *
      */
@@ -1384,7 +1386,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Get a value at given offset
      *
-     * @param  mixed  $offset
+     * @param mixed $offset
      * @return mixed
      *
      */
@@ -1397,8 +1399,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Set the item at a given offset.
      *
-     * @param  mixed  $offset
-     * @param  mixed  $value
+     * @param mixed $offset
+     * @param mixed $value
      * @return void
      *
      */
@@ -1415,7 +1417,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      *
      * Unset the item at a given offset
      *
-     * @param  mixed  $offset
+     * @param mixed $offset
      * @return void
      *
      */
