@@ -494,6 +494,83 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Set limit for the query
+     *
+     * @param  int  $limit
+     * @return $this
+     *
+     */
+    protected function limit(int $limit): Model
+    {
+        $this->currentLimit = $limit;
+        return $this;
+    }
+
+    /**
+     *
+     * Skip for the query
+     *
+     * @param  int  $skip
+     * @return $this
+     *
+     */
+    protected function skip(int $skip): Model
+    {
+        $this->currentSkip = $skip;
+        return $this;
+    }
+
+    /**
+     *
+     * Setup projection for the query
+     *
+     * @param  array|\SailCMS\Collection  $projection
+     * @return $this
+     *
+     */
+    protected function project(array|\SailCMS\Collection $projection): Model
+    {
+        if (is_object($projection)) {
+            $projection = $projection->unwrap();
+        }
+
+        $this->currentProjection = $projection;
+        return $this;
+    }
+
+    /**
+     *
+     * Set collation for the query
+     *
+     * @param  string  $locale
+     * @return $this
+     *
+     */
+    protected function collation(string $locale): Model
+    {
+        $this->currentCollation = $locale;
+        return $this;
+    }
+
+    /**
+     *
+     * Set the sorting for the query
+     *
+     * @param  array|\SailCMS\Collection  $sort
+     * @return Model
+     *
+     */
+    protected function sort(array|\SailCMS\Collection $sort): Model
+    {
+        if (!is_array($sort)) {
+            $sort = $sort->unwrap();
+        }
+
+        $this->currentSort = $sort;
+    }
+
+    /**
+     *
      * Find by id
      *
      * @param  string|ObjectId    $id
