@@ -567,6 +567,7 @@ abstract class Model implements JsonSerializable
         }
 
         $this->currentSort = $sort;
+        return $this;
     }
 
     /**
