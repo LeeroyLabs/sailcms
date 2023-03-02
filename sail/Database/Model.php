@@ -52,6 +52,7 @@ abstract class Model implements JsonSerializable
     // Permission group for the permission checks
     protected string $permissionGroup = '';
 
+    // Validate set fields to set rule
     protected array $validators = [];
 
     // Sorting
@@ -706,7 +707,6 @@ abstract class Model implements JsonSerializable
      * @param  array  $pipeline
      * @return array
      * @throws DatabaseException
-     * @throws FilesystemException
      *
      */
     protected function aggregate(array $pipeline): array
