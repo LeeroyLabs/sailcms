@@ -756,7 +756,6 @@ abstract class Model implements JsonSerializable
             if (isset($update['$set'])) {
                 // Run Validators
                 $this->runValidators((object)$update['$set']);
-
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
@@ -775,15 +774,41 @@ abstract class Model implements JsonSerializable
      * Quickly update a record's given field with given value
      *
      * @param  string|ObjectId  $id
-     * @param  string           $field
+     * @param  string|array     $field
      * @param  mixed            $value
      * @return bool
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
-    public function quickUpdate(string|ObjectId $id, string $field, mixed $value): bool
+    public function quickUpdate(string|ObjectId $id, string|array $field, mixed $value): bool
     {
-        $updated = $this->updateOne(['_id' => $this->ensureObjectId($id)], ['$set' => [$field => $value]]);
+        if (is_array($field)) {
+            // Force $value to be an array and to be of same length
+            if (!is_array($value)) {
+                throw new DatabaseException('Since the field argument is an array, the value argument must also be an array', 0400);
+            }
+
+            if (count($value) !== count($field)) {
+                throw new DatabaseException('The value argument must be an array of the same length has the field argument', 0400);
+            }
+
+            // Build update array
+            $update = array_combine($field, $value);
+
+            // Validate it
+            $this->runValidators((object)$update);
+            $update = $this->prepareForWrite($update);
+
+            $updated = $this->updateOne(['_id' => $this->ensureObjectId($id)], ['$set' => $update]);
+            return ($updated > 0);
+        }
+
+        // Validate it
+        $this->runValidators((object)[$field => $value]);
+        $update = $this->prepareForWrite([$field => $value]);
+
+        $updated = $this->updateOne(['_id' => $this->ensureObjectId($id)], ['$set' => $update]);
         return ($updated > 0);
     }
 
