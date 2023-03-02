@@ -604,7 +604,7 @@ abstract class Model implements JsonSerializable
      * @return $this
      *
      */
-    protected function find(array $query, QueryOptions|null $options = null): Model
+    protected function find(array $query = [], QueryOptions|null $options = null): Model
     {
         if (!$options) {
             $options = QueryOptions::init();
