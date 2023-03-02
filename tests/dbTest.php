@@ -47,3 +47,11 @@ test('QuickUpdate using array field but boolean value, expect failure', function
         expect(true)->toBeTrue();
     }
 })->group('db');
+
+test('Ensure object id for given array using ensureObjectIds', function ()
+{
+    $config = new Config();
+    $ids = $config->ensureObjectIds(['6372a9d21a182a6c5f02a988', '6372a9d21a182a6c5f02a988', '6372a9d21a182a6c5f02a988']);
+
+    expect($ids->length)->toBe(3)->and($ids->at(0))->toBeInstanceOf(\MongoDB\BSON\ObjectId::class);
+})->group('db');

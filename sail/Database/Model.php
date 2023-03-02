@@ -145,6 +145,34 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Ensure that every given id in array is an ObjectId (return the cleaned up array/collection)
+     *
+     * @param  array|\SailCMS\Collection  $ids
+     * @param  bool                       $returnAsArray
+     * @return \SailCMS\Collection|array
+     *
+     */
+    public function ensureObjectIds(array|\SailCMS\Collection $ids, bool $returnAsArray = false): \SailCMS\Collection|array
+    {
+        if (!is_array($ids)) {
+            $ids = $ids->unwrap();
+        }
+
+        $list = [];
+
+        foreach ($ids as $id) {
+            $list[] = $this->ensureObjectId($id);
+        }
+
+        if ($returnAsArray) {
+            return $list;
+        }
+
+        return new \SailCMS\Collection($list);
+    }
+
+    /**
+     *
      * Check if ID is a valid MongoDB ID
      *
      * @param  string|ObjectId  $id
