@@ -105,6 +105,23 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Set collection and apply it to the collection resource
+     *
+     * @param  string  $collection
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public function setCollection(string $collection): void
+    {
+        $client = Database::instance($this->connection);
+
+        $this->collection = $collection;
+        $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $collection);
+    }
+
+    /**
+     *
      * Create an instance without doing the classic instance first
      *
      * @return static
@@ -783,7 +800,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('insertMany', $qt);
             return $ids;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -807,7 +824,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('bulkWrite', $qt);
             return $res;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -840,7 +857,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -871,7 +888,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -939,7 +956,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteOne', $qt, ['query' => $query]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -963,7 +980,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -988,7 +1005,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $id]]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -1023,7 +1040,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->createIndex($index, $options);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -1041,7 +1058,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->createIndexes($indexes, $options);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -1058,7 +1075,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->dropIndex($index);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -1075,7 +1092,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->dropIndexes($indexes);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 

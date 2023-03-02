@@ -53,6 +53,23 @@ final class Schema
 
     /**
      *
+     * Add a field a base value for it only if not found on record
+     *
+     * @param  string  $collection
+     * @param  string  $field
+     * @param  mixed   $baseValue
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public static function addIfNotSet(string $collection, string $field, mixed $baseValue): void
+    {
+        $instance = new Schema($collection);
+        $instance->executor->runUpdateIfNotSet($field, ['$set' => [$field => $baseValue]]);
+    }
+
+    /**
+     *
      * Remove a field from the collection
      *
      * @param  string  $collection
@@ -64,7 +81,7 @@ final class Schema
     public static function remove(string $collection, string $field): void
     {
         $instance = new Schema($collection);
-        $instance->executor->runUpdate(['$unset' => $field]);
+        $instance->executor->runUpdate(['$unset' => [$field => '']]);
     }
 
     /**
