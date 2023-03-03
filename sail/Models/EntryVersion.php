@@ -37,6 +37,23 @@ class EntryVersion extends Model
 
     /**
      *
+     * Get an entry version by id
+     *
+     * @param string|ObjectId $entryVersionId
+     * @return EntryVersion|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     */
+    public function getById(string|ObjectId $entryVersionId): ?EntryVersion
+    {
+        $this->hasPermissions(true);
+
+        return $this->findById($entryVersionId)->exec();
+    }
+
+    /**
+     *
      * Get entry versions for a given entry id
      *
      * @param string|ObjectId $entryId
@@ -104,6 +121,7 @@ class EntryVersion extends Model
     /**
      *
      * Apply a version to an entry
+     *  TODO maybe manage this call to not be able to apply an already applied version. It's possible to apply a same version multiple times.
      *
      * @param string $entry_version_id
      * @return bool
