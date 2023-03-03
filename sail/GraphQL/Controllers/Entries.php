@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\Regex;
@@ -817,5 +818,43 @@ class Entries
         };
 
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+
+    /**
+     *
+     * Resolver for entry model
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     *
+     */
+    public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        // Entry fields to resolve
+        // layout
+        // content
+        // seo
+        // parent
+    }
+
+    /**
+     *
+     * Resolver for entry version model
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     *
+     */
+    public function entryVersionResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        // Entry version field to resolve
+        // entry
     }
 }

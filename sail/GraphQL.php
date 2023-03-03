@@ -396,6 +396,10 @@ final class GraphQL
 
         self::addQueryResolver('fields', Entries::class, 'fields');
 
+        // Types and Resolvers
+        self::addResolver('Entry', Entries::class, 'entryResolver');
+        self::addResolver('EntryVersion', Entries::class, 'entryVersionResolver');
+
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
 
