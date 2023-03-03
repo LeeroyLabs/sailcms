@@ -121,6 +121,7 @@ class EntryVersion extends Model
     /**
      *
      * Apply a version to an entry
+     *  TODO maybe manage this call to not be able to apply an already applied version. It's possible to apply a same version multiple times.
      *
      * @param string $entry_version_id
      * @return bool

@@ -445,6 +445,20 @@ class Entries
         return $entryModel->delete($id, $soft);
     }
 
+    /**
+     *
+     * Get entry version by id
+     *  TODO the entry.content field does not work and maybe other fields as well
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return EntryVersion
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
     public function entryVersion(mixed $obj, Collection $args, Context $context): EntryVersion
     {
         $id = $args->get('id');
@@ -452,6 +466,19 @@ class Entries
         return (new EntryVersion())->getById($id);
     }
 
+    /**
+     *
+     * Get entry versions by entry_id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
     public function entryVersions(mixed $obj, Collection $args, Context $context): array
     {
         $entryId = $args->get('entry_id');
@@ -459,6 +486,23 @@ class Entries
         return (new EntryVersion())->getVersionsByEntryId($entryId);
     }
 
+    /**
+     *
+     * Apply entry version with entry version id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
     public function applyVersion(mixed $obj, Collection $args, Context $context): bool
     {
         $entry_version_id = $args->get('entry_version_id');
