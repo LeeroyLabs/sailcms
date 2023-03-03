@@ -336,6 +336,7 @@ trait ActiveRecord
      *
      * Refresh the properties of the object with what is in the database
      * This is useful when you use special methods like increment, pull, push, etc.
+     * This only updates the fields that were dirty.
      *
      * @return void
      * @throws DatabaseException
@@ -347,7 +348,7 @@ trait ActiveRecord
 
         if ($record) {
             foreach ($this->properties as $prop => $value) {
-                if (isset($record->{$prop})) {
+                if (isset($record->{$prop}) && in_array($prop, $this->dirtyFields, true)) {
                     $this->properties[$prop] = $record->{$prop};
                 }
             }
