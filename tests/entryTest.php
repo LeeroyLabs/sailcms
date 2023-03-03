@@ -80,10 +80,11 @@ test('Update the config of an entry layout', function () {
         $updatedEntryLayout = $model->one([
             '_id' => $entryLayout->_id
         ]);
+        
         expect($result)->toBe(true)
             ->and($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255)
             ->and($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10)
-            ->and($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
+            ->and($updatedEntryLayout->schema->get("title.configs.0.labels")->fr)->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());

@@ -52,8 +52,8 @@ final class Route
      */
     public function matches(string $url): ?Response
     {
-        $searches = array_keys(static::$patterns);
-        $replaces = array_values(static::$patterns);
+        $searches = array_keys(self::$patterns);
+        $replaces = array_values(self::$patterns);
 
         // Check if route is defined without regex
         if ($url === $this->url) {

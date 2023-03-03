@@ -30,7 +30,7 @@ use stdClass;
 /**
  *
  * @property ObjectId $_id
- * @property string $id
+ * @property string   $id
  *
  */
 abstract class Model implements JsonSerializable
@@ -52,6 +52,7 @@ abstract class Model implements JsonSerializable
     // Permission group for the permission checks
     protected string $permissionGroup = '';
 
+    // Validate set fields to set rule
     protected array $validators = [];
 
     // Sorting
@@ -104,6 +105,23 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Set collection and apply it to the collection resource
+     *
+     * @param  string  $collection
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public function setCollection(string $collection): void
+    {
+        $client = Database::instance($this->connection);
+
+        $this->collection = $collection;
+        $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $collection);
+    }
+
+    /**
+     *
      * Create an instance without doing the classic instance first
      *
      * @return static
@@ -130,7 +148,7 @@ abstract class Model implements JsonSerializable
      *
      * Make sure the value given is already an ObjectId or transform it to one
      *
-     * @param string|ObjectId $id
+     * @param  string|ObjectId  $id
      * @return ObjectId
      *
      */
@@ -145,9 +163,37 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Ensure that every given id in array is an ObjectId (return the cleaned up array/collection)
+     *
+     * @param  array|\SailCMS\Collection  $ids
+     * @param  bool                       $returnAsArray
+     * @return \SailCMS\Collection|array
+     *
+     */
+    public function ensureObjectIds(array|\SailCMS\Collection $ids, bool $returnAsArray = false): \SailCMS\Collection|array
+    {
+        if (!is_array($ids)) {
+            $ids = $ids->unwrap();
+        }
+
+        $list = [];
+
+        foreach ($ids as $id) {
+            $list[] = $this->ensureObjectId($id);
+        }
+
+        if ($returnAsArray) {
+            return $list;
+        }
+
+        return new \SailCMS\Collection($list);
+    }
+
+    /**
+     *
      * Check if ID is a valid MongoDB ID
      *
-     * @param string|ObjectId $id
+     * @param  string|ObjectId  $id
      * @return bool
      *
      */
@@ -169,7 +215,7 @@ abstract class Model implements JsonSerializable
      *
      * Get a property dynamically
      *
-     * @param string $name
+     * @param  string  $name
      * @return mixed|string|null
      *
      */
@@ -186,7 +232,7 @@ abstract class Model implements JsonSerializable
      *
      * Set a properties value
      *
-     * @param string $name
+     * @param  string  $name
      * @param          $value
      * @return void
      *
@@ -202,7 +248,7 @@ abstract class Model implements JsonSerializable
      *
      * Check if a property is set
      *
-     * @param string $name
+     * @param  string  $name
      * @return bool
      *
      */
@@ -216,7 +262,7 @@ abstract class Model implements JsonSerializable
      * Make a value safe for querying. You should never query using a value
      * that is not either a string or number, unless you are sure that it's safe.
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return string|array|bool|int|float
      * @throws JsonException
      *
@@ -241,8 +287,8 @@ abstract class Model implements JsonSerializable
      *
      * Execute a query call (cannot be run with a mutation type method)
      *
-     * @param string $cacheKey
-     * @param int $cacheTTL
+     * @param  string  $cacheKey
+     * @param  int     $cacheTTL
      * @return array|static|null
      * @throws DatabaseException
      *
@@ -473,10 +519,10 @@ abstract class Model implements JsonSerializable
      * Automatically populate a field when it is fetched from the database
      * (must be an ObjectId or a string representation)
      *
-     * @param string $field
-     * @param string $target
-     * @param string $model
-     * @param array $subpopulate
+     * @param  string  $field
+     * @param  string  $target
+     * @param  string  $model
+     * @param  array   $subpopulate
      * @return $this
      *
      */
@@ -494,10 +540,88 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Set limit for the query
+     *
+     * @param  int  $limit
+     * @return $this
+     *
+     */
+    protected function limit(int $limit): Model
+    {
+        $this->currentLimit = $limit;
+        return $this;
+    }
+
+    /**
+     *
+     * Skip for the query
+     *
+     * @param  int  $skip
+     * @return $this
+     *
+     */
+    protected function skip(int $skip): Model
+    {
+        $this->currentSkip = $skip;
+        return $this;
+    }
+
+    /**
+     *
+     * Setup projection for the query
+     *
+     * @param  array|\SailCMS\Collection  $projection
+     * @return $this
+     *
+     */
+    protected function project(array|\SailCMS\Collection $projection): Model
+    {
+        if (is_object($projection)) {
+            $projection = $projection->unwrap();
+        }
+
+        $this->currentProjection = $projection;
+        return $this;
+    }
+
+    /**
+     *
+     * Set collation for the query
+     *
+     * @param  string  $locale
+     * @return $this
+     *
+     */
+    protected function collation(string $locale): Model
+    {
+        $this->currentCollation = $locale;
+        return $this;
+    }
+
+    /**
+     *
+     * Set the sorting for the query
+     *
+     * @param  array|\SailCMS\Collection  $sort
+     * @return Model
+     *
+     */
+    protected function sort(array|\SailCMS\Collection $sort): Model
+    {
+        if (!is_array($sort)) {
+            $sort = $sort->unwrap();
+        }
+
+        $this->currentSort = $sort;
+        return $this;
+    }
+
+    /**
+     *
      * Find by id
      *
-     * @param string|ObjectId $id
-     * @param QueryOptions|null $options
+     * @param  string|ObjectId    $id
+     * @param  QueryOptions|null  $options
      * @return $this
      *
      */
@@ -521,12 +645,12 @@ abstract class Model implements JsonSerializable
      *
      * Find many records
      *
-     * @param array $query
-     * @param QueryOptions|null $options
+     * @param  array              $query
+     * @param  QueryOptions|null  $options
      * @return $this
      *
      */
-    protected function find(array $query, QueryOptions|null $options = null): Model
+    protected function find(array $query = [], QueryOptions|null $options = null): Model
     {
         if (!$options) {
             $options = QueryOptions::init();
@@ -547,8 +671,8 @@ abstract class Model implements JsonSerializable
      *
      * Find one
      *
-     * @param array $query
-     * @param QueryOptions|null $options
+     * @param  array              $query
+     * @param  QueryOptions|null  $options
      * @return $this
      */
     protected function findOne(array $query, QueryOptions|null $options = null): Model
@@ -570,9 +694,9 @@ abstract class Model implements JsonSerializable
      *
      * Find distinct documents
      *
-     * @param string $field
-     * @param array $query
-     * @param QueryOptions|null $options
+     * @param  string             $field
+     * @param  array              $query
+     * @param  QueryOptions|null  $options
      * @return $this
      *
      */
@@ -597,10 +721,9 @@ abstract class Model implements JsonSerializable
      *
      * Run an aggregate request
      *
-     * @param array $pipeline
+     * @param  array  $pipeline
      * @return array
      * @throws DatabaseException
-     * @throws FilesystemException
      *
      */
     protected function aggregate(array $pipeline): array
@@ -626,7 +749,7 @@ abstract class Model implements JsonSerializable
      *
      * Insert a record and return its ID
      *
-     * @param object|array $doc
+     * @param  object|array  $doc
      * @return mixed|void
      * @throws DatabaseException
      *
@@ -654,7 +777,7 @@ abstract class Model implements JsonSerializable
      *
      * Insert many records and return the ids
      *
-     * @param array $docs
+     * @param  array  $docs
      * @return ObjectId[]
      * @throws DatabaseException
      *
@@ -677,7 +800,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('insertMany', $qt);
             return $ids;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -685,7 +808,7 @@ abstract class Model implements JsonSerializable
      *
      * Bulk write to database
      *
-     * @param array $writes
+     * @param  array  $writes
      * @return BulkWriteResult
      * @throws DatabaseException
      *
@@ -701,7 +824,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('bulkWrite', $qt);
             return $res;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -709,8 +832,8 @@ abstract class Model implements JsonSerializable
      *
      * Update a single record
      *
-     * @param array $query
-     * @param array $update
+     * @param  array  $query
+     * @param  array  $update
      * @return int
      * @throws DatabaseException
      *
@@ -734,7 +857,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('updateOne', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -742,8 +865,8 @@ abstract class Model implements JsonSerializable
      *
      * Update many records
      *
-     * @param array $query
-     * @param array $update
+     * @param  array  $query
+     * @param  array  $update
      * @return int
      * @throws DatabaseException
      *
@@ -756,7 +879,6 @@ abstract class Model implements JsonSerializable
             if (isset($update['$set'])) {
                 // Run Validators
                 $this->runValidators((object)$update['$set']);
-
                 $update['$set'] = $this->prepareForWrite($update['$set']);
             }
 
@@ -766,15 +888,58 @@ abstract class Model implements JsonSerializable
             $this->debugCall('updateMany', $qt, ['query' => $query, 'update' => $update]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
+    }
+
+    /**
+     *
+     * Quickly update a record's given field with given value
+     *
+     * @param  string|ObjectId  $id
+     * @param  string|array     $field
+     * @param  mixed            $value
+     * @return bool
+     * @throws DatabaseException
+     * @throws JsonException
+     *
+     */
+    public function quickUpdate(string|ObjectId $id, string|array $field, mixed $value): bool
+    {
+        if (is_array($field)) {
+            // Force $value to be an array and to be of same length
+            if (!is_array($value)) {
+                throw new DatabaseException('Since the field argument is an array, the value argument must also be an array', 0400);
+            }
+
+            if (count($value) !== count($field)) {
+                throw new DatabaseException('The value argument must be an array of the same length has the field argument', 0400);
+            }
+
+            // Build update array
+            $update = array_combine($field, $value);
+
+            // Validate it
+            $this->runValidators((object)$update);
+            $update = $this->prepareForWrite($update);
+
+            $updated = $this->updateOne(['_id' => $this->ensureObjectId($id)], ['$set' => $update]);
+            return ($updated > 0);
+        }
+
+        // Validate it
+        $this->runValidators((object)[$field => $value]);
+        $update = $this->prepareForWrite([$field => $value]);
+
+        $updated = $this->updateOne(['_id' => $this->ensureObjectId($id)], ['$set' => $update]);
+        return ($updated > 0);
     }
 
     /**
      *
      * Delete a record
      *
-     * @param array $query
+     * @param  array  $query
      * @return int
      * @throws DatabaseException
      *
@@ -791,7 +956,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteOne', $qt, ['query' => $query]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -799,7 +964,7 @@ abstract class Model implements JsonSerializable
      *
      * Delete many records
      *
-     * @param array $query
+     * @param  array  $query
      * @return int
      * @throws DatabaseException
      *
@@ -815,7 +980,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteMany', $qt, ['query' => $query]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -823,7 +988,7 @@ abstract class Model implements JsonSerializable
      *
      * Delete a record by its ID
      *
-     * @param string|ObjectId $id
+     * @param  string|ObjectId  $id
      * @return int
      * @throws DatabaseException
      *
@@ -840,7 +1005,7 @@ abstract class Model implements JsonSerializable
             $this->debugCall('deleteById', $qt, ['query' => ['_id' => $id]]);
             return $count;
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -848,7 +1013,7 @@ abstract class Model implements JsonSerializable
      *
      * Count the number of records that match the query
      *
-     * @param array $query
+     * @param  array  $query
      * @return int
      *
      */
@@ -865,8 +1030,8 @@ abstract class Model implements JsonSerializable
      *
      * Create an Index
      *
-     * @param array $index
-     * @param array $options
+     * @param  array  $index
+     * @param  array  $options
      * @throws DatabaseException
      *
      */
@@ -875,7 +1040,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->createIndex($index, $options);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -883,8 +1048,8 @@ abstract class Model implements JsonSerializable
      *
      * Create many indexes
      *
-     * @param array $indexes
-     * @param array $options
+     * @param  array  $indexes
+     * @param  array  $options
      * @throws DatabaseException
      *
      */
@@ -893,7 +1058,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->createIndexes($indexes, $options);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -901,7 +1066,7 @@ abstract class Model implements JsonSerializable
      *
      * Delete an index
      *
-     * @param string $index
+     * @param  string  $index
      * @throws DatabaseException
      *
      */
@@ -910,7 +1075,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->dropIndex($index);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -918,7 +1083,7 @@ abstract class Model implements JsonSerializable
      *
      * Delete indexes
      *
-     * @param array $indexes
+     * @param  array  $indexes
      * @throws DatabaseException
      *
      */
@@ -927,7 +1092,7 @@ abstract class Model implements JsonSerializable
         try {
             $this->active_collection->dropIndexes($indexes);
         } catch (Exception $e) {
-            throw new DatabaseException('0500' . $e->getMessage(), 0500);
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
     }
 
@@ -935,7 +1100,7 @@ abstract class Model implements JsonSerializable
      *
      * Handle the toString transformation
      *
-     * @param bool $toArray
+     * @param  bool  $toArray
      * @return string|array
      * @throws JsonException
      *
@@ -989,7 +1154,7 @@ abstract class Model implements JsonSerializable
      *
      * A reusable permission checker
      *
-     * @param bool $read
+     * @param  bool  $read
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -1043,7 +1208,7 @@ abstract class Model implements JsonSerializable
      *
      * Transform mongodb objects to clean php objects
      *
-     * @param array|object $doc
+     * @param  array|object  $doc
      * @return Model
      *
      */
@@ -1165,7 +1330,7 @@ abstract class Model implements JsonSerializable
      *
      * Process BSONDocument to basic php document
      *
-     * @param BSONDocument $doc
+     * @param  BSONDocument  $doc
      * @return stdClass
      *
      */
@@ -1194,7 +1359,7 @@ abstract class Model implements JsonSerializable
      *
      * Simplify an object to json compatible values
      *
-     * @param mixed $obj
+     * @param  mixed  $obj
      * @return mixed
      * @throws JsonException
      *
@@ -1258,7 +1423,7 @@ abstract class Model implements JsonSerializable
      *
      * Prepare document to be written
      *
-     * @param array $doc
+     * @param  array  $doc
      * @return array
      * @throws JsonException
      *
@@ -1291,7 +1456,7 @@ abstract class Model implements JsonSerializable
      *
      * Fill an instance with the give object or array of data
      *
-     * @param mixed $doc
+     * @param  mixed  $doc
      * @return self
      *
      */
@@ -1363,9 +1528,9 @@ abstract class Model implements JsonSerializable
      *
      * Debug the db call just called
      *
-     * @param string $op
-     * @param float $time
-     * @param array $extra
+     * @param  string  $op
+     * @param  float   $time
+     * @param  array   $extra
      * @return void
      *
      */
@@ -1392,7 +1557,7 @@ abstract class Model implements JsonSerializable
      *
      * Build a cache key with the given name
      *
-     * @param string $key
+     * @param  string  $key
      * @return string
      *
      */
