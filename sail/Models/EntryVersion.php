@@ -40,13 +40,12 @@ class EntryVersion extends Model
      * Get an entry version by id
      *
      * @param string|ObjectId $entryVersionId
-     * @return array|Model|EntryVersion|null
+     * @return EntryVersion|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
-     *
      */
-    public function getById(string|ObjectId $entryVersionId)
+    public function getById(string|ObjectId $entryVersionId): ?EntryVersion
     {
         $this->hasPermissions(true);
 

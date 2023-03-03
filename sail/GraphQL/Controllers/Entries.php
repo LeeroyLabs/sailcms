@@ -17,6 +17,7 @@ use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
+use SailCMS\Models\EntryVersion;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -444,19 +445,25 @@ class Entries
         return $entryModel->delete($id, $soft);
     }
 
-    public function entryVersion(mixed $obj, Collection $args, Context $context): bool
+    public function entryVersion(mixed $obj, Collection $args, Context $context): EntryVersion
     {
-        return false;
+        $id = $args->get('id');
+
+        return (new EntryVersion())->getById($id);
     }
 
-    public function entryVersions(mixed $obj, Collection $args, Context $context): bool
+    public function entryVersions(mixed $obj, Collection $args, Context $context): array
     {
-        return false;
+        $entryId = $args->get('entry_id');
+
+        return (new EntryVersion())->getVersionsByEntryId($entryId);
     }
 
     public function applyVersion(mixed $obj, Collection $args, Context $context): bool
     {
-        return false;
+        $entry_version_id = $args->get('entry_version_id');
+
+        return (new EntryVersion())->applyVersion($entry_version_id);
     }
 
     /**
