@@ -8,6 +8,7 @@ use JsonException;
 use JsonSerializable;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\Regex;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\BulkWriteResult;
 use MongoDB\Collection;
@@ -35,6 +36,9 @@ use stdClass;
  */
 abstract class Model implements JsonSerializable
 {
+    // Add the ActiveRecord features
+    use ActiveRecord;
+
     // Connection and Collection
     protected int $connection = 0;
     protected string $collection = '';
@@ -222,7 +226,11 @@ abstract class Model implements JsonSerializable
     public function __get(string $name)
     {
         if ($name === 'id') {
-            return (string)$this->properties['_id'];
+            if (!empty($this->properties['_id'])) {
+                return (string)$this->properties['_id'];
+            }
+
+            return '';
         }
 
         return $this->properties[$name] ?? null;
@@ -241,6 +249,8 @@ abstract class Model implements JsonSerializable
     {
         if ($name !== 'id') {
             $this->properties[$name] = $value;
+            $this->isDirty = true;
+            $this->dirtyFields[] = $name;
         }
     }
 
@@ -409,6 +419,9 @@ abstract class Model implements JsonSerializable
                     }
                 }
 
+                $doc->exists = true;
+                $doc->isDirty = false;
+                $doc->dirtyFields = [];
                 return $doc;
             }
 
@@ -498,6 +511,9 @@ abstract class Model implements JsonSerializable
                 }
             }
 
+            $doc->exists = true;
+            $doc->isDirty = false;
+            $doc->dirtyFields = [];
             $docs[] = $doc;
         }
 
