@@ -52,7 +52,7 @@ final class Queue
         }
 
         $model = new QueueModel();
-        $tasks = $model->get($maxProcess);
+        $tasks = $model->getList($maxProcess);
 
         $tasks->each(function ($key, $value) use ($model)
         {

@@ -241,13 +241,13 @@ trait ActiveRecord
 
     /**
      *
-     * ActiveRecord delete
+     * ActiveRecord remove document
      *
      * @return bool
      * @throws DatabaseException
      *
      */
-    public function delete(): bool
+    public function remove(): bool
     {
         if ($this->exists) {
             $deleted = $this->deleteById($this->id);

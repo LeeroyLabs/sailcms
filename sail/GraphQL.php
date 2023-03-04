@@ -45,9 +45,9 @@ final class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -70,9 +70,9 @@ final class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -95,9 +95,9 @@ final class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param string $type
-     * @param string $className
-     * @param string $method
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -134,7 +134,7 @@ final class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -147,7 +147,7 @@ final class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -160,7 +160,7 @@ final class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -422,9 +422,9 @@ final class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param array $args
+     * @param  array        $args
      * @param               $contextValue
-     * @param ResolveInfo $info
+     * @param  ResolveInfo  $info
      * @return ArrayAccess|mixed
      *
      */
@@ -461,7 +461,7 @@ final class GraphQL
         if ($type === 'Query') {
             foreach (self::$queries as $name => $query) {
                 if ($fieldName === $name) {
-                    return (new $query->class())->{$query->method}($objectValue, new Collection($args), $contextValue);
+                    return DI::resolve($query->class)->{$query->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -471,7 +471,7 @@ final class GraphQL
         if ($type === 'Mutation') {
             foreach (self::$mutations as $name => $mutation) {
                 if ($fieldName === $name) {
-                    return (new $mutation->class())->{$mutation->method}($objectValue, new Collection($args), $contextValue);
+                    return DI::resolve($mutation->class)->{$mutation->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -481,7 +481,7 @@ final class GraphQL
         // One last try on the resolvers
         foreach (self::$resolvers as $name => $resolver) {
             if ($type === $name) {
-                return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                return DI::resolve($resolver->class)->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
             }
         }
 
@@ -492,8 +492,8 @@ final class GraphQL
      *
      * Run custom types on possible resolver for them
      *
-     * @param array $typeConfig
-     * @param TypeDefinitionNode $typeDefinitionNode
+     * @param  array               $typeConfig
+     * @param  TypeDefinitionNode  $typeDefinitionNode
      * @return array
      *
      */
@@ -508,7 +508,8 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver)
+        {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

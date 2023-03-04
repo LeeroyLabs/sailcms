@@ -5,6 +5,7 @@ namespace SailCMS\Routing;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Debug;
+use SailCMS\DI;
 use SailCMS\Http\Response;
 use SailCMS\Contracts\AppController;
 use SailCMS\Locale;
@@ -60,10 +61,10 @@ final class Route
             Locale::setCurrent($this->locale);
 
             if (is_string($this->controller)) {
-                $instance = new $this->controller();
+                $instance = DI::resolve($this->controller);
                 $class = $this->controller;
             } else {
-                $instance = $this->controller;
+                $instance = DI::resolve($this->controller);
                 $class = get_class($this->controller);
             }
 
@@ -85,10 +86,10 @@ final class Route
                 Locale::setCurrent($this->locale);
 
                 if (is_string($this->controller)) {
-                    $instance = new $this->controller();
+                    $instance = DI::resolve($this->controller);
                     $class = $this->controller;
                 } else {
-                    $instance = $this->controller;
+                    $instance = DI::resolve($this->controller);
                     $class = get_class($this->controller);
                 }
 
