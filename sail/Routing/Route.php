@@ -9,6 +9,7 @@ use SailCMS\DI;
 use SailCMS\Http\Response;
 use SailCMS\Contracts\AppController;
 use SailCMS\Locale;
+use SailCMS\Models\User;
 use SailCMS\Text;
 
 final class Route
@@ -19,6 +20,7 @@ final class Route
     private string $HTTPMethod;
     private AppController|string $controller;
     private string $method;
+    private bool $secure;
 
     private static array $patterns = [
         ':any' => '([a-zA-Z0-9\-]+)',
@@ -28,10 +30,10 @@ final class Route
         ':all' => '(.*)'
     ];
 
-    public function __construct(string $name, string $url, string $locale, AppController|string $controller, string $method, string $httpMethod = 'get')
+    public function __construct(string $name, string $url, string $locale, AppController|string $controller, string $method, string $httpMethod = 'get', bool $secure = false)
     {
         if (is_string($controller)) {
-            $controller = new $controller();
+            $controller = DI::resolve($controller);
         }
 
         $this->name = str_replace('//', '/', $name);
@@ -40,6 +42,7 @@ final class Route
         $this->HTTPMethod = $httpMethod;
         $this->controller = $controller;
         $this->method = $method;
+        $this->secure = $secure;
     }
 
     /**
@@ -60,12 +63,23 @@ final class Route
         if ($url === $this->url) {
             Locale::setCurrent($this->locale);
 
+            if ($this->secure && !User::$currentUser) {
+                // Secure URL but user is not logged in
+                Debug::route('GET', '/', 'system:forbidden', '403');
+
+                $response = Response::html();
+                $response->set('year', date('Y'));
+                $response->template = '403';
+                $response->render();
+                return $response;
+            }
+
             if (is_string($this->controller)) {
                 $instance = DI::resolve($this->controller);
                 $class = $this->controller;
             } else {
-                $instance = DI::resolve($this->controller);
                 $class = get_class($this->controller);
+                $instance = $this->controller;
             }
 
             $instance->setRoute($this);
@@ -89,8 +103,8 @@ final class Route
                     $instance = DI::resolve($this->controller);
                     $class = $this->controller;
                 } else {
-                    $instance = DI::resolve($this->controller);
                     $class = get_class($this->controller);
+                    $instance = $this->controller;
                 }
 
                 $instance->setRoute($this);

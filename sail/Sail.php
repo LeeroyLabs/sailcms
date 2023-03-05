@@ -226,12 +226,7 @@ class Sail
 
         $settings = new Collection($config);
         self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
-
-//        $s = setting('emails.globalContext.locales.en');
-//        print_r($s);
-//        die();
-
-
+        
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
             error_reporting(E_ALL & ~E_WARNING | ~E_DEPRECATED);

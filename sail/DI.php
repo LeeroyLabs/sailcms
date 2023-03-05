@@ -2,9 +2,9 @@
 
 namespace SailCMS;
 
-use _PHPStan_eb00fd21c\Symfony\Component\String\Exception\RuntimeException;
 use ReflectionClass;
 use ReflectionException;
+use \RuntimeException;
 
 class DI
 {
