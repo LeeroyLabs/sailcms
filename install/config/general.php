@@ -8,7 +8,7 @@ return [
         'allowAdmin' => true,
         'adminTrigger' => 'admin',
         'timezone' => 'America/New_York',
-        'useBasicAuthentication' => true,
+        'useBasicAuthentication' => false,
         'cache' => [
             'use' => (bool)env('cache_use', 'false'),
             'host' => env('cache_host', 'localhost'),
