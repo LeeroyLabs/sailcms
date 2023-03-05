@@ -34,34 +34,19 @@ class DI
 
                 if ($typeObj) {
                     $t = $typeObj->getName();
-
                     $base = ['array', 'string', 'bool', 'int', 'float', 'resource'];
 
                     if (!in_array($t, $base)) {
                         $arguments[] = new $t();
                     } else {
-                        switch ($t) {
-                            case 'array':
-                                $arguments[] = [];
-                                break;
-
-                            case 'string':
-                                $arguments[] = '';
-                                break;
-
-                            case 'int':
-                            case 'float':
-                                $arguments = 0;
-                                break;
-
-                            case 'bool':
-                                $arguments = false;
-                                break;
-
-                            case 'resource':
-                                $arguments = null;
-                                break;
-                        }
+                        $arguments[] = match ($t) {
+                            'array' => [],
+                            'string' => '',
+                            'int' => 0,
+                            'float' => 0,
+                            'bool' => false,
+                            'resource' => null
+                        };
                     }
                 } else {
                     $arguments[] = null;
