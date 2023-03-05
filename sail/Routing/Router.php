@@ -9,6 +9,7 @@ use SailCMS\Contracts\AppContainer;
 use SailCMS\Contracts\AppController;
 use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
+use SailCMS\DI;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -454,7 +455,7 @@ class Router
         }
 
         if (is_string($controller)) {
-            $controller = new $controller();
+            $controller = DI::resolve($controller);
         }
 
         // Since no name was given, use the url
