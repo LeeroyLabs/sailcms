@@ -143,6 +143,11 @@ class Sail
             self::outputAvailableSites();
         }
 
+        // Execute the boot file (system is available this point)
+        if (file_exists(self::$workingDirectory . '/config/boot.php')) {
+            require_once self::$workingDirectory . '/config/boot.php';
+        }
+
         if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new GraphqlException('Cannot access GraphQL using anything else than the POST request method.', 0400);
@@ -226,7 +231,7 @@ class Sail
 
         $settings = new Collection($config);
         self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
-        
+
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
             error_reporting(E_ALL & ~E_WARNING | ~E_DEPRECATED);
