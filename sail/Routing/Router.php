@@ -9,6 +9,7 @@ use SailCMS\Contracts\AppContainer;
 use SailCMS\Contracts\AppController;
 use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
+use SailCMS\DI;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -84,12 +85,13 @@ class Router
      * @param  AppController|string  $controller
      * @param  string                $method
      * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
-    public function get(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
+    public function get(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
-        $this->addRoute('get', $url, $locale, $controller, $method, $name);
+        $this->addRoute('get', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
@@ -101,12 +103,13 @@ class Router
      * @param  AppController|string  $controller
      * @param  string                $method
      * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
-    public function post(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
+    public function post(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
-        $this->addRoute('post', $url, $locale, $controller, $method, $name);
+        $this->addRoute('post', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
@@ -118,12 +121,13 @@ class Router
      * @param  AppController|string  $controller
      * @param  string                $method
      * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
-    public function delete(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
+    public function delete(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
-        $this->addRoute('delete', $url, $locale, $controller, $method, $name);
+        $this->addRoute('delete', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
@@ -135,12 +139,13 @@ class Router
      * @param  AppController|string  $controller
      * @param  string                $method
      * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
-    public function put(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
+    public function put(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
-        $this->addRoute('put', $url, $locale, $controller, $method, $name);
+        $this->addRoute('put', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
@@ -152,12 +157,13 @@ class Router
      * @param  AppController|string  $controller
      * @param  string                $method
      * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
-    public function any(string $url, string $locale, AppController|string $controller, string $method, string $name = ''): void
+    public function any(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
-        $this->addRoute('any', $url, $locale, $controller, $method, $name);
+        $this->addRoute('any', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
@@ -179,22 +185,23 @@ class Router
      *
      * Dispatch the route detection and execute and render matching route
      *
+     * @param  bool  $isForbidden
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws FileException
      * @throws FilesystemException
      * @throws JsonException
      * @throws LoaderError
+     * @throws PermissionException
      * @throws RouteReturnException
      * @throws RuntimeError
-     * @throws SyntaxError
-     * @throws ACLException
-     * @throws PermissionException
      * @throws SodiumException
+     * @throws SyntaxError
      *
      */
-    public static function dispatch(): void
+    public static function dispatch(bool $isForbidden = false): void
     {
         $uri = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 
@@ -420,7 +427,21 @@ class Router
 
     // -------------------------------------------------- Private -------------------------------------------------- //
 
-    private function addRoute(string $method, string $url, string $locale, AppController|string $controller, string $callback, string $name = ''): void
+    /**
+     *
+     * Add a route
+     *
+     * @param  string                $method
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $callback
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     *
+     */
+    private function addRoute(string $method, string $url, string $locale, AppController|string $controller, string $callback, string $name = '', bool $secure = false): void
     {
         // Trace the registerer of the route
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
@@ -434,7 +455,7 @@ class Router
         }
 
         if (is_string($controller)) {
-            $controller = new $controller();
+            $controller = DI::resolve($controller);
         }
 
         // Since no name was given, use the url
@@ -446,7 +467,7 @@ class Router
             Register::registerRoute($method, $url, $class);
         }
 
-        $route = new Route($name, $url, $locale, $controller, $callback, $method);
+        $route = new Route($name, $url, $locale, $controller, $callback, $method, $secure);
         self::$routes->get(strtolower($method))->push($route);
     }
 }

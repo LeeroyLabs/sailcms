@@ -4,12 +4,14 @@ namespace SailCMS;
 
 use Exception;
 use JsonException;
+use League\Flysystem\FilesystemException;
 use SailCMS\CLI\BasicAuth;
 use SailCMS\CLI\Cache;
 use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
 use SailCMS\CLI\Controller;
 use SailCMS\CLI\Install;
+use SailCMS\CLI\InstallOfficial;
 use SailCMS\CLI\Migrate;
 use SailCMS\CLI\Migrations;
 use SailCMS\CLI\Model;
@@ -54,7 +56,8 @@ final class CLI
      * @throws SiteException
      * @throws DatabaseException
      * @throws JsonException
-     * @throws Exception
+     * @throws Exception|
+     * @throws FilesystemException
      *
      */
     public function run(): void
@@ -79,6 +82,7 @@ final class CLI
         $application->add(new Migrations());
         $application->add(new Test());
         $application->add(new BasicAuth());
+        $application->add(new InstallOfficial());
 
         // Custom commands
         if (!isset(self::$registeredCommands)) {

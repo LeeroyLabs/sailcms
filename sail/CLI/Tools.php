@@ -13,6 +13,20 @@ class Tools
 {
     /**
      *
+     * Install a composer package
+     *
+     * @param  string  $package
+     * @return void
+     *
+     */
+    public static function executeComposerInstall(string $package): void
+    {
+        $cmp = env('composer_location', '/usr/local/bin/composer');
+        shell_exec('yes | ' . $cmp . ' -n require ' . $package . ' 2>/dev/null');
+    }
+
+    /**
+     *
      * Execute composer's dump-autoload from php
      *
      * @return void
