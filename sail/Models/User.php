@@ -216,6 +216,7 @@ class User extends Model
         }
 
         // Validate email properly
+        $email = strtolower($email);
         $this->validateEmail($email, '', true);
 
         // Validate password
@@ -270,6 +271,7 @@ class User extends Model
                              ],
                              'verification_code' => $code,
                              'reset_pass_code' => $passCode,
+                             'user_email' => $email,
                              'name' => $name->first,
                              'who' => (self::$currentUser) ? self::$currentUser->name->full : $defaultWho
                          ])
@@ -280,6 +282,7 @@ class User extends Model
                         'replacements' => [
                             'name' => $name->first
                         ],
+                        'user_email' => $email,
                         'verification_code' => $code
                     ])->send();
                 }
@@ -379,6 +382,7 @@ class User extends Model
         }
 
         // Validate email properly
+        $email = strtolower($email);
         $this->validateEmail($email, '', true);
 
         $pass = Uuid::uuid4();
@@ -421,6 +425,7 @@ class User extends Model
                         ],
                         'verification_code' => $code,
                         'reset_pass_code' => $passCode,
+                        'user_email' => $email,
                         'name' => $name->first
                     ]
                 )->send();
@@ -489,6 +494,7 @@ class User extends Model
 
         // Validate email properly
         if ($email !== null && trim($email) !== '') {
+            $email = strtolower($email);
             $this->validateEmail($email, $id, true);
             $update['email'] = $email;
         }
@@ -992,7 +998,11 @@ class User extends Model
                     'reset_password',
                     $record->locale,
                     [
+                        'replacements' => [
+                            'user_email' => $email,
+                        ],
                         'reset_code' => $code,
+                        'user_email' => $email,
                         'name' => $record->name->first
                     ]
                 )->send();
