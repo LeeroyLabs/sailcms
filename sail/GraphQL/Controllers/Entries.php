@@ -454,21 +454,29 @@ class Entries
      * @param Context $context
      * @param ResolveInfo $info
      * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
+        /**
+         * @var Entry $entry
+         */
+        $entry = $obj['current'];
         // Entry fields to resolve
         if ($info->fieldName === "content") {
-            return $obj['current']->getContent();
+            return $entry->getContent();
         }
 
         if ($info->fieldName === "schema") {
-            return $obj['current']->getSchema();
+            return $entry->getSchema()->unwrap();
         }
 
         if ($info->fieldName === "seo") {
-            return $obj['current']->getSeo();
+            return $entry->getSimplifiedSEO();
         }
 
         return $obj[$info->fieldName];

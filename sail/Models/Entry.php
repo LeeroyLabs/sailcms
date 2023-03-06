@@ -249,18 +249,33 @@ class Entry extends Model implements Validator
         return $seo;
     }
 
+    public function getSimplifiedSEO(): array
+    {
+        $seo = $this->getSEO();
+
+        $socialMetas = $seo->get('social_metas');
+
+        foreach ($socialMetas as &$socialMeta) {
+            $newContent = [];
+            foreach ($socialMeta['content'] as $key => $content) {
+                $newContent[] = [
+                    'name' => $key,
+                    'content' => $content
+                ];
+            }
+            $socialMeta['content'] = $newContent;
+        }
+        $seo->social_metas = $socialMetas;
+
+        return $seo->unwrap();
+    }
+
     /**
      *
      * Parse the entry into an array for api
      *
      * @param object|null $currentHomepageEntry
-     * @param bool $wantSchema
-     * @param bool $parseContent
      * @return array
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      *
      */
     public function simplify(object|null $currentHomepageEntry): array
@@ -984,7 +999,7 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    private function getSchema(bool $silent = false): Collection
+    public function getSchema(bool $silent = false): Collection
     {
         $entryLayout = $this->getEntryLayout();
 
