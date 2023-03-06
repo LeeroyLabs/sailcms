@@ -237,7 +237,7 @@ class Entries
              * @var Entry $entry
              */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $this->parseEntry($entry->simplify($homepage, true));
+            $entryArray = $this->parseEntry($entry->simplify($homepage));
             $data->push($entryArray);
         });
 
@@ -272,8 +272,7 @@ class Entries
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
 
-        // TODO handle wantSchema
-        return $this->parseEntry($entry->simplify($homepage, true));
+        return $this->parseEntry($entry->simplify($homepage));
     }
 
     /**
@@ -325,7 +324,7 @@ class Entries
             'errors' => []
         ];
         if ($entryOrErrors instanceof Entry) {
-            $result['entry'] = $this->parseEntry($entryOrErrors->simplify($homepage, true));
+            $result['entry'] = $this->parseEntry($entryOrErrors->simplify($homepage));
         } else {
             $result['errors'] = $entryOrErrors;
         }
@@ -335,7 +334,7 @@ class Entries
 
     /**
      *
-     * Update an entry
+     * Update an entry TODO check content update, something is wrong. TextField saves as array.
      *
      * @param mixed $obj
      * @param Collection $args
@@ -448,6 +447,36 @@ class Entries
 
     /**
      *
+     * Resolver for entry model
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     *
+     */
+    public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        // Entry fields to resolve
+        if ($info->fieldName === "content") {
+            return $obj['current']->getContent();
+        }
+
+        if ($info->fieldName === "schema") {
+            return $obj['current']->getSchema();
+        }
+
+        if ($info->fieldName === "seo") {
+            return $obj['current']->getSeo();
+        }
+
+        return $obj[$info->fieldName];
+    }
+
+
+    /**
+     *
      * Get entry version by id
      *  TODO the entry.content field does not work and maybe other fields as well
      *
@@ -509,6 +538,27 @@ class Entries
         $entry_version_id = $args->get('entry_version_id');
 
         return (new EntryVersion())->applyVersion($entry_version_id);
+    }
+
+    /**
+     *
+     * Resolver for entry version model
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     *
+     */
+    public function entryVersionResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        // Entry version field to resolve
+        // entry
+        print_r("Version");
+        print_r($info->fieldName);
+
+        return $obj[$info->fieldName];
     }
 
     /**
@@ -818,43 +868,5 @@ class Entries
         };
 
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-    }
-
-
-    /**
-     *
-     * Resolver for entry model
-     *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
-     * @param ResolveInfo $info
-     * @return mixed
-     *
-     */
-    public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
-    {
-        // Entry fields to resolve
-        // layout
-        // content
-        // seo
-        // parent
-    }
-
-    /**
-     *
-     * Resolver for entry version model
-     *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
-     * @param ResolveInfo $info
-     * @return mixed
-     *
-     */
-    public function entryVersionResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
-    {
-        // Entry version field to resolve
-        // entry
     }
 }

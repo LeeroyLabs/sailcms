@@ -255,6 +255,7 @@ class Entry extends Model implements Validator
      *
      * @param object|null $currentHomepageEntry
      * @param bool $wantSchema
+     * @param bool $parseContent
      * @return array
      * @throws ACLException
      * @throws DatabaseException
@@ -262,21 +263,8 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function simplify(object|null $currentHomepageEntry, bool $wantSchema = false, bool $parseContent = true): array
+    public function simplify(object|null $currentHomepageEntry): array
     {
-        $schema = [];
-        if ($wantSchema) {
-            $entryLayout = $this->getEntryLayout();
-
-            if ($entryLayout) {
-                $schema = $entryLayout->simplifySchema();
-            }
-        }
-        $content = $this->content;
-        if ($parseContent) {
-            $content = $this->getContent()->castFrom();
-        }
-
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
@@ -293,9 +281,7 @@ class Entry extends Model implements Validator
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'categories' => $this->categories->castFrom(),
-            'content' => $content,
-            'seo' => $this->getSEO()->castFrom(),
-            'schema' => $schema
+            'current' => $this
         ];
     }
 
@@ -1268,7 +1254,10 @@ class Entry extends Model implements Validator
         // The query has the good entry type
         $entry->entryType = $this->entryType;
 
-        (new EntryVersion)->create($author, $entry->simplify(null, false, false));
+        // Version save with simplify entry
+        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry['content'] = $entry->content;
+        (new EntryVersion)->create($author, $simplifiedEntry);
 
         return $entry;
     }
@@ -1347,7 +1336,10 @@ class Entry extends Model implements Validator
         // The query has the good entry type
         $entry->entryType = $this->entryType;
 
-        (new EntryVersion)->create($author, $entry->simplify(null, false, false));
+        // Version save with simplify entry
+        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry['content'] = $entry->content;
+        (new EntryVersion)->create($author, $simplifiedEntry);
 
         // Return no errors
         return Collection::init();
