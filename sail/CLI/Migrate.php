@@ -153,10 +153,12 @@ class Migrate extends Command
     private function runDown(int $version = -1, bool $skipEnd = false): int
     {
         $currentVersion = $this->getCurrentVersion();
+        $targetVersion = $version;
 
         if ($currentVersion > 0) {
             if ($version === -1) {
                 $version = $currentVersion - 1;
+                $targetVersion = $version;
             }
         } else {
             Tools::outputInfo('error', "Cannot rollback, version is at 0", 'bg-red-500');
@@ -178,7 +180,7 @@ class Migrate extends Command
         }
 
         natsort($executedFiles);
-        $diff = $currentVersion - $last;
+        $diff = $currentVersion - $targetVersion;
 
         if ($diff < 0) {
             Tools::outputInfo('done', "Database is up to date");
@@ -191,7 +193,7 @@ class Migrate extends Command
             $behind = 1;
         }
 
-        Tools::outputInfo('found', "Database will be reverted to version {$last} ({$behind} behind current), starting...");
+        Tools::outputInfo('found', "Database will be reverted to version {$targetVersion} ({$behind} behind current), starting...");
 
         foreach ($executedFiles as $file) {
             include_once $file;
@@ -203,13 +205,13 @@ class Migrate extends Command
             $instance->down();
         }
 
-        $this->writeCurrentVersion($diff);
+        $this->writeCurrentVersion($targetVersion);
 
         if (!$skipEnd) {
-            Tools::outputInfo('status', "Current version is {$diff}", 'bg-green-500');
+            Tools::outputInfo('status', "Current version is {$targetVersion}", 'bg-green-500');
             Tools::outputInfo('done', "Database has been rolled back! 😌", 'bg-green-500');
         }
-        
+
         return Command::SUCCESS;
     }
 }

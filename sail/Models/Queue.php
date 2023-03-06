@@ -67,7 +67,7 @@ class Queue extends Model
      * @throws DatabaseException
      *
      */
-    public function get(int $limit = 0): Collection
+    public function getList(int $limit = 0): Collection
     {
         $options = new QueryOptions();
         $options->limit = $limit;

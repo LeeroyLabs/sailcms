@@ -7,6 +7,7 @@ use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
+use SailCMS\Models\EntryVersion;
 use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
@@ -79,10 +80,11 @@ test('Update the config of an entry layout', function () {
         $updatedEntryLayout = $model->one([
             '_id' => $entryLayout->_id
         ]);
+        
         expect($result)->toBe(true)
             ->and($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255)
             ->and($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10)
-            ->and($updatedEntryLayout->schema->get("title.configs.0.labels.fr"))->toBe('Titre de section');
+            ->and($updatedEntryLayout->schema->get("title.configs.0.labels")->fr)->toBe('Titre de section');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($exception->getTraceAsString());
@@ -177,7 +179,7 @@ test('Create an entry with the default type', function () {
             ->and($entry->locale)->toBe('fr')
             ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 })->group('entry');
@@ -283,7 +285,10 @@ test('Update an entry with an entry type', function () {
     try {
         $result = $entryModel->updateById($entry, [
             'slug' => 'test-de-test',
-            'is_homepage' => false
+            'is_homepage' => false,
+            'content' => [
+                'sub title' => "had content!!!"
+            ],
         ]);
         $entry = $entryModel->one([
             'title' => 'Test'
@@ -417,6 +422,44 @@ test('Failed to find the entry by url', function () {
 
     expect($entry)->toBe(null);
 })->group('entry');
+
+test('Get entry versions failed to apply the last version and apply one', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    $entryVersionModel = new EntryVersion();
+    $entryVersions = $entryVersionModel->getVersionsByEntryId($entry->_id);
+
+    expect(count($entryVersions))->toBe(2);
+
+    $versionToApply = $entryVersions[0];
+    $lastVersion = end($entryVersions);
+
+    try {
+        $entryVersionModel->applyVersion($lastVersion->_id);
+        expect(false)->toBe(true);
+    } catch (EntryException $e) {
+        expect($e->getMessage())->toBe(EntryVersion::CANNOT_APPLY_LAST_VERSION);
+    }
+
+    try {
+        $result = $entryVersionModel->applyVersion($versionToApply->_id);
+        expect($result)->toBe(true);
+
+        $entry = $entryModel->one([
+            'title' => 'Test'
+        ]);
+        // The first versions has empty content
+        expect($entry->content->length)->toBe(0)
+            ->and($entry->slug)->toBe('test');
+
+    } catch (EntryException $e) {
+//        print_r($e->getMessage());
+        expect(true)->toBe(false);
+    }
+})->group('entry-version');
 
 test('Failed to delete an entry type with related entries in it', function () {
     $model = new EntryType();

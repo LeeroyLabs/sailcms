@@ -273,4 +273,18 @@ class Security
     {
         return hash('sha256', uniqid(microtime(), true));
     }
+
+    /**
+     *
+     * Generate a hash that can be replicated using a piece of data (object or array)
+     *
+     * @param  array|object  $data
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public static function generateHashUsingObject(array|object $data): string
+    {
+        return hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
+    }
 }

@@ -49,7 +49,7 @@ class Search extends Model
      * @throws DatabaseException
      *
      */
-    public function remove(string $id): void
+    public function delete(string $id): void
     {
         $this->deleteOne(['document_id' => $id]);
     }

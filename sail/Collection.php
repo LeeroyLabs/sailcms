@@ -354,6 +354,19 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 
     /**
      *
+     * Get element at given key
+     *
+     * @param  string  $key
+     * @return mixed
+     *
+     */
+    public function atKey(string $key): mixed
+    {
+        return $this->_internal[$key] ?? null;
+    }
+
+    /**
+     *
      * Alias for at method
      *
      * @param  int  $index
@@ -646,19 +659,28 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         $parts = explode('.', $dotNotation);
         $value = $this->_internal;
 
+        if (!str_contains($dotNotation, '.')) {
+            return $value[$dotNotation] ?? $defaultValue;
+        }
+
         foreach ($parts as $num => $part) {
-            if ($value instanceof static) {
-                $slice = array_slice($parts, $num, count($parts), false);
-                $value = $value->get(implode('.', $slice));
-            } elseif (is_object($value)) {
-                $value = $value->{$part} ?? $defaultValue;
-            } elseif (is_array($value)) {
-                if (is_numeric($part)) {
-                    $value = $value[(int)$part] ?? $defaultValue;
-                } else {
-                    $value = $value[$part] ?? $defaultValue;
-                }
+            if (is_object($value) && get_class($value) === self::class) {
+                $next = implode('.', array_slice($parts, $num, 1));
+                $value = $value->get($next, $defaultValue);
+                // Add the object handling
+            } elseif (is_object($value) && isset($value->{$part})) {
+                $value = $value->{$part};
+                // Add is_array to be sure it's okay
+            } elseif (is_array($value) && isset($value[$part])) {
+                $value = $value[$part];
+            } else {
+                $value = $defaultValue;
+                break;
             }
+        }
+
+        if (is_array($value)) {
+            return new self($value);
         }
 
         return $value ?? $defaultValue;
