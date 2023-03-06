@@ -22,7 +22,7 @@ class Tools
     public static function executeComposerInstall(string $package): void
     {
         $cmp = env('composer_location', '/usr/local/bin/composer');
-        shell_exec('yes | ' . $cmp . ' -n require ' . $package . ' 2>/dev/null');
+        exec('yes | ' . $cmp . ' -n require ' . $package . ' 2>/dev/null', $out, $code);
     }
 
     /**
@@ -34,7 +34,7 @@ class Tools
      */
     public static function executeComposerRefresh(): void
     {
-        exec(env('composer_location', '/usr/local/bin/composer') . ' dump-autoload -a');
+        exec(env('composer_location', '/usr/local/bin/composer') . ' dump-autoload -a 2>/dev/null', $out, $code);
     }
 
     /**
