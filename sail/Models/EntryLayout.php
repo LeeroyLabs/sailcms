@@ -22,7 +22,7 @@ use stdClass;
 /**
  *
  * @property LocaleField $titles
- * @property Collection $schema
+ * @property array|Collection $schema
  * @property Authors $authors
  * @property Dates $dates
  * @property bool $is_trashed
@@ -65,12 +65,12 @@ class EntryLayout extends Model implements Castable
      * Process Schema
      *
      * @param mixed $value
-     * @return array|Collection
+     * @return Collection
      *
      */
-    public function castTo(mixed $value): array|Collection
+    public function castTo(mixed $value): Collection
     {
-        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
+        return $this->processSchemaOnFetch($value);
     }
 
     /**

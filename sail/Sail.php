@@ -7,7 +7,7 @@ include_once dirname(__DIR__) . '/Globals.php';
 use Clockwork\Support\Vanilla\Clockwork;
 use Dotenv\Dotenv;
 use Exception;
-use \JsonException;
+use JsonException;
 use League\Flysystem\FilesystemException;
 use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Errors\ACLException;
@@ -36,6 +36,7 @@ use Whoops\Run;
 class Sail
 {
     public const SAIL_VERSION = '3.0.0-next.25';
+    public const SAIL_MAJOR_VERSION = 3;
     public const STATE_WEB = 10001;
     public const STATE_CLI = 10002;
 
@@ -64,7 +65,7 @@ class Sail
     public static bool $isServerless = false;
 
     private static Collection $environmentData;
-    private static bool $encryptedEnv = false;
+//    private static bool $encryptedEnv = false; // No usage for that @Marc ?
 
     /**
      *
@@ -141,6 +142,11 @@ class Sail
 
         if ($_SERVER['REQUEST_URI'] === '/v3/sitelist') {
             self::outputAvailableSites();
+        }
+
+        // Execute the boot file (system is available this point)
+        if (file_exists(self::$workingDirectory . '/config/boot.php')) {
+            require_once self::$workingDirectory . '/config/boot.php';
         }
 
         if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
@@ -225,7 +231,6 @@ class Sail
         }
 
         $settings = new Collection($config);
-
         self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
 
         if (setting('devMode', false)) {

@@ -383,6 +383,10 @@ final class GraphQL
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
         self::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
+        self::addQueryResolver('entryVersion', Entries::class, 'entryVersion');
+        self::addQueryResolver('entryVersions', Entries::class, 'entryVersions');
+        self::addMutationResolver('applyVersion', Entries::class, 'applyVersion');
+
         self::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
         self::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
         self::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
@@ -457,7 +461,7 @@ final class GraphQL
         if ($type === 'Query') {
             foreach (self::$queries as $name => $query) {
                 if ($fieldName === $name) {
-                    return (new $query->class())->{$query->method}($objectValue, new Collection($args), $contextValue);
+                    return DI::resolve($query->class)->{$query->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -467,7 +471,7 @@ final class GraphQL
         if ($type === 'Mutation') {
             foreach (self::$mutations as $name => $mutation) {
                 if ($fieldName === $name) {
-                    return (new $mutation->class())->{$mutation->method}($objectValue, new Collection($args), $contextValue);
+                    return DI::resolve($mutation->class)->{$mutation->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -477,7 +481,7 @@ final class GraphQL
         // One last try on the resolvers
         foreach (self::$resolvers as $name => $resolver) {
             if ($type === $name) {
-                return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                return DI::resolve($resolver->class)->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
             }
         }
 

@@ -152,7 +152,7 @@ class Role extends Model
      * @throws PermissionException
      *
      */
-    public function remove(string|ObjectId $id): bool
+    public function delete(string|ObjectId $id): bool
     {
         $this->hasPermissions();
         $role = $this->findById($id)->exec();
