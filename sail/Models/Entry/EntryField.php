@@ -68,7 +68,7 @@ class EntryField extends Field
         $entryId = $content->get('id');
         $entryTypeHandle = $content->get('typeHandle');
 
-        if (!$entryId && $entryTypeHandle || !$entryTypeHandle && $entryId) {
+        if ((!$entryId && $entryTypeHandle) || (!$entryTypeHandle && $entryId)) {
             $errors->push(self::ENTRY_ID_AND_HANDLE);
         } else if ($entryId && $entryTypeHandle) {
             $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);

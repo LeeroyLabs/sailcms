@@ -463,6 +463,10 @@ class Entries
      */
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
+        if (!isset($obj['current'])) {
+            return [];
+        }
+
         /**
          * @var Entry $entry
          */
@@ -562,12 +566,17 @@ class Entries
      */
     public function entryVersionResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
-        // Entry version field to resolve
-        // entry
-        print_r("Version");
-        print_r($info->fieldName);
+        // Entry version field entry to resolve
+//        if ($info->fieldName === "content" && $info->parentType) {
+//            print_r($info->fieldNodes);
+////            $entry_type_id = $obj->entry->get('entry_type_id');
+////            $entryType = (new EntryType())->getById($entry_type_id);
+////            $entryModel = $entryType->getEntryModel($entryType);
+////            $entryModel->content = new Collection((array)$obj->entry->content);
+////            return $entryModel->getContent();
+//        }
 
-        return $obj[$info->fieldName];
+        return $obj->{$info->fieldName};
     }
 
     /**
