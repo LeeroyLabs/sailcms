@@ -649,9 +649,27 @@ class Entry extends Model implements Validator
         $entry = $this->findById($entryId)->exec();
 
         if (isset($entry->_id)) {
-            $newContent = $newContent->merge($entry->content, true);
+            $entry->content->each(function ($key, $content) use (&$newContent) {
+                $currentNewContent = $newContent->get($key);
+
+                if ($currentNewContent instanceof Collection) {
+                    foreach ($content as $subKey => $subContent) {
+                        $subNewContent = $currentNewContent->get($subKey);
+
+                        if (!$subNewContent) {
+                            $currentNewContent->pushKeyValue($subKey, $subContent);
+                        }
+                    }
+                    $newContent->pushKeyValue($key, $currentNewContent);
+
+                } else if (!$currentNewContent) {
+                    $newContent->pushKeyValue($key, $content);
+                }
+            });
         }
 
+
+        // Ensure that all content are arrays
         $newContent->each(function ($key, &$content) use (&$newContent) {
             if ($content instanceof stdClass) {
                 $newContent->pushKeyValue($key, (array)$content);

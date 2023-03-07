@@ -355,6 +355,7 @@ class Entries
         $id = $args->get('id');
         $entryTypeHandle = $args->get('entry_type_handle');
         $content = $args->get('content');
+        $bypassValidation = $args->get('bypass_validation', false);
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
@@ -365,7 +366,7 @@ class Entries
             $args->pushKeyValue('content', $newContent);
         }
 
-        $errors = $entryModel->updateById($id, $args, false);
+        $errors = $entryModel->updateById($id, $args, false, $bypassValidation);
 
         return Entry::processErrorsForGraphQL($errors);
     }
