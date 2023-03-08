@@ -6,7 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\StoringType;
 
-class TextField extends Field
+class AssetField extends Field
 {
     /**
      *
@@ -17,7 +17,7 @@ class TextField extends Field
      */
     public function description(): string
     {
-        return 'Field to implement a text html input.';
+        return 'Field to implement an asset input.';
     }
 
     /**
@@ -69,6 +69,8 @@ class TextField extends Field
      */
     protected function validate(mixed $content): ?Collection
     {
+        // TODO: VALIDATE EXISTENCE OF ASSET
+
         // Nothing to implement
         return null;
     }
