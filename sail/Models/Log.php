@@ -18,12 +18,13 @@ class Log extends Model
     /**
      *
      * @param  string  $message
+     * @param  array   $context
      * @return void
      * @throws DatabaseException
      *
      */
-    public function write(string $message): void
+    public function write(string $message, array $context = []): void
     {
-        $this->insert(['message' => str_replace("\n", " ", $message), 'date' => time()]);
+        $this->insert(['message' => str_replace("\n", " ", $message), 'context' => $context, 'date' => time()]);
     }
 }

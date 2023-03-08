@@ -94,6 +94,7 @@ return [
         'logging' => [
             'useRay' => true,
             'loggerName' => 'sailcms',
+            'database' => false,
             'adapters' => [
                 \SailCMS\Logging\Database::class
             ],
@@ -204,6 +205,7 @@ return [
         'logging' => [
             'useRay' => true,
             'loggerName' => 'sailcms',
+            'database' => false,
             'adapters' => [
                 \SailCMS\Logging\Database::class
             ],
@@ -311,6 +313,7 @@ return [
         'logging' => [
             'useRay' => true,
             'loggerName' => 'sailcms',
+            'database' => false,
             'adapters' => [
                 \SailCMS\Logging\Database::class
             ],

@@ -169,7 +169,7 @@ test('ActiveRecord: get record by field and fail (using !=)', function () {
 test('ActiveRecord: delete record', function () {
     $dbtest = new DBTest();
     $test = $dbtest->getByText('Hell0 W0rld!');
-    $test->delete();
+    $test->remove();
 
     $test = $dbtest->getByText('Hell0 W0rld!');
     expect($test)->toBeNull();

@@ -667,7 +667,6 @@ class Entry extends Model implements Validator
             });
         }
 
-
         // Ensure that all content are arrays
         $newContent->each(function ($key, &$content) use (&$newContent) {
             if ($content instanceof stdClass) {
@@ -1261,6 +1260,8 @@ class Entry extends Model implements Validator
         $dates = Dates::init($published);
         $authors = Authors::init($author, $published);
 
+        // TODO: Middleware
+
         try {
             $entryId = $this->insert([
                 'entry_type_id' => (string)$this->entryType->_id,
@@ -1290,6 +1291,9 @@ class Entry extends Model implements Validator
         $simplifiedEntry = $entry->simplify(null);
         $simplifiedEntry['content'] = $entry->content;
         (new EntryVersion)->create($author, $simplifiedEntry);
+
+        // TODO: Event
+        // TODO: Search (add entry)
 
         return $entry;
     }
