@@ -464,7 +464,15 @@ class Entries
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
         if (!isset($obj['current'])) {
-            return [];
+            if ($info->fieldName === "content") {
+                // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
+                $entry_type_id = $obj['entry_type_id'];
+                $entryType = (new EntryType())->getById($entry_type_id);
+                $entryModel = $entryType->getEntryModel($entryType);
+                $entryModel->content = new Collection((array)$obj['content']);
+                return $entryModel->getContent();
+            }
+            return $obj[$info->fieldName];
         }
 
         /**
@@ -551,32 +559,6 @@ class Entries
         $entry_version_id = $args->get('entry_version_id');
 
         return (new EntryVersion())->applyVersion($entry_version_id);
-    }
-
-    /**
-     *
-     * Resolver for entry version model
-     *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
-     * @param ResolveInfo $info
-     * @return mixed
-     *
-     */
-    public function entryVersionResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
-    {
-        // Entry version field entry to resolve
-//        if ($info->fieldName === "content" && $info->parentType) {
-//            print_r($info->fieldNodes);
-////            $entry_type_id = $obj->entry->get('entry_type_id');
-////            $entryType = (new EntryType())->getById($entry_type_id);
-////            $entryModel = $entryType->getEntryModel($entryType);
-////            $entryModel->content = new Collection((array)$obj->entry->content);
-////            return $entryModel->getContent();
-//        }
-
-        return $obj->{$info->fieldName};
     }
 
     /**
