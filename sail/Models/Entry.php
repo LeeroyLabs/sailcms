@@ -264,7 +264,7 @@ class Entry extends Model implements Validator
             }
             $socialMeta['content'] = $newContent;
         }
-        $seo->social_metas = $socialMetas;
+        $seo->setFor('social_metas', $socialMetas);
 
         return $seo->unwrap();
     }
@@ -299,6 +299,15 @@ class Entry extends Model implements Validator
         ];
     }
 
+    public function searchContent(): array
+    {
+        return [
+            'title' => $this->title,
+            'locale' => $this->locale,
+            'content' => $this->content // TODO parse each json to strings list
+        ];
+    }
+
     /**
      *
      * Get all entries by entry type handle
@@ -314,6 +323,8 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
+     *
      */
     public static function getList(string $entryTypeHandle, ?array $filters = null, int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC): Listing
     {
@@ -423,6 +434,8 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
+     *
      */
     public static function findByURL(string $url, bool $fromRequest = true): Entry|array|null
     {
@@ -487,6 +500,7 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public static function findByCategoryId(string $categoryId, string $siteId = null): Collection
@@ -641,6 +655,7 @@ class Entry extends Model implements Validator
      * @param Collection $newContent
      * @return Collection
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public function updateContentForGraphQL(string $entryId, Collection $newContent): Collection
@@ -738,6 +753,7 @@ class Entry extends Model implements Validator
      * @param ?array $filters
      * @return Collection
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public function all(bool $ignoreTrash = true, ?array $filters = []): Collection
@@ -1293,7 +1309,7 @@ class Entry extends Model implements Validator
         (new EntryVersion)->create($author, $simplifiedEntry);
 
         // TODO: Event
-        // TODO: Search (add entry)
+
 
         return $entry;
     }
@@ -1438,6 +1454,21 @@ class Entry extends Model implements Validator
         (new EntryVersion)->deleteAllByEntryId((string)$entryId);
 
         return $qtyDeleted === 1;
+    }
+
+    /**
+     *
+     * Store entry date for search
+     *
+     * @param Entry $entry
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    private function store(Entry $entry): void
+    {
+        $content = $entry->searchContent();
+        (new Search())->store($content);
     }
 
     /**

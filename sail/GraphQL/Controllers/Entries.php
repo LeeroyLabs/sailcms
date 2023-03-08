@@ -334,7 +334,7 @@ class Entries
 
     /**
      *
-     * Update an entry TODO check content update, something is wrong. TextField saves as array.
+     * Update an entry
      *
      * @param mixed $obj
      * @param Collection $args
@@ -499,7 +499,6 @@ class Entries
     /**
      *
      * Get entry version by id
-     *  TODO the entry.content field does not work and maybe other fields as well
      *
      * @param mixed $obj
      * @param Collection $args
