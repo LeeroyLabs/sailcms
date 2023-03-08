@@ -299,12 +299,21 @@ class Entry extends Model implements Validator
         ];
     }
 
-    public function searchContent(): array
+    /**
+     *
+     * Gather data for search purpose
+     *
+     * @return array
+     *
+     */
+    public function searchData(): array
     {
         return [
+            '_id' => $this->_id,
             'title' => $this->title,
             'locale' => $this->locale,
-            'content' => $this->content // TODO parse each json to strings list
+            'content' => $this->content, // TODO parse each sub array to strings list
+            'handle' => $this->entryType->handle
         ];
     }
 
@@ -1310,6 +1319,8 @@ class Entry extends Model implements Validator
 
         // TODO: Event
 
+        // Search
+        (new Search())->store($entry->searchData());
 
         return $entry;
     }
@@ -1388,10 +1399,13 @@ class Entry extends Model implements Validator
         // The query has the good entry type
         $entry->entryType = $this->entryType;
 
-        // Version save with simplify entry
+        // Version save with simplified entry
         $simplifiedEntry = $entry->simplify(null);
         $simplifiedEntry['content'] = $entry->content;
         (new EntryVersion)->create($author, $simplifiedEntry);
+
+        // Update search
+        (new Search())->store($entry->searchData());
 
         // Return no errors
         return Collection::init();
@@ -1433,6 +1447,7 @@ class Entry extends Model implements Validator
      * @param string|ObjectId $entryId
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function hardDelete(string|ObjectId $entryId): bool
@@ -1453,22 +1468,10 @@ class Entry extends Model implements Validator
         // And entry versions too
         (new EntryVersion)->deleteAllByEntryId((string)$entryId);
 
-        return $qtyDeleted === 1;
-    }
+        // And search
+        (new Search())->delete($entryId);
 
-    /**
-     *
-     * Store entry date for search
-     *
-     * @param Entry $entry
-     * @return void
-     * @throws DatabaseException
-     *
-     */
-    private function store(Entry $entry): void
-    {
-        $content = $entry->searchContent();
-        (new Search())->store($content);
+        return $qtyDeleted === 1;
     }
 
     /**
