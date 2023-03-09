@@ -116,9 +116,8 @@ test('Get a page and modify his SEO', function () {
     }
 })->group('graphql');
 
-test('Add layout to page', function () {
+test('Create layout, entry type & entry', function () {
     if (isset($_ENV['test-token'])) {
-
         $newEntryLayout = $this->client->run('
             mutation createLayout {
                 createEntryLayout(
@@ -209,7 +208,7 @@ test('Add layout to page', function () {
         $newEntry = $this->client->run('
             mutation {
                 createEntry(
-                    entry_type_handle: "string"
+                    entry_type_handle: "tests-graphql"
                     locale: "en"
                     is_homepage: false
                     status: live
@@ -218,11 +217,20 @@ test('Add layout to page', function () {
                     slug: "it-just-works"
                     content: [
                         {
-                            float: "0.03"
-                            text: "Not empty",
-                            desc: "This text contains line returns
-                    and must keep it through all the process",
-                            wysiwyg: "<p><strong>Test</strong></p>",
+                            key: "float"
+                            content: "1.04"
+                        }
+                        {
+                            key: "text"
+                            content: "Not empty"
+                        }
+                        {
+                            key: "desc"
+                            content: "This text contains line returns and must keep it through all the process"
+                        }
+                        {
+                            key: "wysiwyg"
+                            content: "<p><strong>Test</strong></p>"
                         }
                     ]
                 ) {
@@ -237,10 +245,87 @@ test('Add layout to page', function () {
         try {
             expect($newEntryLayout->status)->toBe('ok');
             expect($newEntryType->status)->toBe('ok');
+            expect($newEntry->status)->toBe('ok');
         } catch (Exception $exception) {
             expect(true)->toBe(false);
         }
+    }
+})->group('graphql');
 
+test('Delete layout, entry type & entry', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryType = $this->client->run('
+            {
+                entryType(handle: "tests-graphql") {
+                    _id
+                    handle
+                    entry_layout_id
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $entryType = $entryType->data->entryType;
 
+        $entry = $this->client->run('
+            {
+                entries(
+                    entry_type_handle: "tests-graphql"
+                ) {
+                    list {
+                        _id
+                        entry_type_id
+                        site_id
+                        locale
+                        alternates {
+                            locale
+                            entry_id
+                        }
+                        title
+                        template
+                        url
+                        authors {
+                            created_by
+                        }
+                        dates {
+                            created
+                        }
+                        categories
+                        content {
+                            key
+                            content
+                        }
+                        schema {
+                            key
+                        }
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntry = $this->client->run('
+            mutation {
+                deleteEntry(entry_type_handle: "tests-graphql", id: "_____", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntryLayout = $this->client->run('
+            mutation {
+                deleteEntryLayout(id: "'. $entryType->entry_layout_id .'", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntryType = $this->client->run('
+            mutation {
+                deleteEntryType(id: "'. $entryType->_id .'")
+            }
+        ', [], $_ENV['test-token']);
+
+        try {
+            expect($deleteEntry->status)->toBe('ok');
+            expect($deleteEntryLayout->status)->toBe('ok');
+            expect($deleteEntryType->status)->toBe('ok');
+        } catch (Exception $exception) {
+            print_r($exception);
+            expect(true)->toBe(false);
+        }
     }
 })->group('graphql');
