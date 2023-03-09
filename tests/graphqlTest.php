@@ -115,3 +115,132 @@ test('Get a page and modify his SEO', function () {
         }
     }
 })->group('graphql');
+
+test('Add layout to page', function () {
+    if (isset($_ENV['test-token'])) {
+
+        $newEntryLayout = $this->client->run('
+            mutation createLayout {
+                createEntryLayout(
+                    titles: { fr: "Test des champs graphql", en: "Field tests graphql" }
+                    schema: [
+                        {
+                            labels: { en: "Text", fr: "Texte" }
+                            key: "text"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            inputSettings: [
+                                  {
+                                        settings: [
+                                            { name: "required", value: "1", type: boolean }
+                                            { name: "maxLength", value: "10", type: integer }
+                                            { name: "minLength", value: "5", type: integer }
+                                        ]
+                                 }
+                            ]
+                        }
+                        {
+                            labels: { en: "Integer", fr: "Entier" }
+                            key: "integer"
+                            handle: "SailCMS-Models-Entry-NumberField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "min", value: "-1", type: integer }
+                                            { name: "max", value: "11", type: integer }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Float", fr: "Flottant" }
+                            key: "float"
+                            handle: "SailCMS-Models-Entry-NumberField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                        { name: "min", value: "0.03", type: float }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Description", fr: "Description" }
+                            key: "desc"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            inputSettings: []
+                        }
+                        {
+                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
+                            key: "wysiwyg"
+                            handle: "SailCMS-Models-Entry-HTMLField"
+                            inputSettings: []
+                        }
+                    ]
+                    ) {
+                    _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $newEntryType = $this->client->run('
+            mutation {
+                createEntryType(
+                    handle: "tests-graphql"
+                    title: "Tests graphql"
+                    url_prefix: {
+                        en: "graphql-tests"
+                        fr: "tests-graphql"
+                    }
+                    entry_layout_id: "'. $newEntryLayout->data->createEntryLayout->_id .'"
+                ) {
+                    _id
+                    title
+                    handle
+                    url_prefix {
+                        fr
+                        en
+                    }
+                    entry_layout_id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $newEntry = $this->client->run('
+            mutation {
+                createEntry(
+                    entry_type_handle: "string"
+                    locale: "en"
+                    is_homepage: false
+                    status: live
+                    title: "It just works"
+                    template: ""
+                    slug: "it-just-works"
+                    content: [
+                        {
+                            float: "0.03"
+                            text: "Not empty",
+                            desc: "This text contains line returns
+                    and must keep it through all the process",
+                            wysiwyg: "<p><strong>Test</strong></p>",
+                        }
+                    ]
+                ) {
+                    errors {
+                        key
+                        errors
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        try {
+            expect($newEntryLayout->status)->toBe('ok');
+            expect($newEntryType->status)->toBe('ok');
+        } catch (Exception $exception) {
+            expect(true)->toBe(false);
+        }
+
+
+    }
+})->group('graphql');
