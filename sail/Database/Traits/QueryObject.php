@@ -10,7 +10,6 @@ use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
-use SailCMS\Log;
 use SailCMS\Types\QueryOptions;
 
 trait QueryObject
@@ -36,7 +35,6 @@ trait QueryObject
      * @param  int     $cacheTTL
      * @return array|$this|null
      * @throws DatabaseException
-     * @throws \JsonException
      *
      */
     protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): static|array|null
@@ -129,18 +127,16 @@ trait QueryObject
                         }
 
                         $doc->{$target} = new Collection($list);
-                    } else {
-                        if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
-                            $obj = $instance->findById($doc->{$field});
+                    } elseif (!empty($doc->{$field}) && !is_object($doc->{$field})) {
+                        $obj = $instance->findById($doc->{$field});
 
-                            if (count($subpop) > 0) {
-                                foreach ($subpop as $pop) {
-                                    $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
-                                }
+                        if (count($subpop) > 0) {
+                            foreach ($subpop as $pop) {
+                                $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                             }
-
-                            $doc->{$target} = $obj->exec();
                         }
+
+                        $doc->{$target} = $obj->exec();
                     }
                 }
 
@@ -664,6 +660,7 @@ trait QueryObject
      * @param  mixed            $value
      * @return bool
      * @throws DatabaseException
+     * @throws Exception
      *
      */
     public function quickUpdate(string|ObjectId $id, string|array $field, mixed $value): bool
@@ -882,31 +879,5 @@ trait QueryObject
         $this->currentSkip = 0;
         $this->currentLimit = 10_000;
         $this->currentShowAll = false;
-    }
-
-    /**
-     *
-     * Send logs to the logger if enabled
-     *
-     * @param  string  $method
-     * @param  array   $query
-     * @param  bool    $status
-     * @return void
-     *
-     */
-    private function log(string $method, array $query, bool $status = false): void
-    {
-        $log = setting('logging.database', false);
-        $env = env('environment', 'dev');
-
-        // The log model does not log (infinite loop)
-        if ((static::class !== \SailCMS\Models\Log::class) && $log && ($env === 'dev' || $env === 'development')) {
-            if ($status) {
-                Log::debug($method, $query);
-                return;
-            }
-
-            Log::error($method, $query);
-        }
     }
 }
