@@ -60,12 +60,27 @@ class Bundled extends AbstractExtension
      * Get an .env variable
      *
      * @param  string  $key
+     * @param  mixed   $default
      * @return string|array|bool
      *
      */
-    public function env(string $key): string|array|bool
+    public function env(string $key, mixed $default): mixed
     {
-        return getenv($key);
+        return env($key);
+    }
+
+    /**
+     *
+     * get a setting
+     *
+     * @param  string  $key
+     * @param  mixed   $default
+     * @return mixed
+     *
+     */
+    public function setting(string $key, mixed $default): mixed
+    {
+        return setting($key);
     }
 
     /**
@@ -193,5 +208,58 @@ class Bundled extends AbstractExtension
     public function transform(string $id, string $name, ?int $width = null, ?int $height = null, string $crop = Transformer::CROP_CC): string
     {
         return Asset::transformById($id, $name, $width, $height);
+    }
+
+    /**
+     *
+     * Obfuscate an email address
+     *
+     * @param  string  $email
+     * @return string
+     * @throws Exception
+     *
+     */
+    public function obfuscateEmail(string $email): string
+    {
+        $alwaysEncode = ['.', ':', '@'];
+        $result = '';
+
+        // Encode string using oct and hex character codes
+        $length = strlen($email);
+        for ($i = 0; $i < $length; $i++) {
+            // Encode 25% of characters including several that always should be encoded
+            if (in_array($email[$i], $alwaysEncode) || random_int(1, 100) < 25) {
+                if (random_int(0, 1)) {
+                    $result .= '&#' . ord($email[$i]) . ';';
+                } else {
+                    $result .= '&#x' . dechex(ord($email[$i])) . ';';
+                }
+            } else {
+                $result .= $email[$i];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     *
+     * Create an obfuscated mailto link with optional label
+     *
+     * @param  string  $email
+     * @param  string  $label
+     * @return string
+     * @throws Exception
+     *
+     */
+    public function obfuscateMailto(string $email, string $label = ''): string
+    {
+        $email = $this->obfuscateEmail($email);
+
+        if ($label === '') {
+            $label = $email;
+        }
+
+        return '<a href="mailt&#111;&#58;' . $email . '" rel="nofollow">' . $label . '</a>';
     }
 }

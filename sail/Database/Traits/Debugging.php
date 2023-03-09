@@ -3,6 +3,7 @@
 namespace SailCMS\Database\Traits;
 
 use SailCMS\Debug;
+use SailCMS\Log;
 
 trait Debugging
 {
@@ -33,5 +34,31 @@ trait Debugging
         ];
 
         Debug::endQuery($debugQuery);
+    }
+
+    /**
+     *
+     * Send logs to the logger if enabled
+     *
+     * @param  string  $method
+     * @param  array   $query
+     * @param  bool    $status
+     * @return void
+     *
+     */
+    private function log(string $method, array $query, bool $status = false): void
+    {
+        $log = setting('logging.database', false);
+        $env = env('environment', 'dev');
+
+        // The log model does not log (infinite loop)
+        if ((static::class !== \SailCMS\Models\Log::class) && $log && ($env === 'dev' || $env === 'development')) {
+            if ($status) {
+                Log::debug($method, $query);
+                return;
+            }
+
+            Log::error($method, $query);
+        }
     }
 }
