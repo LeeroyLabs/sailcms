@@ -54,7 +54,14 @@ class InstallOfficial extends Command
             }
 
             // Check version requirement
-            if ($minVer > Sail::SAIL_MAJOR_VERSION) {
+            $isCompatible = Sail::verifyCompatibility($minVer);
+
+            if ($isCompatible === -1) {
+                Tools::outputError("Package {$name} has an invalid version compatibility operator. Please contact the package developer.");
+                return Command::FAILURE;
+            }
+
+            if ($isCompatible === 0) {
                 $installed = Sail::SAIL_VERSION;
                 Tools::outputError("Package {$name} requires a version of SailCMS higher than what is installed (required: {$minVer}.0.0, installed: {$installed})");
                 return Command::FAILURE;
@@ -78,6 +85,7 @@ class InstallOfficial extends Command
         Tools::outputError("Package {$name} is not an official package.");
         return Command::FAILURE;
     }
+
 
     protected function configure(): void
     {

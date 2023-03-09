@@ -37,6 +37,8 @@ class Sail
 {
     public const SAIL_VERSION = '3.0.0-next.25';
     public const SAIL_MAJOR_VERSION = 3;
+    public const SAIL_MINOR_VERSION = 0;
+    public const SAIL_REVISION_VERSION = 0;
     public const STATE_WEB = 10001;
     public const STATE_CLI = 10002;
 
@@ -149,11 +151,10 @@ class Sail
             require_once self::$workingDirectory . '/config/boot.php';
         }
 
-        if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new GraphqlException('Cannot access GraphQL using anything else than the POST request method.', 0400);
-            }
+        $gqlTrigger = '/' . setting('graphql.trigger', 'graphql');
+        $gqlActive = setting('graphql.active', true);
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === $gqlTrigger && $gqlActive) {
             // Run GraphQL
             self::$isGraphQL = true;
             $data = GraphQL::init();
@@ -760,6 +761,41 @@ class Sail
     public static function getEnvironmentVariable(string $key): mixed
     {
         return self::$environmentData->get($key, null);
+    }
+
+    /**
+     *
+     * Compare requested version compatibility with current version of sail
+     *
+     * @param  string  $version
+     * @return int
+     *
+     */
+    public static function verifyCompatibility(string $version): int
+    {
+        // First 2 chars is the operator
+        $operator = substr($version, 0, 2);
+        $valid = ['<=', '!<', '>=', '!>'];
+
+        if (!in_array($operator, $valid)) {
+            return -1;
+        }
+
+        // Breakdown version
+        $version = substr($version, 2);
+        $sailVersion = Sail::SAIL_MAJOR_VERSION . '.' . Sail::SAIL_MINOR_VERSION . '.' . Sail::SAIL_REVISION_VERSION;
+
+        if ($operator === '!<') {
+            $operator = '>';
+        } elseif ($operator === '!>') {
+            $operator = '<';
+        }
+
+        if (version_compare($sailVersion, $version, $operator)) {
+            return 1;
+        }
+
+        return 0;
     }
 
     /**

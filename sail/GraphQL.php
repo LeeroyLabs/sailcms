@@ -12,6 +12,9 @@ use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Utils\AST;
 use GraphQL\Utils\BuildSchema;
+use GraphQL\Validator\DocumentValidator;
+use GraphQL\Validator\Rules\DisableIntrospection;
+use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
@@ -263,11 +266,28 @@ final class GraphQL
             $schema = BuildSchema::build($document, [self::class, 'handleCustomTypes']);
 
             $rawInput = file_get_contents('php://input');
-            $input = json_decode($rawInput, true, setting('graphql.depthLimit', 5), JSON_THROW_ON_ERROR); // N+1 protection
+            $input = json_decode($rawInput, true, 256, JSON_THROW_ON_ERROR);
             $query = $input['query'] ?? $input['mutation'] ?? '';
             $variableValues = $input['variables'] ?? null;
 
             $data = ['query' => $query, 'variables' => $variableValues];
+
+            // Disable Introspection (if set to false)
+            $introspection = setting('graphql.introspection', true);
+            if (!$introspection) {
+                $rule = new DisableIntrospection(DisableIntrospection::ENABLED);
+                DocumentValidator::addRule($rule);
+            }
+
+            // Depth Limiting (n+1)
+            $limit = setting('graphql.depthLimit', 5);
+
+            if ($introspection) {
+                $limit = 11;
+            }
+
+            $rule = new QueryDepth($limit);
+            DocumentValidator::addRule($rule);
 
             if (!empty($input['query'])) {
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeQuery, data: $data));

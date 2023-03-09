@@ -1,6 +1,6 @@
 <?php
 
-namespace SailCMS\Database;
+namespace SailCMS\Database\Traits;
 
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
@@ -348,7 +348,7 @@ trait ActiveRecord
 
         if ($record) {
             foreach ($this->properties as $prop => $value) {
-                if (isset($record->{$prop}) && in_array($prop, $this->dirtyFields, true)) {
+                if (isset($record->{$prop})) {
                     $this->properties[$prop] = $record->{$prop};
                 }
             }
