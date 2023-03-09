@@ -347,27 +347,29 @@ class Entry extends Model implements Validator
      * Get all entries by entry type handle
      *
      * @param string $entryTypeHandle
-     * @param array|null $filters if filters is null it is default to ignore trash entries
+     * @param string $search
      * @param int $page
      * @param int $limit
      * @param string $sort
      * @param int $direction
+     * @param bool $excludeTrash
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException
      * @throws JsonException
+     * @throws PermissionException
      *
      */
-    public static function getList(string $entryTypeHandle, ?array $filters = null, int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC): Listing
+    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $excludeTrash = true): Listing
     {
         $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
         $offset = $page * $limit - $limit;
 
-        // If filters is null it is default to ignore trash entries
-        if ($filters === null) {
+        // Ignore trash entries
+        $filters = [];
+        if ($excludeTrash) {
             $filters['status'] = ['$ne' => EntryStatus::TRASH->value];
         }
 
@@ -375,12 +377,13 @@ class Entry extends Model implements Validator
         $options = QueryOptions::initWithPagination($offset, $limit);
         $options->sort = [$sort => $direction];
 
-        // Set up cache
-        $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters);
-        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
-
+        // TODO use search instead of find...
+        // TODO make a method to index all entries and then a cmd to call it.
+//        if ($search) {
+//
+//        }
         // Actual query
-        $results = $entryModel->find($filters, $options)->exec($cacheKey, $cacheTtl);
+        $results = $entryModel->find($filters, $options)->exec();
 
         // Data for pagination
         $count = $entryModel->count($filters);
@@ -1548,53 +1551,5 @@ class Entry extends Model implements Validator
     private static function homepageConfigHandle($siteId): string
     {
         return self::HOMEPAGE_CONFIG_HANDLE . "_" . $siteId;
-    }
-
-    /**
-     *
-     * Generate cache key from filters
-     *
-     * @param string $handle
-     * @param Collection|array $filters
-     * @return string
-     *
-     */
-    private static function generateCacheKeyFromFilters(string $handle, Collection|array $filters): string
-    {
-        return self::ENTRY_FILTERED_CACHE . $handle . self::iterateIntoFilters($filters);
-    }
-
-    /**
-     *
-     * Iterate into filters recursively.
-     *
-     * @param mixed $iterableOrValue
-     * @return string
-     *
-     */
-    private static function iterateIntoFilters(mixed $iterableOrValue): string
-    {
-        $result = "";
-        if (!is_array($iterableOrValue) && !$iterableOrValue instanceof Collection) {
-            $result = "=" . $iterableOrValue;
-        } else {
-            foreach ($iterableOrValue as $key => $valueOrIterable) {
-                $prefix = "+" . $key;
-                if (!is_string($key)) {
-                    $prefix = "";
-                } else {
-                    if (in_array($key, ['$or', '$and', '$nor'])) {
-                        $prefix = "|" . $key;
-                    } else {
-                        if (str_starts_with($key, '$')) {
-                            $prefix = ">" . $key;
-                        }
-                    }
-                }
-
-                $result .= $prefix . self::iterateIntoFilters($valueOrIterable);
-            }
-        }
-        return $result;
     }
 }

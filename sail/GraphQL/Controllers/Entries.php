@@ -5,7 +5,6 @@ namespace SailCMS\GraphQL\Controllers;
 use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
-use MongoDB\BSON\Regex;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -219,16 +218,14 @@ class Entries
         $limit = $args->get('limit', 50);
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
-
-        // For filtering
-        $parsedFilters = $this->parseFilterInput($args->get('filters', Collection::init()));
+        $search = $args->get('search', '');
+        $excludeTrash = $args->get('exclude_trash', true);
 
         // Get the result!
-        $result = Entry::getList($entryTypeHandle, $parsedFilters, $page, $limit, $sort, $direction); // By entry type instead
+        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $excludeTrash); // By entry type instead
 
         // Get homepage to set is_homepage on each entry
-        $siteId = $parsedFilters['site_id'] ?? Sail::siteId();
-        $currentSiteHomepages = Entry::getHomepage($siteId);
+        $currentSiteHomepages = Entry::getHomepage(Sail::siteId());
 
         // Clean data before returning it.
         $data = Collection::init();
@@ -798,74 +795,5 @@ class Entries
         }
 
         return $simplifiedEntry;
-    }
-
-    /**
-     * TODO do we need that ? AKA use the search instead!
-     *
-     * Parse filter input
-     *
-     * @param Collection|null $filters
-     * @return array
-     * @throws EntryException
-     *
-     */
-    private function parseFilterInput(?Collection $filters): array
-    {
-        $parsedFilters = [];
-
-        $filters?->each(function ($i, $filter) use (&$parsedFilters) {
-            $logic = '$' . $filter->get('logic', 'and');
-
-            $value = $this->cleanFilterValue($filter);
-
-            $filterValue = [$filter->get('field') => match ($filter->get('operation')) {
-                "like" => new Regex($value, 'gi'),
-                "notlike" => ['$not' => new Regex($value, 'gi')],
-                "eq" => $value,
-                "isnull" => null,
-                "notnull" => ['$ne' => null],
-                default => ['$' . $filter->get('operation') => $value],
-            }];
-
-            if ($logic === '$or') {
-                $parsedFilters['$and'][0][$logic][] = $filterValue;
-            } else {
-                $parsedFilters[$logic][] = $filterValue;
-            }
-        });
-
-        return $parsedFilters;
-    }
-
-    /**
-     *
-     * @param Collection $filter
-     * @return string
-     * @throws EntryException
-     *
-     */
-    private function cleanFilterValue(Collection $filter): string
-    {
-        if ($filter->get('value') === null && !in_array($filter->get('operation'), ['isnull', 'notnull'])) {
-            throw new EntryException(Entry::INVALID_FILTER_VALUE);
-        }
-
-        if (!is_scalar($filter->get('value'))) {
-            throw new EntryException(Entry::INVALID_FILTER_VALUE);
-        }
-
-        if ($filter->get('value') && (!$filter->get('type') || $filter->get('value') === 'array')) {
-            throw new EntryException(Entry::INVALID_FILTER_TYPE);
-        }
-
-        $value = match ($filter->get('type')) {
-            "float" => (float)$filter->get('value'),
-            "integer" => (integer)$filter->get('value'),
-            "boolean" => (boolean)$filter->get('value'),
-            default => (string)$filter->get('value')
-        };
-
-        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }
