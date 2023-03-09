@@ -29,7 +29,7 @@ type Query {
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, exclude_trash: Boolean): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout!]

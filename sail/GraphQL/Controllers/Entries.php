@@ -219,10 +219,10 @@ class Entries
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
         $search = $args->get('search', '');
-        $excludeTrash = $args->get('exclude_trash', true);
+        $ignoreTrash = $args->get('ignore_trash', true);
 
         // Get the result!
-        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $excludeTrash); // By entry type instead
+        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $ignoreTrash); // By entry type instead
 
         // Get homepage to set is_homepage on each entry
         $currentSiteHomepages = Entry::getHomepage(Sail::siteId());
