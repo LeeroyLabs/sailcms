@@ -151,11 +151,10 @@ class Sail
             require_once self::$workingDirectory . '/config/boot.php';
         }
 
-        if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new GraphqlException('Cannot access GraphQL using anything else than the POST request method.', 0400);
-            }
+        $gqlTrigger = '/' . setting('graphql.trigger', 'graphql');
+        $gqlActive = setting('graphql.active', true);
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === $gqlTrigger && $gqlActive) {
             // Run GraphQL
             self::$isGraphQL = true;
             $data = GraphQL::init();
@@ -791,7 +790,7 @@ class Sail
         } elseif ($operator === '!>') {
             $operator = '<';
         }
-        
+
         if (version_compare($sailVersion, $version, $operator)) {
             return 1;
         }

@@ -58,6 +58,7 @@ return [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5,
+            'introspection' => true,
             'hideCMS' => false
         ],
         'cors' => [
@@ -184,6 +185,7 @@ return [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5,
+            'introspection' => false,
             'hideCMS' => false
         ],
         'session' => [
@@ -291,6 +293,7 @@ return [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5,
+            'introspection' => false,
             'hideCMS' => false
         ],
         'session' => [
