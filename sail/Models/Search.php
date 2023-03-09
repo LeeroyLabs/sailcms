@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
 use MongoDB\BSON\Regex;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
@@ -24,27 +25,28 @@ class Search extends Model
      *
      * Store or update a document
      *
-     * @param  array  $document
+     * @param array $document
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public function store(array $document): void
     {
-        $doc = $this->findOne(['document_id' => $document['_id']])->exec();
+        $doc = $this->findOne(['document_id' => (string)$document['document_id']])->exec();
 
         if ($doc) {
-            $this->updateOne(['document_id' => $document['_id']], ['$set' => $document]);
+            $this->updateOne(['document_id' => $document['document_id']], ['$set' => $document]);
             return;
         }
 
-        $this->insert($doc);
+        $this->insert($document);
     }
 
     /**
      *
      * Delete a document by the id
      *
-     * @param  string  $id
+     * @param string $id
      * @return void
      * @throws DatabaseException
      *
@@ -58,9 +60,10 @@ class Search extends Model
      *
      * Search for records
      *
-     * @param  string  $search
+     * @param string $search
      * @return SearchResults
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public function search(string $search): SearchResults

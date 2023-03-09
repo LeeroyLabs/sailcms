@@ -15,6 +15,7 @@ class EntryField extends Field
 {
     // TODO : change input field for a select field that choices are entry and entry type
     // TODO : add parse method to include in Entry content Getter ??
+    const SEARCHABLE = false;
 
     /* Error */
     const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';

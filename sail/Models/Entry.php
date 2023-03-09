@@ -15,6 +15,7 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Http\Request;
+use SailCMS\Log as SailLog;
 use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
@@ -304,16 +305,40 @@ class Entry extends Model implements Validator
      * Gather data for search purpose
      *
      * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function searchData(): array
     {
+        $parsedContents = [
+            'entry_type_handle' => $this->entryType->handle
+        ];
+        $schema = $this->getSchema(true);
+        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
+            $parsedContent = $content;
+
+            /**
+             * @var Field $field
+             */
+            $field = $schema->get($key);
+            $isSearchable = $field::SEARCHABLE && $field;
+
+            if ($isSearchable) {
+                if ($content instanceof stdClass) {
+                    $parsedContent = implode('|', (array)$content);
+                }
+                $parsedContents[$key] = $parsedContent;
+            }
+        });
+
         return [
-            '_id' => $this->_id,
+            'document_id' => $this->_id,
             'title' => $this->title,
             'locale' => $this->locale,
-            'content' => $this->content, // TODO parse each sub array to strings list
-            'handle' => $this->entryType->handle
+            'content' => $parsedContents,
         ];
     }
 
@@ -952,6 +977,7 @@ class Entry extends Model implements Validator
      * @return true
      * @throws DatabaseException
      * @throws EntryException
+     * @throws JsonException
      *
      */
     public function updateAllContentKey(string $key, string $newKey): bool
@@ -1044,14 +1070,16 @@ class Entry extends Model implements Validator
     {
         $entryLayout = $this->getEntryLayout();
 
+        // Handling error
+        $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
+        if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
+            $errorMessage .= PHP_EOL . "Check your configuration value for entry/defaultType/entryLayoutId.";
+        }
+
         if (!$entryLayout && !$silent) {
-            $errorMessage = sprintf(EntryLayout::DOES_NOT_EXISTS, $this->entryType->entry_layout_id);
-
-            if ($this->entryType->handle === EntryType::DEFAULT_HANDLE) {
-                $errorMessage .= PHP_EOL . "Check your configuration value for entry/defaultType/entryLayoutId.";
-            }
-
             throw new EntryException($errorMessage);
+        } else if (!$entryLayout) {
+            SailLog::logger()->warning($errorMessage);
         }
 
         $result = $entryLayout ? $entryLayout->schema : Collection::init();
@@ -1241,6 +1269,7 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     private function createWithoutPermission(Collection $data, bool $throwErrors = true): array|Entry|Collection|null
@@ -1338,6 +1367,7 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
@@ -1469,7 +1499,7 @@ class Entry extends Model implements Validator
         (new EntryVersion)->deleteAllByEntryId((string)$entryId);
 
         // And search
-        (new Search())->delete($entryId);
+        (new Search())->delete((string)$entryId);
 
         return $qtyDeleted === 1;
     }
