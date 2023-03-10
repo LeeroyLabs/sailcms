@@ -20,18 +20,18 @@ class InputDateField extends Field
      * Input text field from html input:number attributes
      *
      * @param  LocaleField|null  $labels
+     * @param  string|null       $format
      * @param  bool              $required
-     * @param  string|null             $min
-     * @param  string|null             $max
-     * @param  float|int         $step
+     * @param  string|null       $min
+     * @param  string|null       $max
      *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
+        public readonly ?string $format = 'timestamp',
         public readonly bool $required = false,
         public readonly ?string $min = null,
         public readonly ?string $max = null,
-        public readonly float|int $step = 1
     ) {
     }
 
@@ -45,10 +45,10 @@ class InputDateField extends Field
     public static function defaultSettings(): Collection
     {
         return new Collection([
+            'format' => 'timestamp',
             'required' => false,
             'min' => null,
             'max' => null,
-            'step' => 1
         ]);
     }
 
@@ -62,10 +62,10 @@ class InputDateField extends Field
     public static function availableProperties(): Collection
     {
         return new Collection([
+            new InputSettings('format', InputSettings::INPUT_TYPE_STRING),
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('min', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('max', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('step', InputSettings::INPUT_TYPE_NUMBER)
         ]);
     }
 
