@@ -9,4 +9,5 @@ enum StoringType: string
     case STRING = 'string';
     case BOOLEAN = 'boolean';
     case ARRAY = 'array';
+    case DATE = 'date';
 }
