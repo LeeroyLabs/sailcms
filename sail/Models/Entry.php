@@ -14,8 +14,12 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Event;
 use SailCMS\Http\Request;
 use SailCMS\Log as SailLog;
+use SailCMS\Middleware;
+use SailCMS\Middleware\Data;
+use SailCMS\Middleware\Entry as MEntry;
 use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
@@ -28,6 +32,7 @@ use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\StoringType;
@@ -91,6 +96,10 @@ class Entry extends Model implements Validator
     private const ONE_CACHE_BY_ID = 'entry_';                 // Add id at the end
     private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';   // Add handle at the end
     private const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
+
+    public const EVENT_DELETE = 'event_delete_entry';
+    public const EVENT_CREATE = 'event_create_entry';
+    public const EVENT_UPDATE = 'event_update_entry';
 
     private EntryType $entryType;
     private EntryLayout $entryLayout;
@@ -1349,25 +1358,28 @@ class Entry extends Model implements Validator
         $dates = Dates::init($published);
         $authors = Authors::init($author, $published);
 
-        // TODO: Middleware
+        $data = [
+            'entry_type_id' => (string)$this->entryType->_id,
+            'parent' => $parent,
+            'site_id' => $site_id,
+            'locale' => $locale,
+            'alternates' => $alternates,
+            'status' => $status,
+            'title' => $title,
+            'template' => $template,
+            'slug' => $slug,
+            'url' => self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
+            'authors' => $authors,
+            'dates' => $dates,
+            'content' => $content ?? [],
+            'categories' => $categories ?? []
+        ];
+
+        // Middleware call
+        $mResult = Middleware::execute(MiddlewareType::ENTRY, new Data(MEntry::BeforeCreate, data: $data));
 
         try {
-            $entryId = $this->insert([
-                'entry_type_id' => (string)$this->entryType->_id,
-                'parent' => $parent,
-                'site_id' => $site_id,
-                'locale' => $locale,
-                'alternates' => $alternates,
-                'status' => $status,
-                'title' => $title,
-                'template' => $template,
-                'slug' => $slug,
-                'url' => self::getRelativeUrl($this->entryType->url_prefix, $slug, $locale),
-                'authors' => $authors,
-                'dates' => $dates,
-                'content' => $content ?? [],
-                'categories' => $categories ?? []
-            ]);
+            $entryId = $this->insert($mResult->data);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
@@ -1381,10 +1393,13 @@ class Entry extends Model implements Validator
         $simplifiedEntry['content'] = $entry->content;
         (new EntryVersion)->create($author, $simplifiedEntry);
 
-        // TODO: Event
-
         // Search
         (new SailSearch())->store($entry->searchData(), $entry->_id);
+
+        // Dispatch event
+        Event::dispatch(self::EVENT_CREATE, [
+            'entry' => $entry
+        ]);
 
         return $entry;
     }
@@ -1402,7 +1417,6 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws JsonException
      *
      */
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
@@ -1451,9 +1465,12 @@ class Entry extends Model implements Validator
         $update['authors'] = Authors::updated($entry->authors, $author->_id);
         $update['dates'] = Dates::updated($entry->dates);
 
+        // Middleware call
+        $mResult = Middleware::execute(MiddlewareType::ENTRY, new Data(MEntry::BeforeUpdate, data: $update));
+
         try {
             $this->updateOne(['_id' => $entry->_id], [
-                '$set' => $update
+                '$set' => $mResult->data
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
@@ -1467,10 +1484,17 @@ class Entry extends Model implements Validator
         // Version save with simplified entry
         $simplifiedEntry = $entry->simplify(null);
         $simplifiedEntry['content'] = $entry->content;
-        (new EntryVersion)->create($author, $simplifiedEntry);
+        $versionId = (new EntryVersion)->create($author, $simplifiedEntry);
 
         // Update search
         (new SailSearch())->store($entry->searchData(), $entry->_id);
+
+        // Dispatch event
+        Event::dispatch(self::EVENT_UPDATE, [
+            'entry' => $entry,
+            'update' => $update,
+            'versionId' => $versionId
+        ]);
 
         // Return no errors
         return Collection::init();
@@ -1535,6 +1559,11 @@ class Entry extends Model implements Validator
 
         // And search
         (new SailSearch())->remove($entryId);
+
+        // Dispatch event
+        Event::dispatch(self::EVENT_DELETE, [
+            'entryId' => (string)$entryId,
+        ]);
 
         return $qtyDeleted === 1;
     }
