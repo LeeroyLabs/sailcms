@@ -314,7 +314,10 @@ abstract class Model implements JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        return $this->toJSON(true);
+        $json = $this->toJSON(true);
+        $json['id'] = $this->id; // Add id so up to dev to use _id or id
+
+        return $json;
     }
 
     /**

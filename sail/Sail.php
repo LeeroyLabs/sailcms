@@ -21,6 +21,7 @@ use SailCMS\Http\Response;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\User;
+use SailCMS\Rest\Rest;
 use SailCMS\Routing\Router;
 use SailCMS\Security\TwoFactorAuthenticationController;
 use SailCMS\Types\MiddlewareType;
@@ -174,6 +175,9 @@ class Sail
         if (env('debug', 'off') === 'on') {
             Router::addClockworkSupport();
         }
+
+        // Initialize REST Api
+        Rest::init();
 
         Router::dispatch();
     }

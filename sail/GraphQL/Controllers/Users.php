@@ -132,7 +132,7 @@ class Users
         $list = (new User())->getList(
             $args->get('page'),
             $args->get('limit'),
-            $args->get('search') ?? '',
+            $args->get('search', ''),
             $sorting,
             $userTypeSearch ?? null,
             $metaSearch ?? null,

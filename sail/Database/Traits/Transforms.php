@@ -35,7 +35,7 @@ trait Transforms
         }
 
         foreach ($this->properties as $key => $value) {
-            if (!in_array($key, $guards, true) && (in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
+            if ((in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
                 if ($key === '_id') {
                     $doc[$key] = (string)$value;
                 } elseif (!is_scalar($value)) {
@@ -43,6 +43,12 @@ trait Transforms
                 } else {
                     $doc[$key] = $value;
                 }
+            }
+        }
+
+        foreach ($doc as $key => $value) {
+            if (in_array($key, $this->guards, true)) {
+                unset($doc[$key]);
             }
         }
 

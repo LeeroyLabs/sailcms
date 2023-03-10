@@ -23,6 +23,7 @@ use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
+use SailCMS\Rest\Rest;
 use SailCMS\Sail;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
@@ -449,8 +450,10 @@ class Router
 
         if ($trace[2]['function'] !== '{closure}' && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
-                // Illegal call, this should only be called from the routes method in a container
-                throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);
+                if ($class !== Rest::class) {
+                    // Illegal call, this should only be called from the routes method in a container
+                    throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);
+                }
             }
         }
 
