@@ -13,6 +13,8 @@ use stdClass;
 // TODO custom field registering
 abstract class Field
 {
+    const SEARCHABLE = true;
+
     /* Properties */
     public LocaleField $labels;
     public string $handle;

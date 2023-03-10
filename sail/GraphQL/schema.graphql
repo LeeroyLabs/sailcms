@@ -29,7 +29,7 @@ type Query {
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, filters: [FilterInput!], sort: String, direction: Int): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout!]
@@ -81,7 +81,7 @@ type Mutation {
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
@@ -372,35 +372,6 @@ enum InputType {
     string
     boolean
     array
-}
-
-input FilterInput {
-    field: String!
-    operation: FilterOperation!
-    logic: FilterLogic
-    value: String
-    type: InputType # TODO remove that to cast from entry model (Nich)
-}
-
-enum FilterOperation {
-    gte
-    gt
-    lte
-    lt
-    like
-    notlike
-    eq
-    ne
-    in
-    nin
-    isnull
-    notnull
-}
-
-enum FilterLogic {
-    and
-    or
-    nor
 }
 
 enum EntryStatus {

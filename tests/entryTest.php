@@ -33,6 +33,7 @@ afterAll(function () {
     $authorModel->removeByEmail('testentry@leeroy.ca');
 });
 
+
 test('Create an entry layout', function () {
     $model = new EntryLayout();
 
@@ -80,7 +81,7 @@ test('Update the config of an entry layout', function () {
         $updatedEntryLayout = $model->one([
             '_id' => $entryLayout->_id
         ]);
-        
+
         expect($result)->toBe(true)
             ->and($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255)
             ->and($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10)
@@ -179,7 +180,7 @@ test('Create an entry with the default type', function () {
             ->and($entry->locale)->toBe('fr')
             ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 })->group('entry');
