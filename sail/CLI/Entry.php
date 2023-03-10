@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Entry extends Command
 {
     protected static $defaultDescription = 'Indexation of entries';
-    protected static $defaultName = 'entry:index';
+    protected static $defaultName = 'run:indexing';
 
     /**
      *
