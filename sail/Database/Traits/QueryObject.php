@@ -264,6 +264,34 @@ trait QueryObject
 
     /**
      *
+     * Get Last record added to collection
+     *
+     * @return static|null
+     * @throws DatabaseException
+     *
+     */
+    public static function last(): ?static
+    {
+        $records = self::query()->find()->sort(['_id' => -1])->limit(1)->exec();
+        return $records[0] ?? null;
+    }
+
+    /**
+     *
+     * Get first record added to collection
+     *
+     * @return static|null
+     * @throws DatabaseException
+     *
+     */
+    public static function first(): ?static
+    {
+        $records = self::query()->find()->sort(['_id' => 1])->limit(1)->exec();
+        return $records[0] ?? null;
+    }
+
+    /**
+     *
      * Automatically populate a field when it is fetched from the database
      * (must be an ObjectId or a string representation)
      *
