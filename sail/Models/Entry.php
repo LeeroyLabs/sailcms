@@ -36,8 +36,6 @@ use stdClass;
 
 /**
  *
- * TODO apply cache to all entry queries
- *
  * @property string $entry_type_id
  * @property ?EntryParent $parent
  * @property ?string $site_id
@@ -91,6 +89,7 @@ class Entry extends Model implements Validator
     private const ONE_CACHE_BY_ID = 'entry_';                 // Add id at the end
     private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';   // Add handle at the end
     private const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
+    private const ENTRY_CATEGORY_CACHE = 'entries_by_category_'; // Add category id
 
     private EntryType $entryType;
     private EntryLayout $entryLayout;
@@ -418,12 +417,11 @@ class Entry extends Model implements Validator
 
         $entries = $entryModel->all(false);
 
-        $searchEngine = new SailSearch();
-        $entries->each(function ($key, $entry) use ($searchEngine) {
+        $entries->each(function ($key, $entry) {
             /**
              * @var Entry $entry
              */
-            $searchEngine->store($entry->searchData(), $entry->_id);
+            (new SailSearch())->store($entry->searchData(), $entry->_id);
         });
 
         return $entries->length;
@@ -523,8 +521,8 @@ class Entry extends Model implements Validator
 
             if ($found > 0) {
                 // Winner Winner Chicken Diner!
-                $cache_ttl = setting('entry.cacheTtl', Cache::TTL_WEEK);
-                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(self::FIND_BY_URL_CACHE . $url, $cache_ttl);
+                $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(self::FIND_BY_URL_CACHE . $url, $cacheTtl);
 
                 $preview = false;
                 $previewVersion = false;
@@ -581,10 +579,11 @@ class Entry extends Model implements Validator
 
         $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries) {
             $entry = new Entry($entryType->collection_name);
+            $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
             $entries = $entry->find([
                 'categories' => ['$in' => ['_id', $categoryId]],
                 'site_id' => $siteId
-            ])->exec();
+            ])->exec(self::ENTRY_CATEGORY_CACHE . $categoryId . "_" . $siteId . "_" . $entryType->_id, $cacheTtl);
 
             $allEntries->pushSpread(...$entries);
         });
@@ -725,7 +724,6 @@ class Entry extends Model implements Validator
      * @param Collection $newContent
      * @return Collection
      * @throws DatabaseException
-     * @throws JsonException
      *
      */
     public function updateContentForGraphQL(string $entryId, Collection $newContent): Collection
@@ -792,14 +790,16 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      *
      */
-    public function one(array $filters): Entry|null
+    public function one(array $filters, bool $cache = true): Entry|null
     {
+        $cacheTtl = $cache ? setting('entry.cacheTtl', Cache::TTL_WEEK) : 0;
         if (isset($filters['_id'])) {
-            $cache_ttl = setting('entry.cacheTtl', Cache::TTL_WEEK);
-            return $this->findById($filters['_id'])->exec(self::ONE_CACHE_BY_ID . $filters['_id'], $cache_ttl);
+            $cacheKey = $cache ? self::ONE_CACHE_BY_ID . $filters['_id'] : '';
+            return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
         }
-
-        return $this->findOne($filters)->exec();
+        // NEED HELP for that
+        $cacheKey = $cache ? self::generateCacheKeyFromFilters($this->entryType->handle . "_one_", $filters) : '';
+        return $this->findOne($filters)->exec(/* $cacheKey , $cacheTtl */);
     }
 
     /**
@@ -1304,7 +1304,6 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws JsonException
      *
      */
     private function createWithoutPermission(Collection $data, bool $throwErrors = true): array|Entry|Collection|null
@@ -1402,7 +1401,6 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws JsonException
      *
      */
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
@@ -1611,7 +1609,7 @@ class Entry extends Model implements Validator
     {
         $result = "";
         if (!is_array($iterableOrValue) && !$iterableOrValue instanceof Collection) {
-            $result = "=" . $iterableOrValue;
+            $result = "=" . str_replace(' ', '-', $iterableOrValue);
         } else {
             foreach ($iterableOrValue as $key => $valueOrIterable) {
                 $prefix = "+" . $key;

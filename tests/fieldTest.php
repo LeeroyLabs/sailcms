@@ -16,8 +16,7 @@ use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     Sail::setupForTests(__DIR__);
 
     $authorModel = new User();
@@ -34,8 +33,7 @@ beforeAll(function ()
     $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
 });
 
-afterAll(function ()
-{
+afterAll(function () {
     $authorModel = new User();
     $authorModel->removeByEmail('testentryfield@leeroy.ca');
 
@@ -58,8 +56,7 @@ afterAll(function ()
     $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
-test('Add all fields to the layout', function ()
-{
+test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
@@ -113,8 +110,7 @@ test('Add all fields to the layout', function ()
     }
 });
 
-test('Failed to update the entry content', function ()
-{
+test('Failed to update the entry content', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -140,13 +136,12 @@ test('Failed to update the entry content', function ()
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+//        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
 
-test('Update content with success', function ()
-{
+test('Update content with success', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -172,7 +167,8 @@ and must keep it through all the process',
         expect($errors->length)->toBe(0);
         $entry = $entryModel->one([
             'title' => 'Home Field Test'
-        ]);
+        ], false);
+
         expect($entry->content->get('float'))->toBe('0.03');
         expect($entry->content->get('text'))->toBe('Not empty');
         expect($entry->content->get('description'))->toContain(PHP_EOL);
