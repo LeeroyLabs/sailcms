@@ -734,7 +734,6 @@ class Entry extends Model implements Validator
      * @param Collection $newContent
      * @return Collection
      * @throws DatabaseException
-     * @throws JsonException
      *
      */
     public function updateContentForGraphQL(string $entryId, Collection $newContent): Collection
@@ -1492,7 +1491,7 @@ class Entry extends Model implements Validator
         // Dispatch event
         Event::dispatch(self::EVENT_UPDATE, [
             'entry' => $entry,
-            'update' => $update,
+            'update' => $mResult->data,
             'versionId' => $versionId
         ]);
 
