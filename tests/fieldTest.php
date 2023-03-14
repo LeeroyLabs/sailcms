@@ -3,6 +3,7 @@
 use SailCMS\Collection;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
+use SailCMS\Models\Entry\EntryListField;
 use SailCMS\Models\Entry\MultipleSelectField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
@@ -121,6 +122,8 @@ test('Add all fields to the layout', function ()
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
+    $entryListField = new EntryListField(new LocaleField(['en' => 'Entry List', 'fr' => 'Liste d\'entrées']));
+
     $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
         [
             'required' => true
@@ -134,6 +137,7 @@ test('Add all fields to the layout', function ()
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
         "related" => $entryField,
+        "entryList" => $entryListField,
         "select" => $selectField,
         "multipleSelect" => $multipleSelectField,
         "email" => $emailField
@@ -207,6 +211,9 @@ and must keep it through all the process',
                 'phone' => '514-514-5145',
                 'related' => [
                     'id' => (string)$relatedEntry->_id,
+                    'typeHandle' => 'field-test'
+                ],
+                'entryList' => [
                     'typeHandle' => 'field-test'
                 ],
                 'select' => 'test',

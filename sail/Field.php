@@ -23,7 +23,7 @@ use SailCMS\Models\Entry\Field as ModelField;
  *
  * AssetField
  * EntryField                                       => Errors 6160 to 6179
- * EntryListField
+ * EntryListField                                   => Errors 6260 to 6279
  * CategoryField // to talk about
  *
  */
