@@ -210,7 +210,8 @@ and must keep it through all the process',
         expect($errors->length)->toBe(0);
         $entry = $entryModel->one([
             'title' => 'Home Field Test'
-        ]);
+        ], false);
+
         expect($entry->content->get('float'))->toBe('0.03');
         expect($entry->content->get('text'))->toBe('Not empty');
         expect($entry->content->get('description'))->toContain(PHP_EOL);
