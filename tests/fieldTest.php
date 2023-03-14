@@ -15,7 +15,6 @@ use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputEmailField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputTextField;
-use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
