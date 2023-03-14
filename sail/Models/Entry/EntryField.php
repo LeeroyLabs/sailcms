@@ -15,6 +15,7 @@ class EntryField extends Field
 {
     // TODO : change input field for a select field that choices are entry and entry type
     // TODO : add parse method to include in Entry content Getter ??
+    const SEARCHABLE = false;
 
     /* Error */
     const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
@@ -68,7 +69,7 @@ class EntryField extends Field
         $entryId = $content->get('id');
         $entryTypeHandle = $content->get('typeHandle');
 
-        if (!$entryId && $entryTypeHandle || !$entryTypeHandle && $entryId) {
+        if ((!$entryId && $entryTypeHandle) || (!$entryTypeHandle && $entryId)) {
             $errors->push(self::ENTRY_ID_AND_HANDLE);
         } else if ($entryId && $entryTypeHandle) {
             $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);

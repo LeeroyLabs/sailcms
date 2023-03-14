@@ -178,14 +178,15 @@ class User extends Model
      *
      * Create a regular user (usually user from the site) with no roles.
      *
-     * @param  Username       $name
-     * @param  string         $email
-     * @param  string         $password
-     * @param  string         $locale
-     * @param  string         $avatar
-     * @param  UserMeta|null  $meta
-     * @param  string         $role
-     * @param  bool           $createWithSetPassword
+     * @param  Username          $name
+     * @param  string            $email
+     * @param  string            $password
+     * @param  string            $locale
+     * @param  string            $avatar
+     * @param  UserMeta|null     $meta
+     * @param  Collection|array  $role
+     * @param  bool              $createWithSetPassword
+     * @param  string            $emailTemplate
      * @return string
      * @throws DatabaseException
      *
@@ -197,13 +198,18 @@ class User extends Model
         string $locale = 'en',
         string $avatar = '',
         ?UserMeta $meta = null,
-        string $role = '',
+        Collection|array $roles = ['general-user'],
         bool $createWithSetPassword = false,
         string $emailTemplate = ''
     ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
+        }
+
+        // Make sure we have an array
+        if (is_object($roles)) {
+            $roles = $roles->unwrap();
         }
 
         if ($meta === null) {
@@ -230,12 +236,11 @@ class User extends Model
             $password = Uuid::uuid4()->toString();
         }
 
-        if ($role === '') {
-            $role = setting('users.baseRole', 'general-user');
+        if (empty($roles)) {
+            $roles = [setting('users.baseRole', 'general-user')];
         }
 
         $validate = setting('users.requireValidation', true);
-
         $code = Security::generateVerificationCode();
         $passCode = substr(Security::generateVerificationCode(), 5, 16);
 
@@ -243,7 +248,7 @@ class User extends Model
             'name' => $name,
             'email' => $email,
             'status' => true,
-            'roles' => [$role],
+            'roles' => new Collection($roles),
             'avatar' => $avatar,
             'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),
