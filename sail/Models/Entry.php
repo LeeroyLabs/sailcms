@@ -1349,13 +1349,8 @@ class Entry extends Model implements Validator
         // Get the validated slug
         $slug = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale);
 
-        $published = false;
-        if ($status === EntryStatus::LIVE->value) {
-            $published = true;
-        }
-
-        $dates = Dates::init($published);
-        $authors = Authors::init($author, $published);
+        $dates = Dates::init();
+        $authors = Authors::init($author);
 
         $data = [
             'entry_type_id' => (string)$this->entryType->_id,
