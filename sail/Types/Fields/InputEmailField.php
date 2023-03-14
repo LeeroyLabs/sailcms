@@ -81,10 +81,8 @@ class InputEmailField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($content) {
-            if (!filter_var($content, FILTER_VALIDATE_EMAIL)) {
-                $errors->push(self::EMAIL_INVALID);
-            }
+        if ($content && !filter_var($content, FILTER_VALIDATE_EMAIL)) {
+            $errors->push(self::EMAIL_INVALID);
         }
 
         return $errors;
