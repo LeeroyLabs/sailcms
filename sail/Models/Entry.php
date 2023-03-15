@@ -10,6 +10,7 @@ use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -804,13 +805,19 @@ class Entry extends Model implements Validator
     public function one(array $filters, bool $cache = true): Entry|null
     {
         $cacheTtl = $cache ? setting('entry.cacheTtl', Cache::TTL_WEEK) : 0;
+        $cacheKey = $cache ? self::generateCacheKeyFromFilters($this->entryType->handle . "_one_", $filters) : '';
+        $qs = $this->findOne($filters);
         if (isset($filters['_id'])) {
             $cacheKey = $cache ? self::ONE_CACHE_BY_ID . $filters['_id'] : '';
-            return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
+            $qs = $this->findById((string)$filters['_id']);
         }
-        // NEED HELP for that --- valid if i'm in if ($cacheKey !== '') { condition in QUERYOBJECT.php
-        $cacheKey = $cache ? self::generateCacheKeyFromFilters($this->entryType->handle . "_one_", $filters) : '';
-        return $this->findOne($filters)->exec(/* $cacheKey , $cacheTtl */);
+
+        if ($cache) {
+            Debug::ray('are we there ?');
+            return $qs->exec(/*$cacheKey, $cacheTtl*/);
+        }
+        Debug::ray('or there ?');
+        return $qs->exec();
     }
 
     /**
