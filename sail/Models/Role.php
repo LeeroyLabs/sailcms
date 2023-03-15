@@ -207,7 +207,7 @@ class Role extends Model
     {
         $this->hasPermissions(true);
 
-        $role = $this->findById($id);
+        $role = $this->findById($id)->exec();
 
         $permissionList = ACL::getList();
         $userPermissions = User::$currentUser->roles;
