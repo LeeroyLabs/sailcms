@@ -321,6 +321,7 @@ class User extends Model
      * @return bool
      *
      * @throws DatabaseException
+     *
      */
     public function resendValidationEmail(string $email): bool
     {
@@ -354,6 +355,7 @@ class User extends Model
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
     public function create(Username $name, string $email, string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
@@ -722,6 +724,7 @@ class User extends Model
                 if ($user->meta->flags->use2fa) {
                     return new LoginResult((string)$user->_id, '2fa');
                 }
+                
                 return new LoginResult((string)$user->_id, $key);
             }
         } else {
