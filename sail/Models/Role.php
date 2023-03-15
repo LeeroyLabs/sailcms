@@ -210,13 +210,21 @@ class Role extends Model
         $role = $this->findById($id)->exec();
 
         $permissionList = ACL::getList();
-        $userPermissions = User::$currentUser->roles;
+        $userRoles = User::$currentUser->roles;
+        $userPermissions = [];
 
-        if ($userPermissions->length === 1 && $userPermissions->at() === '*') {
-            $userPermissions = $permissionList;
+        if ($userRoles->length === 1 && $userRoles->has('*')) {
+            foreach ($permissionList as $p) {
+                $userPermissions[] = $p->value;
+            }
+        } else {
+            foreach ($userRoles as $r) {
+                $_role = $this->findOne(['slug' => $r])->exec();
+                $userPermissions[] = $_role->permissions;
+            }
         }
 
-        return new RoleConfig($role, $userPermissions, $permissionList);
+        return new RoleConfig($role, new Collection($userPermissions), $permissionList);
     }
 
     /**

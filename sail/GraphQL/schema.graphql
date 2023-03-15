@@ -191,12 +191,13 @@ type Role {
 
 type RoleConfig {
     role: Role!
-    allowedPermissions: [ACL!]!
+    allowedPermissions: [String!]!
     permissions: [ACL!]!
 }
 
 type ACL {
-    category: String!
+    group: String!
+    type: String!
     value: String!
 }
 
