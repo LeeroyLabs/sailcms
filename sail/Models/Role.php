@@ -213,7 +213,9 @@ class Role extends Model
         $userRoles = User::$currentUser->roles;
         $userPermissions = [];
 
-        if ($userRoles->length === 1 && $userRoles->has('*')) {
+        $UserPerms = User::$currentUser->permissions();
+
+        if ($UserPerms->length === 1 && $UserPerms->has('*')) {
             foreach ($permissionList as $p) {
                 $userPermissions[] = $p->value;
             }
