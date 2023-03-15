@@ -1064,6 +1064,46 @@ class Entry extends Model implements Validator
         }
         return true;
     }
+    
+    /**
+     *
+     * Create an entry version then an entry publication
+     *
+     * @param string $entryId
+     * @param int $publicationDate
+     * @param int $expirationDate
+     * @return string
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function publish(string $entryId, int $publicationDate, int $expirationDate): string
+    {
+        $author = User::$currentUser;
+
+        $entry = $this->findById($entryId)->exec();
+        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry['content'] = $entry->content;
+
+        $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
+        return (new EntryPublication())->create($author, $entryId, $entryVersionID, $publicationDate, $expirationDate);
+    }
+
+    /**
+     *
+     * Remove all entry publication to unpublish
+     *
+     * @param string $entryId
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    public function unpublish(string $entryId): bool
+    {
+        return (new EntryPublication())->deletePublicationsByEntryId($entryId);
+    }
 
     /**
      *
@@ -1406,9 +1446,6 @@ class Entry extends Model implements Validator
 
         return $entry;
     }
-
-    // publish = create version then create entryPublication
-    // unpublish = call deletePublicationsByEntryId
 
     /**
      *
