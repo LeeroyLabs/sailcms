@@ -724,7 +724,7 @@ class User extends Model
                 if ($user->meta->flags->use2fa) {
                     return new LoginResult((string)$user->_id, '2fa');
                 }
-                
+
                 return new LoginResult((string)$user->_id, $key);
             }
         } else {
