@@ -184,7 +184,7 @@ class User extends Model
      * @param  string            $locale
      * @param  string            $avatar
      * @param  UserMeta|null     $meta
-     * @param  Collection|array  $role
+     * @param  Collection|array  $roles
      * @param  bool              $createWithSetPassword
      * @param  string            $emailTemplate
      * @return string
@@ -716,22 +716,23 @@ class User extends Model
 
         if (!$mwResult->data['allowed']) {
             if (Security::verifyPassword($password, $user->password)) {
+                $key = Security::secureTemporaryKey();
+                $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
+
                 if ($user->meta->flags->use2fa) {
                     return new LoginResult((string)$user->_id, '2fa');
                 }
-
-                $key = Security::secureTemporaryKey();
-                $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
                 return new LoginResult((string)$user->_id, $key);
             }
         } else {
             // Middleware says everything is ok, login
+            $key = Security::secureTemporaryKey();
+            $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
+
             if ($user->meta->flags->use2fa) {
                 return new LoginResult((string)$user->_id, '2fa');
             }
 
-            $key = Security::secureTemporaryKey();
-            $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
             return new LoginResult((string)$user->_id, $key);
         }
 

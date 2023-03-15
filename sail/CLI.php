@@ -17,6 +17,7 @@ use SailCMS\CLI\Migrate;
 use SailCMS\CLI\Migrations;
 use SailCMS\CLI\Model;
 use SailCMS\CLI\Module;
+use SailCMS\CLI\Password;
 use SailCMS\CLI\Queue;
 use SailCMS\CLI\Schema;
 use SailCMS\CLI\Test;
@@ -85,6 +86,7 @@ final class CLI
         $application->add(new Test());
         $application->add(new BasicAuth());
         $application->add(new InstallOfficial());
+        $application->add(new Password());
 
         // Custom commands
         if (!isset(self::$registeredCommands)) {

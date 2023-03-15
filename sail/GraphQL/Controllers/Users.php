@@ -199,17 +199,26 @@ class Users
      * @throws SodiumException
      *
      */
-    public function verifyTFA(mixed $obj, Collection $args, Context $context): bool
+    public function verifyTFA(mixed $obj, Collection $args, Context $context): ?User
     {
         $model = new Tfa();
         $tfa = new TwoFactorAuthentication();
         $setup = $model->getForUser($args->get('user_id'));
 
         if ($setup) {
-            return $tfa->validate($setup->secret, $args->get('code'));
+            $result = $tfa->validate($setup->secret, $args->get('code'));
+
+            if ($result) {
+                $user = User::get($args->get('user_id'));
+
+                if ($user) {
+                    $umodel = new User();
+                    return $umodel->verifyTemporaryToken($user->temporary_token);
+                }
+            }
         }
 
-        return false;
+        return null;
     }
 
     /**
