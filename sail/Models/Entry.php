@@ -545,6 +545,7 @@ class Entry extends Model implements Validator
                     $content = null;
                 }
 
+                // Check if publication
                 if (EntryStatus::from($content->status) !== EntryStatus::LIVE) {
                     // Page is not published but preview mode is active
                     if ($preview && $previewVersion) {
@@ -795,6 +796,7 @@ class Entry extends Model implements Validator
      * Get an entry with filters
      *
      * @param array $filters
+     * @param bool $cache
      * @return Entry|null
      * @throws DatabaseException
      *
@@ -806,7 +808,7 @@ class Entry extends Model implements Validator
             $cacheKey = $cache ? self::ONE_CACHE_BY_ID . $filters['_id'] : '';
             return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
         }
-        // NEED HELP for that
+        // NEED HELP for that --- valid if i'm in if ($cacheKey !== '') { condition in QUERYOBJECT.php
         $cacheKey = $cache ? self::generateCacheKeyFromFilters($this->entryType->handle . "_one_", $filters) : '';
         return $this->findOne($filters)->exec(/* $cacheKey , $cacheTtl */);
     }
@@ -1129,7 +1131,7 @@ class Entry extends Model implements Validator
         if ($simplified) {
             return $entryLayout ? $entryLayout->simplifySchema() : Collection::init();
         }
-        
+
         $result = $entryLayout ? $entryLayout->schema : Collection::init();
 
         if (is_array($result)) {
@@ -1397,6 +1399,9 @@ class Entry extends Model implements Validator
 
         return $entry;
     }
+
+    // publish = create version then create entryPublication
+    // unpublish = call deletePublicationsByEntryId
 
     /**
      *

@@ -26,7 +26,7 @@ use SodiumException;
  */
 class EntryVersion extends Model
 {
-    protected string $collection = 'entry_version';
+    protected string $collection = 'entry_versions';
     protected string $permissionGroup = 'entryversion'; // Usage only in get methods
     protected array $casting = [
         "entry" => Collection::class
@@ -102,15 +102,15 @@ class EntryVersion extends Model
      *
      * Delete all version by entry id
      *
-     * @param string $entry_id
+     * @param string $entryId
      * @return bool
      * @throws EntryException
      *
      */
-    public function deleteAllByEntryId(string $entry_id): bool
+    public function deleteAllByEntryId(string $entryId): bool
     {
         try {
-            $result = $this->deleteMany(['entry_id' => $entry_id]);
+            $result = $this->deleteMany(['entry_id' => $entryId]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'deleting') . PHP_EOL . $exception->getMessage());
         }
