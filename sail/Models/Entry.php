@@ -1110,7 +1110,7 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function getSchema(bool $silent = false): Collection
+    public function getSchema(bool $silent = false, bool $simplified = false): Collection
     {
         $entryLayout = $this->getEntryLayout();
 
@@ -1126,6 +1126,10 @@ class Entry extends Model implements Validator
             SailLog::logger()->warning($errorMessage);
         }
 
+        if ($simplified) {
+            return $entryLayout ? $entryLayout->simplifySchema() : Collection::init();
+        }
+        
         $result = $entryLayout ? $entryLayout->schema : Collection::init();
 
         if (is_array($result)) {
@@ -1257,19 +1261,15 @@ class Entry extends Model implements Validator
      *
      * @param string $siteId
      * @param string $locale
-     * @param object|null $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
      */
-    private function setAsHomepage(string $siteId, string $locale, object $currentConfig = null): void
+    private function setAsHomepage(string $siteId, string $locale): void
     {
-        if (!isset($currentConfig)) {
-            $currentConfig = self::getHomepage($siteId);
-        }
-
+        $currentConfig = self::getHomepage($siteId);
         $currentConfig->{$locale} = (object)[
             self::HOMEPAGE_CONFIG_ENTRY_KEY => (string)$this->_id,
             self::HOMEPAGE_CONFIG_ENTRY_TYPE_KEY => $this->entryType->handle

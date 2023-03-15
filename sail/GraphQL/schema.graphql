@@ -388,14 +388,12 @@ type Alternates {
 type Authors {
     created_by: ID
     updated_by: ID
-    published_by: ID
     deleted_by: ID
 }
 
 type Dates {
     created: Float
     updated: Float
-    published: Float
     deleted: Float
 }
 

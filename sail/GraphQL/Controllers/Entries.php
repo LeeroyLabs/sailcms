@@ -482,7 +482,7 @@ class Entries
         }
 
         if ($info->fieldName === "schema") {
-            return $entry->getSchema()->unwrap();
+            return $entry->getSchema(true, true)->unwrap();
         }
 
         if ($info->fieldName === "seo") {

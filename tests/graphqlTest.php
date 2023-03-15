@@ -33,7 +33,7 @@ beforeEach(function () {
     }
 });
 
-// TODO Must create a page
+// TODO maybe Must create a page instead of getting the first one...
 
 test('Get a page and modify his SEO', function () {
     if (isset($_ENV['test-token'])) {
@@ -114,4 +114,94 @@ test('Get a page and modify his SEO', function () {
             expect(true)->toBe(false);
         }
     }
+})->group('graphql');
+
+test('Get a entry', function () {
+    $entryResponse = $this->client->run('
+        query { 
+            entries(entry_type_handle: "page", page: 1, limit: 1) {
+                list {
+                    _id
+                    entry_type_id
+                    parent {
+                        handle
+                        parent_id
+                    }
+                    site_id
+                    locale
+                    alternates {
+                        locale
+                        entry_id
+                    }
+                    is_homepage
+                    status
+                    title
+                    template
+                    slug
+                    url
+                    authors {
+                        created_by
+                        updated_by
+                        deleted_by
+                    }
+                    dates {
+                        created
+                        updated
+                        deleted
+                    }
+                    categories
+                    content {
+                        key
+                        content
+                        handle
+                        type
+                    }
+                    schema {
+                        key
+                        fieldConfigs {
+                            labels {
+                                en
+                                fr
+                            }
+                            handle
+                            inputSettings {
+                                inputKey
+                                settings {
+                                    name
+                                    value
+                                    choices
+                                    type
+                                }
+                            }
+                        }
+                    }
+                    seo {
+                        entry_seo_id
+                        title
+                        alternates {
+                            locale
+                            entry_id
+                        }
+                        url
+                        locale
+                        description
+                        keywords
+                        robots
+                        sitemap
+                        default_image
+                        social_metas {
+                            handle
+                            content {
+                                name
+                                content
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ', [], $_ENV['test-token']);
+    print_r($entryResponse->data->entries->list[0]);
+    expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+
 })->group('graphql');
