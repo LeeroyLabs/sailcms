@@ -741,6 +741,25 @@ class Sail
         self::setWorkingDirectory($rootDir . '/mock');
         self::setAppState(self::STATE_CLI, 'dev', $rootDir . '/mock');
 
+        // Load security into place so it's available everywhere
+        Security::init();
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
+
+        // Register Search Adapters
+        Search::registerSystemAdapters();
+        Search::init();
+
+        // Load cms Fields
+        Field::init();
+
+        // Initialize the logger
+        Log::init();
+
+        // Initialize the router
+        Router::init();
+
         self::$environmentData->setFor('SITE_URL', 'http://localhost:8888');
 
         if ($templatePath !== '') {
@@ -748,6 +767,9 @@ class Sail
         } else {
             self::setTemplateDirectory(dirname($rootDir) . '/templates');
         }
+
+        self::loadContainerFromComposer(dirname($rootDir));
+        self::loadModulesFromComposer(dirname($rootDir));
     }
 
     /**

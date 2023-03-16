@@ -47,13 +47,15 @@ class System
 
             // Assets
             new ACL('Asset', ACLType::READ_WRITE),
+            new ACL('Asset', ACLType::READ),
 
             // Emails
             new ACL('Emails', ACLType::READ_WRITE),
             new ACL('Emails', ACLType::READ),
 
             // Categories
-            new ACL('Categories', ACLType::READ_WRITE),
+            new ACL('Category', ACLType::READ_WRITE),
+            new ACL('Category', ACLType::READ),
 
             // Register
             new ACL('Register', ACLType::READ)
