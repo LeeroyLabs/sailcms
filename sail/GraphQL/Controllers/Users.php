@@ -228,28 +228,11 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
-     * @throws DatabaseException
-     *
-     */
-    public function createUser(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $this->createUserShared($args);
-        return (!empty($id));
-    }
-
-    /**
-     *
-     * Create a regular user and return its id
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
      * @return string
      * @throws DatabaseException
      *
      */
-    public function createUserGetId(mixed $obj, Collection $args, Context $context): string
+    public function createUser(mixed $obj, Collection $args, Context $context): string
     {
         return $this->createUserShared($args);
     }
@@ -289,19 +272,19 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
+     * @return string
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function createAdminUser(mixed $obj, Collection $args, Context $context): bool
+    public function createAdminUser(mixed $obj, Collection $args, Context $context): string
     {
         $user = new User();
 
         $name = Username::initWith($args->get('name'));
         $meta = ($args->get('meta')) ? new UserMeta($args->get('meta')) : null;
-        $id = $user->create(
+        return $user->create(
             $name,
             $args->get('email'),
             '', // no password for admins
@@ -310,8 +293,6 @@ class Users
             $args->get('avatar', ''),
             $meta
         );
-
-        return (!empty($id));
     }
 
     /**
