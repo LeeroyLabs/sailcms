@@ -44,7 +44,7 @@ use SailCMS\Types\QueryOptions;
 class Asset extends Model
 {
     protected string $collection = 'assets';
-    protected string $permissionGroup = 'assets';
+    protected string $permissionGroup = 'asset';
     protected array $casting = [
         'title' => LocaleField::class,
         'size' => Size::class,
