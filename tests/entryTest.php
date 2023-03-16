@@ -281,7 +281,6 @@ test('Update an entry with an entry type', function () {
     $entry = $entryModel->one([
         'title' => 'Test'
     ]);
-    $before = $entry->dates->updated;
 
     try {
         $result = $entryModel->updateById($entry, [
@@ -411,6 +410,23 @@ test('Fail to update an entry to trash', function () {
         expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
 })->group('entry');
+
+test('Publish an entry', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $now = time();
+        $expiration = $now + 3600; // + 1 hour
+        $entryPublicationId = $entryModel->publish($entry->_id, $now, $expiration);
+        expect($entryPublicationId)->not()->toBeNull();
+    } catch (Exception $exception) {
+        print_r($exception);
+        expect(false)->toBeTrue();
+    }
+});
 
 test('Find the entry by url', function () {
     $entry = Entry::findByURL('pages-de-test/test-de-test', false);

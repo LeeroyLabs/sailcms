@@ -70,6 +70,12 @@ class EntryVersion extends Model
         return $this->find(['entry_id' => (string)$entryId])->exec();
     }
 
+    public function getLastVersionByEntryId(string|ObjectId $entryId): array|Model|EntryVersion|null
+    {
+        $options = QueryOptions::initWithSort(['created_at' => -1]);
+        return $this->findOne(['entry_id' => (string)$entryId], $options)->exec();
+    }
+
     /**
      *
      * Create a new version for an entry, automatically called in the create and update of an entry.

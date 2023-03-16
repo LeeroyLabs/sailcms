@@ -32,7 +32,7 @@ class EntryPublication extends Model
 
     public const DATABASE_ERROR = ['5300: Exception when "%s" an entry publication.', 5300];
     public const EXPIRATION_DATE_ERROR = ['5301: The expiration date must be higher than the publication date', 5301];
-    
+
     /**
      *
      * @param string|ObjectId $entryId
@@ -67,7 +67,7 @@ class EntryPublication extends Model
     {
         $this->hasPermissions();
 
-        $this->deletePublicationsByEntryId($entryId);
+        $this->deleteAllByEntryId($entryId);
 
         if ($publicationDate === 0) {
             $publicationDate = time();
@@ -101,7 +101,7 @@ class EntryPublication extends Model
      * @throws EntryException
      *
      */
-    public function deletePublicationsByEntryId(string $entryId): bool
+    public function deleteAllByEntryId(string $entryId): bool
     {
         try {
             $result = $this->deleteMany(['entry_id' => $entryId]);

@@ -257,6 +257,17 @@ class Entry extends Model implements Validator
         return $seo;
     }
 
+    /**
+     *
+     * Return simplified SEO
+     *
+     * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function getSimplifiedSEO(): array
     {
         $seo = $this->getSEO();
@@ -448,6 +459,7 @@ class Entry extends Model implements Validator
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
+     *
      */
     public static function getHomepage(string $siteId, ?string $locale = null): object|null
     {
@@ -1064,7 +1076,7 @@ class Entry extends Model implements Validator
         }
         return true;
     }
-    
+
     /**
      *
      * Create an entry version then an entry publication
@@ -1083,12 +1095,20 @@ class Entry extends Model implements Validator
     {
         $author = User::$currentUser;
 
-        $entry = $this->findById($entryId)->exec();
-        $simplifiedEntry = $entry->simplify(null);
-        $simplifiedEntry['content'] = $entry->content;
+        $entryVersionModel = new EntryVersion();
 
-        $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
-        return (new EntryPublication())->create($author, $entryId, $entryVersionID, $publicationDate, $expirationDate);
+        $lastVersion = $entryVersionModel->getLastVersionByEntryId($entryId);
+
+        if (!$lastVersion) {
+            $entry = $this->findById($entryId)->exec();
+            $simplifiedEntry = $entry->simplify(null);
+            $simplifiedEntry['content'] = $entry->content;
+            $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
+        }
+
+        $entryVersionID = !isset($entryVersionID) ? $lastVersion->_id : $entryVersionID;
+
+        return (new EntryPublication())->create($author, $entryId, (string)$entryVersionID, $publicationDate, $expirationDate);
     }
 
     /**
@@ -1102,7 +1122,7 @@ class Entry extends Model implements Validator
      */
     public function unpublish(string $entryId): bool
     {
-        return (new EntryPublication())->deletePublicationsByEntryId($entryId);
+        return (new EntryPublication())->deleteAllByEntryId($entryId);
     }
 
     /**
@@ -1119,6 +1139,7 @@ class Entry extends Model implements Validator
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
+     *
      */
     public function delete(string|ObjectId $entryId, bool $soft = true): bool
     {
@@ -1152,6 +1173,7 @@ class Entry extends Model implements Validator
      * Get schema from entryLayout
      *
      * @param bool $silent
+     * @param bool $simplified
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1597,8 +1619,11 @@ class Entry extends Model implements Validator
             // Do nothing because there is no entry seo for this entry
         }
 
+        // And publications
+        (new EntryPublication())->deleteAllByEntryId((string)$entryId);
+
         // And entry versions too
-        (new EntryVersion)->deleteAllByEntryId((string)$entryId);
+        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
 
         // And search
         (new SailSearch())->remove($entryId);
@@ -1651,6 +1676,7 @@ class Entry extends Model implements Validator
      *
      * @param $siteId
      * @return string
+     *
      */
     private static function homepageConfigHandle($siteId): string
     {
