@@ -36,13 +36,13 @@ class EntryPublication extends Model
     /**
      *
      * @param string|ObjectId $entryId
-     * @return array|Model|EntryPublication
+     * @return array
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getPublicationsByEntryId(string|ObjectId $entryId): array|Model|EntryPublication
+    public function getPublicationsByEntryId(string|ObjectId $entryId): array
     {
         $this->hasPermissions(true);
 

@@ -5,6 +5,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
@@ -423,7 +424,7 @@ test('Publish an entry', function () {
         $entryPublicationId = $entryModel->publish($entry->_id, $now, $expiration);
         expect($entryPublicationId)->not()->toBeNull();
     } catch (Exception $exception) {
-        print_r($exception);
+//        print_r($exception);
         expect(false)->toBeTrue();
     }
 });
@@ -434,7 +435,25 @@ test('Find the entry by url', function () {
     expect($entry->title)->toBe('Test');
 })->group('entry');
 
+test('Unpublish an entry', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $result = $entryModel->unpublish($entry->_id);
+        $publicationEmpty = (new EntryPublication())->getPublicationsByEntryId($entry->_id);
+        expect($result)->toBeTrue()
+            ->and(count($publicationEmpty))->toBe(0);
+    } catch (Exception $exception) {
+//        print_r($exception);
+        expect(false)->toBeTrue();
+    }
+});
+
 test('Failed to find the entry by url', function () {
+    // Failed to find because it does not exist
     $entry = Entry::findByURL('pages-de-test/test-de-test-2', false);
 
     expect($entry)->toBe(null);
