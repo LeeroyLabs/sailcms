@@ -36,7 +36,7 @@ final class Search
      */
     public static function init(): void
     {
-        new static();
+        new self();
     }
 
     /**
@@ -138,7 +138,7 @@ final class Search
         } else {
             return;
         }
-        
+
         $engines = $composer->sailcms->search ?? [];
 
         foreach ($engines as $name => $engine) {
