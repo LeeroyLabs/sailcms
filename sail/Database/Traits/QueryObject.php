@@ -33,7 +33,7 @@ trait QueryObject
      *
      * @param  string  $cacheKey
      * @param  int     $cacheTTL
-     * @return array|$this|null
+     * @return $this(SailCMS\Database\Model)|array|null
      * @throws DatabaseException
      *
      */

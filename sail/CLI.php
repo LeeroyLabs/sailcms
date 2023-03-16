@@ -58,7 +58,7 @@ final class CLI
      * @throws SiteException
      * @throws DatabaseException
      * @throws JsonException
-     * @throws Exception|
+     * @throws Exception
      * @throws FilesystemException
      *
      */
