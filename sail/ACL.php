@@ -21,7 +21,7 @@ final class ACL
      * @return void
      *
      */
-    public self function init(): void
+    public static function init(): void
     {
         if (!isset(self::$loadedACL)) {
             self::$loadedACL = Collection::init();
@@ -40,7 +40,7 @@ final class ACL
      * @throws ACLException
      *
      */
-    public self function read(string $name): ?Types\ACL
+    public static function read(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
@@ -68,7 +68,7 @@ final class ACL
      * @throws ACLException
      *
      */
-    public self function write(string $name): ?Types\ACL
+    public static function write(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
@@ -96,7 +96,7 @@ final class ACL
      * @throws ACLException
      *
      */
-    public self function readwrite(string $name): ?Types\ACL
+    public static function readwrite(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
@@ -124,7 +124,7 @@ final class ACL
      * @throws ACLException
      *
      */
-    public self function loadCustom(Collection $acls): void
+    public static function loadCustom(Collection $acls): void
     {
         foreach ($acls->unwrap() as $acl) {
             if (!is_object($acl) || get_class($acl) !== Types\ACL::class) {
@@ -151,7 +151,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public self function hasRole(string|User|null $user, string $role): bool
+    public static function hasRole(string|User|null $user, string $role): bool
     {
         if ($user === null) {
             return false;
@@ -179,7 +179,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public self function hasPermission(string|User|null $user, ?Types\ACL ...$permissions): bool
+    public static function hasPermission(string|User|null $user, ?Types\ACL ...$permissions): bool
     {
         // CLI user is allowed RW on everything
         if (Sail::isCLI()) {
@@ -225,7 +225,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public self function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool
+    public static function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool
     {
         if ($user === null) {
             return false;
@@ -261,7 +261,7 @@ final class ACL
      * @return Collection
      *
      */
-    public self function getList(): Collection
+    public static function getList(): Collection
     {
         $list = Collection::init();
 
@@ -284,7 +284,7 @@ final class ACL
      * @return int
      *
      */
-    public self function count(): int
+    public static function count(): int
     {
         return self::$loadedACL->length;
     }
@@ -299,7 +299,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public self function loadCmsACL(): void
+    public static function loadCmsACL(): void
     {
         $entryACL = Collection::init();
         $entryTypes = EntryType::getAll();
