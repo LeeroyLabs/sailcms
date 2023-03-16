@@ -734,6 +734,7 @@ class Sail
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws FileException
+     * @throws JsonException
      *
      */
     public static function setupForTests(string $rootDir = '', string $templatePath = ''): void

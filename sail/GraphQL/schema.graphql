@@ -226,7 +226,7 @@ type Entry {
     parent: Parent
     site_id: String!
     locale: String!
-    alternates: [Alternates]!
+    alternates: [Alternate]!
     is_homepage: Boolean
     status: EntryStatus
     title: String!
@@ -261,7 +261,7 @@ type EntryLayout {
 type EntrySeo {
     entry_seo_id: ID!
     title: String!
-    alternates: [Alternates]!
+    alternates: [Alternate!]!
     url: String
     locale: String
     description: String
@@ -294,21 +294,21 @@ type SocialMetaContent {
 
 type LayoutField {
     key: String!
-    fieldConfigs: [FieldConfigs]!
+    fieldConfigs: [FieldConfig!]!
 }
 
-type FieldConfigs {
+type FieldConfig {
     labels: LocaleField!
     handle: String!
-    inputSettings: [InputSettings]!
+    inputSettings: [InputSetting!]!
 }
 
-type InputSettings {
+type InputSetting {
     inputKey: String!
-    settings: [Settings]!
+    settings: [Setting]!
 }
 
-type Settings {
+type Setting {
     name: String!
     value: String
     options: [Options!]
@@ -380,7 +380,7 @@ enum EntryStatus {
     trash
 }
 
-type Alternates {
+type Alternate {
     locale: String!
     entry_id: ID!
 }
