@@ -62,7 +62,7 @@ class Asset extends Model
      */
     public static function getById(string|ObjectId $id): ?Asset
     {
-        return self::query()->findById($id)->exec((string)$id)->exec();
+        return self::query()->findById($id)->exec((string)$id);
     }
 
     /**

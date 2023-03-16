@@ -18,6 +18,7 @@ use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
+use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
@@ -466,6 +467,15 @@ final class GraphQL
             if (isset($objectValue->{$fieldName})) {
                 if (is_object($objectValue->{$fieldName}) && get_class($objectValue->{$fieldName}) === Collection::class) {
                     $property = $objectValue->{$fieldName}->unwrap();
+                } elseif (is_object($objectValue->{$fieldName})) {
+                    $implements = class_implements($objectValue->{$fieldName});
+                    $implements = array_values($implements)[0];
+
+                    if ($implements === Castable::class) {
+                        return $objectValue->{$fieldName}->castFrom();
+                    } else {
+                        $property = $objectValue->{$fieldName};
+                    }
                 } else {
                     $property = $objectValue->{$fieldName};
                 }
