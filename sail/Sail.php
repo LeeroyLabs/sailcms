@@ -689,7 +689,7 @@ class Sail
      */
     public static function siteId(): string
     {
-        return self::$siteID ?? 'main';
+        return self::$siteID ?? 'default';
     }
 
     /**
