@@ -466,20 +466,19 @@ final class GraphQL
         } elseif (is_object($objectValue)) {
             if (isset($objectValue->{$fieldName})) {
                 if (is_object($objectValue->{$fieldName}) && get_class($objectValue->{$fieldName}) === Collection::class) {
+                    // Unwrap collections before heading out
                     $property = $objectValue->{$fieldName}->unwrap();
                 } elseif (is_object($objectValue->{$fieldName})) {
+                    // Simplify objects that are castable
                     $implements = class_implements($objectValue->{$fieldName});
                     $implements = array_values($implements);
 
-                    if (count($implements) > 0) {
-                        if ($implements === Castable::class) {
-                            return $objectValue->{$fieldName}->castFrom();
-                        } else {
-                            $property = $objectValue->{$fieldName};
-                        }
-                    } else {
-                        $property = $objectValue->{$fieldName};
+                    // When simplified, return them right away because the type cannot be resolved to native json type
+                    if (count($implements) > 0 && $implements[0] === Castable::class) {
+                        return $objectValue->{$fieldName}->castFrom();
                     }
+
+                    $property = $objectValue->{$fieldName};
                 } else {
                     $property = $objectValue->{$fieldName};
                 }
