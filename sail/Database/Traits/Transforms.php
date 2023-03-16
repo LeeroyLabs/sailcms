@@ -3,6 +3,7 @@
 namespace SailCMS\Database\Traits;
 
 use Carbon\Carbon;
+use Exception;
 use \JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
@@ -278,7 +279,7 @@ trait Transforms
      *
      * @param  mixed  $doc
      * @return array
-     * @throws \Exception
+     * @throws Exception
      *
      */
     private function prepareForWrite(mixed $doc): array

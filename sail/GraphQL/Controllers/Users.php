@@ -193,7 +193,7 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
+     * @return User|null
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
