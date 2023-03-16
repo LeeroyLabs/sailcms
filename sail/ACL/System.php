@@ -42,6 +42,7 @@ class System
 
             // Assets
             new ACL('Asset', ACLType::READ_WRITE),
+            new ACL('Asset', ACLType::READ),
 
             // Emails
             new ACL('Emails', ACLType::READ_WRITE),
@@ -49,6 +50,7 @@ class System
 
             // Categories
             new ACL('Categories', ACLType::READ_WRITE),
+            new ACL('Categories', ACLType::READ),
 
             // Register
             new ACL('Register', ACLType::READ)

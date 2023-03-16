@@ -199,17 +199,26 @@ class Users
      * @throws SodiumException
      *
      */
-    public function verifyTFA(mixed $obj, Collection $args, Context $context): bool
+    public function verifyTFA(mixed $obj, Collection $args, Context $context): ?User
     {
         $model = new Tfa();
         $tfa = new TwoFactorAuthentication();
         $setup = $model->getForUser($args->get('user_id'));
 
         if ($setup) {
-            return $tfa->validate($setup->secret, $args->get('code'));
+            $result = $tfa->validate($setup->secret, $args->get('code'));
+
+            if ($result) {
+                $user = User::get($args->get('user_id'));
+
+                if ($user) {
+                    $umodel = new User();
+                    return $umodel->verifyTemporaryToken($user->temporary_token);
+                }
+            }
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -267,7 +276,7 @@ class Users
             $args->get('locale', 'en'),
             $args->get('avatar', ''),
             $meta,
-            $args->get('role', ''),
+            $args->get('roles', []),
             $args->get('createWithSetPassword', false),
             $args->get('useEmailTemplate', '')
         );
@@ -429,18 +438,6 @@ class Users
      */
     public function resolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
-        if ($info->fieldName === 'name') {
-            return $obj->name->castFrom();
-        }
-
-        if ($info->fieldName === 'permissions') {
-            return $obj->permissions()->unwrap();
-        }
-
-        if ($info->fieldName === 'roles') {
-            return $obj->roles->unwrap();
-        }
-
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
             if (is_object($obj->meta) && get_class($obj->meta) === stdClass::class) {

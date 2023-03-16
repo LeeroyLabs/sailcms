@@ -21,13 +21,13 @@ final class ACL
      * @return void
      *
      */
-    public static function init(): void
+    public self function init(): void
     {
-        if (!isset(static::$loadedACL)) {
-            static::$loadedACL = Collection::init();
+        if (!isset(self::$loadedACL)) {
+            self::$loadedACL = Collection::init();
 
             // Load all system ACL
-            static::$loadedACL->pushSpread(...System::getAll()->unwrap());
+            self::$loadedACL->pushSpread(...System::getAll()->unwrap());
         }
     }
 
@@ -40,12 +40,12 @@ final class ACL
      * @throws ACLException
      *
      */
-    public static function read(string $name): ?Types\ACL
+    public self function read(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
 
-        static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
+        self::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
             if (($value->category === 'R' || $value->category === 'RW') && $value->providedName === $name) {
                 $permissionValue = $value;
@@ -68,12 +68,12 @@ final class ACL
      * @throws ACLException
      *
      */
-    public static function write(string $name): ?Types\ACL
+    public self function write(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
 
-        static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
+        self::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
             if (($value->category === 'W' || $value->category === 'RW') && $value->providedName === $name) {
                 $permissionValue = $value;
@@ -96,12 +96,12 @@ final class ACL
      * @throws ACLException
      *
      */
-    public static function readwrite(string $name): ?Types\ACL
+    public self function readwrite(string $name): ?Types\ACL
     {
         // Search through the read permissions for given name
         $permissionValue = null;
 
-        static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
+        self::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
             if ($value->category === 'RW' && $value->providedName === $name) {
                 $permissionValue = $value;
@@ -124,7 +124,7 @@ final class ACL
      * @throws ACLException
      *
      */
-    public static function loadCustom(Collection $acls): void
+    public self function loadCustom(Collection $acls): void
     {
         foreach ($acls->unwrap() as $acl) {
             if (!is_object($acl) || get_class($acl) !== Types\ACL::class) {
@@ -135,7 +135,7 @@ final class ACL
                 throw new ACLException("Cannot use reserved namespace '{$acl->providedName}'. Please choose something else.");
             }
 
-            static::$loadedACL->push($acl);
+            self::$loadedACL->push($acl);
         }
     }
 
@@ -151,7 +151,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public static function hasRole(string|User|null $user, string $role): bool
+    public self function hasRole(string|User|null $user, string $role): bool
     {
         if ($user === null) {
             return false;
@@ -179,7 +179,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public static function hasPermission(string|User|null $user, ?Types\ACL ...$permissions): bool
+    public self function hasPermission(string|User|null $user, ?Types\ACL ...$permissions): bool
     {
         // CLI user is allowed RW on everything
         if (Sail::isCLI()) {
@@ -225,7 +225,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public static function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool
+    public self function hasAllPermissions(string|User|null $user, Types\ACL ...$permissions): bool
     {
         if ($user === null) {
             return false;
@@ -261,11 +261,11 @@ final class ACL
      * @return Collection
      *
      */
-    public static function getList(): Collection
+    public self function getList(): Collection
     {
         $list = Collection::init();
 
-        static::$loadedACL->each(function ($key, $value) use (&$list)
+        self::$loadedACL->each(function ($key, $value) use (&$list)
         {
             $list->push((object)[
                 'group' => $value->providedName,
@@ -284,9 +284,9 @@ final class ACL
      * @return int
      *
      */
-    public static function count(): int
+    public self function count(): int
     {
-        return static::$loadedACL->length;
+        return self::$loadedACL->length;
     }
 
     /**
@@ -299,7 +299,7 @@ final class ACL
      * @throws Errors\PermissionException
      *
      */
-    public static function loadCmsACL(): void
+    public self function loadCmsACL(): void
     {
         $entryACL = Collection::init();
         $entryTypes = EntryType::getAll();
@@ -310,6 +310,6 @@ final class ACL
             $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE));
         });
 
-        static::$loadedACL->pushSpread(...$entryACL->unwrap());
+        self::$loadedACL->pushSpread(...$entryACL->unwrap());
     }
 }

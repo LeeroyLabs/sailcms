@@ -13,8 +13,8 @@ class Database implements Adapter
      *
      * Store or update a document
      *
-     * @param  object|array  $document
-     * @param  string        $dataIndex
+     * @param object|array $document
+     * @param string $dataIndex
      * @throws DatabaseException
      *
      */
@@ -39,8 +39,8 @@ class Database implements Adapter
      *
      * Delete a document by id
      *
-     * @param  string  $id
-     * @param  string  $dataIndex
+     * @param string $id
+     * @param string $dataIndex
      * @return void
      * @throws DatabaseException
      *
@@ -48,16 +48,16 @@ class Database implements Adapter
     public function remove(string $id, string $dataIndex = '')
     {
         $search = new Search();
-        $search->remove($id);
+        $search->delete($id);
     }
 
     /**
      *
      * Search for the keywords (in title and content)
      *
-     * @param  string  $search
-     * @param  array   $meta
-     * @param  string  $dataIndex
+     * @param string $search
+     * @param array $meta
+     * @param string $dataIndex
      * @return SearchResults
      * @throws DatabaseException
      *

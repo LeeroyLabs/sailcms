@@ -12,9 +12,13 @@ use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Utils\AST;
 use GraphQL\Utils\BuildSchema;
+use GraphQL\Validator\DocumentValidator;
+use GraphQL\Validator\Rules\DisableIntrospection;
+use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
+use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
@@ -263,11 +267,28 @@ final class GraphQL
             $schema = BuildSchema::build($document, [self::class, 'handleCustomTypes']);
 
             $rawInput = file_get_contents('php://input');
-            $input = json_decode($rawInput, true, setting('graphql.depthLimit', 5), JSON_THROW_ON_ERROR); // N+1 protection
+            $input = json_decode($rawInput, true, 256, JSON_THROW_ON_ERROR);
             $query = $input['query'] ?? $input['mutation'] ?? '';
             $variableValues = $input['variables'] ?? null;
 
             $data = ['query' => $query, 'variables' => $variableValues];
+
+            // Disable Introspection (if set to false)
+            $introspection = setting('graphql.introspection', true);
+            if (!$introspection) {
+                $rule = new DisableIntrospection(DisableIntrospection::ENABLED);
+                DocumentValidator::addRule($rule);
+            }
+
+            // Depth Limiting (n+1)
+            $limit = setting('graphql.depthLimit', 5);
+
+            if ($introspection) {
+                $limit = 11;
+            }
+
+            $rule = new QueryDepth($limit);
+            DocumentValidator::addRule($rule);
 
             if (!empty($input['query'])) {
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeQuery, data: $data));
@@ -358,6 +379,7 @@ final class GraphQL
         self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
         self::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
         self::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+        self::addResolver('Asset', Assets::class, 'assetResolver');
 
         // Emails
         self::addQueryResolver('email', Emails::class, 'email');
@@ -395,6 +417,9 @@ final class GraphQL
         self::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
 
         self::addQueryResolver('fields', Entries::class, 'fields');
+
+        // Types and Resolvers
+        self::addResolver('Entry', Entries::class, 'entryResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
@@ -441,7 +466,19 @@ final class GraphQL
         } elseif (is_object($objectValue)) {
             if (isset($objectValue->{$fieldName})) {
                 if (is_object($objectValue->{$fieldName}) && get_class($objectValue->{$fieldName}) === Collection::class) {
+                    // Unwrap collections before heading out
                     $property = $objectValue->{$fieldName}->unwrap();
+                } elseif (is_object($objectValue->{$fieldName})) {
+                    // Simplify objects that are castable
+                    $implements = class_implements($objectValue->{$fieldName});
+                    $implements = array_values($implements);
+
+                    // When simplified, return them right away because the type cannot be resolved to native json type
+                    if (count($implements) > 0 && $implements[0] === Castable::class) {
+                        return $objectValue->{$fieldName}->castFrom();
+                    }
+
+                    $property = $objectValue->{$fieldName};
                 } else {
                     $property = $objectValue->{$fieldName};
                 }

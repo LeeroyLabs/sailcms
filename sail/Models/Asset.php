@@ -237,11 +237,12 @@ class Asset extends Model
             'is_image' => $isImage,
             'filesize' => $sizeBytes,
             'size' => $size,
-            'uploader_id' => $uploader_id,
+            'uploader_id' => ($uploader_id !== '') ? $uploader_id : null,
             'public' => ($uploader_id === ''),
             'transforms' => [],
             'created_at' => time(),
-            'folder' => $folder
+            'folder' => $folder,
+            'site_id' => Sail::siteId()
         ]);
 
         // Run all transforms on upload configured

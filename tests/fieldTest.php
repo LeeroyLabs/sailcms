@@ -19,8 +19,7 @@ use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     Sail::setupForTests(__DIR__);
 
     $authorModel = new User();
@@ -37,8 +36,7 @@ beforeAll(function ()
     $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
 });
 
-afterAll(function ()
-{
+afterAll(function () {
     $authorModel = new User();
     $authorModel->removeByEmail('testentryfield@leeroy.ca');
 
@@ -61,8 +59,7 @@ afterAll(function ()
     $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
-test('Add all fields to the layout', function ()
-{
+test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
@@ -140,8 +137,7 @@ test('Add all fields to the layout', function ()
     }
 });
 
-test('Failed to update the entry content', function ()
-{
+test('Failed to update the entry content', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -162,7 +158,7 @@ test('Failed to update the entry content', function ()
                 'multipleSelect' => ['test3', 'test4', 'test-failed']
             ]
         ], false);
-        //print_r($errors);
+//        print_r($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
@@ -176,8 +172,7 @@ test('Failed to update the entry content', function ()
     }
 });
 
-test('Update content with success', function ()
-{
+test('Update content with success', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -205,7 +200,8 @@ and must keep it through all the process',
         expect($errors->length)->toBe(0);
         $entry = $entryModel->one([
             'title' => 'Home Field Test'
-        ]);
+        ], false);
+
         expect($entry->content->get('float'))->toBe('0.03');
         expect($entry->content->get('text'))->toBe('Not empty');
         expect($entry->content->get('description'))->toContain(PHP_EOL);

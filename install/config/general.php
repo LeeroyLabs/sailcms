@@ -58,6 +58,7 @@ return [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5,
+            'introspection' => true,
             'hideCMS' => false
         ],
         'cors' => [
@@ -94,6 +95,7 @@ return [
         'logging' => [
             'useRay' => true,
             'loggerName' => 'sailcms',
+            'database' => false,
             'adapters' => [
                 \SailCMS\Logging\Database::class
             ],
@@ -183,6 +185,7 @@ return [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5,
+            'introspection' => false,
             'hideCMS' => false
         ],
         'session' => [
@@ -204,6 +207,7 @@ return [
         'logging' => [
             'useRay' => true,
             'loggerName' => 'sailcms',
+            'database' => false,
             'adapters' => [
                 \SailCMS\Logging\Database::class
             ],
@@ -289,6 +293,7 @@ return [
             'active' => true,
             'trigger' => 'graphql',
             'depthLimit' => 5,
+            'introspection' => false,
             'hideCMS' => false
         ],
         'session' => [
@@ -311,6 +316,7 @@ return [
         'logging' => [
             'useRay' => true,
             'loggerName' => 'sailcms',
+            'database' => false,
             'adapters' => [
                 \SailCMS\Logging\Database::class
             ],

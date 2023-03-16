@@ -10,16 +10,18 @@ use SailCMS\CLI\Cache;
 use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
 use SailCMS\CLI\Controller;
+use SailCMS\CLI\Entry;
 use SailCMS\CLI\Install;
 use SailCMS\CLI\InstallOfficial;
 use SailCMS\CLI\Migrate;
 use SailCMS\CLI\Migrations;
 use SailCMS\CLI\Model;
+use SailCMS\CLI\Module;
+use SailCMS\CLI\Password;
+use SailCMS\CLI\Queue;
 use SailCMS\CLI\Schema;
 use SailCMS\CLI\Test;
 use SailCMS\CLI\Version;
-use SailCMS\CLI\Module;
-use SailCMS\CLI\Queue;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
@@ -75,6 +77,7 @@ final class CLI
         $application->add(new Install());
         $application->add(new Command());
         $application->add(new Model());
+        $application->add(new Entry());
         $application->add(new Queue());
         $application->add(new Cache());
         $application->add(new Schema());
@@ -83,6 +86,7 @@ final class CLI
         $application->add(new Test());
         $application->add(new BasicAuth());
         $application->add(new InstallOfficial());
+        $application->add(new Password());
 
         // Custom commands
         if (!isset(self::$registeredCommands)) {
