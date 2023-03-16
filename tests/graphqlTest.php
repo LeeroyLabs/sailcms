@@ -115,3 +115,183 @@ test('Get a page and modify his SEO', function () {
         }
     }
 })->group('graphql');
+
+test('Create layout, entry type & entry', function () {
+    if (isset($_ENV['test-token'])) {
+        $newEntryLayout = $this->client->run('
+            mutation createLayout {
+                createEntryLayout(
+                    titles: { fr: "Test des champs graphql", en: "Field tests graphql" }
+                    schema: [
+                        {
+                            labels: { en: "Text", fr: "Texte" }
+                            key: "text"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            inputSettings: [
+                                  {
+                                        settings: [
+                                            { name: "required", value: "1", type: boolean }
+                                            { name: "maxLength", value: "10", type: integer }
+                                            { name: "minLength", value: "5", type: integer }
+                                        ]
+                                 }
+                            ]
+                        }
+                        {
+                            labels: { en: "Integer", fr: "Entier" }
+                            key: "integer"
+                            handle: "SailCMS-Models-Entry-NumberField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "min", value: "-1", type: integer }
+                                        { name: "max", value: "11", type: integer }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Float", fr: "Flottant" }
+                            key: "float"
+                            handle: "SailCMS-Models-Entry-NumberField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                        { name: "min", value: "0.03", type: float }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Description", fr: "Description" }
+                            key: "desc"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            inputSettings: []
+                        }
+                    ]
+                    ) {
+                    _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $newEntryType = $this->client->run('
+            mutation {
+                createEntryType(
+                    handle: "tests-graphql"
+                    title: "Tests graphql"
+                    url_prefix: {
+                        en: "graphql-tests"
+                        fr: "tests-graphql"
+                    }
+                    entry_layout_id: "'. $newEntryLayout->data->createEntryLayout->_id .'"
+                ) {
+                    _id
+                    title
+                    handle
+                    url_prefix {
+                        fr
+                        en
+                    }
+                    entry_layout_id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $newEntry = $this->client->run('
+            mutation {
+                createEntry(
+                    entry_type_handle: "tests-graphql"
+                    locale: "en"
+                    is_homepage: false
+                    status: live
+                    title: "It just works"
+                    template: ""
+                    slug: "it-just-works"
+                    content: [
+                        {
+                            key: "float"
+                            content: "1.04"
+                        }
+                        {
+                            key: "text"
+                            content: "Not empty"
+                        }
+                        {
+                            key: "desc"
+                            content: "This text contains line returns and must keep it through all the process"
+                        }
+                    ]
+                ) {
+                    errors {
+                        key
+                        errors
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        try {
+            expect($newEntryLayout->status)->toBe('ok');
+            expect($newEntryType->status)->toBe('ok');
+            expect($newEntry->status)->toBe('ok');
+        } catch (Exception $exception) {
+            expect(true)->toBe(false);
+        }
+    }
+})->group('graphql');
+
+test('Delete layout, entry type & entry', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryType = $this->client->run('
+            {
+                entryType(handle: "tests-graphql") {
+                    _id
+                    handle
+                    entry_layout_id
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $entryType = $entryType->data->entryType;
+
+        $entry = $this->client->run('
+            {
+                entries(
+                    entry_type_handle: "tests-graphql"
+                ) {
+                    list {
+                        _id
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntry = $this->client->run('
+            mutation {
+                deleteEntry(entry_type_handle: "tests-graphql", id: "'. $entry->data->entries->list[0]->_id .'", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntryType = $this->client->run('
+            mutation {
+                deleteEntryType(id: "'. $entryType->_id .'")
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntryLayout = $this->client->run('
+            mutation {
+                deleteEntryLayout(id: "'. $entryType->entry_layout_id .'", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        try {
+            expect($deleteEntry->status)->toBe('ok');
+            expect($deleteEntryLayout->status)->toBe('ok');
+            expect($deleteEntryType->status)->toBe('ok');
+        } catch (Exception $exception) {
+            print_r($exception);
+            expect(true)->toBe(false);
+        }
+    }
+})->group('graphql');

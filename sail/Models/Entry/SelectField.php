@@ -9,6 +9,8 @@ use SailCMS\Types\StoringType;
 
 class SelectField extends Field
 {
+    const SEARCHABLE = false;
+
     /**
      *
      * Override the constructor to pass a precision to the number
