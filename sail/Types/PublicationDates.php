@@ -35,8 +35,8 @@ class PublicationDates implements Castable
     public function castFrom(): array
     {
         return [
-            'created' => $this->published,
-            'updated' => $this->expired
+            'published' => $this->published,
+            'expired' => $this->expired
         ];
     }
 

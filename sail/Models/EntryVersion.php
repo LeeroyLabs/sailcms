@@ -34,6 +34,7 @@ class EntryVersion extends Model
 
     public const DATABASE_ERROR = '5200: Exception when "%s" an entry version.';
     public const CANNOT_APPLY_LAST_VERSION = '5201: Cannot apply last version, it is the same as the current version.';
+    public const DOES_NOT_EXISTS = '5202: There no version for the given id.';
 
     /**
      *
@@ -70,9 +71,21 @@ class EntryVersion extends Model
         return $this->find(['entry_id' => (string)$entryId])->exec();
     }
 
-    public function getLastVersionByEntryId(string|ObjectId $entryId): array|Model|EntryVersion|null
+    /**
+     *
+     *
+     *
+     * @param string|ObjectId $entryId
+     * @return EntryVersion|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     */
+    public function getLastVersionByEntryId(string|ObjectId $entryId): EntryVersion|null
     {
-        $options = QueryOptions::initWithSort(['created_at' => -1]);
+        $this->hasPermissions(true);
+
+        $options = QueryOptions::initWithSort(['created_at' => -1, '_id' => -1]);
         return $this->findOne(['entry_id' => (string)$entryId], $options)->exec();
     }
 
@@ -151,9 +164,7 @@ class EntryVersion extends Model
         }
 
         // Check if not the last version
-        $lastVersion = $this->findOne([
-            "entry_id" => $entryVersion->entry_id
-        ], QueryOptions::initWithSort(['_id' => -1]))->exec();
+        $lastVersion = $this->getLastVersionByEntryId($entryVersion->entry_id);
 
         if ((string)$lastVersion->_id === (string)$entryVersion->_id) {
             throw new EntryException(self::CANNOT_APPLY_LAST_VERSION);
@@ -182,5 +193,41 @@ class EntryVersion extends Model
         }
 
         return $result->length === 0;
+    }
+
+    /**
+     *
+     * Fake an apply of version directly on an entry object
+     *
+     * @param Entry $entry
+     * @param string $entry_version_id
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function fakeVersion(Entry $entry, string $entry_version_id): Entry
+    {
+        $entryVersion = $this->findById($entry_version_id)->exec();
+
+        if (!isset($entryVersion->_id)) {
+            throw new EntryException(self::DOES_NOT_EXISTS);
+        }
+
+        $entry->authors = $entryVersion->entry->get('authors');
+        $entry->dates = $entryVersion->entry->get('dates');
+        $entry->parent = $entryVersion->entry->get('parent');
+        $entry->site_id = $entryVersion->entry->get('site_id');
+        $entry->locale = $entryVersion->entry->get('locale');
+        $entry->status = $entryVersion->entry->get('status');
+        $entry->title = $entryVersion->entry->get('title');
+        $entry->slug = $entryVersion->entry->get('slug');
+        $entry->url = $entryVersion->entry->get('url');
+        $entry->template = $entryVersion->entry->get('template');
+        $entry->categories = $entryVersion->entry->get('categories');
+        $entry->content = $entryVersion->entry->get('content');
+        $entry->alternates = $entryVersion->entry->get('alternates');
+
+        return $entry;
     }
 }

@@ -35,6 +35,8 @@ use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
+use SailCMS\Types\PublicationDates;
+use SailCMS\Types\PublicationStatus;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\StoringType;
 use SodiumException;
@@ -528,57 +530,19 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public static function findByURL(string $url, bool $fromRequest = true): Entry|array|null
+    public static function findByURL(string $url, bool $fromRequest = true, bool $preview = false): Entry|array|null
     {
-        // Load all entry types before scanning them
-        $availableTypes = EntryType::getAll();
-        $request = $fromRequest ? new Request() : null;
-        $content = null;
         $url = ltrim($url, "/");
+        $request = $fromRequest ? new Request() : null;
+        // TODO handle graphQL ???
+        $preview = false;
+        $previewVersion = false;
+        if ($request) {
+            $preview = $request->get('pm', false, null);
+            $previewVersion = $request->get('pv', false, null);
+        }
 
-        $availableTypes->each(function ($key, $value) use ($url, $request, &$content) {
-            // Search for what collection has this url (if any)
-            $entry = new Entry($value->collection_name);
-            $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
-
-            if ($found > 0) {
-                // Winner Winner Chicken Diner!
-                $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
-                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(self::FIND_BY_URL_CACHE . $url, $cacheTtl);
-
-                $preview = false;
-                $previewVersion = false;
-                if ($request) {
-                    $preview = $request->get('pm', false, null);
-                    $previewVersion = $request->get('pv', false, null);
-                }
-
-                // URL does not exist :/
-                if (!$content) {
-                    $content = null;
-                }
-
-                // Check if publication
-                if (EntryStatus::from($content->status) !== EntryStatus::LIVE) {
-                    // Page is not published but preview mode is active
-                    if ($preview && $previewVersion) {
-                        // TODO: HANDLE PREVIEW
-                        //$content = null;
-
-                    } else {
-                        // Page exists but is not published
-                        $content = null;
-                    }
-                }
-
-                // We already have it, stop!
-                if ($content !== null) {
-                    return;
-                }
-            }
-        });
-
-        return $content;
+        return static::findByUrlFromEntryTypes($url, $preview, $previewVersion);
     }
 
     /**
@@ -1096,19 +1060,21 @@ class Entry extends Model implements Validator
         $author = User::$currentUser;
 
         $entryVersionModel = new EntryVersion();
-
         $lastVersion = $entryVersionModel->getLastVersionByEntryId($entryId);
 
+        // It is almost impossible that an entry has no version, but just to be sure
         if (!$lastVersion) {
             $entry = $this->findById($entryId)->exec();
             $simplifiedEntry = $entry->simplify(null);
             $simplifiedEntry['content'] = $entry->content;
             $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
+            $entryUrl = $simplifiedEntry['url'];
         }
 
         $entryVersionID = !isset($entryVersionID) ? $lastVersion->_id : $entryVersionID;
+        $entryUrl = !isset($entryUrl) ? $lastVersion->entry->get('url') : $entryUrl;
 
-        return (new EntryPublication())->create($author, $entryId, (string)$entryVersionID, $publicationDate, $expirationDate);
+        return (new EntryPublication())->create($author, $entryId, $entryUrl, (string)$entryVersionID, $publicationDate, $expirationDate);
     }
 
     /**
@@ -1634,6 +1600,71 @@ class Entry extends Model implements Validator
         ]);
 
         return $qtyDeleted === 1;
+    }
+
+    private static function findByPublishedUrl(string $url)
+    {
+
+    }
+
+    /**
+     *
+     * Find by url from entry types
+     *
+     * @param string $url
+     * @param $preview
+     * @param $previewVersion
+     * @return Entry|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    private static function findByUrlFromEntryTypes(string $url, bool $preview, string $previewVersion): ?Entry
+    {
+        // Load all entry types before scanning them
+        $availableTypes = EntryType::getAll();
+        $content = null;
+
+        $availableTypes->each(function ($key, $value) use ($url, $preview, $previewVersion, &$content) {
+            // Search for what collection has this url (if any)
+            $entry = new Entry($value->collection_name);
+            $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
+
+            if ($found > 0) {
+                // Winner Winner Chicken Diner!
+                $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+                $content = $entry->findOne(['url' => $url, 'site_id' => Sail::siteId()])->exec(self::FIND_BY_URL_CACHE . $url, $cacheTtl);
+
+                // URL does not exist :/
+                if (!$content) {
+                    $content = null;
+                }
+
+                // Check if publication exists and it's published
+                $publication = (new EntryPublication())->getPublicationByEntryId($content->_id);
+                if ($publication && $publication->version->entry->get('url') === $url) {
+                    // Page is not published but preview mode is active
+                    if (($preview && $previewVersion) || PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
+                        // TODO: HANDLE PREVIEW
+                        $content = (new EntryVersion())->fakeVersion($content, $publication->entry_version_id);
+                    } else {
+                        // Page exists but is not published
+                        $content = null;
+                    }
+                } else {
+                    $content = null;
+                }
+
+                // We already have it, stop!
+                if ($content !== null) {
+                    return;
+                }
+            }
+        });
+
+        return $content;
     }
 
     /**

@@ -16,9 +16,13 @@ use SailCMS\Types\PublicationDates;
  * @property string $entry_id
  * @property string $entry_version_id
  * @property PublicationDates $dates
+ * @property string $entry_url
  * @property string $user_id
  * @property string $user_full_name
  * @property string $user_email
+ *
+ * optional
+ * @property EntryVersion $version = null
  *
  */
 class EntryPublication extends Model
@@ -36,17 +40,17 @@ class EntryPublication extends Model
     /**
      *
      * @param string|ObjectId $entryId
-     * @return array
+     * @return array|EntryPublication|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
-     *
      */
-    public function getPublicationsByEntryId(string|ObjectId $entryId): array
+    public function getPublicationByEntryId(string|ObjectId $entryId): array|EntryPublication|null
     {
         $this->hasPermissions(true);
 
-        return $this->find(['entry_id' => (string)$entryId])->exec();
+        // TODO add an option to populate version or not
+        return $this->findOne(['entry_id' => (string)$entryId])->populate('entry_version_id', 'version', EntryVersion::class)->exec();
     }
 
     /**
@@ -63,7 +67,7 @@ class EntryPublication extends Model
      * @throws PermissionException
      *
      */
-    public function create(User $user, string $entryId, string $entryVersionId, int $publicationDate = 0, int $expirationDate = 0): string
+    public function create(User $user, string $entryId, string $entryUrl, string $entryVersionId, int $publicationDate = 0, int $expirationDate = 0): string
     {
         $this->hasPermissions();
 
@@ -82,7 +86,8 @@ class EntryPublication extends Model
                 'user_full_name' => $user->name->full,
                 'user_email' => $user->email,
                 'entry_version_id' => $entryVersionId,
-                'entry_id' => $entryId
+                'entry_id' => $entryId,
+                'entry_url' => $entryUrl
             ]);
         } catch (DatabaseException $exception) {
             $errorMsg = sprintf(self::DATABASE_ERROR[0], 'creating') . PHP_EOL . $exception->getMessage();
@@ -103,6 +108,8 @@ class EntryPublication extends Model
      */
     public function deleteAllByEntryId(string $entryId): bool
     {
+        $this->hasPermissions();
+
         try {
             $result = $this->deleteMany(['entry_id' => $entryId]);
         } catch (DatabaseException $exception) {

@@ -191,7 +191,8 @@ test('Access to default SEO data', function () {
 
     $seo = $entry->getSEO();
 
-    expect($seo->title)->toBe($entry->title)->and($seo->entry_seo_id)->not->toBeNull();
+    expect($seo->title)->toBe($entry->title)
+        ->and($seo->entry_seo_id)->not->toBeNull();
 });
 
 test('Update seo data for an entry', function () {
@@ -277,6 +278,23 @@ test('Get homepage entry', function () {
     expect($entry->title)->toBe('Test');
 })->group('entry');
 
+test('Publish an entry', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $now = time();
+        $expiration = $now + 3600; // + 1 hour
+        $entryPublicationId = $entryModel->publish($entry->_id, $now, $expiration);
+        expect($entryPublicationId)->not()->toBeNull();
+    } catch (Exception $exception) {
+//        print_r($exception);
+        expect(false)->toBeTrue();
+    }
+});
+
 test('Update an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
@@ -349,7 +367,7 @@ test('Get a validated slug for an existing slug', function () {
     expect($newSlug)->toBe('test-de-test-3');
 })->group('entry');
 
-test('Failed to update content because a field does not validate', function () {
+test('Failed to update content because a field does not validated', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test 2'
@@ -412,27 +430,12 @@ test('Fail to update an entry to trash', function () {
     }
 })->group('entry');
 
-test('Publish an entry', function () {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-    $entry = $entryModel->one([
-        'title' => 'Test'
-    ]);
-
-    try {
-        $now = time();
-        $expiration = $now + 3600; // + 1 hour
-        $entryPublicationId = $entryModel->publish($entry->_id, $now, $expiration);
-        expect($entryPublicationId)->not()->toBeNull();
-    } catch (Exception $exception) {
-//        print_r($exception);
-        expect(false)->toBeTrue();
-    }
-});
-
 test('Find the entry by url', function () {
-    $entry = Entry::findByURL('pages-de-test/test-de-test', false);
+    $entry = Entry::findByURL('pages-de-test/test', false);
 
-    expect($entry->title)->toBe('Test');
+    expect($entry->title)->toBe('Test')
+        ->and($entry->slug)->toBe('test')
+        ->and($entry->content->length)->toBe(0); // We have the entry published before the content has been added
 })->group('entry');
 
 test('Unpublish an entry', function () {
@@ -443,9 +446,9 @@ test('Unpublish an entry', function () {
 
     try {
         $result = $entryModel->unpublish($entry->_id);
-        $publicationEmpty = (new EntryPublication())->getPublicationsByEntryId($entry->_id);
+        $publicationEmpty = (new EntryPublication())->getPublicationByEntryId($entry->_id);
         expect($result)->toBeTrue()
-            ->and(count($publicationEmpty))->toBe(0);
+            ->and($publicationEmpty)->toBeNull();
     } catch (Exception $exception) {
 //        print_r($exception);
         expect(false)->toBeTrue();
@@ -455,7 +458,10 @@ test('Unpublish an entry', function () {
 test('Failed to find the entry by url', function () {
     // Failed to find because it does not exist
     $entry = Entry::findByURL('pages-de-test/test-de-test-2', false);
+    expect($entry)->toBe(null);
 
+    // Failed to find because it's not published yet
+    $entry = Entry::findByURL('pages-de-test/test-de-test', false);
     expect($entry)->toBe(null);
 })->group('entry');
 
