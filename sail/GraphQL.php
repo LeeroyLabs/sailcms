@@ -469,10 +469,14 @@ final class GraphQL
                     $property = $objectValue->{$fieldName}->unwrap();
                 } elseif (is_object($objectValue->{$fieldName})) {
                     $implements = class_implements($objectValue->{$fieldName});
-                    $implements = array_values($implements)[0];
+                    $implements = array_values($implements);
 
-                    if ($implements === Castable::class) {
-                        return $objectValue->{$fieldName}->castFrom();
+                    if (count($implements) > 0) {
+                        if ($implements === Castable::class) {
+                            return $objectValue->{$fieldName}->castFrom();
+                        } else {
+                            $property = $objectValue->{$fieldName};
+                        }
                     } else {
                         $property = $objectValue->{$fieldName};
                     }
