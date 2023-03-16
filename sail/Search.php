@@ -129,8 +129,16 @@ final class Search
     public static function registerSystemAdapters(): void
     {
         $composerFile = Sail::getWorkingDirectory() . '/composer.json';
-        $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+        $composerFileAlt = dirname(Sail::getWorkingDirectory(), 2) . '/composer.json';
 
+        if (file_exists($composerFile)) {
+            $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+        } elseif (file_exists($composerFileAlt)) {
+            $composer = json_decode(file_get_contents($composerFileAlt), false, 512, JSON_THROW_ON_ERROR);
+        } else {
+            return;
+        }
+        
         $engines = $composer->sailcms->search ?? [];
 
         foreach ($engines as $name => $engine) {
