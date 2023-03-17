@@ -308,7 +308,8 @@ class Mail
                     $superContext->get('cta_link')
                 ));
             } else {
-                $superContext->setFor('cta_link', '{reset_code}', '');
+                $link = $superContext->get('cta_link');
+                $superContext->setFor('cta_link', str_replace('{reset_code}', '', $link));
             }
 
             // Replace locale variable in template name to the actual locale
