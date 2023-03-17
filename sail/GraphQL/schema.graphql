@@ -541,6 +541,17 @@ type Middleware {
 }
 
 type GraphQLInfo {
+    queries: [QueryInfo!]!
+    mutations: [MutationInfo!]!
+}
+
+type QueryInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type MutationInfo {
     operation: String!
     handler: String!
     method: String!
