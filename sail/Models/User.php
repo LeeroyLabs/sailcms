@@ -176,6 +176,38 @@ class User extends Model
 
     /**
      *
+     * Get List of users with given query and settings
+     *
+     * @param  array   $query
+     * @param  string  $sort
+     * @param  int     $order
+     * @param  int     $page
+     * @param  int     $limit
+     * @param  string  $collation
+     * @return Listing
+     * @throws DatabaseException
+     *
+     */
+    public function getListBy(array $query, string $sort = 'full.name', int $order = 1, int $page = 1, int $limit = 25, string $collation = 'en'): Listing
+    {
+        $skip = $page * $limit - $limit;
+        $list = new Collection(
+            $this->find($query)
+                 ->skip($skip)
+                 ->limit($limit)
+                 ->collation($collation)
+                 ->sort([$sort => $order])
+                 ->exec()
+        );
+
+        $total = $this->count($query);
+        $pages = ceil($total / $limit);
+        $pagination = new Pagination($page, $pages, $total);
+        return new Listing($pagination, $list);
+    }
+
+    /**
+     *
      * Create a regular user (usually user from the site) with no roles.
      *
      * @param  Username          $name
