@@ -20,6 +20,7 @@ class Bundled extends AbstractExtension
     public function getFunctions(): array
     {
         return [
+            new TwigFunction('version', [$this, 'version']),
             new TwigFunction('header', [$this, 'header']),
             new TwigFunction('debug', [$this, 'debug']),
             new TwigFunction('env', [$this, 'env']),
@@ -40,6 +41,18 @@ class Bundled extends AbstractExtension
     public function header(): void
     {
         // TODO: Implement for SEO
+    }
+
+    /**
+     *
+     * Get current sail version
+     *
+     * @return string
+     *
+     */
+    public function version(): string
+    {
+        return Sail::SAIL_VERSION;
     }
 
     /**

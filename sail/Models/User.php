@@ -288,6 +288,7 @@ class User extends Model
                             'name' => $name->first
                         ],
                         'user_email' => $email,
+                        'reset_pass_code' => $passCode,
                         'verification_code' => $code
                     ])->send();
                 }
