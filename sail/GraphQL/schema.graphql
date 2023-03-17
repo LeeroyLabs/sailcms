@@ -520,6 +520,8 @@ type ContainerInfo {
     description: String!
     version: Float!
     semver: String!
+    author: String!
+    link: String!
 }
 
 type ModuleInfo {
@@ -527,6 +529,8 @@ type ModuleInfo {
     description: String!
     version: Float!
     semver: String!
+    author: String!
+    link: String!
 }
 
 type Middleware {
@@ -535,6 +539,17 @@ type Middleware {
 }
 
 type GraphQLInfo {
+    queries: [QueryInfo!]!
+    mutations: [MutationInfo!]!
+}
+
+type QueryInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type MutationInfo {
     operation: String!
     handler: String!
     method: String!

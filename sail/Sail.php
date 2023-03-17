@@ -180,6 +180,8 @@ class Sail
 
     /**
      *
+     * Boot basic systems
+     *
      * @params array $securitySettings
      * @params bool $skipContainers
      * @throws DatabaseException
@@ -188,6 +190,7 @@ class Sail
      * @throws SiteException
      * @throws ACLException
      * @throws PermissionException
+     * @throws FilesystemException
      *
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
