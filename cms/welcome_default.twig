@@ -2,12 +2,12 @@
 <head>
     <title>Welcome to SailCMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Radio+Canada:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
     <style>
-        h1 {
-            text-shadow: -1px -1px 0 #1c3465,
-            1px -1px 0 #1c3465,
-            -1px 1px 0 #1c3465,
-            1px 1px 0 #1c3465;
+        * {
+            font-family: 'Radio Canada', sans-serif;
         }
     </style>
 </head>
@@ -21,7 +21,7 @@
             </g>
         </svg>
     </div>
-    <div class="bg-white p-4 py-6 mt-4 rounded-md shadow-md grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white p-4 py-6 mt-4 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-6">
         <a class="flex flex-row items-center" href="https://sailcms-docs.leeroy.ca/" target="_blank">
             <div>
                 <svg width="70px" height="70px" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
@@ -56,8 +56,8 @@
             </div>
         </a>
     </div>
-    <div class="mt-1.5 text-gray-400 flex flex-row justify-between">
-        <span>v{{ version() }}</span>
+    <div class="mt-1.5 text-gray-400 flex flex-row justify-between text-sm">
+        v{{ version() }}
     </div>
 </div>
 </body>
