@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
@@ -36,27 +37,57 @@ class EntryPublication extends Model
 
     public const DATABASE_ERROR = ['5300: Exception when "%s" an entry publication.', 5300];
     public const EXPIRATION_DATE_ERROR = ['5301: The expiration date must be higher than the publication date', 5301];
+    public const FIND_BY_URL_CACHE = 'find_by_url_entry_';   // Add url at the end
 
     /**
      *
+     * Get publication by entry id
+     *
      * @param string|ObjectId $entryId
-     * @return array|EntryPublication|null
+     * @param bool $getVersion
+     * @return EntryPublication|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
-    public function getPublicationByEntryId(string|ObjectId $entryId): array|EntryPublication|null
+    public function getPublicationByEntryId(string|ObjectId $entryId, bool $getVersion = true): ?EntryPublication
     {
         $this->hasPermissions(true);
 
-        // TODO add an option to populate version or not
-        return $this->findOne(['entry_id' => (string)$entryId])->populate('entry_version_id', 'version', EntryVersion::class)->exec();
+        $qs = $this->findOne(['entry_id' => (string)$entryId]);
+
+        if ($getVersion) {
+            $qs->populate('entry_version_id', 'version', EntryVersion::class);
+        }
+        
+        return $qs->exec();
+    }
+
+    /**
+     *
+     * Get a publication by url
+     *
+     * @param string $url
+     * @return EntryPublication|null
+     * @throws DatabaseException
+     *
+     */
+    public function getPublicationByUrl(string $url): ?EntryPublication
+    {
+        $cacheKey = self::FIND_BY_URL_CACHE . $url;
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+
+        return $this->findOne(['entry_url' => $url])
+            ->populate('entry_version_id', 'version', EntryVersion::class)
+            ->exec($cacheKey, $cacheTtl);
     }
 
     /**
      *
      * @param User $user
      * @param string $entryId
+     * @param string $entryUrl
      * @param string $entryVersionId
      * @param int $publicationDate
      * @param int $expirationDate
@@ -103,7 +134,10 @@ class EntryPublication extends Model
      *
      * @param string $entryId
      * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function deleteAllByEntryId(string $entryId): bool

@@ -630,7 +630,7 @@ class EntryLayout extends Model implements Castable
     private function createWithoutPermission(LocaleField $titles, Collection $schema): EntryLayout
     {
         $dates = Dates::init();
-        $authors = Authors::init(User::$currentUser, false);
+        $authors = Authors::init(User::$currentUser);
 
         try {
             $entryLayoutId = $this->insert([

@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\TextField;
@@ -431,8 +432,8 @@ test('Fail to update an entry to trash', function () {
 })->group('entry');
 
 test('Find the entry by url', function () {
-    $entry = Entry::findByURL('pages-de-test/test', false);
-
+    $entry = Entry::findByURL('test/test', false);
+    Debug::ray('entry', $entry);
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')
         ->and($entry->content->length)->toBe(0); // We have the entry published before the content has been added
