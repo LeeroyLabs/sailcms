@@ -145,7 +145,7 @@ test('Create layout, entry type & entry', function () {
                                 {
                                     settings: [
                                         { name: "min", value: "-1", type: integer }
-                                            { name: "max", value: "11", type: integer }
+                                        { name: "max", value: "11", type: integer }
                                     ]
                                 }
                             ]
@@ -174,6 +174,18 @@ test('Create layout, entry type & entry', function () {
                             key: "wysiwyg"
                             handle: "SailCMS-Models-Entry-HTMLField"
                             inputSettings: []
+                        }
+                        {
+                            labels: { en: "Email", fr: "Courriel" }
+                            key: "email"
+                            handle: "SailCMS-Models-Entry-EmailField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                     ) {
@@ -231,6 +243,10 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "wysiwyg"
                             content: "<p><strong>Test</strong></p>"
+                        }
+                        {
+                            key: "email"
+                            content: "testleeroy@leeroy.ca"
                         }
                     ]
                 ) {

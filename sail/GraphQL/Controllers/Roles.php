@@ -114,7 +114,7 @@ class Roles
     {
         return (new Role())->update(
             $args->get('id'),
-            $args->get('name' . ''),
+            $args->get('name', ''),
             $args->get('level', -1),
             $args->get('description', ''),
             $args->get('permissions', [])

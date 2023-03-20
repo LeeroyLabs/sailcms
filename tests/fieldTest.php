@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\HTMLField;
 use SailCMS\Models\Entry\NumberField;
@@ -12,6 +13,7 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
+use SailCMS\Types\Fields\InputEmailField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
@@ -96,6 +98,12 @@ test('Add all fields to the layout', function ()
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
+    $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
+        [
+            'required' => true
+        ]
+    ]);
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -103,7 +111,8 @@ test('Add all fields to the layout', function ()
         "wysiwyg" => $htmlField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
-        "related" => $entryField
+        "related" => $entryField,
+        "email" => $emailField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -134,7 +143,8 @@ test('Failed to update the entry content', function ()
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'related' => [
                     'id' => (string)$relatedEntry->_id
-                ]
+                ],
+                'select' => 'test-failed'
             ]
         ], false);
         //print_r($errors);
@@ -143,6 +153,7 @@ test('Failed to update the entry content', function ()
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
+        expect($errors->get('email')[0][0])->toBe(InputEmailField::EMAIL_INVALID);
     } catch (Exception $exception) {
         //print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -171,7 +182,8 @@ and must keep it through all the process',
                 'related' => [
                     'id' => (string)$relatedEntry->_id,
                     'typeHandle' => 'field-test'
-                ]
+                ],
+                'email' => 'email-test@email.com'
             ]
         ], false);
         expect($errors->length)->toBe(0);

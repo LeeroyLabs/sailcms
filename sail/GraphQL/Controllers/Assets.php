@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use ImagickException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Assets\Transformer;
@@ -13,6 +14,7 @@ use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Asset;
+use SailCMS\Models\User;
 use SailCMS\Types\Listing;
 
 class Assets
@@ -162,5 +164,30 @@ class Assets
             $size->get('height', null),
             $size->get('crop', Transformer::CROP_CC)
         );
+    }
+
+    /**
+     *
+     * Resolve custom fields
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return mixed
+     * @throws DatabaseException
+     *
+     */
+    public function assetResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === 'uploader') {
+            if ($obj->{$info->fieldName}) {
+                return User::get($obj->uploader_id);
+            }
+
+            return null;
+        }
+
+        return $obj->{$info->fieldName};
     }
 }

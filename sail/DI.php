@@ -32,7 +32,7 @@ class DI
             foreach ($params as $param) {
                 $typeObj = $param->getType();
 
-                if ($typeObj) {
+                if ($typeObj && method_exists($typeObj, 'getName')) {
                     $t = $typeObj->getName();
                     $base = ['array', 'string', 'bool', 'int', 'float', 'resource'];
 
@@ -42,10 +42,9 @@ class DI
                         $arguments[] = match ($t) {
                             'array' => [],
                             'string' => '',
-                            'int' => 0,
-                            'float' => 0,
+                            'int', 'float' => 0,
                             'bool' => false,
-                            'resource' => null
+                            default => null
                         };
                     }
                 } else {
