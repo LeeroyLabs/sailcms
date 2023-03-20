@@ -2,26 +2,73 @@
 
 namespace SailCMS\Types;
 
+use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
-
-// TODO: Implement
+use SailCMS\Errors\NavigationException;
 
 class NavigationStructure implements Castable
 {
     /**
-     * @return mixed
+     * @var NavigationElement[] $structure
      */
-    public function castFrom(): mixed
+    public readonly array $structure;
+
+    /**
+     *
+     * Build the structure
+     *
+     * @param  array|Collection  $structure
+     * @throws NavigationException
+     *
+     */
+    public function __construct(array|Collection $structure = [])
     {
-        return [];
+        if (!is_array($structure)) {
+            $this->structure = $structure->unwrap();
+        } else {
+            $this->structure = $structure;
+        }
+
+        // Very every element in array to make sure we have NavigationElements
+        foreach ($this->structure as $element) {
+            if (!is_object($element) || get_class($element) !== NavigationElement::class) {
+                throw new NavigationException(
+                    "Cannot add anything else than 'NavigationElement' objects in a navigation",
+                    0400
+                );
+            }
+        }
     }
 
     /**
-     * @param  mixed  $value
-     * @return mixed
+     *
+     * Cast to simpler type
+     *
+     * @return array
+     *
      */
-    public function castTo(mixed $value): mixed
+    public function castFrom(): array
     {
-        return [];
+        $out = [];
+
+        foreach ($this->structure as $element) {
+            $out[] = $element->simplify();
+        }
+
+        return $out;
+    }
+
+    /**
+     *
+     * Create instance of NavigationStructure
+     *
+     * @param  mixed  $value
+     * @return $this
+     * @throws NavigationException
+     *
+     */
+    public function castTo(mixed $value): self
+    {
+        return new self($value);
     }
 }
