@@ -199,7 +199,7 @@ class EntryLayout extends Model implements Castable
      */
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
+        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
             /**
              * @var ModelField $field
              */

@@ -1032,7 +1032,6 @@ class Entry extends Model implements Validator
     /**
      *
      * Create an entry version then an entry publication
-     * todo add homepage system to publication + site id
      *
      * @param string $entryId
      * @param int $publicationDate
@@ -1042,7 +1041,10 @@ class Entry extends Model implements Validator
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function publish(string $entryId, int $publicationDate, int $expirationDate, string $siteId = null): string
@@ -1070,7 +1072,6 @@ class Entry extends Model implements Validator
 
         // Must override entryUrl if it's the homepage
         $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
-        setting('entry.cacheTtl', Cache::TTL_WEEK);
         if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) {
             $entryUrl = ""; // TODO Add locale if not default
         }
