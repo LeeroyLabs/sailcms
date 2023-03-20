@@ -10,7 +10,6 @@ class InputSettings implements Castable
     public const INPUT_TYPE_CHECKBOX = 'checkbox';
     public const INPUT_TYPE_NUMBER = 'number';
     public const INPUT_TYPE_REGEX = 'regex';
-    public const INPUT_TYPE_OPTIONS = 'options';
 
     /**
      *
@@ -18,13 +17,13 @@ class InputSettings implements Castable
      *
      * @param string $name
      * @param string $type
-     * @param Collection|null $options
+     * @param Collection|null $choices
      *
      */
     public function __construct(
         public readonly string      $name = '',
         public readonly string      $type = '',
-        public readonly ?Collection $options = new Collection([])
+        public readonly ?Collection $choices = new Collection([])
     )
     {
     }
@@ -41,7 +40,7 @@ class InputSettings implements Castable
         return [
             'name' => $this->name,
             'type' => $this->type,
-            'options' => $this->options
+            'choices' => $this->choices
         ];
     }
 
@@ -55,6 +54,6 @@ class InputSettings implements Castable
      */
     public function castTo(mixed $value): self
     {
-        return new self($value->name, $value->type, $value->options);
+        return new self($value->name, $value->type, $value->choices);
     }
 }

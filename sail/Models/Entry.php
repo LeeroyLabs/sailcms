@@ -1169,6 +1169,7 @@ class Entry extends Model implements Validator
     private function validateContent(Collection $content): Collection
     {
         $errors = Collection::init();
+
         $schema = null;
         if ($this->entryType->entry_layout_id) {
             $schema = $this->getSchema();

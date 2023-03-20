@@ -45,10 +45,10 @@ abstract class Field implements Castable
      *
      * Must define the available properties
      *
-     * @param array|null $options
      * @return Collection
+     *
      */
-    abstract public static function availableProperties(?array $options = null): Collection;
+    abstract public static function availableProperties(): Collection;
 
     /**
      *
@@ -82,7 +82,6 @@ abstract class Field implements Castable
         return match ($type) {
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false, "1", "0", 1, 0, "true", "false"], true),
             InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
-            InputSettings::INPUT_TYPE_OPTIONS => get_class($value) === Collection::class,
             InputSettings::INPUT_TYPE_REGEX => is_string($value),
             default => false
         };
@@ -92,18 +91,16 @@ abstract class Field implements Castable
      *
      * Validate settings before the schema creation in an entry layout
      *
-     * @param Collection|null $settings
+     * @param Collection|array|null $settings
      * @param Collection $defaultSettings
      * @return Collection
      *
      */
-    public static function validateSettings(Collection|null $settings, Collection $defaultSettings): Collection
+    public static function validateSettings(Collection|array|null $settings, Collection $defaultSettings): Collection
     {
         $validSettings = Collection::init();
 
-        $options = $settings?->get('options', []);
-
-        static::availableProperties((array)$options)->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
+        static::availableProperties()->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
@@ -132,12 +129,11 @@ abstract class Field implements Castable
     public function getSettingType(string $name, mixed $value): string
     {
         $type = StoringType::STRING->value;
-        static::availableProperties($this->options ?? null)->filter(function ($setting) use (&$type, $name, $value) {
+        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value) {
             if ($setting->name === $name) {
                 $type = match ($setting->type) {
-                    InputSettings::INPUT_TYPE_NUMBER => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
-                    InputSettings::INPUT_TYPE_CHECKBOX => StoringType::BOOLEAN->value,
-                    InputSettings::INPUT_TYPE_OPTIONS => StoringType::ARRAY->value,
+                    "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
+                    "checkbox" => StoringType::BOOLEAN->value,
                     default => StoringType::STRING->value
                 };
             }
