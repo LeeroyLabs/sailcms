@@ -400,7 +400,7 @@ test('Get homepage entry after update', function () {
 })->group('entry');
 
 test('Find the entry by url', function () {
-    $entry = Entry::findByURL('test/test', false);
+    $entry = Entry::findByURL('', false);
     Debug::ray('entry', $entry);
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')

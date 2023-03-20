@@ -518,6 +518,7 @@ class Entry extends Model implements Validator
      * Find a content by the url
      *
      * @param string $url
+     * @param string|null $siteId
      * @param bool $fromRequest
      * @param bool $preview
      * @param string $previewVersion
@@ -526,8 +527,9 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
-    public static function findByURL(string $url, bool $fromRequest = true, bool $preview = false, string $previewVersion = ""): Entry|array|null
+    public static function findByURL(string $url, ?string $siteId = null, bool $fromRequest = true, bool $preview = false, string $previewVersion = ""): Entry|array|null
     {
         $url = ltrim($url, "/");
         $request = $fromRequest ? new Request() : null;
@@ -541,7 +543,7 @@ class Entry extends Model implements Validator
             return self::findByUrlFromEntryTypes($url, $previewVersion);
         } else {
             Debug::ray('FindByUrl public', $url);
-            return self::findByPublishedUrl($url);
+            return self::findByPublishedUrl($url, $siteId);
         }
     }
 
@@ -1035,6 +1037,7 @@ class Entry extends Model implements Validator
      * @param string $entryId
      * @param int $publicationDate
      * @param int $expirationDate
+     * @param string|null $siteId
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -1042,9 +1045,13 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function publish(string $entryId, int $publicationDate, int $expirationDate): string
+    public function publish(string $entryId, int $publicationDate, int $expirationDate, string $siteId = null): string
     {
         $author = User::$currentUser;
+
+        if (!$siteId) {
+            $siteId = Sail::siteId();
+        }
 
         $entryVersionModel = new EntryVersion();
         $lastVersion = $entryVersionModel->getLastVersionByEntryId($entryId);
@@ -1061,7 +1068,14 @@ class Entry extends Model implements Validator
         $entryVersionID = !isset($entryVersionID) ? $lastVersion->_id : $entryVersionID;
         $entryUrl = !isset($entryUrl) ? $lastVersion->entry->get('url') : $entryUrl;
 
-        return (new EntryPublication())->create($author, $entryId, $entryUrl, (string)$entryVersionID, $publicationDate, $expirationDate);
+        // Must override entryUrl if it's the homepage
+        $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
+        setting('entry.cacheTtl', Cache::TTL_WEEK);
+        if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) {
+            $entryUrl = ""; // TODO Add locale if not default
+        }
+
+        return (new EntryPublication())->create($author, $entryId, $siteId, $entryUrl, (string)$entryVersionID, $publicationDate, $expirationDate);
     }
 
     /**
@@ -1070,7 +1084,10 @@ class Entry extends Model implements Validator
      *
      * @param string $entryId
      * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function unpublish(string $entryId): bool
@@ -1577,10 +1594,15 @@ class Entry extends Model implements Validator
      * @throws PermissionException
      *
      */
-    private static function findByPublishedUrl(string $url): ?Entry
+    private static function findByPublishedUrl(string $url, string $siteId = null): ?Entry
     {
         $content = null;
-        $publication = (new EntryPublication())->getPublicationByUrl($url);
+
+        if (!$siteId) {
+            $siteId = Sail::siteId();
+        }
+
+        $publication = (new EntryPublication())->getPublicationByUrl($url, $siteId);
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
             $entryTypeId = $publication->version->entry->get('entry_type_id');

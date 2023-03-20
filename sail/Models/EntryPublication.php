@@ -10,12 +10,14 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Sail;
 use SailCMS\Types\PublicationDates;
 
 /**
  *
  * @property string $entry_id
  * @property string $entry_version_id
+ * @property string $site_id
  * @property PublicationDates $dates
  * @property string $entry_url
  * @property string $user_id
@@ -45,6 +47,7 @@ class EntryPublication extends Model
      *
      * @param string|ObjectId $entryId
      * @param bool $getVersion
+     * @param bool $api
      * @return EntryPublication|null
      * @throws ACLException
      * @throws DatabaseException
@@ -75,12 +78,16 @@ class EntryPublication extends Model
      * @throws DatabaseException
      *
      */
-    public function getPublicationByUrl(string $url): ?EntryPublication
+    public function getPublicationByUrl(string $url, string $siteId = null): ?EntryPublication
     {
-        $cacheKey = self::FIND_BY_URL_CACHE . $url;
+        if (!$siteId) {
+            $siteId = Sail::siteId();
+        }
+
+        $cacheKey = self::FIND_BY_URL_CACHE . $url . "_" . $siteId;
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
 
-        return $this->findOne(['entry_url' => $url])
+        return $this->findOne(['entry_url' => $url, 'site_id' => $siteId])
             ->populate('entry_version_id', 'version', EntryVersion::class)
             ->exec($cacheKey, $cacheTtl);
     }
@@ -89,6 +96,7 @@ class EntryPublication extends Model
      *
      * @param User $user
      * @param string $entryId
+     * @param string $siteId
      * @param string $entryUrl
      * @param string $entryVersionId
      * @param int $publicationDate
@@ -98,9 +106,8 @@ class EntryPublication extends Model
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public function create(User $user, string $entryId, string $entryUrl, string $entryVersionId, int $publicationDate = 0, int $expirationDate = 0): string
+    public function create(User $user, string $entryId, string $siteId, string $entryUrl, string $entryVersionId, int $publicationDate = 0, int $expirationDate = 0): string
     {
         $this->hasPermissions();
 
@@ -120,7 +127,8 @@ class EntryPublication extends Model
                 'user_email' => $user->email,
                 'entry_version_id' => $entryVersionId,
                 'entry_id' => $entryId,
-                'entry_url' => $entryUrl
+                'entry_url' => $entryUrl,
+                'site_id' => $siteId
             ]);
         } catch (DatabaseException $exception) {
             $errorMsg = sprintf(self::DATABASE_ERROR[0], 'creating') . PHP_EOL . $exception->getMessage();

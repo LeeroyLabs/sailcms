@@ -432,10 +432,11 @@ class Entries
     public function publishEntry(mixed $obj, Collection $args, Context $context): string
     {
         $entryId = $args->get('id');
-        $publicationDate = $args->get('publicationDate', 0);
-        $expirationDate = $args->get('expirationDate', 0);
+        $publicationDate = $args->get('publication_date', 0);
+        $expirationDate = $args->get('expiration_date', 0);
+        $siteId = $args->get('site_id');
 
-        return (new Entry())->publish($entryId, $publicationDate, $expirationDate);
+        return (new Entry())->publish($entryId, $publicationDate, $expirationDate, $siteId);
     }
 
     /**
