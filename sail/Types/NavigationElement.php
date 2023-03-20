@@ -10,6 +10,9 @@ class NavigationElement
         public readonly bool $external = false,
         private array $children = []
     ) {
+        foreach ($this->children as $num => $child) {
+            $this->children[$num] = new self(...$child);
+        }
     }
 
     /**

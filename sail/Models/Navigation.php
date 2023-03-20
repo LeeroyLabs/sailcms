@@ -6,6 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\NavigationException;
+use SailCMS\Types\NavigationElement;
 use SailCMS\Types\NavigationStructure;
 
 /**
@@ -39,6 +40,8 @@ class Navigation extends Model
         if (!is_object($structure) || get_class($structure) !== NavigationStructure::class) {
             $structure = new NavigationStructure($structure);
         }
+
+        \SailCMS\Debug::ray($structure);
 
         $id = $this->insert([
             'name' => $name,
