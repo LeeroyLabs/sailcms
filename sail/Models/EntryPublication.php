@@ -51,16 +51,18 @@ class EntryPublication extends Model
      * @throws PermissionException
      *
      */
-    public function getPublicationByEntryId(string|ObjectId $entryId, bool $getVersion = true): ?EntryPublication
+    public function getPublicationByEntryId(string|ObjectId $entryId, bool $getVersion = true, bool $api = true): ?EntryPublication
     {
-        $this->hasPermissions(true);
+        if ($api) {
+            $this->hasPermissions(true);
+        }
 
         $qs = $this->findOne(['entry_id' => (string)$entryId]);
 
         if ($getVersion) {
             $qs->populate('entry_version_id', 'version', EntryVersion::class);
         }
-        
+
         return $qs->exec();
     }
 

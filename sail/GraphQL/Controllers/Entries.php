@@ -15,6 +15,7 @@ use SailCMS\Field;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
@@ -416,6 +417,47 @@ class Entries
 
     /**
      *
+     * Publish an entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return string
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function publishEntry(mixed $obj, Collection $args, Context $context): string
+    {
+        $entryId = $args->get('id');
+        $publicationDate = $args->get('publicationDate', 0);
+        $expirationDate = $args->get('expirationDate', 0);
+
+        return (new Entry())->publish($entryId, $publicationDate, $expirationDate);
+    }
+
+    /**
+     *
+     * Unpublish an entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    public function unpublishEntry(mixed $obj, Collection $args, Context $context): bool
+    {
+        $entryId = $args->get('id');
+
+        return (new Entry())->unpublish($entryId);
+    }
+
+    /**
+     *
      * Delete an entry
      *
      * @param mixed $obj
@@ -488,9 +530,37 @@ class Entries
             return $entry->getSimplifiedSEO();
         }
 
-        // TODO add publication
+        if ($info->fieldName === "publication") {
+            return (new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+        }
 
         return $obj[$info->fieldName];
+    }
+
+    /**
+     *
+     * Resolver the version for Entry Publication
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryPublicationResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        /**
+         * @var EntryPublication $obj
+         */
+        if ($info->fieldName === "version") {
+            return (new EntryVersion())->getById($obj->entry_version_id);
+        }
+
+        return $obj->{$info->fieldName};
     }
 
 

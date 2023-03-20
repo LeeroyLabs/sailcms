@@ -242,7 +242,6 @@ class Entry extends Model implements Validator
     {
         $seo = Collection::init();
 
-        // TODO ask marc does it work as cache runtime
         if (!isset($this->entrySeo) || $refresh) {
             $this->entrySeo = (new EntrySeo())->getOrCreateByEntryId($this->_id, $this->title);
         }
@@ -1584,7 +1583,7 @@ class Entry extends Model implements Validator
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
             $entryTypeId = $publication->version->entry->get('entry_type_id');
-            $entryModel = (new EntryType())->getById($entryTypeId)->getEntryModel();
+            $entryModel = (new EntryType())->getById($entryTypeId, false)->getEntryModel();
             $entry = $entryModel->one(['_id' => $publication->entry_id]);
             $content = (new EntryVersion())->fakeVersion($entry, $publication->entry_version_id);
         }

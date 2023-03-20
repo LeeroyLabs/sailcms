@@ -68,7 +68,7 @@ class PublicationDates implements Castable
 
         if ($now < $dates->published) {
             return PublicationStatus::DRAFT->value;
-        } else if ($now < $dates->expired) {
+        } else if ($dates->expired > 0 && $now < $dates->expired || $dates->expired === 0) {
             return PublicationStatus::PUBLISHED->value;
         } else {
             return PublicationStatus::EXPIRED->value;

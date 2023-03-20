@@ -83,6 +83,8 @@ type Mutation {
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
+    publishEntry(id: ID!, publicationDate: Int, expirationDate: Int): ID
+    unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
@@ -228,6 +230,7 @@ type Entry {
     locale: String!
     alternates: [Alternate]!
     is_homepage: Boolean!
+    publication: EntryPublication
     trashed: Boolean!
     title: String!
     template: String!
@@ -280,6 +283,17 @@ type EntryVersion {
     user_email: String!
     entry_id: ID!
     entry: Entry!
+}
+
+type EntryPublication {
+    _id: ID!
+    entry_id: ID!
+    version: EntryVersion!
+    dates: PublicationDates!
+    entry_url: String!
+    user_id: ID!
+    user_full_name: String!
+    user_email: String!
 }
 
 type SocialMeta {
@@ -386,9 +400,14 @@ type Authors {
 }
 
 type Dates {
-    created: Float
-    updated: Float
-    deleted: Float
+    created: Int
+    updated: Int
+    deleted: Int
+}
+
+type PublicationDates {
+    published: Int!
+    expired: Int
 }
 
 type Parent {
