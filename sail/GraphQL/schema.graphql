@@ -79,8 +79,8 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
@@ -227,8 +227,8 @@ type Entry {
     site_id: String!
     locale: String!
     alternates: [Alternate]!
-    is_homepage: Boolean
-    status: EntryStatus
+    is_homepage: Boolean!
+    trashed: Boolean!
     title: String!
     template: String!
     slug: String
@@ -374,12 +374,6 @@ enum InputType {
     array
 }
 
-enum EntryStatus {
-    live
-    inactive
-    trash
-}
-
 type Alternate {
     locale: String!
     entry_id: ID!
@@ -436,7 +430,7 @@ type FieldInputInfo {
     fullname: String!
     type: String!
     inputKey: String
-    availableSettings: [Settings!]!
+    availableSettings: [Setting!]!
 }
 
 type LocaleField {

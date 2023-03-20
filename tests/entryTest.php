@@ -13,7 +13,6 @@ use SailCMS\Models\EntryVersion;
 use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\SocialMeta;
 use SailCMS\Types\Username;
@@ -175,10 +174,9 @@ test('Create an entry with the default type', function () {
     $model = new Entry();
 
     try {
-        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home');
+        $entry = $model->create(true, 'fr', 'Home', 'home');
 
         expect($entry->title)->toBe('Home')
-            ->and($entry->status)->toBe(EntryStatus::LIVE->value)
             ->and($entry->locale)->toBe('fr')
             ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
@@ -237,9 +235,8 @@ test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test', 'test');
+        $entry = $entryModel->create(true, 'fr', 'Test', 'test', 'test');
         expect($entry->title)->toBe('Test');
-        expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('test/test');
     } catch (Exception $exception) {
@@ -332,30 +329,17 @@ test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test', 'test-de-test', [
+        $entry = $entryModel->create(false, 'fr', 'Test 2', 'test', 'test-de-test', [
             'content' => [
                 'sub title' => "Textfield content"
             ]
         ]);
         expect($entry->title)->toBe('Test 2')
-            ->and($entry->status)->toBe(EntryStatus::INACTIVE->value)
             ->and($entry->locale)->toBe('fr')
             ->and($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
-    }
-})->group('entry');
-
-test('Fail to create an entry that is trashed', function () {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-
-    try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 3', 'test', 'test-de-test', []);
-        expect(true)->toBe(false);
-    } catch (Exception $exception) {
-        expect(true)->toBe(true);
-        expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
 })->group('entry');
 
@@ -382,7 +366,7 @@ test('Failed to update content because a field does not validated', function () 
         expect(true)->toBe(false);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
+        expect($exception->getMessage())->toBe("5005: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
     }
 })->group('entry');
 
@@ -413,22 +397,6 @@ test('Update an entry with the default type', function () {
 test('Get homepage entry after update', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
     expect($entry->title)->toBe('Home page');
-})->group('entry');
-
-test('Fail to update an entry to trash', function () {
-    $model = new Entry();
-    $entry = $model->one([
-        'title' => 'Home page'
-    ]);
-
-    try {
-        $result = $entry->updateById($entry, [
-            'status' => EntryStatus::TRASH,
-        ]);
-        expect(true)->toBe(false);
-    } catch (Exception $exception) {
-        expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
-    }
 })->group('entry');
 
 test('Find the entry by url', function () {
@@ -528,7 +496,7 @@ test('Soft Delete an entry with the default type', function () {
             'title' => 'Home page'
         ]);
         expect($result)->toBe(true)
-            ->and($entry->status)->toBe(EntryStatus::TRASH->value);
+            ->and($entry->trashed)->toBeTrue();
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }

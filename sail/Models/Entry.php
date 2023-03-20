@@ -29,7 +29,6 @@ use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryParent;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -49,7 +48,7 @@ use stdClass;
  * @property ?string $site_id
  * @property string $locale
  * @property Collection $alternates
- * @property string $status
+ * @property bool $trashed = false
  * @property string $title
  * @property string $template
  * @property ?string $slug
@@ -83,13 +82,12 @@ class Entry extends Model implements Validator
 
     /* Errors */
     public const TITLE_MISSING = '5001: You must set the entry title in your data.';
-    public const STATUS_CANNOT_BE_TRASH = '5002: You cannot delete a entry this way, use the delete method instead.';
-    public const CANNOT_VALIDATE_CONTENT = '5003: You cannot validate content without setting an entry layout to the type.';
-    public const TEMPLATE_NOT_SET = '5004: Template property of the entry is not set.';
-    public const CONTENT_KEY_ERROR = '5005: The key "%s" does not exist in the schema of the entry layout.';
-    public const CONTENT_ERROR = '5006: The content has theses errors :' . PHP_EOL;
-    public const DOES_NOT_EXISTS = '5007: Entry "%s" does not exist.';
-    public const DATABASE_ERROR = '5008: Exception when "%s" an entry.';
+    public const CANNOT_VALIDATE_CONTENT = '5002: You cannot validate content without setting an entry layout to the type.';
+    public const TEMPLATE_NOT_SET = '5003: Template property of the entry is not set.';
+    public const CONTENT_KEY_ERROR = '5004: The key "%s" does not exist in the schema of the entry layout.';
+    public const CONTENT_ERROR = '5005: The content has theses errors :' . PHP_EOL;
+    public const DOES_NOT_EXISTS = '5006: Entry "%s" does not exist.';
+    public const DATABASE_ERROR = '5007: Exception when "%s" an entry.';
 
     /* Cache */
     private const HOMEPAGE_CACHE = 'homepage_entry_';         // Add site id and locale at the end
@@ -308,7 +306,7 @@ class Entry extends Model implements Validator
             'site_id' => $this->site_id,
             'locale' => $this->locale,
             'alternates' => $this->alternates,
-            'status' => $this->status,
+            'trashed' => $this->trashed ?? false,
             'title' => $this->title,
             'template' => $this->template ?? "", // Temporary because it's a new field
             'slug' => $this->slug,
@@ -390,7 +388,7 @@ class Entry extends Model implements Validator
         // Ignore trash entries
         $filters = [];
         if ($ignoreTrash) {
-            $filters['status'] = ['$ne' => EntryStatus::TRASH->value];
+            $filters['trashed'] = ['$in' => [false, null]];
         }
 
         // Option for pagination
@@ -823,9 +821,9 @@ class Entry extends Model implements Validator
     public function all(bool $ignoreTrash = true, ?array $filters = []): Collection
     {
         // Fast selection of only valid entry (not thrashed)
-        if (!$ignoreTrash && !in_array('status', $filters)) {
+        if (!$ignoreTrash && !in_array('trashed', $filters)) {
             // Want everything but trash
-            $filters['status'] = ['$ne' => EntryStatus::TRASH->value];
+            $filters['trashed'] = false;
         }
 
         // According to the filters, create the cache key
@@ -848,21 +846,15 @@ class Entry extends Model implements Validator
      * Count entries for the current entry type
      *  (according to the __construct method)
      *
-     * @param EntryStatus|string|null $status
+     * @param bool $ignoreTrash
      * @return int
-     *
      */
-    public function countEntries(EntryStatus|string|null $status = null): int
+    public function countEntries(bool $ignoreTrash = false): int
     {
         $filters = [];
-        if ($status) {
-            if ($status instanceof EntryStatus) {
-                $status = $status->value;
-            }
-
-            $filters = ['status' => $status];
+        if ($ignoreTrash) {
+            $filters['trashed'] = false;
         }
-
         return $this->count($filters);
     }
 
@@ -877,7 +869,6 @@ class Entry extends Model implements Validator
      *
      * @param bool $isHomepage
      * @param string $locale
-     * @param EntryStatus|string $status
      * @param string $title
      * @param string $template
      * @param string|null $slug
@@ -893,19 +884,14 @@ class Entry extends Model implements Validator
      * @throws SodiumException
      *
      */
-    public function create(bool $isHomepage, string $locale, EntryStatus|string $status, string $title, string $template, ?string $slug = null, array|Collection $extraData = [], bool $throwErrors = true): array|Entry|Collection|null
+    public function create(bool $isHomepage, string $locale, string $title, string $template, ?string $slug = null, array|Collection $extraData = [], bool $throwErrors = true): array|Entry|Collection|null
     {
         $this->hasPermissions();
-
-        if ($status instanceof EntryStatus) {
-            $status = $status->value;
-        }
 
         $data = new Collection([
             'locale' => $locale,
             'title' => $title,
             'template' => $template,
-            'status' => $status,
             'slug' => $slug
         ]);
 
@@ -1179,26 +1165,6 @@ class Entry extends Model implements Validator
 
     /**
      *
-     * Validate that status is not thrash
-     *  because the only to set it to trash is in the delete method
-     *
-     * @param EntryStatus|string $status
-     * @return void
-     * @throws EntryException
-     *
-     */
-    private static function validateStatus(EntryStatus|string $status): void
-    {
-        if ($status instanceof EntryStatus) {
-            $status = $status->value;
-        }
-        if ($status === EntryStatus::TRASH->value) {
-            throw new EntryException(self::STATUS_CANNOT_BE_TRASH);
-        }
-    }
-
-    /**
-     *
      * Validate content from the entry type layout schema
      *
      * @param Collection $content
@@ -1356,7 +1322,6 @@ class Entry extends Model implements Validator
     private function createWithoutPermission(Collection $data, bool $throwErrors = true): array|Entry|Collection|null
     {
         $locale = $data->get('locale');
-        $status = $data->get('status', EntryStatus::INACTIVE->value);
         $title = $data->get('title');
         $template = $data->get('template');
         $slug = $data->get('slug', Text::slugify($title, $locale));
@@ -1368,7 +1333,6 @@ class Entry extends Model implements Validator
         $categories = $data->get('categories');
 
         // VALIDATION & PARSING
-        self::validateStatus($status);
         if ($content instanceof Collection && $content->length > 0) {
             // Check if there is errors
             $errors = $this->validateContent($content);
@@ -1396,7 +1360,6 @@ class Entry extends Model implements Validator
             'site_id' => $site_id,
             'locale' => $locale,
             'alternates' => $alternates,
-            'status' => $status,
             'title' => $title,
             'template' => $template,
             'slug' => $slug,
@@ -1469,9 +1432,6 @@ class Entry extends Model implements Validator
             $slug = $data->get('slug');
             $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
-        if (in_array('status', $data->keys()->unwrap())) {
-            self::validateStatus($data->get('status'));
-        }
 
         // We bypass content validation when we apply a version
         if (!$bypassContentValidation && in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
@@ -1487,7 +1447,7 @@ class Entry extends Model implements Validator
         }
 
         $data->each(function ($key, $value) use (&$update) {
-            if (in_array($key, ['parent', 'site_id', 'locale', 'status', 'title', 'template', 'categories', 'content', 'alternates'])) {
+            if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
         });
@@ -1551,7 +1511,7 @@ class Entry extends Model implements Validator
                 '$set' => [
                     'authors' => $authors,
                     'dates' => $dates,
-                    'status' => EntryStatus::TRASH->value
+                    'trashed' => true
                 ]
             ]);
         } catch (DatabaseException $exception) {
@@ -1758,7 +1718,11 @@ class Entry extends Model implements Validator
     {
         $result = "";
         if (!is_array($iterableOrValue) && !$iterableOrValue instanceof Collection) {
-            $result = "=" . str_replace(' ', '-', $iterableOrValue);
+            if ($iterableOrValue) {
+                $result = "=" . str_replace(' ', '-', $iterableOrValue);
+            } else {
+                $result = "=null";
+            }
         } else {
             foreach ($iterableOrValue as $key => $valueOrIterable) {
                 $prefix = "+" . $key;

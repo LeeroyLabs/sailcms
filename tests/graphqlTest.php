@@ -47,6 +47,7 @@ test('Get a page and modify his SEO', function () {
             }
         ', [], $_ENV['test-token']);
 
+        print_r($entryResponse);
         $id = $entryResponse->data->entries->list[0]->_id;
 
         $response = $this->client->run('
@@ -134,7 +135,7 @@ test('Get a entry', function () {
                         entry_id
                     }
                     is_homepage
-                    status
+                    trashed
                     title
                     template
                     slug

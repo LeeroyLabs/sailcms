@@ -10,7 +10,6 @@ use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputTextField;
@@ -30,8 +29,8 @@ beforeAll(function () {
 
     $entryType = (new EntryType)->create('field-test', 'Field Test', new LocaleField(['en' => 'field-test', 'fr' => 'test-de-champs']), $entryLayout->_id);
 
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Home Field Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
 });
 
 afterAll(function () {

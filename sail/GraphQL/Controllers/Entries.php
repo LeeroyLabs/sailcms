@@ -296,7 +296,6 @@ class Entries
         $parent = $args->get('parent');
         $locale = $args->get('locale');
         $alternates = $args->get('alternates');
-        $status = $args->get('status');
         $title = $args->get('title');
         $template = $args->get('template');
         $slug = $args->get('slug');
@@ -306,7 +305,7 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $template, $slug, [
+        $entryOrErrors = $entryModel->create($isHomepage, $locale, $title, $template, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
@@ -488,6 +487,8 @@ class Entries
         if ($info->fieldName === "seo") {
             return $entry->getSimplifiedSEO();
         }
+
+        // TODO add publication
 
         return $obj[$info->fieldName];
     }
