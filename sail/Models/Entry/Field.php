@@ -54,6 +54,10 @@ abstract class Field
         // Parse configs according to his type
         $this->configs = Collection::init();
         $settings = !$settings ? $this->defaultSettings() : $settings;
+        if (isset($settings[0]['options']) && get_class($settings[0]['options']) !== Collection::class) {
+            $settings[0]['options'] = new Collection((array)$settings[0]['options']);
+        }
+
         if (is_array($settings)) {
             $settings = new Collection($settings);
         }
@@ -102,7 +106,7 @@ abstract class Field
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
             $currentContent = $content;
-            if ($content instanceof Collection) {
+            if ($content instanceof Collection && !property_exists($fieldTypeClass, 'options')) {
                 $currentContent = $content->get($index);
             }
             $error = $fieldTypeClass->validate($currentContent);
