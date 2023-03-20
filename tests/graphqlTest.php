@@ -170,12 +170,6 @@ test('Create layout, entry type & entry', function () {
                             inputSettings: []
                         }
                         {
-                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
-                            key: "wysiwyg"
-                            handle: "SailCMS-Models-Entry-HTMLField"
-                            inputSettings: []
-                        }
-                        {
                             labels: { en: "Email", fr: "Courriel" }
                             key: "email"
                             handle: "SailCMS-Models-Entry-EmailField"
@@ -206,7 +200,7 @@ test('Create layout, entry type & entry', function () {
                     entry_layout_id: "'. $newEntryLayout->data->createEntryLayout->_id .'"
                 ) {
                     _id
-                    title
+                    title 
                     handle
                     url_prefix {
                         fr
@@ -239,10 +233,6 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "desc"
                             content: "This text contains line returns and must keep it through all the process"
-                        }
-                        {
-                            key: "wysiwyg"
-                            content: "<p><strong>Test</strong></p>"
                         }
                         {
                             key: "email"
