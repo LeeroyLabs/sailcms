@@ -13,7 +13,7 @@ use stdClass;
 // TODO custom field registering
 abstract class Field
 {
-    const SEARCHABLE = true;
+    const SEARCHABLE = false;
 
     /* Properties */
     public LocaleField $labels;
@@ -215,6 +215,7 @@ abstract class Field
             $fakeInstance->handle,
             $fakeInstance->description(),
             $fakeInstance->storingType(),
+            static::SEARCHABLE,
             $availableSettings->unwrap()
         );
     }

@@ -290,6 +290,7 @@ type EntryPublication {
     entry_id: ID!
     version: EntryVersion!
     dates: PublicationDates!
+    site_id: String!
     entry_url: String!
     user_id: ID!
     user_full_name: String!
@@ -441,6 +442,7 @@ type FieldInfo {
     handle: String!
     description: String!
     storingType: String!
+    searchable: Boolean!
     inputs: [FieldInputInfo]!
 }
 

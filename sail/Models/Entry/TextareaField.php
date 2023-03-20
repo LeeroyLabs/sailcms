@@ -7,6 +7,8 @@ use SailCMS\Types\Fields\InputTextField;
 
 class TextareaField extends TextField
 {
+    public const SEARCHABLE = true;
+
     /**
      *
      * Description for field info

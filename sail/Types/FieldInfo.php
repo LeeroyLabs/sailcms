@@ -10,6 +10,7 @@ class FieldInfo
         public readonly string $handle,
         public readonly string $description,
         public readonly string $storingType,
+        public readonly bool   $searchable,
         public readonly array  $inputs
     )
     {
