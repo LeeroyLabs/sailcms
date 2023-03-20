@@ -438,7 +438,7 @@ type FieldInputInfo {
     fullname: String!
     type: String!
     inputKey: String
-    availableSettings: [Settings!]!
+    availableSettings: [Setting!]!
 }
 
 type LocaleField {
