@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
@@ -9,7 +10,6 @@ use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputTextField;
@@ -29,8 +29,8 @@ beforeAll(function () {
 
     $entryType = (new EntryType)->create('field-test', 'Field Test', new LocaleField(['en' => 'field-test', 'fr' => 'test-de-champs']), $entryLayout->_id);
 
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Home Field Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
 });
 
 afterAll(function () {
@@ -146,6 +146,7 @@ test('Update content with success', function () {
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
+    $entryId = $entry->_id;
     $relatedEntry = $entryModel->one([
         'title' => 'Related Page Test'
     ]);
@@ -165,14 +166,17 @@ and must keep it through all the process',
             ]
         ], false);
         expect($errors->length)->toBe(0);
-        $entry = $entryModel->one([
-            'title' => 'Home Field Test'
+        Debug::ray('There is supposed to have no cache.');
+        $entryModel = EntryType::getEntryModelByHandle('field-test');
+        $entryUpdated = $entryModel->one([
+            '_id' => $entryId
         ], false);
+        Debug::ray('BEFORE THAT!!!', $entryUpdated->content);
 
-        expect($entry->content->get('float'))->toBe('0.03');
-        expect($entry->content->get('text'))->toBe('Not empty');
-        expect($entry->content->get('description'))->toContain(PHP_EOL);
-        expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
+        expect($entryUpdated->content->get('float'))->toBe('0.03');
+        expect($entryUpdated->content->get('text'))->toBe('Not empty');
+        expect($entryUpdated->content->get('description'))->toContain(PHP_EOL);
+        expect($entryUpdated->content->get('related.id'))->toBe((string)$relatedEntry->_id);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($errors);
