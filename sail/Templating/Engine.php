@@ -132,7 +132,7 @@ class Engine
      */
     public static function addFunction(string $name, callable $callback): void
     {
-        self::$filters[] = new TwigFunction($name, $callback);
+        self::$functions[] = new TwigFunction($name, $callback);
     }
 
     /**
