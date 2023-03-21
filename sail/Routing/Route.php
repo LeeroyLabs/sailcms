@@ -23,7 +23,7 @@ final class Route
     private bool $secure;
 
     private static array $patterns = [
-        ':any' => '([a-zA-Z0-9\-]+)',
+        ':any' => '([a-zA-Z0-9\-\_]+)',
         ':string' => '([a-zA-Z]+)',
         ':id' => '([a-z0-9]{24})',
         ':num' => '([0-9]+)',
