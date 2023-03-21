@@ -1,0 +1,35 @@
+<html>
+<head>
+    <title>Welcome to SailCMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Radio+Canada:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Radio Canada', sans-serif;
+        }
+
+        h1 {
+            text-shadow: -1px -1px 0 #1c3465,
+            1px -1px 0 #1c3465,
+            -1px 1px 0 #1c3465,
+            1px 1px 0 #1c3465;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col align-items-center h-screen bg-cover bg-bottom bg-gradient-to-br from-blue-700 to-sky-900 p-6" style="background-image: url(https://sailcms.s3.us-east-2.amazonaws.com/cms/bg_sail.webp)">
+<div class="fixed right-0 top-[-190px] text-[600px] text-white/20 pointer-events-none">403</div>
+<h1 class="p-8">
+    <img src="https://sailcms.s3.us-east-2.amazonaws.com/cms/logo.webp" class="w-[350px]"/>
+</h1>
+<div class="flex flex-grow items-center">
+    <div class="flex flex-col w-full">
+        <p class="text-center w-full font-extrabold text-white text-5xl mb-2">Oups!</p>
+        <p class="text-center w-full text-white text-xl">You do not have the privileges to access this resource..</p>
+    </div>
+</div>
+<div class="text-center text-blue-300">Made 💖 by Leeroy in {{ year }}.</div>
+</body>
+</html>

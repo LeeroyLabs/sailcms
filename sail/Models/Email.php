@@ -35,7 +35,7 @@ class Email extends Model
         'title' => LocaleField::class,
         'content' => LocaleField::class,
         'cta' => LocaleField::class,
-        'cta_link' => LocaleField::class
+        'cta_title' => LocaleField::class
     ];
 
     protected string $permissionGroup = 'emails';

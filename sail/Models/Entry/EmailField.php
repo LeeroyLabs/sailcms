@@ -3,10 +3,10 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputEmailField;
 use SailCMS\Types\StoringType;
 
-class TextField extends Field
+class EmailField extends Field
 {
     /**
      *
@@ -17,7 +17,7 @@ class TextField extends Field
      */
     public function description(): string
     {
-        return 'Field to implement a text html input.';
+        return 'Field to implement an email input.';
     }
 
     /**
@@ -34,7 +34,7 @@ class TextField extends Field
 
     /**
      *
-     * Sets the default settings from the input text field
+     * Sets the default settings from the input email field
      *
      * @return Collection
      *
@@ -42,28 +42,28 @@ class TextField extends Field
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputTextField::defaultSettings()
+            InputEmailField::defaultSettings()
         ]);
     }
 
     /**
      *
-     * The text field contain only an input text field
+     * The text field contain only an input email field
      *
      * @return void
      */
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            InputTextField::class
+            InputEmailField::class
         ]);
     }
 
     /**
      *
-     * There is nothing extra to validate for the text field
+     * There is nothing extra to validate for the email field
      *
-     * @param  mixed  $content
+     * @param mixed $content
      * @return Collection|null
      *
      */

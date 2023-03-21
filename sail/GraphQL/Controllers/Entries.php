@@ -2,9 +2,9 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
-use MongoDB\BSON\Regex;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -17,6 +17,7 @@ use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
+use SailCMS\Models\EntryVersion;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -217,16 +218,14 @@ class Entries
         $limit = $args->get('limit', 50);
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
-
-        // For filtering
-        $parsedFilters = $this->parseFilterInput($args->get('filters', Collection::init()));
+        $search = $args->get('search', '');
+        $ignoreTrash = $args->get('ignore_trash', true);
 
         // Get the result!
-        $result = Entry::getList($entryTypeHandle, $parsedFilters, $page, $limit, $sort, $direction); // By entry type instead
+        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $ignoreTrash); // By entry type instead
 
         // Get homepage to set is_homepage on each entry
-        $siteId = $parsedFilters['site_id'] ?? Sail::siteId();
-        $currentSiteHomepages = Entry::getHomepage($siteId);
+        $currentSiteHomepages = Entry::getHomepage(Sail::siteId());
 
         // Clean data before returning it.
         $data = Collection::init();
@@ -353,6 +352,7 @@ class Entries
         $id = $args->get('id');
         $entryTypeHandle = $args->get('entry_type_handle');
         $content = $args->get('content');
+        $bypassValidation = $args->get('bypass_validation', false);
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
@@ -363,7 +363,7 @@ class Entries
             $args->pushKeyValue('content', $newContent);
         }
 
-        $errors = $entryModel->updateById($id, $args, false);
+        $errors = $entryModel->updateById($id, $args, false, $bypassValidation);
 
         return Entry::processErrorsForGraphQL($errors);
     }
@@ -441,6 +441,120 @@ class Entries
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         return $entryModel->delete($id, $soft);
+    }
+
+    /**
+     *
+     * Resolver for entry model
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if (!isset($obj['current'])) {
+            if ($info->fieldName === "content") {
+                // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
+                $entry_type_id = $obj['entry_type_id'];
+                $entryType = (new EntryType())->getById($entry_type_id);
+                $entryModel = $entryType->getEntryModel($entryType);
+                $entryModel->content = new Collection((array)$obj['content']);
+                return $entryModel->getContent();
+            }
+            return $obj[$info->fieldName];
+        }
+
+        /**
+         * @var Entry $entry
+         */
+        $entry = $obj['current'];
+        // Entry fields to resolve
+        if ($info->fieldName === "content") {
+            return $entry->getContent();
+        }
+
+        if ($info->fieldName === "schema") {
+            return $entry->getSchema()->unwrap();
+        }
+
+        if ($info->fieldName === "seo") {
+            return $entry->getSimplifiedSEO();
+        }
+
+        return $obj[$info->fieldName];
+    }
+
+
+    /**
+     *
+     * Get entry version by id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return EntryVersion
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryVersion(mixed $obj, Collection $args, Context $context): EntryVersion
+    {
+        $id = $args->get('id');
+
+        return (new EntryVersion())->getById($id);
+    }
+
+    /**
+     *
+     * Get entry versions by entry_id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryVersions(mixed $obj, Collection $args, Context $context): array
+    {
+        $entryId = $args->get('entry_id');
+
+        return (new EntryVersion())->getVersionsByEntryId($entryId);
+    }
+
+    /**
+     *
+     * Apply entry version with entry version id
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function applyVersion(mixed $obj, Collection $args, Context $context): bool
+    {
+        $entry_version_id = $args->get('entry_version_id');
+
+        return (new EntryVersion())->applyVersion($entry_version_id);
     }
 
     /**
@@ -681,74 +795,5 @@ class Entries
         }
 
         return $simplifiedEntry;
-    }
-
-    /**
-     * TODO do we need that ? AKA use the search instead!
-     *
-     * Parse filter input
-     *
-     * @param Collection|null $filters
-     * @return array
-     * @throws EntryException
-     *
-     */
-    private function parseFilterInput(?Collection $filters): array
-    {
-        $parsedFilters = [];
-
-        $filters?->each(function ($i, $filter) use (&$parsedFilters) {
-            $logic = '$' . $filter->get('logic', 'and');
-
-            $value = $this->cleanFilterValue($filter);
-
-            $filterValue = [$filter->get('field') => match ($filter->get('operation')) {
-                "like" => new Regex($value, 'gi'),
-                "notlike" => ['$not' => new Regex($value, 'gi')],
-                "eq" => $value,
-                "isnull" => null,
-                "notnull" => ['$ne' => null],
-                default => ['$' . $filter->get('operation') => $value],
-            }];
-
-            if ($logic === '$or') {
-                $parsedFilters['$and'][0][$logic][] = $filterValue;
-            } else {
-                $parsedFilters[$logic][] = $filterValue;
-            }
-        });
-
-        return $parsedFilters;
-    }
-
-    /**
-     *
-     * @param Collection $filter
-     * @return string
-     * @throws EntryException
-     *
-     */
-    private function cleanFilterValue(Collection $filter): string
-    {
-        if ($filter->get('value') === null && !in_array($filter->get('operation'), ['isnull', 'notnull'])) {
-            throw new EntryException(Entry::INVALID_FILTER_VALUE);
-        }
-
-        if (!is_scalar($filter->get('value'))) {
-            throw new EntryException(Entry::INVALID_FILTER_VALUE);
-        }
-
-        if ($filter->get('value') && (!$filter->get('type') || $filter->get('value') === 'array')) {
-            throw new EntryException(Entry::INVALID_FILTER_TYPE);
-        }
-
-        $value = match ($filter->get('type')) {
-            "float" => (float)$filter->get('value'),
-            "integer" => (integer)$filter->get('value'),
-            "boolean" => (boolean)$filter->get('value'),
-            default => (string)$filter->get('value')
-        };
-
-        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }

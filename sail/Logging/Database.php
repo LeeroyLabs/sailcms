@@ -25,6 +25,6 @@ class Database extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        $this->model->write($record->formatted);
+        $this->model->write($record->message, $record->context);
     }
 }

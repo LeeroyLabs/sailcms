@@ -24,18 +24,21 @@ class Engine
     private static array $filters = [];
     private static array $functions = [];
     private static array $extensions = [];
+    private static FilesystemLoader $loader;
 
     public function __construct()
     {
-        $loader = new FilesystemLoader([Sail::getTemplateDirectory(), dirname(__DIR__, 2) . '/cms']);
+        if (!isset(self::$loader)) {
+            self::$loader = new FilesystemLoader([Sail::getTemplateDirectory(), dirname(__DIR__, 2) . '/cms']);
+        }
 
         // Use template caching or not
         if (setting('templating.cache', false)) {
-            $this->twig = new Environment($loader, [
+            $this->twig = new Environment(self::$loader, [
                 'cache' => Sail::getCacheDirectory(),
             ]);
         } else {
-            $this->twig = new Environment($loader);
+            $this->twig = new Environment(self::$loader);
         }
 
         // Set tags to enable twig and vue side by side
@@ -55,6 +58,24 @@ class Engine
 
     /**
      *
+     * Add a template path for Twig
+     *
+     * @param  string  $path
+     * @return void
+     * @throws LoaderError
+     *
+     */
+    public static function addTemplatePath(string $path): void
+    {
+        if (!isset(self::$loader)) {
+            self::$loader = new FilesystemLoader([Sail::getTemplateDirectory(), dirname(__DIR__, 2) . '/cms']);
+        }
+
+        self::$loader->addPath($path);
+    }
+
+    /**
+     *
      * Render an HTML template using Twig
      *
      * @param  string  $file
@@ -63,14 +84,11 @@ class Engine
      * @throws FileException|FilesystemException|LoaderError|RuntimeError|SyntaxError
      *
      */
-    public function render(string $file, object $data): string
-    {
+    public function render(
+        string $file,
+        object $data
+    ): string {
         $st = microtime(true);
-
-        $fs = Filesystem::manager();
-        $target = 'root://templates/' . $file . '.twig';
-        $target2 = 'cms://' . $file . '.twig';
-        $html = '';
 
         // Add some last minutes variables to the template
         $data->paths = (object)[
@@ -81,16 +99,11 @@ class Engine
             'public' => '/public'
         ];
 
-        if ($fs->fileExists($target) || $fs->fileExists($target2)) {
-            ob_start();
-            $this->twig->display($file . '.twig', (array)$data);
-            $html = ob_get_clean();
-        } else {
-            throw new FileException("Template {$file} does not exist, please make sure it exists before using it", 0404);
-        }
+        ob_start();
+        $this->twig->display($file . '.twig', (array)$data);
+        $html = ob_get_clean();
 
         Debug::view($file, (array)$data, $st);
-
         return $html;
     }
 

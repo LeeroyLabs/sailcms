@@ -127,6 +127,21 @@ class Response
 
     /**
      *
+     * Set many key/value pairs at once
+     *
+     * @param  array  $keyValues
+     * @return void
+     *
+     */
+    public function setArray(array $keyValues): void
+    {
+        foreach ($keyValues as $key => $value) {
+            $this->data->{$key} = $value;
+        }
+    }
+
+    /**
+     *
      * Set the columns for a csv
      *
      * @param  array  $columns

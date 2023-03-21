@@ -13,6 +13,20 @@ class Tools
 {
     /**
      *
+     * Install a composer package
+     *
+     * @param  string  $package
+     * @return void
+     *
+     */
+    public static function executeComposerInstall(string $package): void
+    {
+        $cmp = env('composer_location', '/usr/local/bin/composer');
+        exec('yes | ' . $cmp . ' -n require ' . $package . ' 2>/dev/null', $out, $code);
+    }
+
+    /**
+     *
      * Execute composer's dump-autoload from php
      *
      * @return void
@@ -20,7 +34,7 @@ class Tools
      */
     public static function executeComposerRefresh(): void
     {
-        exec(env('composer_location', '/usr/local/bin/composer') . ' dump-autoload -a');
+        exec(env('composer_location', '/usr/local/bin/composer') . ' dump-autoload -a 2>/dev/null', $out, $code);
     }
 
     /**

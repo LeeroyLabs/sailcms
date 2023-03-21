@@ -29,10 +29,12 @@ type Query {
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, filters: [FilterInput!], sort: String, direction: Int): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
-    entryLayouts: [EntryLayout]
+    entryLayouts: [EntryLayout!]
+    entryVersion(id: ID!): EntryVersion
+    entryVersions(entry_id: ID!): [EntryVersion!]
     fields: [FieldInfo]
 
     # Registers
@@ -49,8 +51,8 @@ type Query {
 
 type Mutation {
     # Users
-    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, role: String, createWithSetPassword: Boolean, useEmailTemplate: String): Boolean!
-    createUserGetId(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, role: String, createWithSetPassword: Boolean): ID!
+    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): Boolean!
+    createUserGetId(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean): ID!
     createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): Boolean!
     updateUser(id: ID!, name: UserNameInput! email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput, locale: String): Boolean!
     deleteUser(id: ID!): Boolean!
@@ -79,8 +81,9 @@ type Mutation {
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
+    applyVersion(entry_version_id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
@@ -269,6 +272,16 @@ type EntrySeo {
     social_metas: [SocialMeta]!
 }
 
+type EntryVersion {
+    _id: ID!
+    created_at: Int!
+    user_id: ID!
+    user_full_name: String!
+    user_email: String!
+    entry_id: ID!
+    entry: Entry!
+}
+
 type SocialMeta {
     handle: String!
     content: [SocialMetaContent]
@@ -359,35 +372,6 @@ enum InputType {
     string
     boolean
     array
-}
-
-input FilterInput {
-    field: String!
-    operation: FilterOperation!
-    logic: FilterLogic
-    value: String
-    type: InputType # TODO remove that to cast from entry model (Nich)
-}
-
-enum FilterOperation {
-    gte
-    gt
-    lte
-    lt
-    like
-    notlike
-    eq
-    ne
-    in
-    nin
-    isnull
-    notnull
-}
-
-enum FilterLogic {
-    and
-    or
-    nor
 }
 
 enum EntryStatus {
