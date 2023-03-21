@@ -175,6 +175,10 @@ class Sail
             Router::addClockworkSupport();
         }
 
+        if (setting('emails.usePreviewer', false)) {
+            Router::setupEmailPreviewer();
+        }
+
         Router::dispatch();
     }
 
@@ -362,6 +366,8 @@ class Sail
 
                 if (class_exists($className)) {
                     $instance = new $className();
+                    $instance->init();
+
                     $info = $instance->info();
 
                     // Register the container

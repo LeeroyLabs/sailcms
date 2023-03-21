@@ -27,6 +27,7 @@ return [
                 'fr' => 'SailCMS',
                 'en' => 'SailCMS'
             ],
+            'usePreviewer' => true,
             'sendNewAccount' => true,
             'globalContext' => [
                 // You can add your own static context variables
@@ -153,8 +154,13 @@ return [
             ]
         ],
         'emails' => [
-            'from' => 'no-reply@sailcms.io',
-            'sendNewAccount' => false,
+            'from' => 'no-reply@leeroy.ca',
+            'fromName' => [
+                'fr' => 'SailCMS',
+                'en' => 'SailCMS'
+            ],
+            'usePreviewer' => false,
+            'sendNewAccount' => true,
             'globalContext' => [
                 // You can add your own static context variables
                 'locales' => [
@@ -261,8 +267,13 @@ return [
             ]
         ],
         'emails' => [
-            'from' => 'no-reply@sailcms.io',
-            'sendNewAccount' => false,
+            'from' => 'no-reply@leeroy.ca',
+            'fromName' => [
+                'fr' => 'SailCMS',
+                'en' => 'SailCMS'
+            ],
+            'usePreviewer' => false,
+            'sendNewAccount' => true,
             'globalContext' => [
                 // You can add your own static context variables
                 'locales' => [
