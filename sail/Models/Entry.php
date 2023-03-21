@@ -16,6 +16,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Event;
 use SailCMS\Http\Request;
+use SailCMS\Locale;
 use SailCMS\Log as SailLog;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
@@ -1085,7 +1086,11 @@ class Entry extends Model implements Validator
         // Must override entryUrl if it's the homepage
         $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
         if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) {
-            $entryUrl = ""; // TODO Add locale if not default
+            $entryLocale = $lastVersion->entry->get('locale');
+            $entryUrl = "";
+            if ($entryLocale !== Locale::default()) {
+                $entryUrl = $entryLocale . "/";
+            }
         }
 
         return (new EntryPublication())->create($author, $entryId, $siteId, $entryUrl, (string)$entryVersionID, $publicationDate, $expirationDate);

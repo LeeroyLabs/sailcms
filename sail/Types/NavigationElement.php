@@ -6,8 +6,7 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
-use SailCMS\Models\Entry;
-use SailCMS\Models\EntryType;
+use SailCMS\Models\EntryPublication;
 
 class NavigationElement
 {
@@ -23,20 +22,20 @@ class NavigationElement
      */
     public function __construct(
         public readonly string $label,
-        public string $url,
-        public readonly bool $is_entry = false,
+        public string          $url,
+        public readonly bool   $is_entry = false,
         public readonly string $entry_id = '',
-        public readonly string $entry_type = '',
-        public readonly bool $external = false,
-        private array $children = []
-    ) {
+        public readonly bool   $external = false,
+        private array          $children = []
+    )
+    {
         if ($this->is_entry) {
             // We have an entry, find it's current URL
-            $entry = EntryType::getEntryModelByHandle($this->entry_type);
-            $entryData = $entry->getById($this->entry_id);
+            $publication = (new EntryPublication())->getPublicationByEntryId($this->entry_id, true, false);
+            $entryData = $publication->version->entry;
 
             if ($entryData) {
-                $this->url = $entryData->url;
+                $this->url = $entryData->get('url', '');
             }
         }
 
@@ -46,7 +45,6 @@ class NavigationElement
                 $child['url'],
                 $child['is_entry'],
                 $child['entry_id'],
-                $child['entry_type'],
                 $child['external'],
                 $child['children']
             );
@@ -57,7 +55,7 @@ class NavigationElement
      *
      * Add a NavigationElement at the end of the children array
      *
-     * @param  NavigationElement  $child
+     * @param NavigationElement $child
      * @return void
      *
      */
@@ -70,8 +68,8 @@ class NavigationElement
      *
      * Insert an NavigationElement at given position
      *
-     * @param  NavigationElement  $child
-     * @param  int                $index
+     * @param NavigationElement $child
+     * @param int $index
      * @return void
      *
      */
@@ -112,7 +110,6 @@ class NavigationElement
             'url' => $this->url,
             'is_entry' => $this->is_entry,
             'entry_id' => $this->entry_id,
-            'entry_type' => $this->entry_type,
             'external' => $this->external,
             'children' => $children
         ];

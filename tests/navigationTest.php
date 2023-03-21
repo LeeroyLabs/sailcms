@@ -6,13 +6,11 @@ use SailCMS\Types\NavigationElement;
 
 include_once __DIR__ . '/mock/db.php';
 
-beforeAll(function ()
-{
+beforeAll(function () {
     Sail::setupForTests(__DIR__);
 });
 
-test('Create a navigation called "sidebar" with 100% array', function ()
-{
+test('Create a navigation called "sidebar" with 100% array', function () {
     $navigation = new Navigation();
     $structure = [
         [
@@ -20,7 +18,6 @@ test('Create a navigation called "sidebar" with 100% array', function ()
             'url' => '/',
             'is_entry' => false,
             'entry_id' => '',
-            'entry_type' => '',
             'external' => false,
             'children' => []
         ],
@@ -29,7 +26,6 @@ test('Create a navigation called "sidebar" with 100% array', function ()
             'url' => '/products',
             'is_entry' => false,
             'entry_id' => '',
-            'entry_type' => '',
             'external' => false,
             'children' => [
                 [
@@ -37,7 +33,6 @@ test('Create a navigation called "sidebar" with 100% array', function ()
                     'url' => '/products/super-product',
                     'is_entry' => false,
                     'entry_id' => '',
-                    'entry_type' => '',
                     'external' => false,
                     'children' => []
                 ]
@@ -48,7 +43,6 @@ test('Create a navigation called "sidebar" with 100% array', function ()
             'url' => '/about',
             'is_entry' => false,
             'entry_id' => '',
-            'entry_type' => '',
             'external' => false,
             'children' => []
         ]
@@ -60,17 +54,15 @@ test('Create a navigation called "sidebar" with 100% array', function ()
     expect($nav)->not->toBe(null)->and(count($nav->structure->get()))->toBe(3);
 })->group('navigation');
 
-test('Create a navigation called "sidebar2" with some elements already NavigationElement', function ()
-{
+test('Create a navigation called "sidebar2" with some elements already NavigationElement', function () {
     $navigation = new Navigation();
     $structure = [
-        new NavigationElement('Home', '/', false, '', '', false, []),
+        new NavigationElement('Home', '/', false, '', false, []),
         [
             'label' => 'Products',
             'url' => '/products',
             'is_entry' => false,
             'entry_id' => '',
-            'entry_type' => '',
             'external' => false,
             'children' => [
                 [
@@ -78,7 +70,6 @@ test('Create a navigation called "sidebar2" with some elements already Navigatio
                     'url' => '/products/super-product',
                     'is_entry' => false,
                     'entry_id' => '',
-                    'entry_type' => '',
                     'external' => false,
                     'children' => []
                 ]
@@ -89,7 +80,6 @@ test('Create a navigation called "sidebar2" with some elements already Navigatio
             'url' => '/about',
             'is_entry' => false,
             'entry_id' => '',
-            'entry_type' => '',
             'external' => false,
             'children' => []
         ]
@@ -100,14 +90,12 @@ test('Create a navigation called "sidebar2" with some elements already Navigatio
     expect($nav)->not->toBe(null)->and(count($nav->structure->get()))->toBe(3);
 })->group('navigation');
 
-test('Fetch navigation called "sidebar"', function ()
-{
+test('Fetch navigation called "sidebar"', function () {
     $nav = Navigation::getByName('sidebar');
     expect($nav)->not->toBeNull()->and($nav->structure->get())->toBeArray()->and(count($nav->structure->get()))->toBe(3);
 })->group('navigation');
 
-test('Update navigation called "sidebar"', function ()
-{
+test('Update navigation called "sidebar"', function () {
     $nav = Navigation::getByName('sidebar');
 
     $navigation = new Navigation();
@@ -117,8 +105,7 @@ test('Update navigation called "sidebar"', function ()
     expect($nav)->not->toBeNull()->and($nav->locale)->toBe('fr');
 })->group('navigation');
 
-test('Delete navigation by name', function ()
-{
+test('Delete navigation by name', function () {
     $navigation = new Navigation();
     $navigation->deleteByName('sidebar');
     $navigation->deleteByName('sidebar2');

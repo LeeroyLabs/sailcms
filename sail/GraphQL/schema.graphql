@@ -602,7 +602,6 @@ type NavigationItem {
     url: String!
     is_entry: Boolean!
     entry_id: String!
-    entry_type: String!
     external: Boolean!
     children: [NavigationItem!]!
 }
@@ -612,7 +611,6 @@ input NavigationItemInput {
     url: String!
     is_entry: Boolean!
     entry_id: String!
-    entry_type: String!
     external: Boolean!
     children: [NavigationItemInput!]!
 }
