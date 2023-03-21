@@ -25,6 +25,12 @@ use SailCMS\Text;
  * @property ObjectId $_id
  * @property string   $id
  *
+ * @uses Validation
+ * @uses Transforms
+ * @uses ActiveRecord
+ * @uses QueryObject
+ * @uses Debugging
+ *
  */
 abstract class Model implements JsonSerializable
 {

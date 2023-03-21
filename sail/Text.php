@@ -309,4 +309,74 @@ class Text
     {
         return (new UnicodeString($word))->snake();
     }
+
+    /**
+     *
+     * Generate a random string of required length
+     *
+     * @param  int   $length
+     * @param  bool  $symbols
+     * @return string
+     *
+     */
+    public static function randomString(int $length, bool $symbols = true): string
+    {
+        if ($symbols) {
+            $seed = str_split('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()');
+        } else {
+            $seed = str_split('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+        }
+
+        $rand = '';
+
+        foreach (array_rand($seed, $length) as $key) {
+            $rand .= $seed[$key];
+        }
+
+        return $rand;
+    }
+
+    /**
+     *
+     * Multibyte enabled string reverse
+     *
+     * @param  string  $text
+     * @return string
+     *
+     */
+    public static function reverse(string $text): string
+    {
+        if (extension_loaded('mbstring')) {
+            $encoding = mb_detect_encoding($text);
+            $length = mb_strlen($text, $encoding);
+            $reversed = '';
+
+            while ($length-- > 0) {
+                $reversed .= mb_substr($text, $length, 1, $encoding);
+            }
+
+            return $reversed;
+        }
+
+        return strrev($text);
+    }
+
+    /**
+     *
+     * Multibyte enabled substr
+     *
+     * @param  string    $text
+     * @param  int       $offset
+     * @param  int|null  $length
+     * @return string
+     *
+     */
+    public static function substr(string $text, int $offset, int $length = null): string
+    {
+        if (extension_loaded('mbstring')) {
+            return mb_substr($text, $offset, $length);
+        }
+
+        return substr($text, $offset, $length);
+    }
 }

@@ -46,6 +46,10 @@ type Query {
     categoryFullTree(parent_id: ID!, site_id: String!): [Category!]!
     categoryEntries(slug: String, id: ID, site_id: String): [Entry!]
 
+    # Navigation
+    navigation(name: String!): [NavigationItem!]!
+    navigationDetails(name: String!): Navigation
+
     #{CUSTOM_QUERIES}#
 }
 
@@ -95,6 +99,11 @@ type Mutation {
     updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
+
+    # Navigation
+    createNavigation(name: String!, structure: NavigationItemInput!, locale: String!): String!
+    updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
+    deleteNavigation(name: String!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
@@ -572,6 +581,34 @@ type Category {
     order: Int!
     parent_id: String!
     children: [Category!]!
+}
+
+type NavigationItem {
+    label: String!
+    url: String!
+    is_entry: Boolean!
+    entry_id: String!
+    entry_type: String!
+    external: Boolean!
+    children: [NavigationItem!]!
+}
+
+input NavigationItemInput {
+    label: String!
+    url: String!
+    is_entry: Boolean!
+    entry_id: String!
+    entry_type: String!
+    external: Boolean!
+    children: [NavigationItemInput!]!
+}
+
+type Navigation {
+    _id: ID!
+    title: String!
+    name: String!
+    structure: [NavigationItem!]!
+    locale: String!
 }
 
 #{CUSTOM_TYPES}#
