@@ -6,6 +6,7 @@ use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\NavigationException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Text;
@@ -39,6 +40,7 @@ class Navigation extends Model
      * @throws NavigationException
      * @throws ACLException
      * @throws PermissionException
+     * @throws EntryException
      *
      */
     public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): string
@@ -65,7 +67,7 @@ class Navigation extends Model
             'locale' => $locale
         ]);
 
-        return (string)$id;
+        return $name;
     }
 
     /**
@@ -76,8 +78,11 @@ class Navigation extends Model
      * @param  array|Collection|NavigationStructure  $structure
      * @param  string                                $locale
      * @return bool
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws EntryException
      * @throws NavigationException
+     * @throws PermissionException
      *
      */
     public function update(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
