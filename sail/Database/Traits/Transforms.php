@@ -128,7 +128,7 @@ trait Transforms
                             $castInstance = new $cast();
                             $instance->{$k} = $castInstance->castTo($v->bsonSerialize());
                         } elseif ($cast !== '') {
-                            if ($cast::HANDLE_ARRAY_CASTING) {
+                            if (defined("$cast::HANDLE_ARRAY_CASTING") && $cast::HANDLE_ARRAY_CASTING) {
                                 $casted = new $cast();
                                 $instance->{$k} = $casted->castTo($v->bsonSerialize());
                             } else {
