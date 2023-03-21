@@ -20,6 +20,8 @@ class Mail
 {
     private TemplatedEmail $email;
 
+    private static array $registeredPreviewers = [];
+
     public const PRIORITY_LOWEST = 5;
     public const PRIORTIY_LOW = 4;
     public const PRIORITY_NORMAL = 3;
@@ -29,6 +31,41 @@ class Mail
     public function __construct()
     {
         $this->email = new TemplatedEmail();
+    }
+
+    /**
+     *
+     * Register a preview handler
+     *
+     * @param  string  $template
+     * @param  string  $class
+     * @param  string  $method
+     * @return void
+     * @throws EmailException
+     *
+     */
+    public static function registerPreviewHandler(string $template, string $class, string $method): void
+    {
+        if (!isset(self::$registeredPreviewers[$template])) {
+            $instance = new $class();
+            self::$registeredPreviewers[$template] = ['template' => $template, 'class' => $instance, 'method' => $method];
+            return;
+        }
+
+        throw new EmailException('Cannot register more than 1 preview handler for ' . $template, 0403);
+    }
+
+    /**
+     *
+     * Get list of preview handlers for given template
+     *
+     * @param  string  $template
+     * @return array|null
+     *
+     */
+    public static function getRegisteredPreviewHandler(string $template): array|null
+    {
+        return self::$registeredPreviewers[$template] ?? null;
     }
 
     /**
