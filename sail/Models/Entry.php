@@ -55,6 +55,7 @@ use stdClass;
  * @property Authors $authors
  * @property Dates $dates
  * @property Collection $categories
+ * @property Collection $content
  *
  */
 class Entry extends Model implements Validator
