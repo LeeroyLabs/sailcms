@@ -26,6 +26,7 @@ class Bundled extends AbstractExtension
             new TwigFunction('env', [$this, 'env']),
             new TwigFunction('publicPath', [$this, 'publicPath']),
             new TwigFunction('locale', [$this, 'getLocale']),
+            new TwigFunction('defaultLocale', [$this, 'defaultLocale']),
             new TwigFunction('__', [$this, 'translate']),
             new TwigFunction('twoFactor', [$this, 'twoFactor']),
             new TwigFunction('csrf', [$this, 'csrf']),
@@ -123,6 +124,18 @@ class Bundled extends AbstractExtension
     public function getLocale(): string
     {
         return Locale::$current;
+    }
+
+    /**
+     *
+     * Get default locale
+     *
+     * @return string
+     *
+     */
+    public function defaultLocale(): string
+    {
+        return Locale::default();
     }
 
     /**
