@@ -58,7 +58,11 @@ class System
             new ACL('Category', ACLType::READ),
 
             // Register
-            new ACL('Register', ACLType::READ)
+            new ACL('Register', ACLType::READ),
+
+            // Navigation
+            new ACL('Navigation', ACLType::READ_WRITE),
+            new ACL('Navigation', ACLType::READ),
         ]);
     }
 }

@@ -5,7 +5,6 @@ namespace SailCMS\Templating;
 use League\Flysystem\FilesystemException;
 use SailCMS\Debug;
 use SailCMS\Errors\FileException;
-use SailCMS\Filesystem;
 use SailCMS\Sail;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -16,6 +15,7 @@ use Twig\Lexer;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
 use SailCMS\Templating\Extensions\Bundled;
+use SailCMS\Templating\Extensions\Navigation;
 use Twig\TwigFunction;
 
 class Engine
@@ -153,6 +153,7 @@ class Engine
     private function setupExtensions(): void
     {
         $this->twig->addExtension(new Bundled());
+        $this->twig->addExtension(new Navigation());
 
         foreach (self::$extensions as $extension) {
             $this->twig->addExtension($extension);

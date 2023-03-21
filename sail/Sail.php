@@ -956,6 +956,7 @@ class Sail
                     self::$siteID = $name;
                     Locale::setAvailableLocales($config['locales']);
                     Locale::setCurrent($config['defaultLocale']);
+                    Locale::setDefault($config['defaultLocale']);
                     break;
                 }
             }
@@ -968,13 +969,15 @@ class Sail
                     self::$siteID = $value;
                     Locale::setAvailableLocales($sites[$value]['locales']);
                     Locale::setCurrent($sites[$value]['defaultLocale']);
+                    Locale::setDefault($config['defaultLocale']);
                     break;
                 }
             }
         } else {
-            self::$siteID = 'main';
+            self::$siteID = 'default';
             Locale::setAvailableLocales(['en']);
             Locale::setCurrent('en');
+            Locale::setDefault('en');
         }
     }
 

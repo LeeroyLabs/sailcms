@@ -26,6 +26,7 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -438,6 +439,13 @@ final class GraphQL
         self::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
         self::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
         self::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
+
+        // Navigation
+        self::addQueryResolver('navigation', Navigation::class, 'navigation');
+        self::addQueryResolver('navigationDetails', Navigation::class, 'navigationDetails');
+        self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
+        self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
+        self::addMutationResolver('deleteNavigation', Navigation::class, 'deleteNavigation');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)

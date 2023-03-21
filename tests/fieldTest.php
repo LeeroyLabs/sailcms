@@ -129,7 +129,7 @@ test('Failed to update the entry content', function () {
                 ]
             ]
         ], false);
-//        print_r($errors);
+        print_r($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));

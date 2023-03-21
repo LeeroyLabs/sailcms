@@ -35,7 +35,7 @@
         "myclabs/php-enum": "^1.8",
         "symfony/string": "^6.0",
         "symfony/translation-contracts": "^3.0",
-        "filp/whoops": "=2.14.6",
+        "filp/whoops": "2.15.1",
         "nesbot/carbon": "^2.58",
         "mongodb/mongodb": "^1.12",
         "ext-mongodb": "*",
@@ -65,17 +65,17 @@
         "leeroy/php-inflector": "^1.0.1"
     },
     "require-dev": {
-        "pestphp/pest": "^1.21",
-        "phpstan/phpstan": "^1.9"
+        "phpstan/phpstan": "^1.9",
+        "pestphp/pest": "^2.0"
     },
     "config": {
         "allow-plugins": {
-            "pestphp/pest-plugin": true,
-            "composer/package-versions-deprecated": true
+            "composer/package-versions-deprecated": true,
+            "pestphp/pest-plugin": true
         }
     },
     "scripts": {
-        "test": "./vendor/bin/pest --",
+        "test": "./vendor/bin/pest",
         "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
         "testall": "composer test; composer analyze"
     },

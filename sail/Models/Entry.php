@@ -55,7 +55,6 @@ use stdClass;
  * @property Authors $authors
  * @property Dates $dates
  * @property Collection $categories
- * @property Collection $content
  *
  */
 class Entry extends Model implements Validator
@@ -162,6 +161,20 @@ class Entry extends Model implements Validator
         if ($key === 'title' && empty($value)) {
             throw new EntryException(self::TITLE_MISSING);
         }
+    }
+
+    /**
+     *
+     * Get basic entry document by its id
+     *
+     * @param string|ObjectId $id
+     * @return Entry|null
+     * @throws DatabaseException
+     *
+     */
+    public function getById(string|ObjectId $id): ?Entry
+    {
+        return $this->findById($id)->exec('entry_' . (string)$id);
     }
 
     /**
@@ -401,7 +414,6 @@ class Entry extends Model implements Validator
             });
 
             $filters['_id'] = ['$in' => (new static())->ensureObjectIds($entryIds)->unwrap()];
-
         }
 
         // Actual query
@@ -730,9 +742,10 @@ class Entry extends Model implements Validator
                         }
                     }
                     $newContent->pushKeyValue($key, $currentNewContent);
-
-                } else if (!$currentNewContent) {
-                    $newContent->pushKeyValue($key, $content);
+                } else {
+                    if (!$currentNewContent) {
+                        $newContent->pushKeyValue($key, $content);
+                    }
                 }
             });
         }
@@ -1162,8 +1175,10 @@ class Entry extends Model implements Validator
 
         if (!$entryLayout && !$silent) {
             throw new EntryException($errorMessage);
-        } else if (!$entryLayout) {
-            SailLog::logger()->warning($errorMessage);
+        } else {
+            if (!$entryLayout) {
+                SailLog::logger()->warning($errorMessage);
+            }
         }
 
         if ($simplified) {
@@ -1464,6 +1479,7 @@ class Entry extends Model implements Validator
 
         $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'content', 'alternates'])) {
+
                 $update[$key] = $value;
             }
         });

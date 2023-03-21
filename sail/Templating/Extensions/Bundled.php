@@ -26,10 +26,16 @@ class Bundled extends AbstractExtension
             new TwigFunction('env', [$this, 'env']),
             new TwigFunction('publicPath', [$this, 'publicPath']),
             new TwigFunction('locale', [$this, 'getLocale']),
+            new TwigFunction('defaultLocale', [$this, 'defaultLocale']),
             new TwigFunction('__', [$this, 'translate']),
             new TwigFunction('twoFactor', [$this, 'twoFactor']),
             new TwigFunction('csrf', [$this, 'csrf']),
-            new TwigFunction('transform', [$this, 'transform'])
+            new TwigFunction('transform', [$this, 'transform']),
+            new TwigFunction('json_encode', [$this, 'jsonEncode']),
+            new TwigFunction('jsonEncode', [$this, 'jsonEncode']),
+            new TwigFunction('json', [$this, 'jsonEncode']),
+            new TwigFunction('json_decode', [$this, 'jsonDecode']),
+            new TwigFunction('jsonDecode', [$this, 'jsonDecode']),
         ];
     }
 
@@ -118,6 +124,18 @@ class Bundled extends AbstractExtension
     public function getLocale(): string
     {
         return Locale::$current;
+    }
+
+    /**
+     *
+     * Get default locale
+     *
+     * @return string
+     *
+     */
+    public function defaultLocale(): string
+    {
+        return Locale::default();
     }
 
     /**
@@ -274,5 +292,38 @@ class Bundled extends AbstractExtension
         }
 
         return '<a href="mailt&#111;&#58;' . $email . '" rel="nofollow">' . $label . '</a>';
+    }
+
+    /**
+     *
+     * Encode JSON
+     *
+     * @param  mixed  $item
+     * @param  bool   $pretty
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public function jsonEncode(mixed $item, bool $pretty = false): string
+    {
+        if ($pretty) {
+            return json_encode($item, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        }
+
+        return json_encode($item, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     *
+     * Encode JSON
+     *
+     * @param  string  $json
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public function jsonDecode(string $json): string
+    {
+        return json_decode($json, false, 512, JSON_THROW_ON_ERROR);
     }
 }
