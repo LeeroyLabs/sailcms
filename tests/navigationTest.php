@@ -126,4 +126,4 @@ test('Delete navigation by name', function ()
     $nav = Navigation::getByName('sidebar');
 
     expect($nav)->toBeNull();
-})->group('navigation')->skip();
+})->group('navigation');
