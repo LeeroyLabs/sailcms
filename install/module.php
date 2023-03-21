@@ -10,7 +10,14 @@ class Module implements AppModule
 {
     public function info(): ModuleInformation
     {
-        return new ModuleInformation('[NAME]', 'your description here', 1.0, '1.0.0');
+        return new ModuleInformation(
+            '[NAME]',
+            'your description here',
+            1.0,
+            '1.0.0',
+            'Your Name',
+            'Your Link'
+        );
     }
 
     public function cli(): Collection

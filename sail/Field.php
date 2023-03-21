@@ -14,8 +14,8 @@ use SailCMS\Models\Entry\Field as ModelField;
  * NumberField // option float + negative number    => Errors 6140 to 6159
  * DateField
  * DateTimeField
- * EmailField
- * HtmlField
+ * EmailField                                       => Errors 6240 to 6259
+ * HtmlField                                        => Errors 6220 to 6239
  * UrlField
  *
  * SelectField // search...                         => Errors 6180 to 6199

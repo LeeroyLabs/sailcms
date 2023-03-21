@@ -21,23 +21,13 @@ class Registers
      * @param  Collection  $args
      * @param  Context     $context
      * @return object
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws PermissionException
      *
      */
     public function registeredExtensions(mixed $obj, Collection $args, Context $context): object
     {
-        if (ACL::hasPermission(User::$currentUser, ACL::read('register'))) {
-            return (object)[
-                'containers' => Register::getContainerList(),
-                'modules' => Register::getModules()
-            ];
-        }
-
         return (object)[
-            'containers' => [],
-            'modules' => []
+            'containers' => Register::getContainerList(),
+            'modules' => Register::getModules()
         ];
     }
 }

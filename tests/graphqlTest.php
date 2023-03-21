@@ -182,6 +182,24 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
+                            key: "wysiwyg"
+                            handle: "SailCMS-Models-Entry-HTMLField"
+                            inputSettings: []
+                        }
+                        {
+                            labels: { en: "Email", fr: "Courriel" }
+                            key: "email"
+                            handle: "SailCMS-Models-Entry-EmailField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
@@ -234,6 +252,14 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "desc"
                             content: "This text contains line returns and must keep it through all the process"
+                        }
+                        {
+                            key: "wysiwyg"
+                            content: "<p><strong>Test</strong></p>"
+                        }
+                        {
+                            key: "email"
+                            content: "testleeroy@leeroy.ca"
                         }
                     ]
                 ) {
