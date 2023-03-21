@@ -8,9 +8,13 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Types\Authors;
+use SailCMS\Types\Dates;
+use SailCMS\Types\EntryParent;
 use SailCMS\Types\QueryOptions;
 use SodiumException;
 
@@ -204,6 +208,7 @@ class EntryVersion extends Model
      * @return Entry
      * @throws DatabaseException
      * @throws EntryException
+     * @throws CollectionException
      *
      */
     public function fakeVersion(Entry $entry, string $entry_version_id): Entry
@@ -214,18 +219,17 @@ class EntryVersion extends Model
             throw new EntryException(self::DOES_NOT_EXISTS);
         }
 
-        $entry->authors = $entryVersion->entry->get('authors');
-        $entry->dates = $entryVersion->entry->get('dates');
-        $entry->parent = $entryVersion->entry->get('parent');
+        $entry->authors = (new Authors())->castTo($entryVersion->entry->get('authors'));
+        $entry->dates = (new Dates())->castTo($entryVersion->entry->get('dates'));
+        $entry->parent = (new EntryParent())->castTo($entryVersion->entry->get('parent'));
         $entry->site_id = $entryVersion->entry->get('site_id');
         $entry->locale = $entryVersion->entry->get('locale');
-        $entry->status = $entryVersion->entry->get('status');
         $entry->title = $entryVersion->entry->get('title');
         $entry->slug = $entryVersion->entry->get('slug');
         $entry->url = $entryVersion->entry->get('url');
         $entry->template = $entryVersion->entry->get('template');
-        $entry->categories = $entryVersion->entry->get('categories');
-        $entry->content = $entryVersion->entry->get('content');
+        $entry->categories = (new Collection())->castTo($entryVersion->entry->get('categories'));
+        $entry->content = (new Collection())->castTo($entryVersion->entry->get('content'));
         $entry->alternates = $entryVersion->entry->get('alternates');
 
         return $entry;

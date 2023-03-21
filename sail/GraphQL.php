@@ -400,6 +400,7 @@ final class GraphQL
 
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
+        self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');

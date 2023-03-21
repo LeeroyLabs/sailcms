@@ -275,6 +275,37 @@ class Entries
 
     /**
      *
+     * Get an entry by url
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function entryByUrl(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $url = $args->get('url');
+        $siteId = $args->get("site_id", Sail::siteId());
+
+        $entry = Entry::findByURL($url, $siteId);
+
+        if ($entry) {
+            $homepage = Entry::getHomepage($siteId, $entry->locale);
+            return $this->parseEntry($entry->simplify($homepage));
+        }
+        return null;
+    }
+
+    /**
+     *
      * Create an entry and return it
      *
      * @param mixed $obj
@@ -426,7 +457,10 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function publishEntry(mixed $obj, Collection $args, Context $context): string

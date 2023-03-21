@@ -10,7 +10,6 @@ use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -300,7 +299,7 @@ class Entry extends Model implements Validator
         return [
             '_id' => $this->_id,
             'entry_type_id' => $this->entry_type_id,
-            'is_homepage' => isset($currentHomepageEntry) && $this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
@@ -542,7 +541,6 @@ class Entry extends Model implements Validator
         if ($preview || $previewVersion) {
             return self::findByUrlFromEntryTypes($url, $previewVersion);
         } else {
-            Debug::ray('FindByUrl public', $url);
             return self::findByPublishedUrl($url, $siteId);
         }
     }
