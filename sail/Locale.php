@@ -203,6 +203,9 @@ class Locale
         // General CMS Locales
         self::loadFromDirectories(['cms_root://sail']);
 
+        // General Application Level
+        self::loadFromDirectories(['root://']);
+
         // Load all container locale files
         self::loadFromDirectories($fs->listContents('root://containers', false)->toArray());
     }
