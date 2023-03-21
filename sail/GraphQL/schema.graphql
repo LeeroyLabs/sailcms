@@ -441,6 +441,13 @@ type FieldInputInfo {
     availableSettings: [Settings!]!
 }
 
+type Settings {
+    name: String!
+    value: String
+    options: [Options!]
+    type: String!
+}
+
 type LocaleField {
     #{LOCALE_FIELDS}#
 }

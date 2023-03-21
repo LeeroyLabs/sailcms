@@ -169,6 +169,19 @@ test('Create layout, entry type & entry', function () {
                             handle: "SailCMS-Models-Entry-TextField"
                             inputSettings: []
                         }
+                        {
+                            labels: { en: "Select", fr: "Selection" }
+                            key: "select"
+                            handle: "SailCMS-Models-Entry-SelectField"
+                            inputSettings: [
+                                { 
+                                    settings: [
+                                        {name: "required", value: "true", type: boolean}
+                                        {name: "options", value: "[{name: "test", value: "Big test"}, {name: "test2", value: "The real big test"}]", type: array}
+                                    ] 
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
