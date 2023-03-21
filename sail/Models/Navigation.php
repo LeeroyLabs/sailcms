@@ -4,13 +4,16 @@ namespace SailCMS\Models;
 
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\NavigationException;
-use SailCMS\Types\NavigationElement;
+use SailCMS\Errors\PermissionException;
+use SailCMS\Text;
 use SailCMS\Types\NavigationStructure;
 
 /**
  *
+ * @property string              $title
  * @property string              $name
  * @property NavigationStructure $structure
  * @property string              $locale
@@ -19,6 +22,7 @@ use SailCMS\Types\NavigationStructure;
 class Navigation extends Model
 {
     protected string $collection = 'navigations';
+    protected string $permissionGroup = 'navigation';
     protected array $casting = [
         'structure' => NavigationStructure::class
     ];
@@ -33,23 +37,79 @@ class Navigation extends Model
      * @return string
      * @throws DatabaseException
      * @throws NavigationException
+     * @throws ACLException
+     * @throws PermissionException
      *
      */
     public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): string
     {
+        $this->hasPermissions();
+
         if (!is_object($structure) || get_class($structure) !== NavigationStructure::class) {
             $structure = new NavigationStructure($structure);
         }
 
-        \SailCMS\Debug::ray($structure);
+        $title = $name;
+        $name = Text::slugify($name);
+        $count = self::query()->count(['name' => $name]);
+
+        // Set a number next to the name to make it unique
+        if ($count > 0) {
+            $name .= '-' . Text::randomString(4, false);
+        }
 
         $id = $this->insert([
+            'title' => $title,
             'name' => $name,
             'structure' => $structure,
             'locale' => $locale
         ]);
 
         return (string)$id;
+    }
+
+    /**
+     *
+     * Update existing navigation with given information and structure
+     *
+     * @param  string                                $name
+     * @param  array|Collection|NavigationStructure  $structure
+     * @param  string                                $locale
+     * @return bool
+     * @throws DatabaseException
+     * @throws NavigationException
+     *
+     */
+    public function update(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
+    {
+        if (!is_object($structure) || get_class($structure) !== NavigationStructure::class) {
+            $structure = new NavigationStructure($structure);
+        }
+
+        $this->updateOne(['name' => $name], [
+            '$set' => [
+                'title' => $name,
+                'structure' => $structure,
+                'locale' => $locale
+            ]
+        ]);
+
+        return true;
+    }
+
+    /**
+     *
+     * Delete a navigation by name
+     *
+     * @param  string  $name
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function deleteByName(string $name): bool
+    {
+        self::query()->deleteOne(['name' => $name]);
+        return true;
     }
 
     /**

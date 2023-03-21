@@ -2,10 +2,14 @@
 
 namespace SailCMS\Types;
 
+use MongoDB\Model\BSONArray;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
-use SailCMS\Debug;
+use SailCMS\Errors\ACLException;
+use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\NavigationException;
+use SailCMS\Errors\PermissionException;
 
 class NavigationStructure implements Castable
 {
@@ -22,6 +26,10 @@ class NavigationStructure implements Castable
      *
      * @param  array|Collection  $structure
      * @throws NavigationException
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function __construct(array|Collection $structure = [])
@@ -93,16 +101,20 @@ class NavigationStructure implements Castable
      */
     public function castTo(mixed $value): self
     {
-        $list = [];
+        $list = $this->bsonToArray($value);
+        return new self($list);
+    }
 
-        foreach ($value as $item) {
+    private function bsonToArray(BSONArray|array $children): array
+    {
+        $out = [];
+
+        foreach ($children as $item) {
             $el = (array)$item;
-            $el['children'] = (array)$el['children'];
-            $list[] = $el;
+            $el['children'] = $this->bsonToArray($item['children']);
+            $out[] = $el;
         }
 
-        Debug::ray($list);
-
-        return new self((array)$value->structure);
+        return $out;
     }
 }
