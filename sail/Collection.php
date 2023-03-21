@@ -964,6 +964,46 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 
     /**
      *
+     * Return elements that do not match key/value
+     *
+     * This does not keep indexes
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return Collection
+     *
+     */
+    public function whereNot(string $key, mixed $value): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $_v !== $v) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v !== $value) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && $v->{$key} !== $value) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
      * Get elements that have a value within the given array for given key
      *
      * Does not keep indexes and evaluates loosely
