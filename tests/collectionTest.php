@@ -303,6 +303,19 @@ test("where with array", function ()
     expect($new->length)->toBe(2);
 });
 
+test("where not with array", function ()
+{
+    $col = new Collection([
+        ['mykey' => 'super'],
+        ['mykey' => 'hello'],
+        ['mykey' => 'world'],
+        ['mykey' => 'hello']
+    ]);
+
+    $new = $col->whereNot('mykey', 'hello');
+    expect($new->length)->toBe(2);
+});
+
 test("where with Object", function ()
 {
     $obj1 = (object)['mykey' => 'world'];
