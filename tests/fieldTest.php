@@ -3,6 +3,7 @@
 use SailCMS\Collection;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
+use SailCMS\Models\Entry\HTMLField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
@@ -81,6 +82,7 @@ test('Add all fields to the layout', function ()
         ]
     ]);
     $descriptionField = new TextareaField(new LocaleField(['en' => 'Description', 'fr' => 'Description']));
+    $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
     $numberFieldInteger = new NumberField(new LocaleField(['en' => 'Integer', 'fr' => 'Entier']), [
         [
             'min' => -1,
@@ -106,6 +108,7 @@ test('Add all fields to the layout', function ()
         "text" => $textField,
         "phone" => $phoneField,
         "description" => $descriptionField,
+        "wysiwyg" => $htmlField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
         "related" => $entryField,
@@ -137,6 +140,7 @@ test('Failed to update the entry content', function ()
             'content' => [
                 'float' => '0',
                 'phone' => '514-3344344',
+                'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'related' => [
                     'id' => (string)$relatedEntry->_id
                 ],
@@ -156,7 +160,8 @@ test('Failed to update the entry content', function ()
     }
 });
 
-test('Update content with success', function () {
+test('Update content with success', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -172,6 +177,7 @@ test('Update content with success', function () {
                 'text' => 'Not empty',
                 'description' => 'This text contains line returns
 and must keep it through all the process',
+                'wysiwyg' => '<p><strong>Test</strong></p>',
                 'phone' => '514-514-5145',
                 'related' => [
                     'id' => (string)$relatedEntry->_id,

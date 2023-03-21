@@ -15,7 +15,7 @@ use SailCMS\Models\Entry\Field as ModelField;
  * DateField
  * DateTimeField
  * EmailField                                       => Errors 6240 to 6259
- * HtmlField
+ * HtmlField                                        => Errors 6220 to 6239
  * UrlField
  *
  * SelectField // search...                         => Errors 6180 to 6199

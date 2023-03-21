@@ -80,6 +80,7 @@
         "testall": "composer test; composer analyze"
     },
     "sailcms": {
-        "containers": []
+        "containers": [],
+        "modules": []
     }
 }

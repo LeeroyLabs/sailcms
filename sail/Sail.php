@@ -180,6 +180,8 @@ class Sail
 
     /**
      *
+     * Boot basic systems
+     *
      * @params array $securitySettings
      * @params bool $skipContainers
      * @throws DatabaseException
@@ -188,6 +190,7 @@ class Sail
      * @throws SiteException
      * @throws ACLException
      * @throws PermissionException
+     * @throws FilesystemException
      *
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
@@ -689,7 +692,7 @@ class Sail
      */
     public static function siteId(): string
     {
-        return self::$siteID ?? 'main';
+        return self::$siteID ?? 'default';
     }
 
     /**
@@ -734,12 +737,32 @@ class Sail
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws FileException
+     * @throws JsonException
      *
      */
     public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
     {
         self::setWorkingDirectory($rootDir . '/mock');
         self::setAppState(self::STATE_CLI, 'dev', $rootDir . '/mock');
+
+        // Load security into place so it's available everywhere
+        Security::init();
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
+
+        // Register Search Adapters
+        Search::registerSystemAdapters();
+        Search::init();
+
+        // Load cms Fields
+        Field::init();
+
+        // Initialize the logger
+        Log::init();
+
+        // Initialize the router
+        Router::init();
 
         self::$environmentData->setFor('SITE_URL', 'http://localhost:8888');
 
@@ -748,6 +771,9 @@ class Sail
         } else {
             self::setTemplateDirectory(dirname($rootDir) . '/templates');
         }
+
+        self::loadContainerFromComposer(dirname($rootDir));
+        self::loadModulesFromComposer(dirname($rootDir));
     }
 
     /**

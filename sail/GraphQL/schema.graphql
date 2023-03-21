@@ -9,7 +9,7 @@ type Query {
     resendValidationEmail(email: String!): Boolean!
     authenticate(email: String!, password: String!): LoginResult!
     verifyAuthenticationToken(token: String!): User
-    verifyTFA(user_id: ID!, code: String!): Boolean!
+    verifyTFA(user_id: ID!, code: String!): User
     forgotPassword(email: String!): Boolean!
     userWithToken: User
 
@@ -51,9 +51,8 @@ type Query {
 
 type Mutation {
     # Users
-    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): Boolean!
-    createUserGetId(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean): ID!
-    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): Boolean!
+    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): ID!
+    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): ID!
     updateUser(id: ID!, name: UserNameInput! email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput, locale: String): Boolean!
     deleteUser(id: ID!): Boolean!
     validateAccount(code: String!): Boolean!
@@ -191,12 +190,13 @@ type Role {
 
 type RoleConfig {
     role: Role!
-    allowedPermissions: [ACL!]!
+    allowedPermissions: [String!]!
     permissions: [ACL!]!
 }
 
 type ACL {
-    category: String!
+    group: String!
+    type: String!
     value: String!
 }
 
@@ -226,7 +226,7 @@ type Entry {
     parent: Parent
     site_id: String!
     locale: String!
-    alternates: [Alternates]!
+    alternates: [Alternate]!
     is_homepage: Boolean
     status: EntryStatus
     title: String!
@@ -261,7 +261,7 @@ type EntryLayout {
 type EntrySeo {
     entry_seo_id: ID!
     title: String!
-    alternates: [Alternates]!
+    alternates: [Alternate!]!
     url: String
     locale: String
     description: String
@@ -294,21 +294,21 @@ type SocialMetaContent {
 
 type LayoutField {
     key: String!
-    fieldConfigs: [FieldConfigs]!
+    fieldConfigs: [FieldConfig!]!
 }
 
-type FieldConfigs {
+type FieldConfig {
     labels: LocaleField!
     handle: String!
-    inputSettings: [InputSettings]!
+    inputSettings: [InputSetting!]!
 }
 
-type InputSettings {
+type InputSetting {
     inputKey: String!
-    settings: [Settings]!
+    settings: [Setting]!
 }
 
-type Settings {
+type Setting {
     name: String!
     value: String
     options: [Options!]
@@ -380,7 +380,7 @@ enum EntryStatus {
     trash
 }
 
-type Alternates {
+type Alternate {
     locale: String!
     entry_id: ID!
 }
@@ -438,7 +438,7 @@ type FieldInputInfo {
     fullname: String!
     type: String!
     inputKey: String
-    availableSettings: [Settings!]!
+    availableSettings: [Setting!]!
 }
 
 type LocaleField {
@@ -522,6 +522,8 @@ type ContainerInfo {
     description: String!
     version: Float!
     semver: String!
+    author: String!
+    link: String!
 }
 
 type ModuleInfo {
@@ -529,6 +531,8 @@ type ModuleInfo {
     description: String!
     version: Float!
     semver: String!
+    author: String!
+    link: String!
 }
 
 type Middleware {
@@ -537,6 +541,17 @@ type Middleware {
 }
 
 type GraphQLInfo {
+    queries: [QueryInfo!]!
+    mutations: [MutationInfo!]!
+}
+
+type QueryInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type MutationInfo {
     operation: String!
     handler: String!
     method: String!

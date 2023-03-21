@@ -27,6 +27,7 @@ use SailCMS\Types\QueryOptions;
 class Category extends Model
 {
     protected string $collection = 'categories';
+    protected string $permissionGroup = 'category';
     protected array $casting = [
         'name' => LocaleField::class
     ];
