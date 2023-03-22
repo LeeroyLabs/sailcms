@@ -81,7 +81,7 @@ class Engine
      * @param  string  $file
      * @param  object  $data
      * @return string
-     * @throws FileException|FilesystemException|LoaderError|RuntimeError|SyntaxError
+     * @throws LoaderError|RuntimeError|SyntaxError
      *
      */
     public function render(
@@ -146,6 +146,22 @@ class Engine
     public static function addExtension(AbstractExtension $extension): void
     {
         self::$extensions[] = $extension;
+    }
+
+    /**
+     *
+     * Get registered extensions, filters and functions
+     *
+     * @return array
+     *
+     */
+    public static function getExtensions(): array
+    {
+        return [
+            'extensions' => self::$extensions,
+            'filters' => self::$filters,
+            'functions' => self::$functions
+        ];
     }
 
     // -------------------------------------------------- Private -------------------------------------------------- //

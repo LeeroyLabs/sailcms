@@ -7,6 +7,9 @@ use League\Flysystem\FilesystemException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Models\Email;
+use SailCMS\Templating\Engine;
+use SailCMS\Templating\Extensions\Bundled;
+use SailCMS\Templating\Extensions\Navigation;
 use Symfony\Bridge\Twig\Mime\BodyRenderer;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Transport;
@@ -260,6 +263,24 @@ class Mail
         $mailer = new Mailer(Transport::fromDsn(env('mail_dsn', '')));
         $loader = new FilesystemLoader(Sail::getTemplateDirectory());
         $twigEnv = new Environment($loader);
+
+        // Load all Twig extensions, functions and filters
+        $extensions = Engine::getExtensions();
+
+        $twigEnv->addExtension(new Bundled());
+        $twigEnv->addExtension(new Navigation());
+
+        foreach ($extensions['extensions'] as $ext) {
+            $twigEnv->addExtension($ext);
+        }
+
+        foreach ($extensions['filters'] as $filter) {
+            $twigEnv->addFilter($filter);
+        }
+
+        foreach ($extensions['functions'] as $func) {
+            $twigEnv->addFunction($func);
+        }
 
         try {
             $twigBodyRenderer = new BodyRenderer($twigEnv);
