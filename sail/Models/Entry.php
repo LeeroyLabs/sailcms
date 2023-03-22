@@ -313,7 +313,7 @@ class Entry extends Model implements Validator
     {
         return [
             '_id' => $this->_id,
-            'entry_type_id' => $this->entry_type_id,
+            'entry_type' => $this->entryType,
             'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,

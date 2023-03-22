@@ -536,6 +536,7 @@ class Entries
      */
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
+        // For EntryVersion
         if (!isset($obj['current'])) {
             if ($info->fieldName === "content") {
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
@@ -552,6 +553,7 @@ class Entries
          * @var Entry $entry
          */
         $entry = $obj['current'];
+
         // Entry fields to resolve
         if ($info->fieldName === "content") {
             return $entry->getContent();
@@ -567,6 +569,16 @@ class Entries
 
         if ($info->fieldName === "publication") {
             return (new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+        }
+
+        if ($info->fieldName === "parent") {
+            if (!$obj['parent']['handle']) {
+                return null;
+            }
+            $entryType = (new EntryType())->getByHandle($obj['parent']['handle']);
+            $entry = $entryType->getEntryModel()->getById($obj['parent']['parent_id']);
+            $currentHomepage = Entry::getHomepage($entry->site_id, $entry->locale);
+            return $entry->simplify($currentHomepage);
         }
 
         return $obj[$info->fieldName];
