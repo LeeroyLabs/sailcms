@@ -531,7 +531,10 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
