@@ -637,7 +637,6 @@ class Entries
 
         $entryLayoutModel = new EntryLayout();
         $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
-
         return $entryLayout->simplify();
     }
 

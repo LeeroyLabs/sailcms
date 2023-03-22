@@ -170,6 +170,12 @@ test('Create layout, entry type & entry', function () {
                             inputSettings: []
                         }
                         {
+                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
+                            key: "wysiwyg"
+                            handle: "SailCMS-Models-Entry-HTMLField"
+                            inputSettings: []
+                        }
+                        {
                             labels: { en: "Select", fr: "Selection" }
                             key: "select"
                             handle: "SailCMS-Models-Entry-SelectField"
@@ -177,16 +183,19 @@ test('Create layout, entry type & entry', function () {
                                 { 
                                     settings: [
                                         {name: "required", value: "true", type: boolean}
-                                        {name: "options", value: "[{name: "test", value: "Big test"}, {name: "test2", value: "The real big test"}]", type: array}
+                                        {name: "options", options: [
+                                            {
+                                                label: "Big test"
+                                                value: "test"
+                                            },
+                                            {
+                                                label: "The real big test"
+                                                value: "test2"
+                                            }
+                                        ], type: array}
                                     ] 
                                 }
                             ]
-                        }
-                        {
-                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
-                            key: "wysiwyg"
-                            handle: "SailCMS-Models-Entry-HTMLField"
-                            inputSettings: []
                         }
                         {
                             labels: { en: "Email", fr: "Courriel" }
@@ -261,6 +270,10 @@ test('Create layout, entry type & entry', function () {
                             key: "email"
                             content: "testleeroy@leeroy.ca"
                         }
+                        {
+                            key: "select"
+                            content: "test"
+                        }
                     ]
                 ) {
                     errors {
@@ -276,6 +289,7 @@ test('Create layout, entry type & entry', function () {
             expect($newEntryType->status)->toBe('ok');
             expect($newEntry->status)->toBe('ok');
         } catch (Exception $exception) {
+            //print_r($exception->getMessage());
             expect(true)->toBe(false);
         }
     }

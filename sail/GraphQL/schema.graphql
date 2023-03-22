@@ -352,8 +352,14 @@ input InputSettingsInput {
 
 input SettingsInput {
     name: String!
-    value: String!
+    value: String
+    options: [OptionsInput!]
     type: InputType!
+}
+
+input OptionsInput {
+    value: String!
+    label: String!
 }
 
 input ModelFieldContentInput {
@@ -439,13 +445,6 @@ type FieldInputInfo {
     type: String!
     inputKey: String
     availableSettings: [Setting!]!
-}
-
-type Settings {
-    name: String!
-    value: String
-    options: [Options!]
-    type: String!
 }
 
 type LocaleField {
