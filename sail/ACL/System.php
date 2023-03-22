@@ -13,6 +13,9 @@ class System
         'user',
         'entrytype',
         'entrylayout',
+        'entryseo',
+        'entryversion',
+        'entrypublication',
         'asset',
         'emails',
         'categories',
@@ -39,6 +42,8 @@ class System
             new ACL('EntrySeo', ACLType::READ_WRITE),
             new ACL('EntryVersion', ACLType::READ),
             new ACL('EntryVersion', ACLType::READ_WRITE),
+            new ACL('EntryPublication', ACLType::READ),
+            new ACL('EntryPublication', ACLType::READ_WRITE),
 
             // Assets
             new ACL('Asset', ACLType::READ_WRITE),
@@ -53,7 +58,11 @@ class System
             new ACL('Category', ACLType::READ),
 
             // Register
-            new ACL('Register', ACLType::READ)
+            new ACL('Register', ACLType::READ),
+
+            // Navigation
+            new ACL('Navigation', ACLType::READ_WRITE),
+            new ACL('Navigation', ACLType::READ),
         ]);
     }
 }

@@ -26,6 +26,7 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -49,9 +50,9 @@ final class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param  string  $operationName
-     * @param  string  $className
-     * @param  string  $method
+     * @param string $operationName
+     * @param string $className
+     * @param string $method
      * @return void
      * @throws GraphqlException
      *
@@ -74,9 +75,9 @@ final class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param  string  $operationName
-     * @param  string  $className
-     * @param  string  $method
+     * @param string $operationName
+     * @param string $className
+     * @param string $method
      * @return void
      * @throws GraphqlException
      *
@@ -99,9 +100,9 @@ final class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param  string  $type
-     * @param  string  $className
-     * @param  string  $method
+     * @param string $type
+     * @param string $className
+     * @param string $method
      * @return void
      * @throws GraphqlException
      *
@@ -138,7 +139,7 @@ final class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param  string  $content
+     * @param string $content
      * @return void
      *
      */
@@ -151,7 +152,7 @@ final class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param  string  $content
+     * @param string $content
      * @return void
      *
      */
@@ -164,7 +165,7 @@ final class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param  string  $content
+     * @param string $content
      * @return void
      *
      */
@@ -400,9 +401,12 @@ final class GraphQL
 
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
+        self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
+        self::addMutationResolver('publishEntry', Entries::class, 'publishEntry');
+        self::addMutationResolver('unpublishEntry', Entries::class, 'unpublishEntry');
         self::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
         self::addQueryResolver('entryVersion', Entries::class, 'entryVersion');
@@ -420,6 +424,7 @@ final class GraphQL
 
         // Types and Resolvers
         self::addResolver('Entry', Entries::class, 'entryResolver');
+        self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
@@ -435,6 +440,13 @@ final class GraphQL
         self::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
         self::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
 
+        // Navigation
+        self::addQueryResolver('navigation', Navigation::class, 'navigation');
+        self::addQueryResolver('navigationDetails', Navigation::class, 'navigationDetails');
+        self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
+        self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
+        self::addMutationResolver('deleteNavigation', Navigation::class, 'deleteNavigation');
+
         // Misc calls
         // TODO: GET LOGS (from file or db)
 
@@ -447,9 +459,9 @@ final class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param  array        $args
+     * @param array $args
      * @param               $contextValue
-     * @param  ResolveInfo  $info
+     * @param ResolveInfo $info
      * @return ArrayAccess|mixed
      *
      */
@@ -529,8 +541,8 @@ final class GraphQL
      *
      * Run custom types on possible resolver for them
      *
-     * @param  array               $typeConfig
-     * @param  TypeDefinitionNode  $typeDefinitionNode
+     * @param array $typeConfig
+     * @param TypeDefinitionNode $typeDefinitionNode
      * @return array
      *
      */
@@ -545,8 +557,7 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver)
-        {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

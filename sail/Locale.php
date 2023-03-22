@@ -8,6 +8,7 @@ use Symfony\Component\Yaml\Yaml;
 class Locale
 {
     public static string $current;
+    private static string $default;
     public static array $strings = [];
 
     private static array $availableLocales = [];
@@ -32,6 +33,19 @@ class Locale
 
     /**
      *
+     * Set default language for the cms
+     *
+     * @param  string  $locale
+     * @return void
+     *
+     */
+    public static function setDefault(string $locale): void
+    {
+        self::$default = $locale;
+    }
+
+    /**
+     *
      * Get current Locale value
      *
      * @return string
@@ -40,6 +54,18 @@ class Locale
     public static function current(): string
     {
         return self::$current;
+    }
+
+    /**
+     *
+     * Get the default locale
+     *
+     * @return string
+     *
+     */
+    public static function default(): string
+    {
+        return self::$default;
     }
 
     /**
@@ -176,6 +202,9 @@ class Locale
 
         // General CMS Locales
         self::loadFromDirectories(['cms_root://sail']);
+
+        // General Application Level
+        self::loadFromDirectories(['root://']);
 
         // Load all container locale files
         self::loadFromDirectories($fs->listContents('root://containers', false)->toArray());

@@ -5,13 +5,13 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
 use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\SocialMeta;
 use SailCMS\Types\Username;
@@ -173,10 +173,9 @@ test('Create an entry with the default type', function () {
     $model = new Entry();
 
     try {
-        $entry = $model->create(true, 'fr', EntryStatus::LIVE, 'Home', 'home');
+        $entry = $model->create(true, 'fr', 'Home', 'home');
 
         expect($entry->title)->toBe('Home')
-            ->and($entry->status)->toBe(EntryStatus::LIVE->value)
             ->and($entry->locale)->toBe('fr')
             ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
     } catch (Exception $exception) {
@@ -190,7 +189,8 @@ test('Access to default SEO data', function () {
 
     $seo = $entry->getSEO();
 
-    expect($seo->title)->toBe($entry->title)->and($seo->entry_seo_id)->not->toBeNull();
+    expect($seo->title)->toBe($entry->title)
+        ->and($seo->entry_seo_id)->not->toBeNull();
 });
 
 test('Update seo data for an entry', function () {
@@ -234,9 +234,8 @@ test('Create an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(true, 'fr', EntryStatus::LIVE, 'Test', 'test', 'test');
+        $entry = $entryModel->create(true, 'fr', 'Test', 'test', 'test');
         expect($entry->title)->toBe('Test');
-        expect($entry->status)->toBe(EntryStatus::LIVE->value);
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('test/test');
     } catch (Exception $exception) {
@@ -276,12 +275,28 @@ test('Get homepage entry', function () {
     expect($entry->title)->toBe('Test');
 })->group('entry');
 
+test('Publish an entry', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
+    ]);
+
+    try {
+        $now = time();
+        $expiration = $now + 3600; // + 1 hour
+        $entryPublicationId = $entryModel->publish($entry->_id, $now, $expiration);
+        expect($entryPublicationId)->not()->toBeNull();
+    } catch (Exception $exception) {
+//        print_r($exception);
+        expect(false)->toBeTrue();
+    }
+});
+
 test('Update an entry with an entry type', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test'
     ]);
-    $before = $entry->dates->updated;
 
     try {
         $result = $entryModel->updateById($entry, [
@@ -313,30 +328,17 @@ test('Create an entry with an entry type with an existing url', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
 
     try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::INACTIVE, 'Test 2', 'test', 'test-de-test', [
+        $entry = $entryModel->create(false, 'fr', 'Test 2', 'test', 'test-de-test', [
             'content' => [
                 'sub title' => "Textfield content"
             ]
         ]);
         expect($entry->title)->toBe('Test 2')
-            ->and($entry->status)->toBe(EntryStatus::INACTIVE->value)
             ->and($entry->locale)->toBe('fr')
             ->and($entry->url)->toBe('pages-de-test/test-de-test-2');
     } catch (Exception $exception) {
         // print_r($exception->getMessage());
         expect(true)->toBe(false);
-    }
-})->group('entry');
-
-test('Fail to create an entry that is trashed', function () {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-
-    try {
-        $entry = $entryModel->create(false, 'fr', EntryStatus::TRASH, 'Test 3', 'test', 'test-de-test', []);
-        expect(true)->toBe(false);
-    } catch (Exception $exception) {
-        expect(true)->toBe(true);
-        expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
     }
 })->group('entry');
 
@@ -349,7 +351,7 @@ test('Get a validated slug for an existing slug', function () {
     expect($newSlug)->toBe('test-de-test-3');
 })->group('entry');
 
-test('Failed to update content because a field does not validate', function () {
+test('Failed to update content because a field does not validated', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test 2'
@@ -363,7 +365,7 @@ test('Failed to update content because a field does not validate', function () {
         expect(true)->toBe(false);
     } catch (EntryException $exception) {
 //        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("5006: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
+        expect($exception->getMessage())->toBe("5005: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
     }
 })->group('entry');
 
@@ -396,31 +398,38 @@ test('Get homepage entry after update', function () {
     expect($entry->title)->toBe('Home page');
 })->group('entry');
 
-test('Fail to update an entry to trash', function () {
-    $model = new Entry();
-    $entry = $model->one([
-        'title' => 'Home page'
+test('Find the entry by url', function () {
+    $entry = Entry::findByURL('fr/', false);
+
+    expect($entry->title)->toBe('Test')
+        ->and($entry->slug)->toBe('test')
+        ->and($entry->content->length)->toBe(0); // We have the entry published before the content has been added
+})->group('entry');
+
+test('Unpublish an entry', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+    $entry = $entryModel->one([
+        'title' => 'Test'
     ]);
 
     try {
-        $result = $entry->updateById($entry, [
-            'status' => EntryStatus::TRASH,
-        ]);
-        expect(true)->toBe(false);
+        $result = $entryModel->unpublish($entry->_id);
+        $publicationEmpty = (new EntryPublication())->getPublicationByEntryId($entry->_id);
+        expect($result)->toBeTrue()
+            ->and($publicationEmpty)->toBeNull();
     } catch (Exception $exception) {
-        expect($exception->getMessage())->toBe(Entry::STATUS_CANNOT_BE_TRASH);
+//        print_r($exception);
+        expect(false)->toBeTrue();
     }
-})->group('entry');
-
-test('Find the entry by url', function () {
-    $entry = Entry::findByURL('pages-de-test/test-de-test', false);
-
-    expect($entry->title)->toBe('Test');
-})->group('entry');
+});
 
 test('Failed to find the entry by url', function () {
+    // Failed to find because it does not exist
     $entry = Entry::findByURL('pages-de-test/test-de-test-2', false);
+    expect($entry)->toBe(null);
 
+    // Failed to find because it's not published yet
+    $entry = Entry::findByURL('pages-de-test/test-de-test', false);
     expect($entry)->toBe(null);
 })->group('entry');
 
@@ -486,7 +495,7 @@ test('Soft Delete an entry with the default type', function () {
             'title' => 'Home page'
         ]);
         expect($result)->toBe(true)
-            ->and($entry->status)->toBe(EntryStatus::TRASH->value);
+            ->and($entry->trashed)->toBeTrue();
     } catch (EntryException $exception) {
         expect(true)->toBe(false);
     }

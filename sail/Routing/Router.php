@@ -10,6 +10,7 @@ use SailCMS\Contracts\AppController;
 use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
 use SailCMS\DI;
+use SailCMS\Email\Controller;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -23,7 +24,6 @@ use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
-use SailCMS\Sail;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
 use Twig\Error\LoaderError;
@@ -220,12 +220,7 @@ class Router
             }
         }
 
-        if ($uri === '/') {
-            $entry = Entry::getHomepageEntry(Sail::siteId(), Locale::$current);
-        } else {
-            $entry = Entry::findByURL($uri);
-        }
-
+        $entry = Entry::findByURL($uri);
         if ($entry) {
             $response = Response::html();
 
@@ -425,6 +420,19 @@ class Router
         );
     }
 
+    /**
+     *
+     * Add the email previewer route to the system
+     *
+     * @return void
+     *
+     */
+    public static function setupEmailPreviewer(): void
+    {
+        $instance = new self();
+        $instance->get('/email-preview/:any/:any', 'en', Controller::class, 'previewEmail');
+    }
+
     // -------------------------------------------------- Private -------------------------------------------------- //
 
     /**
@@ -447,7 +455,7 @@ class Router
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $class = $trace[2]['class'];
 
-        if ($trace[2]['function'] !== '{closure}' && !str_contains($class, 'Tests\routerTest')) {
+        if ($trace[2]['function'] !== '{closure}' && !str_contains($class, self::class) && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
                 // Illegal call, this should only be called from the routes method in a container
                 throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);

@@ -15,6 +15,7 @@ use SailCMS\Field;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
@@ -274,6 +275,37 @@ class Entries
 
     /**
      *
+     * Get an entry by url
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function entryByUrl(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $url = $args->get('url');
+        $siteId = $args->get("site_id", Sail::siteId());
+
+        $entry = Entry::findByURL($url, $siteId);
+
+        if ($entry) {
+            $homepage = Entry::getHomepage($siteId, $entry->locale);
+            return $this->parseEntry($entry->simplify($homepage));
+        }
+        return null;
+    }
+
+    /**
+     *
      * Create an entry and return it
      *
      * @param mixed $obj
@@ -296,7 +328,6 @@ class Entries
         $parent = $args->get('parent');
         $locale = $args->get('locale');
         $alternates = $args->get('alternates');
-        $status = $args->get('status');
         $title = $args->get('title');
         $template = $args->get('template');
         $slug = $args->get('slug');
@@ -306,7 +337,7 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $template, $slug, [
+        $entryOrErrors = $entryModel->create($isHomepage, $locale, $title, $template, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
@@ -417,6 +448,51 @@ class Entries
 
     /**
      *
+     * Publish an entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return string
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function publishEntry(mixed $obj, Collection $args, Context $context): string
+    {
+        $entryId = $args->get('id');
+        $publicationDate = $args->get('publication_date', 0);
+        $expirationDate = $args->get('expiration_date', 0);
+        $siteId = $args->get('site_id');
+
+        return (new Entry())->publish($entryId, $publicationDate, $expirationDate, $siteId);
+    }
+
+    /**
+     *
+     * Unpublish an entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    public function unpublishEntry(mixed $obj, Collection $args, Context $context): bool
+    {
+        $entryId = $args->get('id');
+
+        return (new Entry())->unpublish($entryId);
+    }
+
+    /**
+     *
      * Delete an entry
      *
      * @param mixed $obj
@@ -482,14 +558,44 @@ class Entries
         }
 
         if ($info->fieldName === "schema") {
-            return $entry->getSchema()->unwrap();
+            return $entry->getSchema(true, true)->unwrap();
         }
 
         if ($info->fieldName === "seo") {
             return $entry->getSimplifiedSEO();
         }
 
+        if ($info->fieldName === "publication") {
+            return (new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+        }
+
         return $obj[$info->fieldName];
+    }
+
+    /**
+     *
+     * Resolver the version for Entry Publication
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryPublicationResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        /**
+         * @var EntryPublication $obj
+         */
+        if ($info->fieldName === "version") {
+            return (new EntryVersion())->getById($obj->entry_version_id);
+        }
+
+        return $obj->{$info->fieldName};
     }
 
 

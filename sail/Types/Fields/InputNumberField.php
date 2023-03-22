@@ -55,10 +55,10 @@ class InputNumberField extends Field
      *
      * Available properties of the settings
      *
-     * @param array|null $options
      * @return Collection
+     *
      */
-    public static function availableProperties(?array $options = null): Collection
+    public static function availableProperties(): Collection
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),

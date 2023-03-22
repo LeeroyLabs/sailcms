@@ -8,9 +8,13 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Types\Authors;
+use SailCMS\Types\Dates;
+use SailCMS\Types\EntryParent;
 use SailCMS\Types\QueryOptions;
 use SodiumException;
 
@@ -26,7 +30,7 @@ use SodiumException;
  */
 class EntryVersion extends Model
 {
-    protected string $collection = 'entry_version';
+    protected string $collection = 'entry_versions';
     protected string $permissionGroup = 'entryversion'; // Usage only in get methods
     protected array $casting = [
         "entry" => Collection::class
@@ -34,6 +38,7 @@ class EntryVersion extends Model
 
     public const DATABASE_ERROR = '5200: Exception when "%s" an entry version.';
     public const CANNOT_APPLY_LAST_VERSION = '5201: Cannot apply last version, it is the same as the current version.';
+    public const DOES_NOT_EXISTS = '5202: There no version for the given id.';
 
     /**
      *
@@ -72,6 +77,24 @@ class EntryVersion extends Model
 
     /**
      *
+     *
+     *
+     * @param string|ObjectId $entryId
+     * @return EntryVersion|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     */
+    public function getLastVersionByEntryId(string|ObjectId $entryId): EntryVersion|null
+    {
+        $this->hasPermissions(true);
+
+        $options = QueryOptions::initWithSort(['created_at' => -1, '_id' => -1]);
+        return $this->findOne(['entry_id' => (string)$entryId], $options)->exec();
+    }
+
+    /**
+     *
      * Create a new version for an entry, automatically called in the create and update of an entry.
      *
      * @param User $user
@@ -102,15 +125,15 @@ class EntryVersion extends Model
      *
      * Delete all version by entry id
      *
-     * @param string $entry_id
+     * @param string $entryId
      * @return bool
      * @throws EntryException
      *
      */
-    public function deleteAllByEntryId(string $entry_id): bool
+    public function deleteAllByEntryId(string $entryId): bool
     {
         try {
-            $result = $this->deleteMany(['entry_id' => $entry_id]);
+            $result = $this->deleteMany(['entry_id' => $entryId]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'deleting') . PHP_EOL . $exception->getMessage());
         }
@@ -145,9 +168,7 @@ class EntryVersion extends Model
         }
 
         // Check if not the last version
-        $lastVersion = $this->findOne([
-            "entry_id" => $entryVersion->entry_id
-        ], QueryOptions::initWithSort(['_id' => -1]))->exec();
+        $lastVersion = $this->getLastVersionByEntryId($entryVersion->entry_id);
 
         if ((string)$lastVersion->_id === (string)$entryVersion->_id) {
             throw new EntryException(self::CANNOT_APPLY_LAST_VERSION);
@@ -176,5 +197,41 @@ class EntryVersion extends Model
         }
 
         return $result->length === 0;
+    }
+
+    /**
+     *
+     * Fake an apply of version directly on an entry object
+     *
+     * @param Entry $entry
+     * @param string $entry_version_id
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws CollectionException
+     *
+     */
+    public function fakeVersion(Entry $entry, string $entry_version_id): Entry
+    {
+        $entryVersion = $this->findById($entry_version_id)->exec();
+
+        if (!isset($entryVersion->_id)) {
+            throw new EntryException(self::DOES_NOT_EXISTS);
+        }
+
+        $entry->authors = (new Authors())->castTo($entryVersion->entry->get('authors'));
+        $entry->dates = (new Dates())->castTo($entryVersion->entry->get('dates'));
+        $entry->parent = (new EntryParent())->castTo($entryVersion->entry->get('parent'));
+        $entry->site_id = $entryVersion->entry->get('site_id');
+        $entry->locale = $entryVersion->entry->get('locale');
+        $entry->title = $entryVersion->entry->get('title');
+        $entry->slug = $entryVersion->entry->get('slug');
+        $entry->url = $entryVersion->entry->get('url');
+        $entry->template = $entryVersion->entry->get('template');
+        $entry->categories = (new Collection())->castTo($entryVersion->entry->get('categories'));
+        $entry->content = (new Collection())->castTo($entryVersion->entry->get('content'));
+        $entry->alternates = $entryVersion->entry->get('alternates');
+
+        return $entry;
     }
 }

@@ -5,7 +5,6 @@ namespace SailCMS\Templating;
 use League\Flysystem\FilesystemException;
 use SailCMS\Debug;
 use SailCMS\Errors\FileException;
-use SailCMS\Filesystem;
 use SailCMS\Sail;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -16,6 +15,7 @@ use Twig\Lexer;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
 use SailCMS\Templating\Extensions\Bundled;
+use SailCMS\Templating\Extensions\Navigation;
 use Twig\TwigFunction;
 
 class Engine
@@ -81,7 +81,7 @@ class Engine
      * @param  string  $file
      * @param  object  $data
      * @return string
-     * @throws FileException|FilesystemException|LoaderError|RuntimeError|SyntaxError
+     * @throws LoaderError|RuntimeError|SyntaxError
      *
      */
     public function render(
@@ -132,7 +132,7 @@ class Engine
      */
     public static function addFunction(string $name, callable $callback): void
     {
-        self::$filters[] = new TwigFunction($name, $callback);
+        self::$functions[] = new TwigFunction($name, $callback);
     }
 
     /**
@@ -148,11 +148,28 @@ class Engine
         self::$extensions[] = $extension;
     }
 
+    /**
+     *
+     * Get registered extensions, filters and functions
+     *
+     * @return array
+     *
+     */
+    public static function getExtensions(): array
+    {
+        return [
+            'extensions' => self::$extensions,
+            'filters' => self::$filters,
+            'functions' => self::$functions
+        ];
+    }
+
     // -------------------------------------------------- Private -------------------------------------------------- //
 
     private function setupExtensions(): void
     {
         $this->twig->addExtension(new Bundled());
+        $this->twig->addExtension(new Navigation());
 
         foreach (self::$extensions as $extension) {
             $this->twig->addExtension($extension);

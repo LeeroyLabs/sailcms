@@ -7,6 +7,9 @@ use League\Flysystem\FilesystemException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Models\Email;
+use SailCMS\Templating\Engine;
+use SailCMS\Templating\Extensions\Bundled;
+use SailCMS\Templating\Extensions\Navigation;
 use Symfony\Bridge\Twig\Mime\BodyRenderer;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Transport;
@@ -20,6 +23,8 @@ class Mail
 {
     private TemplatedEmail $email;
 
+    private static array $registeredPreviewers = [];
+
     public const PRIORITY_LOWEST = 5;
     public const PRIORTIY_LOW = 4;
     public const PRIORITY_NORMAL = 3;
@@ -29,6 +34,41 @@ class Mail
     public function __construct()
     {
         $this->email = new TemplatedEmail();
+    }
+
+    /**
+     *
+     * Register a preview handler
+     *
+     * @param  string  $template
+     * @param  string  $class
+     * @param  string  $method
+     * @return void
+     * @throws EmailException
+     *
+     */
+    public static function registerPreviewHandler(string $template, string $class, string $method): void
+    {
+        if (!isset(self::$registeredPreviewers[$template])) {
+            $instance = new $class();
+            self::$registeredPreviewers[$template] = ['template' => $template, 'class' => $instance, 'method' => $method];
+            return;
+        }
+
+        throw new EmailException('Cannot register more than 1 preview handler for ' . $template, 0403);
+    }
+
+    /**
+     *
+     * Get list of preview handlers for given template
+     *
+     * @param  string  $template
+     * @return array|null
+     *
+     */
+    public static function getRegisteredPreviewHandler(string $template): array|null
+    {
+        return self::$registeredPreviewers[$template] ?? null;
     }
 
     /**
@@ -223,6 +263,24 @@ class Mail
         $mailer = new Mailer(Transport::fromDsn(env('mail_dsn', '')));
         $loader = new FilesystemLoader(Sail::getTemplateDirectory());
         $twigEnv = new Environment($loader);
+
+        // Load all Twig extensions, functions and filters
+        $extensions = Engine::getExtensions();
+
+        $twigEnv->addExtension(new Bundled());
+        $twigEnv->addExtension(new Navigation());
+
+        foreach ($extensions['extensions'] as $ext) {
+            $twigEnv->addExtension($ext);
+        }
+
+        foreach ($extensions['filters'] as $filter) {
+            $twigEnv->addFilter($filter);
+        }
+
+        foreach ($extensions['functions'] as $func) {
+            $twigEnv->addFunction($func);
+        }
 
         try {
             $twigBodyRenderer = new BodyRenderer($twigEnv);

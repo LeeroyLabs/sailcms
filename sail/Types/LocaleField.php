@@ -44,6 +44,16 @@ class LocaleField implements Castable
         return $this->get($locale);
     }
 
+    public function __set(string $locale, string $value): void
+    {
+        $this->combinations->find(function ($key, $val) use ($locale, $value)
+        {
+            if ($val['locale'] === $locale) {
+                $val['value'] = $value;
+            }
+        });
+    }
+
     /**
      *
      * Cast to simpler format from LocaleField

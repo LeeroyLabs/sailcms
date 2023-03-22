@@ -30,6 +30,7 @@ type Query {
     entryTypes: [EntryType!]
     entryType(handle: String): EntryType
     entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
+    entryByUrl(url: String!, site_id: String): Entry
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout!]
@@ -45,6 +46,10 @@ type Query {
     categoryBySlug(slug: String!, site_id: String!): Category
     categoryFullTree(parent_id: ID!, site_id: String!): [Category!]!
     categoryEntries(slug: String, id: ID, site_id: String): [Entry!]
+
+    # Navigation
+    navigation(name: String!): [NavigationItem!]!
+    navigationDetails(name: String!): Navigation
 
     #{CUSTOM_QUERIES}#
 }
@@ -79,10 +84,12 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
+    publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
+    unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
     createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
@@ -95,6 +102,11 @@ type Mutation {
     updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
+
+    # Navigation
+    createNavigation(name: String!, structure: NavigationItemInput!, locale: String!): String!
+    updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
+    deleteNavigation(name: String!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
@@ -227,8 +239,9 @@ type Entry {
     site_id: String!
     locale: String!
     alternates: [Alternate]!
-    is_homepage: Boolean
-    status: EntryStatus
+    is_homepage: Boolean!
+    publication: EntryPublication
+    trashed: Boolean!
     title: String!
     template: String!
     slug: String
@@ -282,6 +295,18 @@ type EntryVersion {
     entry: Entry!
 }
 
+type EntryPublication {
+    _id: ID!
+    entry_id: ID!
+    version: EntryVersion!
+    dates: PublicationDates!
+    site_id: String!
+    entry_url: String!
+    user_id: ID!
+    user_full_name: String!
+    user_email: String!
+}
+
 type SocialMeta {
     handle: String!
     content: [SocialMetaContent]
@@ -311,7 +336,7 @@ type InputSetting {
 type Setting {
     name: String!
     value: String
-    options: [Options!]
+    choices: [String]
     type: String!
 }
 
@@ -380,12 +405,6 @@ enum InputType {
     array
 }
 
-enum EntryStatus {
-    live
-    inactive
-    trash
-}
-
 type Alternate {
     locale: String!
     entry_id: ID!
@@ -394,15 +413,18 @@ type Alternate {
 type Authors {
     created_by: ID
     updated_by: ID
-    published_by: ID
     deleted_by: ID
 }
 
 type Dates {
-    created: Float
-    updated: Float
-    published: Float
-    deleted: Float
+    created: Int
+    updated: Int
+    deleted: Int
+}
+
+type PublicationDates {
+    published: Int!
+    expired: Int
 }
 
 type Parent {
@@ -436,6 +458,7 @@ type FieldInfo {
     handle: String!
     description: String!
     storingType: String!
+    searchable: Boolean!
     inputs: [FieldInputInfo]!
 }
 
@@ -580,9 +603,30 @@ type Category {
     children: [Category!]!
 }
 
-type Options {
-    value: String!
+type NavigationItem {
     label: String!
+    url: String!
+    is_entry: Boolean!
+    entry_id: String!
+    external: Boolean!
+    children: [NavigationItem!]!
+}
+
+input NavigationItemInput {
+    label: String!
+    url: String!
+    is_entry: Boolean!
+    entry_id: String!
+    external: Boolean!
+    children: [NavigationItemInput!]!
+}
+
+type Navigation {
+    _id: ID!
+    title: String!
+    name: String!
+    structure: [NavigationItem!]!
+    locale: String!
 }
 
 #{CUSTOM_TYPES}#

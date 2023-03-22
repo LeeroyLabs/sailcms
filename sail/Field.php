@@ -14,12 +14,12 @@ use SailCMS\Models\Entry\Field as ModelField;
  * NumberField // option float + negative number    => Errors 6140 to 6159
  * DateField
  * DateTimeField
- * EmailField                                       => Errors 6240 to 6259
- * HtmlField                                        => Errors 6220 to 6239
+ * EmailField
+ * HtmlField
  * UrlField
  *
- * SelectField // search...                         => Errors 6180 to 6199
- * SelectMultipleField // search...                 => Errors 6200 to 6219
+ * ChoiceField // option radio / check
+ * SelectField // search...
  *
  * AssetField
  * EntryField                                       => Errors 6160 to 6179
