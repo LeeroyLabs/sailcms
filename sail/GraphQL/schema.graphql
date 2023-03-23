@@ -248,7 +248,7 @@ type Entry {
     url: String!
     authors: Authors!
     dates: Dates!
-    categories: [ID!]!
+    categories: [Category!]!
     content: [ModelFieldContent!]!
     schema: [LayoutField]!
     seo: EntrySeo
@@ -272,7 +272,7 @@ type EntryLayout {
 }
 
 type EntrySeo {
-    entry_seo_id: ID!
+    _id: ID!
     title: String!
     alternates: [Alternate!]!
     url: String

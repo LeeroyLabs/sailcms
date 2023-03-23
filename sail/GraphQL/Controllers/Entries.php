@@ -13,6 +13,7 @@ use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Field;
 use SailCMS\GraphQL\Context;
+use SailCMS\Models\Category;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryPublication;
@@ -586,6 +587,21 @@ class Entries
             $entry = $entryType->getEntryModel()->getById($obj['parent']['parent_id']);
             $currentHomepage = Entry::getHomepage($entry->site_id, $entry->locale);
             return $entry->simplify($currentHomepage);
+        }
+
+        if ($info->fieldName === "categories") {
+            $categoryIds = $obj['categories'];
+
+            $categories = Category::getByIds($categoryIds);
+
+            foreach ($categories as &$category) {
+                /**
+                 * @var Category $category
+                 */
+                $category = $category->simplify();
+            }
+
+            return $categories;
         }
 
         return $obj[$info->fieldName];

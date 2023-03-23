@@ -181,7 +181,14 @@ test('Get a entry', function () {
                         updated
                         deleted
                     }
-                    categories
+                    categories {
+                        _id
+                        name {
+                            en
+                            fr
+                        }
+                        slug
+                    }
                     content {
                         key
                         content
@@ -208,10 +215,11 @@ test('Get a entry', function () {
                         }
                     }
                     seo {
-                        entry_seo_id
+                        _id
                         title
                         alternates {
                             locale
+                            url
                             entry_id
                         }
                         url
