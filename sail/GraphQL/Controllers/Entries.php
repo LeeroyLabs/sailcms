@@ -481,7 +481,10 @@ class Entries
      * @param Collection $args
      * @param Context $context
      * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function unpublishEntry(mixed $obj, Collection $args, Context $context): bool
@@ -585,6 +588,25 @@ class Entries
         }
 
         return $obj[$info->fieldName];
+    }
+
+    /**
+     *
+     *
+     *
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public function entryAlternateResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === "url") {
+            $publication = (new EntryPublication())->getPublicationByEntryId($obj->entry_id);
+            return $publication->entry_url ?? ""; // We default to an empty string in case the entry is not published
+        }
+
+        return $obj->{$info->fieldName};
     }
 
     /**

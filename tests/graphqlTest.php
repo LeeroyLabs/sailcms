@@ -122,15 +122,24 @@ test('Get a entry', function () {
             entries(entry_type_handle: "page", page: 1, limit: 1) {
                 list {
                     _id
-                    entry_type_id
-                    parent {
+                    entry_type {
+                        _id
+                        title
                         handle
-                        parent_id
+                        url_prefix {
+                            en
+                            fr
+                        }
+                    }
+                    parent {
+                        _id
+                        title
                     }
                     site_id
                     locale
                     alternates {
                         locale
+                        url
                         entry_id
                     }
                     is_homepage

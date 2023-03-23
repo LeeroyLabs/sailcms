@@ -11,8 +11,8 @@ use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
@@ -353,7 +353,7 @@ class Entry extends Model implements Validator, Castable
     {
         return [
             '_id' => $this->_id,
-            'entry_type' => $this->entryType,
+            'entry_type' => $this->entryType->simplify(),
             'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,
@@ -1405,7 +1405,7 @@ class Entry extends Model implements Validator, Castable
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser;
-        $alternates = $data->get('alternates');
+        $alternates = $data->get('alternates', []);
         $parent = $data->get('parent');
         $content = $data->get('content');
         $categories = $data->get('categories');
@@ -1508,11 +1508,11 @@ class Entry extends Model implements Validator, Castable
         $locale = $entry->locale;
         $site_id = $entry->site_id;
 
+        // Validations
         if (in_array('locale', $data->keys()->unwrap())) {
             $locale = $data->get('locale');
             // Validate locale
             $locales = Locale::getAvailableLocales();
-            Debug::ray('change locale', $locales, 'for', $locale, $locales->contains($locale));
             if (!$locales->contains($locale)) {
                 $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
                 throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
@@ -1524,6 +1524,13 @@ class Entry extends Model implements Validator, Castable
         if (in_array('slug', $data->keys()->unwrap())) {
             $slug = $data->get('slug');
             $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
+        }
+        if (in_array('alternates', $data->keys()->unwrap())) {
+            $alternates = $data->get('alternates');
+            $alternates->each(function ($key, $alternate) {
+                // It's on a construction test to valid the locale
+                new EntryAlternate($alternate->locale, $alternate->entry_id);
+            });
         }
 
         // We bypass content validation when we apply a version
@@ -1667,8 +1674,10 @@ class Entry extends Model implements Validator, Castable
      * Find entry content by entry publication
      *
      * @param string $url
+     * @param string|null $siteId
      * @return Entry|null
      * @throws ACLException
+     * @throws CollectionException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
@@ -1685,8 +1694,8 @@ class Entry extends Model implements Validator, Castable
         $publication = (new EntryPublication())->getPublicationByUrl($url, $siteId);
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
-            $entryTypeId = $publication->version->entry->get('entry_type_id');
-            $entryModel = (new EntryType())->getById($entryTypeId, false)->getEntryModel();
+            $entryType = $publication->version->entry->get('entry_type');
+            $entryModel = (new EntryType())->getById($entryType->_id, false)->getEntryModel();
             $entry = $entryModel->one(['_id' => $publication->entry_id]);
             $content = (new EntryVersion())->fakeVersion($entry, $publication->entry_version_id);
         }

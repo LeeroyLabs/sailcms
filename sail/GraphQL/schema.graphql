@@ -401,8 +401,8 @@ enum InputType {
 
 type Alternate {
     locale: String!
+    url: String!
     entry_id: ID!
-    url: String
 }
 
 input AlternateInput {
