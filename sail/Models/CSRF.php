@@ -8,7 +8,6 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Http\Request;
 use SailCMS\Security;
-use SailCMS\Types\QueryOptions;
 
 /**
  *
@@ -68,7 +67,7 @@ class CSRF extends Model
     public function validate(string $receivedToken): bool
     {
         $ip = (new Request())->ipAddress();
-        $token = $this->findOne(['ip' => $ip], QueryOptions::initWithSort(['expire_at' => -1]))->exec();
+        $token = $this->findOne(['ip' => $ip])->sort(['expire_at' => -1])->exec();
         $leeway = setting('CSRF.leeway', 5);
         $now = time() + $leeway;
 

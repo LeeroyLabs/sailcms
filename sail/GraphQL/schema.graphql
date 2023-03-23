@@ -108,7 +108,20 @@ type Mutation {
     updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
     deleteNavigation(name: String!): Boolean!
 
+    # Forms
+    processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
+
     #{CUSTOM_MUTATIONS}#
+}
+
+input FormDataInput {
+    data: Json
+}
+
+type FormProcessingResult {
+    code: Int!
+    message: String!
+    missing: [String!]!
 }
 
 scalar Json

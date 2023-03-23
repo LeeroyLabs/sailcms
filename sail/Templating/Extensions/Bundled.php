@@ -35,7 +35,7 @@ class Bundled extends AbstractExtension
             new TwigFunction('jsonEncode', [$this, 'jsonEncode']),
             new TwigFunction('json', [$this, 'jsonEncode']),
             new TwigFunction('json_decode', [$this, 'jsonDecode']),
-            new TwigFunction('jsonDecode', [$this, 'jsonDecode']),
+            new TwigFunction('jsonDecode', [$this, 'jsonDecode'])
         ];
     }
 
@@ -209,13 +209,18 @@ class Bundled extends AbstractExtension
      * @throws Exception
      *
      */
-    public function csrf(): string
+    public function csrf(bool $returnAsFormElement = false): string
     {
         $use = setting('CSRF.use', true);
+        $csrfName = setting('CSRF.fieldName', '_csrf_');
+
+        if ($use && $returnAsFormElement) {
+            $token = Security::csrf();
+            return '<input type="hidden" name="' . $csrfName . '" value="' . $token . '" />';
+        }
 
         if ($use) {
-            $token = Security::csrf();
-            return '<input type="hidden" name="_csrf_" value="' . $token . '" />';
+            return Security::csrf();
         }
 
         return '';

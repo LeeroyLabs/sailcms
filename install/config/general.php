@@ -53,7 +53,8 @@ return [
         'CSRF' => [
             'use' => true,
             'leeway' => 5,
-            'expiration' => 120
+            'expiration' => 120,
+            'fieldName' => '_csrf_' // You should make this a random value to be unique
         ],
         'graphql' => [
             'active' => true,
@@ -185,7 +186,8 @@ return [
         'CSRF' => [
             'use' => true,
             'leeway' => 5,
-            'expiration' => 120
+            'expiration' => 120,
+            'fieldName' => '_csrf_' // You should make this a random value to be unique
         ],
         'graphql' => [
             'active' => true,
@@ -298,7 +300,8 @@ return [
         'CSRF' => [
             'use' => true,
             'leeway' => 5,
-            'expiration' => 120
+            'expiration' => 120,
+            'fieldName' => '_csrf_' // You should make this a random value to be unique
         ],
         'graphql' => [
             'active' => true,

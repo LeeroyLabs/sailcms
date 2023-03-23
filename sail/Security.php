@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use Exception;
 use League\Flysystem\FilesystemException;
+use SailCMS\Http\Request;
 use SailCMS\Models\CSRF;
 use SodiumException;
 
@@ -191,9 +192,13 @@ class Security
     public static function verifyCSRF(): void
     {
         $use = setting('CSRF.use', true);
+        $fieldName = setting('CSRF.fieldName', '_csrf_');
 
-        if ($use && !empty($_POST['_csrf_'])) {
-            $_ENV['CSRF_VALID'] = (new CSRF())->validate($_POST['_csrf_']);
+        $request = new Request();
+        $csrf = $request->post($fieldName, '');
+
+        if ($use && !empty($csrf)) {
+            $_ENV['CSRF_VALID'] = (new CSRF())->validate($csrf);
             return;
         }
 

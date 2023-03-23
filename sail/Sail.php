@@ -289,6 +289,9 @@ class Sail
         // Authenticate user
         User::authenticate();
 
+        // Setup Form Handling
+        Forms::init();
+
         // Ensure peak performance from the database
         self::ensurePerformance();
     }
@@ -341,7 +344,7 @@ class Sail
                 'register_helper' => true
             ]);
 
-            register_shutdown_function('self::shutdownHandler');
+            register_shutdown_function(self::shutdownHandler(...));
             Debug::eventStart('Running SailCMS', 'blue');
         }
     }

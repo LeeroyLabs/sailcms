@@ -63,6 +63,10 @@ class System
             // Navigation
             new ACL('Navigation', ACLType::READ_WRITE),
             new ACL('Navigation', ACLType::READ),
+
+            // Forms
+            new ACL('Form', ACLType::READ_WRITE),
+            new ACL('Form', ACLType::READ)
         ]);
     }
 }
