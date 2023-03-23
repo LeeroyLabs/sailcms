@@ -425,6 +425,7 @@ final class GraphQL
         // Types and Resolvers
         self::addResolver('Entry', Entries::class, 'entryResolver');
         self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
+        self::addResolver('Authors', Entries::class, 'authorsResolver');
         self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
 
         // Register

@@ -302,7 +302,6 @@ type EntryPublication {
     dates: PublicationDates!
     site_id: String!
     entry_url: String!
-    user_id: ID!
     user_full_name: String!
     user_email: String!
 }
@@ -411,9 +410,9 @@ input AlternateInput {
 }
 
 type Authors {
-    created_by: ID
-    updated_by: ID
-    deleted_by: ID
+    created_by: User
+    updated_by: User
+    deleted_by: User
 }
 
 type Dates {

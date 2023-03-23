@@ -130,10 +130,15 @@ test('Get a entry', function () {
                             en
                             fr
                         }
+                        entry_layout_id
                     }
                     parent {
                         _id
                         title
+                        slug
+                        url
+                        locale
+                        site_id
                     }
                     site_id
                     locale
@@ -149,9 +154,27 @@ test('Get a entry', function () {
                     slug
                     url
                     authors {
-                        created_by
-                        updated_by
-                        deleted_by
+                        created_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        updated_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        deleted_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
                     }
                     dates {
                         created

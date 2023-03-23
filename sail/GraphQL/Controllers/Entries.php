@@ -19,6 +19,7 @@ use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
+use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -607,6 +608,30 @@ class Entries
         }
 
         return $obj->{$info->fieldName};
+    }
+
+    /**
+     *
+     * Resolver authors of an entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function authorsResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        $userId = $obj[$info->fieldName] ?? null;
+
+        if ($userId) {
+            return (new User())->getById($userId);
+        }
+        return null;
     }
 
     /**
