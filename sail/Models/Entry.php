@@ -828,17 +828,26 @@ class Entry extends Model implements Validator, Castable
      * Get an entry with filters
      *
      * @param array $filters
+     * @param bool $cache
      * @return Entry|null
      * @throws DatabaseException
      *
      */
-    public function one(array $filters): Entry|null
+    public function one(array $filters, bool $cache = false): Entry|null
     {
+        $cacheTtl = $cache ? setting('entry.cacheTtl', Cache::TTL_WEEK) : 0;
+        $cacheKey = $cache ? self::generateCacheKeyFromFilters($this->entryType->handle . "_one_", $filters) : '';
         $qs = $this->findOne($filters);
         if (isset($filters['_id'])) {
+            $cacheKey = $cache ? self::ONE_CACHE_BY_ID . $filters['_id'] : '';
             $qs = $this->findById((string)$filters['_id']);
         }
-        return $qs->exec();
+
+        if (!$cache) {
+            $this->clearCacheForModel();
+            return $qs->exec();
+        }
+        return $qs->exec($cacheKey, $cacheTtl);
     }
 
     /**

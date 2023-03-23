@@ -172,7 +172,7 @@ final class Cache
         }
 
         $keys = self::$client->keys("{$prefix}:*");
-//        Debug::ray($keys);
+        
         if (count($keys) === 0) {
             return false;
         }
