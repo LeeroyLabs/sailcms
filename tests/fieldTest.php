@@ -1,7 +1,6 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\TextareaField;
@@ -166,12 +165,12 @@ and must keep it through all the process',
             ]
         ], false);
         expect($errors->length)->toBe(0);
-        Debug::ray('There is supposed to have no cache.');
+
         $entryModel = EntryType::getEntryModelByHandle('field-test');
         $entryUpdated = $entryModel->one([
             '_id' => $entryId
-        ], false);
-        Debug::ray('BEFORE THAT!!!', $entryUpdated->content);
+        ]);
+
 
         expect($entryUpdated->content->get('float'))->toBe('0.03');
         expect($entryUpdated->content->get('text'))->toBe('Not empty');

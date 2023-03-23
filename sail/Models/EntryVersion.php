@@ -187,7 +187,7 @@ class EntryVersion extends Model
             'alternates' => $entryVersion->entry->get('alternates'),
         ];
 
-        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'))->exec();
+        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type')->_id)->exec();
         $entryModel = $entryType->getEntryModel($entryType);
 
         try {

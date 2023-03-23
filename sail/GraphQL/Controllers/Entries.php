@@ -13,12 +13,14 @@ use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Field;
 use SailCMS\GraphQL\Context;
+use SailCMS\Models\Category;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
+use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -481,7 +483,10 @@ class Entries
      * @param Collection $args
      * @param Context $context
      * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
     public function unpublishEntry(mixed $obj, Collection $args, Context $context): bool
@@ -531,11 +536,15 @@ class Entries
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
+        // For EntryVersion
         if (!isset($obj['current'])) {
             if ($info->fieldName === "content") {
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
@@ -552,6 +561,7 @@ class Entries
          * @var Entry $entry
          */
         $entry = $obj['current'];
+
         // Entry fields to resolve
         if ($info->fieldName === "content") {
             return $entry->getContent();
@@ -569,7 +579,75 @@ class Entries
             return (new EntryPublication())->getPublicationByEntryId($entry->_id, false);
         }
 
+        if ($info->fieldName === "parent") {
+            if (!$obj['parent']['handle']) {
+                return null;
+            }
+            $entryType = (new EntryType())->getByHandle($obj['parent']['handle']);
+            $entry = $entryType->getEntryModel()->getById($obj['parent']['parent_id']);
+            $currentHomepage = Entry::getHomepage($entry->site_id, $entry->locale);
+            return $entry->simplify($currentHomepage);
+        }
+
+        if ($info->fieldName === "categories") {
+            $categoryIds = $obj['categories'];
+
+            $categories = Category::getByIds($categoryIds);
+
+            foreach ($categories as &$category) {
+                /**
+                 * @var Category $category
+                 */
+                $category = $category->simplify();
+            }
+
+            return $categories;
+        }
+
         return $obj[$info->fieldName];
+    }
+
+    /**
+     *
+     *
+     *
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public function entryAlternateResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === "url") {
+            $publication = (new EntryPublication())->getPublicationByEntryId($obj->entry_id);
+            return $publication->entry_url ?? ""; // We default to an empty string in case the entry is not published
+        }
+
+        return $obj->{$info->fieldName};
+    }
+
+    /**
+     *
+     * Resolver authors of an entry
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function authorsResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        $userId = $obj[$info->fieldName] ?? null;
+
+        if ($userId) {
+            return (new User())->getById($userId);
+        }
+        return null;
     }
 
     /**

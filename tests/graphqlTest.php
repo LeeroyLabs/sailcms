@@ -122,15 +122,29 @@ test('Get a entry', function () {
             entries(entry_type_handle: "page", page: 1, limit: 1) {
                 list {
                     _id
-                    entry_type_id
-                    parent {
+                    entry_type {
+                        _id
+                        title
                         handle
-                        parent_id
+                        url_prefix {
+                            en
+                            fr
+                        }
+                        entry_layout_id
+                    }
+                    parent {
+                        _id
+                        title
+                        slug
+                        url
+                        locale
+                        site_id
                     }
                     site_id
                     locale
                     alternates {
                         locale
+                        url
                         entry_id
                     }
                     is_homepage
@@ -140,16 +154,41 @@ test('Get a entry', function () {
                     slug
                     url
                     authors {
-                        created_by
-                        updated_by
-                        deleted_by
+                        created_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        updated_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        deleted_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
                     }
                     dates {
                         created
                         updated
                         deleted
                     }
-                    categories
+                    categories {
+                        _id
+                        name {
+                            en
+                            fr
+                        }
+                        slug
+                    }
                     content {
                         key
                         content
@@ -176,10 +215,11 @@ test('Get a entry', function () {
                         }
                     }
                     seo {
-                        entry_seo_id
+                        _id
                         title
                         alternates {
                             locale
+                            url
                             entry_id
                         }
                         url
