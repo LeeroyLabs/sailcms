@@ -1,7 +1,9 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
+use SailCMS\Models\Entry\HTMLField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
@@ -95,6 +97,14 @@ test('Add all fields to the layout', function ()
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
+    $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
+
+    $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
+        [
+            'required' => true
+        ]
+    ]);
+
     $selectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
         [
             'required' => false,
@@ -112,6 +122,8 @@ test('Add all fields to the layout', function ()
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
         "related" => $entryField,
+        "wysiwyg" => $htmlField,
+        "email" => $emailField,
         "select" => $selectField,
     ]);
 
@@ -144,7 +156,8 @@ test('Failed to update the entry content', function ()
                 'related' => [
                     'id' => (string)$relatedEntry->_id
                 ],
-                'select' => 'test-failed',
+                'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
+                'select' => 'test-failed'
             ]
         ], false);
         //print_r($errors);
@@ -183,6 +196,8 @@ and must keep it through all the process',
                     'id' => (string)$relatedEntry->_id,
                     'typeHandle' => 'field-test'
                 ],
+                'wysiwyg' => '<p><strong>Test</strong></p>',
+                'email' => 'email-test@email.com',
                 'select' => 'test'
             ]
         ], false);
