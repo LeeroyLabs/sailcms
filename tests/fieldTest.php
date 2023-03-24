@@ -1,7 +1,6 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
@@ -156,7 +155,7 @@ test('Failed to update the entry content', function ()
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
         expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
     } catch (Exception $exception) {
-        print_r($exception->getMessage());
+        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -167,6 +166,7 @@ test('Update content with success', function ()
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
+    $entryId = $entry->_id;
     $relatedEntry = $entryModel->one([
         'title' => 'Related Page Test'
     ]);
@@ -187,17 +187,19 @@ and must keep it through all the process',
             ]
         ], false);
         expect($errors->length)->toBe(0);
-        $entry = $entryModel->one([
-            'title' => 'Home Field Test'
-        ], false);
 
-        expect($entry->content->get('float'))->toBe('0.03');
-        expect($entry->content->get('text'))->toBe('Not empty');
-        expect($entry->content->get('description'))->toContain(PHP_EOL);
-        expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
+        $entryModel = EntryType::getEntryModelByHandle('field-test');
+        $entryUpdated = $entryModel->one([
+            '_id' => $entryId
+        ]);
+
+        expect($entryUpdated->content->get('float'))->toBe('0.03');
+        expect($entryUpdated->content->get('text'))->toBe('Not empty');
+        expect($entryUpdated->content->get('description'))->toContain(PHP_EOL);
+        expect($entryUpdated->content->get('related.id'))->toBe((string)$relatedEntry->_id);
     } catch (Exception $exception) {
-        //print_r($exception);
-        print_r($errors);
+//        print_r($exception->getMessage());
+//        print_r($errors);
         expect(true)->toBe(false);
     }
 });

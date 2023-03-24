@@ -54,9 +54,9 @@ final class Cache
      *
      * Set a key's value
      *
-     * @param  string  $key
-     * @param  mixed   $value
-     * @param  int     $ttl
+     * @param string $key
+     * @param mixed $value
+     * @param int $ttl
      * @return void
      * @throws JsonException
      *
@@ -81,7 +81,7 @@ final class Cache
      *
      * Get a key's value
      *
-     * @param  string  $key
+     * @param string $key
      * @return mixed
      * @throws JsonException
      *
@@ -112,7 +112,7 @@ final class Cache
      *
      * Delete one or many keys
      *
-     * @param  array|Collection|string  $key
+     * @param array|Collection|string $key
      * @return void
      *
      */
@@ -139,7 +139,7 @@ final class Cache
      *
      * Remove all from db or globally (flushall)
      *
-     * @param  bool  $global
+     * @param bool $global
      * @return void
      *
      */
@@ -161,7 +161,7 @@ final class Cache
      *
      * Remove keys that match prefix
      *
-     * @param  string  $prefix
+     * @param string $prefix
      * @return bool
      *
      */
@@ -172,7 +172,7 @@ final class Cache
         }
 
         $keys = self::$client->keys("{$prefix}:*");
-
+        
         if (count($keys) === 0) {
             return false;
         }

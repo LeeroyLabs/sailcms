@@ -84,8 +84,8 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
@@ -234,8 +234,8 @@ type AssetListing {
 
 type Entry {
     _id: ID!
-    entry_type_id: ID!
-    parent: Parent
+    entry_type: EntryType!
+    parent: Entry
     site_id: String!
     locale: String!
     alternates: [Alternate]!
@@ -248,7 +248,7 @@ type Entry {
     url: String!
     authors: Authors!
     dates: Dates!
-    categories: [ID!]!
+    categories: [Category!]!
     content: [ModelFieldContent!]!
     schema: [LayoutField]!
     seo: EntrySeo
@@ -272,7 +272,7 @@ type EntryLayout {
 }
 
 type EntrySeo {
-    entry_seo_id: ID!
+    _id: ID!
     title: String!
     alternates: [Alternate!]!
     url: String
@@ -302,7 +302,6 @@ type EntryPublication {
     dates: PublicationDates!
     site_id: String!
     entry_url: String!
-    user_id: ID!
     user_full_name: String!
     user_email: String!
 }
@@ -412,13 +411,19 @@ enum InputType {
 
 type Alternate {
     locale: String!
+    url: String!
+    entry_id: ID!
+}
+
+input AlternateInput {
+    locale: String!
     entry_id: ID!
 }
 
 type Authors {
-    created_by: ID
-    updated_by: ID
-    deleted_by: ID
+    created_by: User
+    updated_by: User
+    deleted_by: User
 }
 
 type Dates {
@@ -430,11 +435,6 @@ type Dates {
 type PublicationDates {
     published: Int!
     expired: Int
-}
-
-type Parent {
-    handle: String!
-    parent_id: ID!
 }
 
 input ParenInput {

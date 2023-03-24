@@ -8,9 +8,11 @@ use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Cache;
 use SailCMS\Collection;
+use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
@@ -28,6 +30,7 @@ use SailCMS\Search as SailSearch;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
+use SailCMS\Types\EntryAlternate;
 use SailCMS\Types\EntryParent;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Listing;
@@ -59,12 +62,12 @@ use stdClass;
  * @property Collection $content
  *
  */
-class Entry extends Model implements Validator
+class Entry extends Model implements Validator, Castable
 {
     protected string $collection = '';
     protected array $casting = [
         'parent' => EntryParent::class,
-        'alternates' => Collection::class,
+        'alternates' => self::class,
         'authors' => Authors::class,
         'dates' => Dates::class,
         'categories' => Collection::class,
@@ -81,13 +84,14 @@ class Entry extends Model implements Validator
     public const HOMEPAGE_CONFIG_ENTRY_KEY = 'entry_id';
 
     /* Errors */
-    public const TITLE_MISSING = '5001: You must set the entry title in your data.';
-    public const CANNOT_VALIDATE_CONTENT = '5002: You cannot validate content without setting an entry layout to the type.';
-    public const TEMPLATE_NOT_SET = '5003: Template property of the entry is not set.';
-    public const CONTENT_KEY_ERROR = '5004: The key "%s" does not exist in the schema of the entry layout.';
-    public const CONTENT_ERROR = '5005: The content has theses errors :' . PHP_EOL;
-    public const DOES_NOT_EXISTS = '5006: Entry "%s" does not exist.';
-    public const DATABASE_ERROR = '5007: Exception when "%s" an entry.';
+    public const TITLE_MISSING = ['5001: You must set the entry title in your data.', 5001];
+    public const CANNOT_VALIDATE_CONTENT = ['5002: You cannot validate content without setting an entry layout to the type.', 5002];
+    public const TEMPLATE_NOT_SET = ['5003: Template property of the entry is not set.', 5003];
+    public const CONTENT_KEY_ERROR = ['5004: The key "%s" does not exist in the schema of the entry layout.', 5004];
+    public const CONTENT_ERROR = ['5005: The content has theses errors :' . PHP_EOL, 5005];
+    public const DOES_NOT_EXISTS = ['5006: Entry "%s" does not exist.', 5006];
+    public const DATABASE_ERROR = ['5007: Exception when "%s" an entry.', 5007];
+    public const INVALID_ALTERNATE_LOCALE = ['5008: The "%s" locale is not set in the project', 5008];
 
     /* Cache */
     private const HOMEPAGE_CACHE = 'homepage_entry_';         // Add site id and locale at the end
@@ -161,8 +165,44 @@ class Entry extends Model implements Validator
     public static function validate(string $key, mixed $value): void
     {
         if ($key === 'title' && empty($value)) {
-            throw new EntryException(self::TITLE_MISSING);
+            throw new EntryException(self::TITLE_MISSING[0], self::TITLE_MISSING[1]);
         }
+    }
+
+    /**
+     *
+     * Cast from for EntryAlternates collection
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        if (is_array($this->alternates)) {
+            $this->alternates = new Collection($this->alternates);
+        }
+
+        $castedAlternates = [];
+        $this->alternates->each(function ($key, $alternate) use (&$castedAlternates) {
+            if ($alternate instanceof EntryAlternate) {
+                $castedAlternates[] = $alternate->castFrom();
+            } // Else it's not an Entry Alternate object, so we ignore it
+        });
+        return $castedAlternates;
+    }
+
+    /**
+     *
+     * Cast to for EntryAlternate elements
+     *
+     * @param mixed $value
+     * @return EntryAlternate
+     *
+     */
+    public function castTo(mixed $value): EntryAlternate
+    {
+        $alternateInstance = new EntryAlternate();
+        return $alternateInstance->castTo($value);
     }
 
     /**
@@ -313,7 +353,7 @@ class Entry extends Model implements Validator
     {
         return [
             '_id' => $this->_id,
-            'entry_type_id' => $this->entry_type_id,
+            'entry_type' => $this->entryType->simplify(),
             'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
             'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,
@@ -793,7 +833,7 @@ class Entry extends Model implements Validator
      * @throws DatabaseException
      *
      */
-    public function one(array $filters, bool $cache = true): Entry|null
+    public function one(array $filters, bool $cache = false): Entry|null
     {
         $cacheTtl = $cache ? setting('entry.cacheTtl', Cache::TTL_WEEK) : 0;
         $cacheKey = $cache ? self::generateCacheKeyFromFilters($this->entryType->handle . "_one_", $filters) : '';
@@ -803,10 +843,11 @@ class Entry extends Model implements Validator
             $qs = $this->findById((string)$filters['_id']);
         }
 
-        if ($cache) {
-            return $qs->exec(/*$cacheKey, $cacheTtl*/);
+        if (!$cache) {
+            $this->clearCacheForModel();
+            return $qs->exec();
         }
-        return $qs->exec();
+        return $qs->exec($cacheKey, $cacheTtl);
     }
 
     /**
@@ -957,7 +998,7 @@ class Entry extends Model implements Validator
         }
 
         if (!$entry) {
-            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryId));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS[0], $entryId), self::DOES_NOT_EXISTS[1]);
         }
 
         $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors, $bypassContentValidation);
@@ -1036,7 +1077,8 @@ class Entry extends Model implements Validator
             try {
                 $this->bulkWrite($updates);
             } catch (Exception $exception) {
-                throw new EntryException(sprintf(self::DATABASE_ERROR, "bulk update content") . PHP_EOL . $exception->getMessage());
+                $errorMsg = sprintf(self::DATABASE_ERROR[0], "bulk update content") . PHP_EOL . $exception->getMessage();
+                throw new EntryException($errorMsg, self::DATABASE_ERROR[1]);
             }
         }
         return true;
@@ -1135,7 +1177,7 @@ class Entry extends Model implements Validator
 
         $entry = $this->findById($entryId)->exec();
         if (!$entry) {
-            throw new EntryException(sprintf(self::DOES_NOT_EXISTS, $entryId));
+            throw new EntryException(sprintf(self::DOES_NOT_EXISTS[0], $entryId), self::DOES_NOT_EXISTS[1]);
         }
 
         if ($soft) {
@@ -1221,7 +1263,7 @@ class Entry extends Model implements Validator
         }
 
         if ($content->length > 0 && !$schema) {
-            throw new EntryException(self::CANNOT_VALIDATE_CONTENT);
+            throw new EntryException(self::CANNOT_VALIDATE_CONTENT[0], self::CANNOT_VALIDATE_CONTENT[1]);
         } else {
             if (!$schema) {
                 $schema = Collection::init();
@@ -1253,7 +1295,7 @@ class Entry extends Model implements Validator
 
         $content->each(function ($key, $content) use ($schema) {
             if (!$schema->get($key)) {
-                throw new EntryException(sprintf(self::CONTENT_KEY_ERROR, $key));
+                throw new EntryException(sprintf(self::CONTENT_KEY_ERROR[0], $key), self::CONTENT_KEY_ERROR[1]);
             }
         });
 
@@ -1364,7 +1406,7 @@ class Entry extends Model implements Validator
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser;
-        $alternates = new Collection($data->get('alternates', []));
+        $alternates = $data->get('alternates', []);
         $parent = $data->get('parent');
         $content = $data->get('content');
         $categories = $data->get('categories');
@@ -1383,6 +1425,13 @@ class Entry extends Model implements Validator
             }
 
             $content = $content->unwrap();
+        }
+
+        // Validate locale
+        $locales = Locale::getAvailableLocales();
+        if (!$locales->contains($locale)) {
+            $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
+            throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
         }
 
         // Get the validated slug
@@ -1413,7 +1462,8 @@ class Entry extends Model implements Validator
         try {
             $entryId = $this->insert($mResult->data);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            $errorMsg = sprintf(self::DATABASE_ERROR[0], "creating") . PHP_EOL . $exception->getMessage();
+            throw new EntryException($errorMsg, self::DATABASE_ERROR[1]);
         }
 
         $entry = $this->findById($entryId)->exec();
@@ -1459,8 +1509,15 @@ class Entry extends Model implements Validator
         $locale = $entry->locale;
         $site_id = $entry->site_id;
 
+        // Validations
         if (in_array('locale', $data->keys()->unwrap())) {
             $locale = $data->get('locale');
+            // Validate locale
+            $locales = Locale::getAvailableLocales();
+            if (!$locales->contains($locale)) {
+                $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
+                throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
+            }
         }
         if (in_array('site_id', $data->keys()->unwrap())) {
             $site_id = $data->get('site_id');
@@ -1468,6 +1525,13 @@ class Entry extends Model implements Validator
         if (in_array('slug', $data->keys()->unwrap())) {
             $slug = $data->get('slug');
             $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
+        }
+        if (in_array('alternates', $data->keys()->unwrap())) {
+            $alternates = $data->get('alternates');
+            $alternates->each(function ($key, $alternate) {
+                // It's on a construction test to valid the locale
+                new EntryAlternate($alternate->locale, $alternate->entry_id);
+            });
         }
 
         // We bypass content validation when we apply a version
@@ -1503,7 +1567,8 @@ class Entry extends Model implements Validator
                 '$set' => $mResult->data
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            $errorMsg = sprintf(self::DATABASE_ERROR[0], "updating") . PHP_EOL . $exception->getMessage();
+            throw new EntryException($errorMsg, self::DATABASE_ERROR[1]);
         }
 
         // Could we avoid to get the entry ?
@@ -1553,7 +1618,8 @@ class Entry extends Model implements Validator
                 ]
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+            $errorMsg = sprintf(self::DATABASE_ERROR[0], "soft deleting") . PHP_EOL . $exception->getMessage();
+            throw new EntryException($errorMsg, self::DATABASE_ERROR[1]);
         }
 
         return $qtyUpdated === 1;
@@ -1576,7 +1642,8 @@ class Entry extends Model implements Validator
         try {
             $qtyDeleted = $this->deleteById((string)$entryId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+            $errorMsg = sprintf(self::DATABASE_ERROR[0], "hard deleting") . PHP_EOL . $exception->getMessage();
+            throw new EntryException($errorMsg, self::DATABASE_ERROR[1]);
         }
 
         // Must delete seo data
@@ -1608,8 +1675,10 @@ class Entry extends Model implements Validator
      * Find entry content by entry publication
      *
      * @param string $url
+     * @param string|null $siteId
      * @return Entry|null
      * @throws ACLException
+     * @throws CollectionException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
@@ -1626,8 +1695,8 @@ class Entry extends Model implements Validator
         $publication = (new EntryPublication())->getPublicationByUrl($url, $siteId);
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
-            $entryTypeId = $publication->version->entry->get('entry_type_id');
-            $entryModel = (new EntryType())->getById($entryTypeId, false)->getEntryModel();
+            $entryType = $publication->version->entry->get('entry_type');
+            $entryModel = (new EntryType())->getById($entryType->_id, false)->getEntryModel();
             $entry = $entryModel->one(['_id' => $publication->entry_id]);
             $content = (new EntryVersion())->fakeVersion($entry, $publication->entry_version_id);
         }
@@ -1718,7 +1787,8 @@ class Entry extends Model implements Validator
         });
 
         if (count($errorsStrings) > 0) {
-            throw new EntryException(self::CONTENT_ERROR . implode("\t," . PHP_EOL, $errorsStrings));
+            $errorMsg = self::CONTENT_ERROR[0] . implode("\t," . PHP_EOL, $errorsStrings);
+            throw new EntryException($errorMsg, self::CONTENT_ERROR[1]);
         }
     }
 

@@ -190,7 +190,7 @@ test('Access to default SEO data', function () {
     $seo = $entry->getSEO();
 
     expect($seo->title)->toBe($entry->title)
-        ->and($seo->entry_seo_id)->not->toBeNull();
+        ->and($seo->_id)->not->toBeNull();
 });
 
 test('Update seo data for an entry', function () {
