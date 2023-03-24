@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;

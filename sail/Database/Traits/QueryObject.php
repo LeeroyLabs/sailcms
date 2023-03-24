@@ -88,7 +88,6 @@ trait QueryObject
         // Single query
         if ($this->isSingle) {
             $result = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
-
             if ($result) {
                 $doc = $this->transformDocToModel($result);
 

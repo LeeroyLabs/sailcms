@@ -20,13 +20,11 @@ class InputSelectField extends Field
      *
      * @param LocaleField|null $labels
      * @param bool $required
-     * @param bool $multiple
      * @param Collection $options
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
         public readonly bool $required = false,
-        public readonly bool $multiple = false,
         public readonly Collection $options = new Collection([])
     ) {
     }
@@ -42,7 +40,6 @@ class InputSelectField extends Field
     {
         return new Collection([
             'required' => false,
-            'multiple' => $multiple,
             'options' => new Collection([])
         ]);
     }
@@ -62,7 +59,6 @@ class InputSelectField extends Field
 
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('multiple', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('options', InputSettings::INPUT_TYPE_OPTIONS, $options)
         ]);
     }
@@ -121,7 +117,6 @@ class InputSelectField extends Field
             'labels' => $this->labels->castFrom(),
             'settings' => [
                 'required' => $this->required,
-                'multiple' => $this->multiple,
                 'options' => $this->options->unwrap()
             ]
         ];
@@ -140,7 +135,6 @@ class InputSelectField extends Field
         return new self(
             $value->labels,
             $value->settings->required,
-            $value->settings->multiple,
             $value->settings->options
         );
     }

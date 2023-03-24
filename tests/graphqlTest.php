@@ -38,7 +38,7 @@ beforeEach(function () {
 test('Get a page and modify his SEO', function () {
     if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('
-            query { 
+            query {
                 entries(entry_type_handle: "page") {
                     list {
                         _id
@@ -170,41 +170,25 @@ test('Create layout, entry type & entry', function () {
                             inputSettings: []
                         }
                         {
-                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
-                            key: "wysiwyg"
-                            handle: "SailCMS-Models-Entry-HTMLField"
-                            inputSettings: []
-                        }
-                        {
                             labels: { en: "Select", fr: "Selection" }
                             key: "select"
                             handle: "SailCMS-Models-Entry-SelectField"
                             inputSettings: [
-                                { 
-                                    settings: [
-                                        {name: "required", value: "true", type: boolean}
-                                        {name: "options", options: [
-                                            {
-                                                label: "Big test"
-                                                value: "test"
-                                            },
-                                            {
-                                                label: "The real big test"
-                                                value: "test2"
-                                            }
-                                        ], type: array}
-                                    ] 
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Email", fr: "Courriel" }
-                            key: "email"
-                            handle: "SailCMS-Models-Entry-EmailField"
-                            inputSettings: [
                                 {
                                     settings: [
-                                        { name: "required", value: "true", type: boolean }
+                                        { name: "required", value: "false", type: boolean }
+                                        {
+                                            name: "options"
+                                            value: ""
+                                            options: [
+                                                { label: "Big test", value: "test" }
+                                                {
+                                                    label: "The real big test"
+                                                    value: "test2"
+                                                }
+                                            ]
+                                            type: array
+                                        }
                                     ]
                                 }
                             ]
@@ -245,7 +229,6 @@ test('Create layout, entry type & entry', function () {
                     entry_type_handle: "tests-graphql"
                     locale: "en"
                     is_homepage: false
-                    status: live
                     title: "It just works"
                     template: ""
                     slug: "it-just-works"
@@ -261,14 +244,6 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "desc"
                             content: "This text contains line returns and must keep it through all the process"
-                        }
-                        {
-                            key: "wysiwyg"
-                            content: "<p><strong>Test</strong></p>"
-                        }
-                        {
-                            key: "email"
-                            content: "testleeroy@leeroy.ca"
                         }
                         {
                             key: "select"
@@ -351,7 +326,7 @@ test('Delete layout, entry type & entry', function () {
 
 test('Get a entry', function () {
     $entryResponse = $this->client->run('
-        query { 
+        query {
             entries(entry_type_handle: "page", page: 1, limit: 1) {
                 list {
                     _id
@@ -402,7 +377,6 @@ test('Get a entry', function () {
                                 settings {
                                     name
                                     value
-                                    choices
                                     type
                                 }
                             }

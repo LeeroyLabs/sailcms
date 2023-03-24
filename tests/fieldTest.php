@@ -1,11 +1,8 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Models\Entry\EmailField;
 use SailCMS\Debug;
 use SailCMS\Models\Entry\EntryField;
-use SailCMS\Models\Entry\HTMLField;
-use SailCMS\Models\Entry\MultipleSelectField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
@@ -14,9 +11,7 @@ use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\User;
 use SailCMS\Sail;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
-use SailCMS\Types\Fields\InputEmailField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
@@ -37,8 +32,8 @@ beforeAll(function ()
 
     $entryType = (new EntryType)->create('field-test', 'Field Test', new LocaleField(['en' => 'field-test', 'fr' => 'test-de-champs']), $entryLayout->_id);
 
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Home Field Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
 });
 
 afterAll(function ()
@@ -86,7 +81,6 @@ test('Add all fields to the layout', function ()
         ]
     ]);
     $descriptionField = new TextareaField(new LocaleField(['en' => 'Description', 'fr' => 'Description']));
-    $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
     $numberFieldInteger = new NumberField(new LocaleField(['en' => 'Integer', 'fr' => 'Entier']), [
         [
             'min' => -1,
@@ -102,30 +96,12 @@ test('Add all fields to the layout', function ()
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
-    $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
-        [
-            'required' => true
-        ]
-    ]);
-
     $selectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
         [
-            'required' => true,
+            'required' => false,
             'options' => new Collection([
                 'test' => 'Big test',
                 'test2' => 'The real big test'
-            ])
-        ]
-    ]);
-
-    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Multiple Select', 'fr' => 'Selection multiple']), [
-        [
-            'required' => true,
-            'options' => new Collection([
-                'test' => 'Big test',
-                'test2' => 'The real big test',
-                'test3' => 'BIG TEST OF DOOM',
-                'test4' => 'It\' just a flesh wound'
             ])
         ]
     ]);
@@ -134,13 +110,10 @@ test('Add all fields to the layout', function ()
         "text" => $textField,
         "phone" => $phoneField,
         "description" => $descriptionField,
-        "wysiwyg" => $htmlField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
         "related" => $entryField,
-        "email" => $emailField,
         "select" => $selectField,
-        "multipleSelect" => $multipleSelectField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -149,6 +122,7 @@ test('Add all fields to the layout', function ()
         $updated = (new EntryLayout())->updateById($entryLayout->_id, $entryLayout->titles, $schema);
         expect($updated)->toBe(true);
     } catch (Exception $exception) {
+        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -168,13 +142,10 @@ test('Failed to update the entry content', function ()
             'content' => [
                 'float' => '0',
                 'phone' => '514-3344344',
-                'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'related' => [
                     'id' => (string)$relatedEntry->_id
                 ],
                 'select' => 'test-failed',
-                'multipleSelect' => ['test3', 'test4', 'test-failed'],
-                'email' => 'email-test-failed'
             ]
         ], false);
         //print_r($errors);
@@ -184,10 +155,8 @@ test('Failed to update the entry content', function ()
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
         expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
-        expect($errors->get('multipleSelect')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
-        expect($errors->get('email')[0][0])->toBe(InputEmailField::EMAIL_INVALID);
     } catch (Exception $exception) {
-        //print_r($exception->getMessage());
+        print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -209,15 +178,12 @@ test('Update content with success', function ()
                 'text' => 'Not empty',
                 'description' => 'This text contains line returns
 and must keep it through all the process',
-                'wysiwyg' => '<p><strong>Test</strong></p>',
                 'phone' => '514-514-5145',
                 'related' => [
                     'id' => (string)$relatedEntry->_id,
                     'typeHandle' => 'field-test'
                 ],
-                'select' => 'test',
-                'multipleSelect' => ['test3', 'test4'],
-                'email' => 'email-test@email.com'
+                'select' => 'test'
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -230,8 +196,8 @@ and must keep it through all the process',
         expect($entry->content->get('description'))->toContain(PHP_EOL);
         expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
     } catch (Exception $exception) {
-        //print_r($exception->getMessage());
-        //print_r($errors);
+        //print_r($exception);
+        print_r($errors);
         expect(true)->toBe(false);
     }
 });
