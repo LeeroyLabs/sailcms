@@ -687,6 +687,7 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Get the relative url of the entry
+     * TODO add parent url to that ?
      *
      * @param LocaleField $urlPrefix
      * @param string $slug
@@ -1013,6 +1014,7 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Update entries url according to an url prefix (normally comes from entry type)
+     * Todo update with parent url too ?
      *
      * @param LocaleField $urlPrefix
      * @return void
@@ -1654,7 +1656,7 @@ class Entry extends Model implements Validator, Castable
         }
 
         // And publications
-        (new EntryPublication())->deleteAllByEntryId((string)$entryId);
+        (new EntryPublication())->deleteAllByEntryId((string)$entryId, false);
 
         // And entry versions too
         (new EntryVersion())->deleteAllByEntryId((string)$entryId);

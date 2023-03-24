@@ -74,6 +74,7 @@ class EntryPublication extends Model
      * Get a publication by url
      *
      * @param string $url
+     * @param string|null $siteId
      * @return EntryPublication|null
      * @throws DatabaseException
      *
@@ -150,9 +151,11 @@ class EntryPublication extends Model
      * @throws PermissionException
      *
      */
-    public function deleteAllByEntryId(string $entryId): bool
+    public function deleteAllByEntryId(string $entryId, bool $api = true): bool
     {
-        $this->hasPermissions();
+        if ($api) {
+            $this->hasPermissions();
+        }
 
         try {
             $result = $this->deleteMany(['entry_id' => $entryId]);
