@@ -151,9 +151,7 @@ abstract class Field
         });
 
         $className = static::getClassFromHandle($data->handle);
-
         $labels = new LocaleField($data->labels ?? []);
-
         return new $className($labels, $settings);
     }
 

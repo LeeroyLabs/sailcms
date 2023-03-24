@@ -83,6 +83,7 @@ abstract class Field implements Castable
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false, "1", "0", 1, 0, "true", "false"], true),
             InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
             InputSettings::INPUT_TYPE_REGEX => is_string($value),
+            InputSettings::INPUT_TYPE_OPTIONS => is_array($value) || $value instanceof Collection,
             default => false
         };
     }
@@ -134,6 +135,7 @@ abstract class Field implements Castable
                 $type = match ($setting->type) {
                     "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
                     "checkbox" => StoringType::BOOLEAN->value,
+                    "options" => StoringType::ARRAY->value,
                     default => StoringType::STRING->value
                 };
             }

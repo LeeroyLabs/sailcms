@@ -1,8 +1,11 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
+use SailCMS\Models\Entry\HTMLField;
 use SailCMS\Models\Entry\NumberField;
+use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
@@ -11,11 +14,13 @@ use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
+use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\Username;
 
-beforeAll(function () {
+beforeAll(function ()
+{
     Sail::setupForTests(__DIR__);
 
     $authorModel = new User();
@@ -32,7 +37,8 @@ beforeAll(function () {
     $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
 });
 
-afterAll(function () {
+afterAll(function ()
+{
     $authorModel = new User();
     $authorModel->removeByEmail('testentryfield@leeroy.ca');
 
@@ -55,7 +61,8 @@ afterAll(function () {
     $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
-test('Add all fields to the layout', function () {
+test('Add all fields to the layout', function ()
+{
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
@@ -90,13 +97,34 @@ test('Add all fields to the layout', function () {
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
+    $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
+
+    $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
+        [
+            'required' => true
+        ]
+    ]);
+
+    $selectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
+        [
+            'required' => false,
+            'options' => new Collection([
+                'test' => 'Big test',
+                'test2' => 'The real big test'
+            ])
+        ]
+    ]);
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
         "description" => $descriptionField,
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
-        "related" => $entryField
+        "related" => $entryField,
+        "wysiwyg" => $htmlField,
+        "email" => $emailField,
+        "select" => $selectField,
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -105,11 +133,13 @@ test('Add all fields to the layout', function () {
         $updated = (new EntryLayout())->updateById($entryLayout->_id, $entryLayout->titles, $schema);
         expect($updated)->toBe(true);
     } catch (Exception $exception) {
+        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
 
-test('Failed to update the entry content', function () {
+test('Failed to update the entry content', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -125,22 +155,26 @@ test('Failed to update the entry content', function () {
                 'phone' => '514-3344344',
                 'related' => [
                     'id' => (string)$relatedEntry->_id
-                ]
+                ],
+                'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
+                'select' => 'test-failed'
             ]
         ], false);
-//        print_r($errors);
+        //print_r($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
+        expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
+        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
 
-test('Update content with success', function () {
+test('Update content with success', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -161,7 +195,10 @@ and must keep it through all the process',
                 'related' => [
                     'id' => (string)$relatedEntry->_id,
                     'typeHandle' => 'field-test'
-                ]
+                ],
+                'wysiwyg' => '<p><strong>Test</strong></p>',
+                'email' => 'email-test@email.com',
+                'select' => 'test'
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -170,7 +207,6 @@ and must keep it through all the process',
         $entryUpdated = $entryModel->one([
             '_id' => $entryId
         ]);
-
 
         expect($entryUpdated->content->get('float'))->toBe('0.03');
         expect($entryUpdated->content->get('text'))->toBe('Not empty');

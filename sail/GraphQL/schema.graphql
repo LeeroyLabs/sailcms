@@ -335,7 +335,7 @@ type InputSetting {
 type Setting {
     name: String!
     value: String
-    choices: [String]
+    options: [Options!]
     type: String!
 }
 
@@ -376,8 +376,19 @@ input InputSettingsInput {
 
 input SettingsInput {
     name: String!
-    value: String!
+    value: String
+    options: [OptionsInput!]
     type: InputType!
+}
+
+input OptionsInput {
+    value: String!
+    label: String!
+}
+
+type Options {
+    value: String!
+    label: String!
 }
 
 input ModelFieldContentInput {

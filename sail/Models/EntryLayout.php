@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -83,7 +84,7 @@ class EntryLayout extends Model implements Castable
     public function simplify(): array
     {
         return [
-            '_id' => $this->_id,
+            '_id' => (string)$this->_id,
             'titles' => $this->titles->castFrom(),
             'schema' => $this->simplifySchema(),
             'authors' => $this->authors->castFrom(),
@@ -388,13 +389,10 @@ class EntryLayout extends Model implements Castable
             $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
                 $settings = Collection::init();
                 $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
-                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
+                    $options = EntryLayout::parseOptions($setting->options ?? null);
+                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value, $options));
                 });
-
-                $inputKey = $index;
-                if (isset($fieldsData->inputKey)) {
-                    $inputKey = $fieldsData->inputKey;
-                }
+                $inputKey = $fieldsData->inputKey ?? $index;
 
                 $parsedConfigs->pushKeyValue($inputKey, $settings);
             });
@@ -480,11 +478,16 @@ class EntryLayout extends Model implements Castable
                     }
 
                     $type = $input->getSettingType($name, $value);
+                    $options = [];
 
+                    if ($type === "array") {
+                        $options = $value;
+                        $value = "";
+                    }
                     $fieldSettings->push([
                         'name' => $name,
                         'value' => (string)$value,
-                        'choices' => [],
+                        'options' => $options,
                         'type' => $type
                     ]);
                 });
@@ -515,13 +518,15 @@ class EntryLayout extends Model implements Castable
      *
      * @param string $type
      * @param string $value
-     * @return string
-     *
+     * @param Collection|null $options
+     * @return string|Collection
      */
-    private static function parseSettingValue(string $type, string $value): string
+    private static function parseSettingValue(string $type, string $value, Collection $options = null): string|Collection
     {
         if ($type === "boolean") {
             $result = !($value === "false");
+        } else if ($type === "array") {
+            $result = $options;
         } else {
             if ($type === "integer") {
                 $result = (integer)$value;
@@ -534,6 +539,25 @@ class EntryLayout extends Model implements Castable
             }
         }
         return $result;
+    }
+
+    /**
+     *
+     * Parse options 
+     *
+     * @param Collection|null $options
+     * @return Collection|null
+     */
+    public static function parseOptions(Collection|null $options): ?Collection
+    {
+        if ($options) {
+            $parseOptions = Collection::init();
+            $options->each(function ($key, $option) use ($parseOptions) {
+                $parseOptions->pushKeyValue($option->value, $option->label);
+            });
+            return $parseOptions;
+        }
+        return null;
     }
 
     /**
@@ -570,8 +594,12 @@ class EntryLayout extends Model implements Castable
 
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
-
         $schemaFromDb->each(function ($key, $value) use (&$schema) {
+            foreach ($value->configs as $input) {
+                if (array_key_exists('options', (array)$input->settings)) {
+                    (array)$input->settings['options'] = new Collection((array)$input->settings['options']);
+                }
+            }
             $valueParsed = ModelField::fromLayoutField($value);
             $schema->pushKeyValue($key, $valueParsed);
         });
