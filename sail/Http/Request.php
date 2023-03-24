@@ -24,7 +24,16 @@ class Request
         $this->_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'CLI';
         $this->_post = new Post();
         $this->_get = new Get();
-        $this->_headers = new Collection(getallheaders());
+
+        // Make sure all headers are lowercased
+        $headers = getallheaders();
+        $cleaned = [];
+
+        foreach ($headers as $key => $value) {
+            $cleaned[strtolower($key)] = $value;
+        }
+
+        $this->_headers = new Collection($cleaned);
     }
 
     /**
@@ -123,7 +132,7 @@ class Request
      */
     public function header(string $key): mixed
     {
-        return $this->_headers->get($key);
+        return $this->_headers->get(strtolower($key), '');
     }
 
     /**

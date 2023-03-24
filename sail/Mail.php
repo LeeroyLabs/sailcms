@@ -6,6 +6,7 @@ use Exception;
 use League\Flysystem\FilesystemException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
+use SailCMS\Http\Request;
 use SailCMS\Models\Email;
 use SailCMS\Templating\Engine;
 use SailCMS\Templating\Extensions\Bundled;
@@ -392,10 +393,28 @@ class Mail
                 $template->subject->{$locale} = str_replace('{' . $key . '}', $value, $template->subject->{$locale});
             }
 
+            // Determine what host to use (if no override, use .env url) otherwise use override if allowed
+            $request = new Request();
+            $override = $request->header('x-domain-override');
+            $host = env('SITE_URL');
+
+            if ($override !== '') {
+                $allowed = setting('emails.overrides', new Collection(['allow' => false, 'acceptedDomains' => []]))->unwrap();
+
+                if ($allowed['allow'] && in_array($override, $allowed['acceptedDomains'], true)) {
+                    if (str_contains($override, 'localhost')) {
+                        $host = 'http://' . $override;
+                    } else {
+                        $host = 'https://' . $override;
+                    }
+                }
+            }
+
             $superContext->setFor('email_title', $title);
             $superContext->setFor('email_content', $content);
-            $superContext->setFor('cta_link', $cta);
+            $superContext->setFor('cta_link', str_replace('{host}', $host, $cta));
             $superContext->setFor('cta_title', $cta_title);
+            $superContext->pushKeyValue('host', $host);
 
             return $this
                 ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))

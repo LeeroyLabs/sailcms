@@ -41,6 +41,10 @@ return [
                         "defaultWho" => 'Someone you know'
                     ]
                 ]
+            ],
+            'overrides' => [
+                'allow' => true,
+                'acceptedDomains' => ['localhost', 'localhost:5173', 'localhost:3000']
             ]
         ],
         'passwords' => [
@@ -173,6 +177,10 @@ return [
                         "defaultWho" => 'Someone you know'
                     ]
                 ]
+            ],
+            'overrides' => [
+                'allow' => true,
+                'acceptedDomains' => ['localhost', 'localhost:5173', 'localhost:3000']
             ]
         ],
         'passwords' => [
@@ -286,6 +294,10 @@ return [
                         "defaultWho" => 'Someone you know'
                     ]
                 ]
+            ],
+            'overrides' => [
+                'allow' => true,
+                'acceptedDomains' => ['localhost', 'localhost:5173', 'localhost:3000']
             ]
         ],
         'passwords' => [

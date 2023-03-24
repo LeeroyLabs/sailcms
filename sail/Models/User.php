@@ -315,14 +315,16 @@ class User extends Model
                          ->send();
                 } else {
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
-                    $mail->to($email)->useEmail($emailName, $locale, [
-                        'replacements' => [
-                            'name' => $name->first
-                        ],
-                        'user_email' => $email,
-                        'reset_pass_code' => $passCode,
-                        'verification_code' => $code
-                    ])->send();
+                    $mail->to($email)
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first
+                             ],
+                             'user_email' => $email,
+                             'reset_pass_code' => $passCode,
+                             'verification_code' => $code
+                         ])
+                         ->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
