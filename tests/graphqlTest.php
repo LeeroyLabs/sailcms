@@ -227,7 +227,7 @@ test('Create layout, entry type & entry', function () {
                         en: "graphql-tests"
                         fr: "tests-graphql"
                     }
-                    entry_layout_id: "'. $newEntryLayout->data->createEntryLayout->_id .'"
+                    entry_layout_id: "' . $newEntryLayout->data->createEntryLayout->_id . '"
                 ) {
                     _id
                     title
@@ -323,19 +323,19 @@ test('Delete layout, entry type & entry', function () {
 
         $deleteEntry = $this->client->run('
             mutation {
-                deleteEntry(entry_type_handle: "tests-graphql", id: "'. $entry->data->entries->list[0]->_id .'", soft: false)
+                deleteEntry(entry_type_handle: "tests-graphql", id: "' . $entry->data->entries->list[0]->_id . '", soft: false)
             }
         ', [], $_ENV['test-token']);
 
         $deleteEntryType = $this->client->run('
             mutation {
-                deleteEntryType(id: "'. $entryType->_id .'")
+                deleteEntryType(id: "' . $entryType->_id . '")
             }
         ', [], $_ENV['test-token']);
 
         $deleteEntryLayout = $this->client->run('
             mutation {
-                deleteEntryLayout(id: "'. $entryType->entry_layout_id .'", soft: false)
+                deleteEntryLayout(id: "' . $entryType->entry_layout_id . '", soft: false)
             }
         ', [], $_ENV['test-token']);
 
@@ -344,7 +344,7 @@ test('Delete layout, entry type & entry', function () {
             expect($deleteEntryLayout->status)->toBe('ok');
             expect($deleteEntryType->status)->toBe('ok');
         } catch (Exception $exception) {
-            print_r($exception);
+//            print_r($exception);
             expect(true)->toBe(false);
         }
     }
