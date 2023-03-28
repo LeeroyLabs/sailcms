@@ -561,9 +561,7 @@ class User extends Model
             }
         }
 
-        if ($avatar) {
-            $update['avatar'] = $avatar;
-        }
+        $update['avatar'] = $avatar ?? '';
 
         if ($meta) {
             $update['meta'] = $meta->simplify();
