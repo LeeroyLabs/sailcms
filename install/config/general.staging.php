@@ -67,7 +67,7 @@ return [
     ],
     'cors' => [
         'use' => true,
-        'origins' => ['*'],
+        'origin' => '*',
         'allowCredentials' => true,
         'maxAge' => 86400,
         'methods' => ['POST', 'GET', 'DELETE', 'PUT', 'OPTIONS'],

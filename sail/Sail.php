@@ -842,10 +842,10 @@ class Sail
         $cors = setting('cors', ['use' => false, 'origins' => '*', 'allowCredentials' => false]);
 
         if (setting('cors.use', false)) {
-            $origins = implode(',', setting('cors.origins', Collection::init())->unwrap());
+            $origin = setting('cors.origin', '*');
             $maxAge = setting('cors.maxAge', 86_400);
 
-            header("Access-Control-Allow-Origin: {$origins}");
+            header("Access-Control-Allow-Origin: {$origin}");
             header("Access-Control-Max-Age: {$maxAge}");
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
