@@ -239,7 +239,7 @@ class Sail
         }
 
         $settings = new Collection($config);
-        self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
+        self::$environmentData->setFor('SETTINGS', $settings);
 
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
@@ -660,9 +660,9 @@ class Sail
             $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
-                self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
+                self::$environmentData->setFor('SETTINGS', $settings);
             } else {
-                self::$environmentData->setFor('SETTINGS', $settings->get('dev'));
+                self::$environmentData->setFor('SETTINGS', $settings);
             }
 
             ACL::init();
@@ -863,7 +863,7 @@ class Sail
                 header("Access-Control-Allow-Headers: {$headers}");
                 header('Content-Length: 0');
                 header('Content-Type: text/plain');
-                die(); // Options just needs headers, the rest is not required. Stop now!
+                die(''); // Options just needs headers, the rest is not required. Stop now!
             }
         }
     }

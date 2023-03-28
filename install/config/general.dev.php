@@ -71,14 +71,7 @@ return [
         'allowCredentials' => true,
         'maxAge' => 86400,
         'methods' => ['POST', 'GET', 'DELETE', 'PUT', 'OPTIONS'],
-        'headers' => [
-            'Accept',
-            'Upgrade-Insecure-Requests',
-            'Content-Type',
-            'x-requested-with',
-            'x-access-token',
-            'x-domain-override'
-        ]
+        'headers' => []
     ],
     'session' => [
         'mode' => \SailCMS\Session\Stateless::class,
