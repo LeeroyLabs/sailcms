@@ -233,13 +233,13 @@ class Sail
         self::$configDirectory = self::$workingDirectory . '/config';
 
         if (!self::$installMode) {
-            $config = include self::$configDirectory . '/general.php';
+            $config = include self::$configDirectory . '/general.dev.php';
         } else {
-            $config = include dirname(__DIR__) . '/install/config/general.php';
+            $config = include dirname(__DIR__) . '/install/config/general. ' . env('ENVIRONMENT', 'dev') . '.php';
         }
 
         $settings = new Collection($config);
-        self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
+        self::$environmentData->setFor('SETTINGS', $settings);
 
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
@@ -656,13 +656,13 @@ class Sail
 
             self::setupEnv();
 
-            $config = include dirname(__DIR__) . '/install/config/general.php';
+            $config = include dirname(__DIR__) . '/install/config/general' . env('ENVIRONMENT', 'dev') . '.php';
             $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
-                self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
+                self::$environmentData->setFor('SETTINGS', $settings);
             } else {
-                self::$environmentData->setFor('SETTINGS', $settings->get('dev'));
+                self::$environmentData->setFor('SETTINGS', $settings);
             }
 
             ACL::init();
@@ -842,21 +842,28 @@ class Sail
         $cors = setting('cors', ['use' => false, 'origins' => '*', 'allowCredentials' => false]);
 
         if (setting('cors.use', false)) {
-            $origins = implode(',', setting('cors.origins', Collection::init())->unwrap());
+            $origin = setting('cors.origin', '*');
             $maxAge = setting('cors.maxAge', 86_400);
 
-            header("Access-Control-Allow-Origin: {$origins}");
+            header("Access-Control-Allow-Origin: {$origin}");
             header("Access-Control-Max-Age: {$maxAge}");
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
                 $methods = implode(",", setting('cors.methods', new Collection(['get']))->unwrap());
                 $headers = implode(",", setting('cors.headers', Collection::init())->unwrap());
 
+                // Force these to exist
+                if ($headers !== '') {
+                    $headers .= ',';
+                }
+
+                $headers .= 'Accept,Upgrade-Insecure-Requests,Content-Type,x-requested-with,x-access-token,x-domain-override';
+
                 header("Access-Control-Allow-Methods: {$methods}");
                 header("Access-Control-Allow-Headers: {$headers}");
                 header('Content-Length: 0');
                 header('Content-Type: text/plain');
-                die(); // Options just needs headers, the rest is not required. Stop now!
+                die(''); // Options just needs headers, the rest is not required. Stop now!
             }
         }
     }
