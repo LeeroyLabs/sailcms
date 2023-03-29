@@ -235,7 +235,7 @@ class Sail
         if (!self::$installMode) {
             $config = include self::$configDirectory . '/general.dev.php';
         } else {
-            $config = include dirname(__DIR__) . '/install/config/general. ' . env('ENVIRONMENT', 'dev') . '.php';
+            $config = include dirname(__DIR__) . '/install/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
         }
 
         $settings = new Collection($config);
@@ -656,7 +656,7 @@ class Sail
 
             self::setupEnv();
 
-            $config = include dirname(__DIR__) . '/install/config/general' . env('ENVIRONMENT', 'dev') . '.php';
+            $config = include dirname(__DIR__) . '/install/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
             $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
