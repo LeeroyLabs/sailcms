@@ -297,11 +297,11 @@ class User extends Model
             // Send a nice email to greet
             try {
                 $mail = new Mail();
+                $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
+                $who = (self::$currentUser) ? self::$currentUser->name->full : $defaultWho;
 
                 if ($createWithSetPassword) {
-                    $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
-                    $who = (self::$currentUser) ? self::$currentUser->name->full : $defaultWho;
 
                     $mail->to($email)
                         ->useEmail($emailName, $locale, [
@@ -321,7 +321,8 @@ class User extends Model
                     $mail->to($email)
                         ->useEmail($emailName, $locale, [
                             'replacements' => [
-                                'name' => $name->first
+                                'name' => $name->first,
+                                'who' => $who
                             ],
                             'user_email' => $email,
                             'reset_pass_code' => $passCode,
