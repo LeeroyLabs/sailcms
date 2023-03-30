@@ -10,7 +10,6 @@ use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
-// TODO custom field registering
 abstract class Field
 {
     const SEARCHABLE = false;
@@ -32,7 +31,6 @@ abstract class Field
      */
     public function __construct(LocaleField $labels, Collection|array|null $settings = null)
     {
-        // TODO Check to avoid duplicate handle
         $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
 
