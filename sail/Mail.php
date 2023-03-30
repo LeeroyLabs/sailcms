@@ -12,11 +12,11 @@ use SailCMS\Templating\Engine;
 use SailCMS\Templating\Extensions\Bundled;
 use SailCMS\Templating\Extensions\Navigation;
 use Symfony\Bridge\Twig\Mime\BodyRenderer;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mailer\Transport;
-use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\Mime\Address;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Address;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
@@ -41,9 +41,9 @@ class Mail
      *
      * Register a preview handler
      *
-     * @param  string  $template
-     * @param  string  $class
-     * @param  string  $method
+     * @param string $template
+     * @param string $class
+     * @param string $method
      * @return void
      * @throws EmailException
      *
@@ -63,7 +63,7 @@ class Mail
      *
      * Get list of preview handlers for given template
      *
-     * @param  string  $template
+     * @param string $template
      * @return array|null
      *
      */
@@ -76,7 +76,7 @@ class Mail
      *
      * Set from
      *
-     * @param  string  $email
+     * @param string $email
      * @return $this
      *
      */
@@ -90,8 +90,8 @@ class Mail
      *
      * Set from with a full name eg: John Doe <john@doe.com>
      *
-     * @param  string  $name
-     * @param  string  $email
+     * @param string $name
+     * @param string $email
      * @return $this
      *
      */
@@ -105,7 +105,7 @@ class Mail
      *
      * Set Targets
      *
-     * @param  string  ...$emails
+     * @param string ...$emails
      * @return $this
      *
      */
@@ -119,7 +119,7 @@ class Mail
      *
      * Set CC
      *
-     * @param  string  ...$emails
+     * @param string ...$emails
      * @return $this
      *
      */
@@ -133,7 +133,7 @@ class Mail
      *
      * Set BCC
      *
-     * @param  string  ...$emails
+     * @param string ...$emails
      * @return $this
      *
      */
@@ -147,7 +147,7 @@ class Mail
      *
      * Set subject line
      *
-     * @param  string  $subject
+     * @param string $subject
      * @return $this
      *
      */
@@ -161,8 +161,8 @@ class Mail
      *
      * Attach a file from the local disk to the email
      *
-     * @param  string  $path
-     * @param  string  $name
+     * @param string $path
+     * @param string $name
      * @return $this
      * @throws FilesystemException
      *
@@ -179,8 +179,8 @@ class Mail
      * Embed an image to the email, in your email you must use the CID format
      * eg: for image named 'my-image' you must us <img src="cid:my-image"/>
      *
-     * @param  string  $path
-     * @param  string  $name
+     * @param string $path
+     * @param string $name
      * @return $this
      * @throws FilesystemException
      *
@@ -196,7 +196,7 @@ class Mail
      *
      * Set replyTo
      *
-     * @param  string  $email
+     * @param string $email
      * @return $this
      *
      */
@@ -210,7 +210,7 @@ class Mail
      *
      * Set priority
      *
-     * @param  int  $priority
+     * @param int $priority
      * @return $this
      *
      */
@@ -224,8 +224,8 @@ class Mail
      *
      * Set the twig template to use for the email
      *
-     * @param  string      $name
-     * @param  Collection  $context
+     * @param string $name
+     * @param Collection $context
      * @return $this
      *
      */
@@ -241,7 +241,7 @@ class Mail
      *
      * Set the text version of the email
      *
-     * @param  string  $text
+     * @param string $text
      * @return $this
      *
      */
@@ -302,9 +302,9 @@ class Mail
      *
      * Setup email to use a template from the templating system
      *
-     * @param  string            $slug
-     * @param  string            $locale
-     * @param  Collection|array  $context
+     * @param string $slug
+     * @param string $locale
+     * @param Collection|array $context
      * @return $this
      * @throws Errors\DatabaseException
      * @throws FileException
@@ -385,12 +385,13 @@ class Mail
 
             $replacements = $superContext->get('replacements', []);
 
+            $subject = $template->subject->{$locale};
             foreach ($replacements as $key => $value) {
                 $title = str_replace('{' . $key . '}', $value, $title);
                 $content = str_replace('{' . $key . '}', $value, $content);
                 $cta = str_replace('{' . $key . '}', $value, $cta);
                 $cta_title = str_replace('{' . $key . '}', $value, $cta_title);
-                $template->subject->{$locale} = str_replace('{' . $key . '}', $value, $template->subject->{$locale});
+                $subject = str_replace('{' . $key . '}', $value, $subject);
             }
 
             // Determine what host to use (if no override, use .env url) otherwise use override if allowed
@@ -418,7 +419,7 @@ class Mail
 
             return $this
                 ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))
-                ->subject($template->subject->{$locale})
+                ->subject($subject)
                 ->template($template->template, $superContext);
         }
 
