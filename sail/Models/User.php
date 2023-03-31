@@ -134,7 +134,7 @@ class User extends Model
             $role = $roleModel->getByName($roleSlug);
 
             if ($role) {
-                $permission = $permissions->merge($role->permissions);
+                $permissions = $permissions->merge($role->permissions);
             }
         }
 
