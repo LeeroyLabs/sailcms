@@ -66,7 +66,7 @@ return [
         'hideCMS' => false
     ],
     'cors' => [
-        'use' => true,
+        'use' => true,      // If using serverless, this should be set to false and CORS should be set in serverless platform
         'origin' => '*',
         'allowCredentials' => true,
         'maxAge' => 86400,
