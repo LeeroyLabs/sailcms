@@ -341,7 +341,7 @@ class Sail
                 'register_helper' => true
             ]);
 
-            register_shutdown_function('self::shutdownHandler');
+            register_shutdown_function(self::shutdownHandler(...));
             Debug::eventStart('Running SailCMS', 'blue');
         }
     }
