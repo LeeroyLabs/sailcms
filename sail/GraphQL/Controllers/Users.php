@@ -14,12 +14,14 @@ use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
+use SailCMS\Middleware;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
+use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
@@ -421,6 +423,10 @@ class Users
     {
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
+            // Ask Middleware
+            $data = new Middleware\Data(Middleware\Login::Meta, $obj);
+            $obj = Middleware::execute(MiddlewareType::LOGIN, $data)->data;
+
             if (is_object($obj->meta) && get_class($obj->meta) === stdClass::class) {
                 $meta = new UserMeta();
                 return $meta->castTo($obj->meta)->castFrom();
