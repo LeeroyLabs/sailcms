@@ -7,6 +7,9 @@ beforeEach(function () {
     Sail::setupForTests(__DIR__);
 
     $graphqlUrl = env('TEST_GRAPHQL_URL');
+    $userEmail = env('TEST_USER_EMAIL');
+    $userPWD = env('TEST_USER_PWD');
+
     if ($graphqlUrl) {
         $this->client = new GraphQLClient($graphqlUrl);
 
@@ -16,7 +19,7 @@ beforeEach(function () {
                     message
                 }
             }
-        ', ['email' => 'philippe@leeroy.ca', 'password' => 'Hell0W0rld!']);
+        ', ['email' => $userEmail, 'password' => $userPWD]);
 
         $tmpToken = $authTmpResponse->data->authenticate->message;
 
