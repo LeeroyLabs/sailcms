@@ -6,7 +6,7 @@ use SailCMS\Test\GraphQLClient;
 beforeEach(function () {
     Sail::setupForTests(__DIR__);
 
-    $graphqlUrl = env('GRAPHQL_URL');
+    $graphqlUrl = env('TEST_GRAPHQL_URL');
     if ($graphqlUrl) {
         $this->client = new GraphQLClient($graphqlUrl);
 
