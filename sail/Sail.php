@@ -966,6 +966,7 @@ class Sail
      */
     private static function loadAndDetectSites(): void
     {
+        $defaultLocale = "en";
         if (file_exists(self::$workingDirectory . '/config/sites.php')) {
             $sites = include self::$workingDirectory . '/config/sites.php';
 
@@ -978,9 +979,10 @@ class Sail
 
                 if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
                     self::$siteID = $name;
+                    $defaultLocale = $config['defaultLocale'];
                     Locale::setAvailableLocales($config['locales']);
-                    Locale::setCurrent($config['defaultLocale']);
-                    Locale::setDefault($config['defaultLocale']);
+                    Locale::setCurrent($defaultLocale);
+                    Locale::setDefault($defaultLocale);
                     break;
                 }
             }
@@ -993,15 +995,15 @@ class Sail
                     self::$siteID = $value;
                     Locale::setAvailableLocales($sites[$value]['locales']);
                     Locale::setCurrent($sites[$value]['defaultLocale']);
-                    Locale::setDefault($config['defaultLocale']);
+                    Locale::setDefault($defaultLocale);
                     break;
                 }
             }
         } else {
             self::$siteID = 'default';
-            Locale::setAvailableLocales(['en']);
-            Locale::setCurrent('en');
-            Locale::setDefault('en');
+            Locale::setAvailableLocales([$defaultLocale]);
+            Locale::setCurrent($defaultLocale);
+            Locale::setDefault($defaultLocale);
         }
     }
 
