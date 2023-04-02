@@ -9,30 +9,17 @@ use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
-use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\SocialMeta;
-use SailCMS\Types\Username;
 
 beforeAll(function () {
     Sail::setupForTests(__DIR__);
 
-    $authorModel = new User();
-    $username = new Username('Test', 'Entry');
-    $userId = $authorModel->create($username, 'testentry@leeroy.ca', 'Hell0W0rld!', Collection::init());
-    User::$currentUser = $authorModel->getById($userId);
-
     // Ensure default type exists
     EntryType::getDefaultType();
 });
-
-afterAll(function () {
-    $authorModel = new User();
-    $authorModel->removeByEmail('testentry@leeroy.ca');
-});
-
 
 test('Create an entry layout', function () {
     $model = new EntryLayout();
