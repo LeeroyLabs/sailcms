@@ -73,7 +73,7 @@ class Sail
      *
      * Initialize the CMS
      *
-     * @param string $execPath
+     * @param  string  $execPath
      * @return void
      * @throws DatabaseException
      * @throws Errors\RouteReturnException
@@ -233,7 +233,7 @@ class Sail
         self::$configDirectory = self::$workingDirectory . '/config';
 
         if (!self::$installMode) {
-            $config = include self::$configDirectory . '/general.dev.php';
+            $config = self::loadCombinedConfigurations();
         } else {
             $config = include dirname(__DIR__) . '/install/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
         }
@@ -461,7 +461,8 @@ class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value) {
+        $models->each(function ($key, $value)
+        {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -475,7 +476,7 @@ class Sail
      *
      * Launch Sail for Cron execution
      *
-     * @param string $execPath
+     * @param  string  $execPath
      * @return void
      * @throws SiteException
      * @throws JsonException
@@ -509,7 +510,7 @@ class Sail
      *
      * Launch Sail for CLI execution
      *
-     * @param string $execPath
+     * @param  string  $execPath
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -560,7 +561,7 @@ class Sail
      *
      * Set the working directory
      *
-     * @param string $path
+     * @param  string  $path
      * @return void
      *
      */
@@ -585,7 +586,7 @@ class Sail
      *
      * Force set the template directory
      *
-     * @param string $path
+     * @param  string  $path
      * @return void
      *
      */
@@ -635,9 +636,9 @@ class Sail
      * Set app state (either web or cli) for some very specific use cases
      * NOTE: DO NOT USE FOR ANYTHING, THIS IS RESERVED FOR UNIT TEST
      *
-     * @param int $state
-     * @param string $env
-     * @param string $forceIOPath
+     * @param  int     $state
+     * @param  string  $env
+     * @param  string  $forceIOPath
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -736,8 +737,8 @@ class Sail
      *
      * Run bare minimum for tests to work
      *
-     * @param string $rootDir
-     * @param string $templatePath
+     * @param  string  $rootDir
+     * @param  string  $templatePath
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -797,7 +798,7 @@ class Sail
      *
      * Get an environment variable in safe way (cannot be dumped)
      *
-     * @param string $key
+     * @param  string  $key
      * @return mixed
      *
      */
@@ -810,7 +811,7 @@ class Sail
      *
      * Compare requested version compatibility with current version of sail
      *
-     * @param string $version
+     * @param  string  $version
      * @return int
      *
      */
@@ -1059,5 +1060,51 @@ class Sail
             header('WWW-Authenticate: Basic realm="Secure Area"');
             header('HTTP/1.0 401 Unauthorized');
         }
+    }
+
+    /**
+     *
+     * Combine the default configs with the overwriting configs
+     *
+     * @return array
+     *
+     */
+    private static function loadCombinedConfigurations(): array
+    {
+        // Default configuration
+        $defaultConfig = include dirname(__DIR__) . '/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
+
+        // App Configuration
+        $config = include self::$configDirectory . '/general.' . env('ENVIRONMENT', 'dev') . '.php';
+
+        return self::processConfigs($defaultConfig, $config);
+    }
+
+    /**
+     *
+     * Process the configs to see what should be replaced
+     *
+     * @param  array  $default
+     * @param  array  $config
+     * @return array
+     *
+     */
+    private static function processConfigs(array $default, array $config): array
+    {
+        $processed = [];
+
+        foreach ($default as $key => $group) {
+            if (isset($config[$key])) {
+                if (is_scalar($config[$key])) {
+                    $processed[$key] = $config[$key];
+                } else {
+                    $processed[$key] = array_replace($group, $config[$key]);
+                }
+            } else {
+                $processed[$key] = $group;
+            }
+        }
+
+        return $processed;
     }
 }
