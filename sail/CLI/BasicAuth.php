@@ -47,7 +47,7 @@ class BasicAuth extends Command
             return Command::INVALID;
         }
 
-        $file = Sail::getFSDirectory() . '/storage/fs/vault/basic_auth';
+        $file = Sail::getFSDirectory() . '/vault/basic_auth';
         $encPass = Security::hashPassword($password);
         $format = $user . ":" . $encPass;
 
