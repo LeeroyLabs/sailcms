@@ -56,7 +56,8 @@ return [
     'CSRF' => [
         'use' => true,
         'leeway' => 5,
-        'expiration' => 120
+        'expiration' => 120,
+        'fieldName' => '_csrf_' // You should make this a random value to be unique
     ],
     'graphql' => [
         'active' => true,
@@ -71,7 +72,11 @@ return [
         'allowCredentials' => true,
         'maxAge' => 86400,
         'methods' => ['POST', 'GET', 'DELETE', 'PUT', 'OPTIONS'],
-        'headers' => []
+        'headers' => [
+            'Content-Type',
+            'x-access-token',
+            'x-domain-override'
+        ]
     ],
     'session' => [
         'mode' => \SailCMS\Session\Stateless::class,
