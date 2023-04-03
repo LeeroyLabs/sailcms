@@ -100,20 +100,27 @@ trait QueryObject
 
                     $list = [];
                     $targetList = [];
-                    $is_array = false;
+                    $isArray = false;
+                    $hasSub = false;
+                    $sub = '';
+
+                    if (str_contains($field, '.')) {
+                        [$field, $sub] = explode('.', $field);
+                        $hasSub = true;
+                    }
 
                     if (isset($doc->{$field}) && is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
                         $targetList = $doc->{$field}->unwrap();
-                        $is_array = true;
+                        $isArray = true;
                     } elseif (is_array($doc->{$field})) {
                         $targetList = $doc->{$field};
-                        $is_array = true;
+                        $isArray = true;
                     }
 
-                    if ($is_array) {
-                        foreach ($targetList as $item) {
-                            if (!empty($item) && !is_object($item)) {
-                                $obj = $instance->findById($item);
+                    if ($isArray) {
+                        foreach ($targetList as $n => $item) {
+                            if (!empty($item) && $hasSub && isset($item->{$sub})) {
+                                $obj = $instance->findById($item->{$sub});
 
                                 if (count($subpop) > 0) {
                                     foreach ($subpop as $pop) {
@@ -121,7 +128,7 @@ trait QueryObject
                                     }
                                 }
 
-                                $list[] = $obj->exec();
+                                $doc->{$field}[$n]->{$target} = $obj->exec();
                             }
                         }
 
