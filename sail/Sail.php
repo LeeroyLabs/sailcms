@@ -309,16 +309,16 @@ class Sail
                 self::$workingDirectory . '/.env',
                 file_get_contents(dirname(__DIR__) . '/install/env')
             );
-        }
+        } else {
+            // Load .env file
+            try {
+                $envData = file_get_contents(self::$workingDirectory . '/.env');
+                $env = Dotenv::parse($envData);
 
-        // Load .env file
-        try {
-            $envData = file_get_contents(self::$workingDirectory . '/.env');
-            $env = Dotenv::parse($envData);
-
-            self::$environmentData = new Collection($env);
-        } catch (Exception $e) {
-            throw new FileException('Cannot read/find the .env file');
+                self::$environmentData = new Collection($env);
+            } catch (Exception $e) {
+                throw new FileException('Cannot read/find the .env file');
+            }
         }
 
         // Setup Clockwork for debugging info
@@ -655,8 +655,8 @@ class Sail
             self::$cacheDirectory = self::$workingDirectory . '/storage/cache';
 
             self::setupEnv();
-
-            $config = include dirname(__DIR__) . '/install/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
+            
+            $config = include self::$workingDirectory . '/config/general.dev.php';
             $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
