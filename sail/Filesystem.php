@@ -40,15 +40,15 @@ final class Filesystem
     public static function mountCore(string $forcedPath = ''): void
     {
         $path = $forcedPath;
-
-        if ($forcedPath === '') {
-            $path = Sail::getFSDirectory();
-        }
-
         $wd = Sail::getWorkingDirectory();
         $host = '/assets';
 
+        if ($forcedPath === '') {
+            $path = $wd;
+        }
+
         self::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
+        self::$adapters['vault'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/vault/'));
         self::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/'));
         self::$adapters['debug'] = new FS(new LocalFilesystemAdapter($wd . '/storage/debug/'));
         self::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/logs/'));
