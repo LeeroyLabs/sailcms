@@ -580,6 +580,7 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws CollectionException
      *
      */
     public static function findByURL(string $url, ?string $siteId = null, bool $fromRequest = true, bool $preview = false, string $previewVersion = ""): Entry|array|null

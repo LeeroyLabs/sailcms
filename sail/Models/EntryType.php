@@ -288,6 +288,7 @@ class EntryType extends Model implements Validator
      * Get an entryType by id
      *
      * @param string $id
+     * @param bool $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException

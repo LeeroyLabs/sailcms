@@ -5,14 +5,16 @@ namespace SailCMS\Models;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
+use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Locale;
 use SailCMS\Models\Entry\Field as ModelField;
+use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\Fields\Field;
@@ -22,6 +24,9 @@ use stdClass;
 
 /**
  *
+ * todo add cache
+ *
+ * @property string $handle
  * @property LocaleField $titles
  * @property array|Collection $schema
  * @property Authors $authors
@@ -29,7 +34,7 @@ use stdClass;
  * @property bool $is_trashed
  *
  */
-class EntryLayout extends Model implements Castable
+class EntryLayout extends Model implements Validator, Castable
 {
     protected string $collection = 'entry_layouts';
     protected string $permissionGroup = 'entrylayout';
@@ -46,8 +51,9 @@ class EntryLayout extends Model implements Castable
     public const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
     public const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
     public const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
-    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
+    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" ddoes not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
+    public const HANDLE_ALREADY_EXISTS = '6008: Handle already exists.';
 
     /**
      *
@@ -72,6 +78,26 @@ class EntryLayout extends Model implements Castable
     public function castTo(mixed $value): Collection
     {
         return $this->processSchemaOnFetch($value);
+    }
+
+    /**
+     *
+     * Validate the entry layout handle
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     * @throws EntryException
+     *
+     */
+    public static function validate(string $key, mixed $value): void
+    {
+        if ($key === 'handle') {
+            $entryLayout = (new EntryLayout())->getByHandle($value);
+            if ($entryLayout) {
+                throw new EntryException(self::HANDLE_ALREADY_EXISTS);
+            }
+        }
     }
 
     /**
@@ -137,6 +163,24 @@ class EntryLayout extends Model implements Castable
         }
 
         return $this->find($filters)->exec();
+    }
+
+    /**
+     *
+     * Get entry layout by handle.
+     *
+     * @param string $handle
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getByHandle(string $handle): ?EntryLayout
+    {
+        $this->hasPermissions(true);
+
+        return $this->one(['handle' => $handle])->exec();
     }
 
     /**
@@ -543,7 +587,7 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Parse options 
+     * Parse options
      *
      * @param Collection|null $options
      * @return Collection|null
@@ -650,18 +694,22 @@ class EntryLayout extends Model implements Castable
      *
      * @param LocaleField $titles
      * @param Collection $schema
+     * @param string|null $handle
      * @return EntryLayout
      * @throws DatabaseException
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(LocaleField $titles, Collection $schema): EntryLayout
+    private function createWithoutPermission(LocaleField $titles, Collection $schema, string $handle = null): EntryLayout
     {
         $dates = Dates::init();
         $authors = Authors::init(User::$currentUser);
 
+        $handle = $handle ?? Text::slugify($titles->{Locale::default()});
+
         try {
             $entryLayoutId = $this->insert([
+                'handle' => $handle,
                 'titles' => $titles,
                 'schema' => $schema,
                 'authors' => $authors,
@@ -700,6 +748,11 @@ class EntryLayout extends Model implements Castable
         $schema = $data->get('schema');
         if ($schema) {
             $update['schema'] = $schema;
+        }
+
+        $handle = $data->get('handle');
+        if ($handle) {
+            $update['handle'] = $handle;
         }
 
         try {
