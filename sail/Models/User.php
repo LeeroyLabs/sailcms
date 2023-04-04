@@ -147,15 +147,19 @@ class User extends Model
      * Get a user by id
      *
      * @param string $id
+     * @param bool $api
      * @return User|null
-     * @throws DatabaseException
      * @throws ACLException
+     * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getById(string $id): ?User
+    public function getById(string $id, bool $api = true): ?User
     {
-        $this->hasPermissions(true, true, $id);
+        if ($api) {
+            $this->hasPermissions(true, true, $id);
+        }
+
         return $this->findById($id)->exec();
     }
 
