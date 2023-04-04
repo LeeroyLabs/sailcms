@@ -1697,7 +1697,13 @@ class Entry extends Model implements Validator, Castable
         $publication = (new EntryPublication())->getPublicationByUrl($url, $siteId);
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
-            $entryTypeId = $publication->version->entry->get('entry_type_id');
+            $entryType = $publication->version->entry->get('entry_type');
+            if (!$entryType) {
+                // Must deprecate that...
+                $entryTypeId = $publication->version->entry->get('entry_type_id');
+            } else {
+                $entryTypeId = $entryType->_id;
+            }
             $entryModel = (new EntryType())->getById($entryTypeId, false)->getEntryModel();
             $entry = $entryModel->one(['_id' => $publication->entry_id]);
             $content = (new EntryVersion())->fakeVersion($entry, $publication->entry_version_id);
