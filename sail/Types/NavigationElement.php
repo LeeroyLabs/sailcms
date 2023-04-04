@@ -75,7 +75,7 @@ class NavigationElement
      */
     public function insertChildAt(NavigationElement $child, int $index): void
     {
-        $this->children = array_slice($this->children, $index, 0, $child);
+        $this->children = array_splice($this->children, $index, 0, $child);
     }
 
     /**

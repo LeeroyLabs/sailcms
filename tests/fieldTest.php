@@ -10,23 +10,15 @@ use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
-use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
-use SailCMS\Types\Username;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     Sail::setupForTests(__DIR__);
-
-    $authorModel = new User();
-    $username = new Username('Test', 'Entry');
-    $userId = $authorModel->create($username, 'testentryfield@leeroy.ca', 'Hell0W0rld!', Collection::init());
-    User::$currentUser = $authorModel->getById($userId);
 
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->create(new LocaleField(['fr' => 'Test des champs', 'en' => 'Field Test']), Collection::init());
@@ -37,11 +29,7 @@ beforeAll(function ()
     $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
 });
 
-afterAll(function ()
-{
-    $authorModel = new User();
-    $authorModel->removeByEmail('testentryfield@leeroy.ca');
-
+afterAll(function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -61,8 +49,7 @@ afterAll(function ()
     $layoutModel->delete((string)$entryLayout->_id, false);
 });
 
-test('Add all fields to the layout', function ()
-{
+test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->one([
         'titles.fr' => 'Test des champs'
@@ -138,8 +125,7 @@ test('Add all fields to the layout', function ()
     }
 });
 
-test('Failed to update the entry content', function ()
-{
+test('Failed to update the entry content', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -173,8 +159,7 @@ test('Failed to update the entry content', function ()
     }
 });
 
-test('Update content with success', function ()
-{
+test('Update content with success', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'

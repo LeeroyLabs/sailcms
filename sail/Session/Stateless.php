@@ -94,7 +94,7 @@ final class Stateless implements AppSession
     {
         // Key is not important
         $algo = new Sha256();
-        $thekey = Filesystem::manager()->read('local://vault/.security_key');
+        $thekey = Filesystem::manager()->read('local://storage/fs/vault/.security_key');
         $genkey = InMemory::plainText($thekey);
 
         // Set cookie for token
@@ -223,7 +223,7 @@ final class Stateless implements AppSession
         $token = $parser->parse($cookie);
         $validator = new Validator();
 
-        $thekey = Filesystem::manager()->read('local://vault/.security_key');
+        $thekey = Filesystem::manager()->read('local://storage/fs/vault/.security_key');
         $genkey = InMemory::plainText($thekey);
 
         if (!$validator->validate($token, new IssuedBy(setting('session.jwt.issuer', 'SailCMS')))) {

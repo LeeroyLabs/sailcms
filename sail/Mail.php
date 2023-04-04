@@ -12,11 +12,11 @@ use SailCMS\Templating\Engine;
 use SailCMS\Templating\Extensions\Bundled;
 use SailCMS\Templating\Extensions\Navigation;
 use Symfony\Bridge\Twig\Mime\BodyRenderer;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mailer\Transport;
-use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\Mime\Address;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Address;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
@@ -385,12 +385,13 @@ class Mail
 
             $replacements = $superContext->get('replacements', []);
 
+            $subject = $template->subject->{$locale};
             foreach ($replacements as $key => $value) {
                 $title = str_replace('{' . $key . '}', $value, $title);
                 $content = str_replace('{' . $key . '}', $value, $content);
                 $cta = str_replace('{' . $key . '}', $value, $cta);
                 $cta_title = str_replace('{' . $key . '}', $value, $cta_title);
-                $template->subject->{$locale} = str_replace('{' . $key . '}', $value, $template->subject->{$locale});
+                $subject = str_replace('{' . $key . '}', $value, $subject);
             }
 
             // Determine what host to use (if no override, use .env url) otherwise use override if allowed
@@ -418,10 +419,10 @@ class Mail
 
             return $this
                 ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))
-                ->subject($template->subject->{$locale})
+                ->subject($subject)
                 ->template($template->template, $superContext);
         }
 
-        throw new EmailException("Cannot find the email from database, please make sure it's not a typo", 0404);
+        throw new EmailException("Cannot find the email '{$slug}' from database, please make sure it's not a typo", 0404);
     }
 }

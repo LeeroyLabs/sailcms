@@ -302,8 +302,12 @@ abstract class Model implements JsonSerializable
     {
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
 
+        if (!User::$currentUser) {
+            throw new PermissionException('0403: Permission Denied', 0403);
+        }
+
         if ($read) {
-            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->permissionGroup))) {
+            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->permissionGroup), ACL::write($this->permissionGroup))) {
                 throw new PermissionException('0403: ' . $errorMsg, 0403);
             }
         } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->permissionGroup))) {

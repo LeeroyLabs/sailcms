@@ -11,6 +11,7 @@ use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -146,7 +147,7 @@ class Asset extends Model
         $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
 
         // Options
-        $adapter = setting('assets.adapter', 'local://');
+        $adapter = setting('assets.adapter', 'local');
         $maxSize = setting('assets.maxUploadSize', 5);
         $optimize = setting('assets.optimizeOnUpload', true);
         $transforms = setting('assets.onUploadTransforms', []);
@@ -166,7 +167,7 @@ class Asset extends Model
         // Local adapter is special
         if ($adapter === 'local') {
             $basePath = 'local://';
-            $path = 'local://uploads/';
+            $path = 'local://storage/fs/uploads/';
         }
 
         // All folders are Year/Month (of upload)
@@ -204,6 +205,8 @@ class Asset extends Model
             // Not applicable
             $size = new Size(0, 0);
         }
+
+        file_put_contents(Sail::getWorkingDirectory() . '/test-output.txt', $path . $timePath . $filename . "\n");
 
         // Store asset
         $fs->write($path . $timePath . $filename, $data, ['visibility' => 'public']);
