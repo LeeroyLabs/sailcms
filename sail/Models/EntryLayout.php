@@ -51,7 +51,7 @@ class EntryLayout extends Model implements Castable
     public const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
     public const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
     public const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
-    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" ddoes not exists.';
+    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
 
