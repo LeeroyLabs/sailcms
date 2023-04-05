@@ -22,7 +22,7 @@ class Security
     public static function init(): void
     {
         $manager = Filesystem::manager();
-        $path = 'local://storage/fs/vault';
+        $path = 'vault://';
 
         if (static::$overrideKey) {
             return;
@@ -49,7 +49,7 @@ class Security
     public static function encrypt(string $data): string
     {
         $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('local://storage/fs/vault/.security_key') : static::$overrideKey;
+        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('vault://.security_key') : static::$overrideKey;
         $encrypted = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($data, '', $nonce, $key);
 
         $nonceHex = bin2hex($nonce);
@@ -78,7 +78,7 @@ class Security
 
         $nonce = hex2bin($nonceHex);
         $hash = hex2bin($hashHex);
-        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('local://storage/fs/vault/.security_key') : static::$overrideKey;
+        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('vault://.security_key') : static::$overrideKey;
         return sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($hash, '', $nonce, $key);
     }
 

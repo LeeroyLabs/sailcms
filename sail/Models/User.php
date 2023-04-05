@@ -147,15 +147,19 @@ class User extends Model
      * Get a user by id
      *
      * @param string $id
+     * @param bool $api
      * @return User|null
-     * @throws DatabaseException
      * @throws ACLException
+     * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getById(string $id): ?User
+    public function getById(string $id, bool $api = true): ?User
     {
-        $this->hasPermissions(true, true, $id);
+        if ($api) {
+            $this->hasPermissions(true, true, $id);
+        }
+
         return $this->findById($id)->exec();
     }
 
@@ -339,7 +343,8 @@ class User extends Model
                             ],
                             'user_email' => $email,
                             'reset_pass_code' => $passCode,
-                            'verification_code' => $code
+                            'verification_code' => $code,
+                            'who' => $who
                         ])
                         ->send();
                 }
@@ -472,6 +477,8 @@ class User extends Model
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
             // Send a nice email to greet
+            $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
+            $who = (self::$currentUser) ? self::$currentUser->name->full : $defaultWho;
             try {
                 // Overwrite the cta url for the admin one
                 $mail = new Mail();
@@ -480,12 +487,14 @@ class User extends Model
                     $locale,
                     [
                         'replacements' => [
-                            'name' => $name->first
+                            'name' => $name->first,
+                            'who' => $who
                         ],
                         'verification_code' => $code,
                         'reset_pass_code' => $passCode,
                         'user_email' => $email,
-                        'name' => $name->first
+                        'name' => $name->first,
+                        'who' => $who
                     ]
                 )->send();
 
