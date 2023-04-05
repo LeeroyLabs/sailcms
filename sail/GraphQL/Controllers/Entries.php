@@ -6,8 +6,8 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
@@ -291,6 +291,7 @@ class Entries
      * @throws JsonException
      * @throws PermissionException
      * @throws SodiumException
+     * @throws CollectionException
      *
      */
     public function entryByUrl(mixed $obj, Collection $args, Context $context): ?array
@@ -814,6 +815,7 @@ class Entries
     {
         $titles = $args->get('titles');
         $graphqlSchema = $args->get('schema');
+        $slug = $args->get('slug');
 
         $titles = new LocaleField($titles->unwrap());
 
@@ -821,7 +823,7 @@ class Entries
         $generatedSchema = EntryLayout::generateLayoutSchema($schema);
 
         $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
+        $entryLayout = $entryLayoutModel->create($titles, $generatedSchema, $slug);
         return $entryLayout->simplify();
     }
 
@@ -869,6 +871,7 @@ class Entries
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
