@@ -16,9 +16,9 @@ class GraphQLClient
      *
      * Execute a Query and get the return data
      *
-     * @param  string  $query
-     * @param  array   $variables
-     * @param  string  $token
+     * @param string $query
+     * @param array $variables
+     * @param string $token
      * @return object
      * @throws JsonException
      * @throws GraphqlException
