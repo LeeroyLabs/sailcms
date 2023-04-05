@@ -16,9 +16,9 @@ class GraphQLClient
      *
      * Execute a Query and get the return data
      *
-     * @param  string  $query
-     * @param  array   $variables
-     * @param  string  $token
+     * @param string $query
+     * @param array $variables
+     * @param string $token
      * @return object
      * @throws JsonException
      * @throws GraphqlException
@@ -49,7 +49,7 @@ class GraphQLClient
         curl_close($ch);
 
         // Handle errors and 404 not found
-        if ($error || $info['http_code'] !== "200") {
+        if ($error || $info['http_code'] !== 200) {
             return new GraphQLResponse('failed', $data, null);
         }
 
