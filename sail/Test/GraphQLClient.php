@@ -49,7 +49,7 @@ class GraphQLClient
         curl_close($ch);
 
         // Handle errors and 404 not found
-        if ($error || $info['http_code'] !== "200") {
+        if ($error || $info['http_code'] !== 200) {
             return new GraphQLResponse('failed', $data, null);
         }
 
