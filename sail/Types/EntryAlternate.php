@@ -10,10 +10,9 @@ class EntryAlternate
 {
     /**
      *
-     * @param string $locale
+     * @param string|null $locale
      * @param string $entry_id
      * @throws EntryException
-     *
      */
     public function __construct(
         public ?string $locale = null,
@@ -45,10 +44,11 @@ class EntryAlternate
 
     /**
      *
-     * Cast to EntryParent
+     * Cast to EntryAlternate
      *
      * @param mixed $value
      * @return EntryAlternate
+     * @throws EntryException
      *
      */
     public function castTo(mixed $value): self
