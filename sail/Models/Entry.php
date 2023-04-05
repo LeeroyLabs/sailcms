@@ -580,6 +580,7 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws CollectionException
      *
      */
     public static function findByURL(string $url, ?string $siteId = null, bool $fromRequest = true, bool $preview = false, string $previewVersion = ""): Entry|array|null
@@ -1698,7 +1699,7 @@ class Entry extends Model implements Validator, Castable
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
             $entryType = $publication->version->entry->get('entry_type');
             if (!$entryType) {
-                // Must deprecate that...
+                // Add a deprecation message
                 $entryTypeId = $publication->version->entry->get('entry_type_id');
             } else {
                 $entryTypeId = $entryType->_id;
@@ -1722,6 +1723,8 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws CollectionException
+     *
      */
     private static function findByUrlFromEntryTypes(string $url, ?string $previewVersion): ?Entry
     {
