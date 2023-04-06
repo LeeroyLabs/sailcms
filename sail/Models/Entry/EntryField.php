@@ -13,12 +13,10 @@ use SailCMS\Types\StoringType;
 
 class EntryField extends Field
 {
-    // TODO : change input field for a select field that choices are entry and entry type ??
-
     /* Error */
     const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
     const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';
-    const ENTRY_ID_AND_HANDLE = '6161: Entry id and entry type handle must be set both or none';
+    const ENTRY_ID_AND_HANDLE = '6162: Entry id and entry type handle must be set both or none';
 
     public function description(): string
     {
@@ -84,6 +82,17 @@ class EntryField extends Field
         return $errors;
     }
 
+    /**
+     *
+     * Parent override to get the entry
+     *
+     * @param $content
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
     public function parse($content): mixed
     {
         if ($content instanceof \stdClass) {
@@ -95,8 +104,9 @@ class EntryField extends Field
                 $entry = $entryModel->getById($entryId);
             } catch (EntryException $exception) {
                 // Fail silently
-                return [];
+                return new \stdClass();
             }
+            // Get publication instead ?
             return $entry->simplify(null);
         }
 
