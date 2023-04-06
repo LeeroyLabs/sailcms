@@ -8,13 +8,17 @@ use SailCMS\Types\StoringType;
 
 class InputUrlField extends Field
 {
-    /* Errors from 6240 to 6259 */
+
+    // @src https://uibakery.io/regex-library/url-regex-php
+    public const DEFAULT_REGEX = '^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$';
+
+    /* Errors from 6260 to 6279 */
     public const FIELD_PATTERN_NO_MATCH = '6201: The regex pattern does not matches /%s/';
 
     public function __construct(
         public readonly ?LocaleField $labels = null,
         public readonly bool         $required = false,
-        public readonly string       $pattern = ''
+        public readonly string       $pattern = self::DEFAULT_REGEX
     )
     {
     }
@@ -23,7 +27,7 @@ class InputUrlField extends Field
     {
         return new Collection([
             'required' => false,
-            'pattern' => ''
+            'pattern' => self::DEFAULT_REGEX
         ]);
     }
 

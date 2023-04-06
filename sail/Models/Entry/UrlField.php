@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\StoringType;
 
@@ -32,11 +31,11 @@ class UrlField extends Field
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            InputTextField::class
+            InputUrlField::class
         ]);
     }
 
-    protected function validate(Collection $content): ?Collection
+    protected function validate(mixed $content): ?Collection
     {
         // Nothing to implement
         return null;
