@@ -911,5 +911,6 @@ trait QueryObject
         $this->currentSkip = 0;
         $this->currentLimit = 10_000;
         $this->currentShowAll = false;
+        $this->isSingle = false;
     }
 }
