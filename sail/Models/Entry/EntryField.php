@@ -13,7 +13,7 @@ use SailCMS\Types\StoringType;
 
 class EntryField extends Field
 {
-    // TODO : change input field for a select field that choices are entry and entry type
+    // TODO : change input field for a select field that choices are entry and entry type ??
     // TODO : add parse method to include in Entry content Getter ??
 
     /* Error */

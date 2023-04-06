@@ -8,6 +8,7 @@ use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\UrlField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
@@ -15,6 +16,7 @@ use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
 
 beforeAll(function () {
@@ -102,6 +104,8 @@ test('Add all fields to the layout', function () {
         ]
     ]);
 
+    $urlField = new UrlField(new LocaleField(['en' => 'Url', 'fr' => 'Url']));
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -112,6 +116,7 @@ test('Add all fields to the layout', function () {
         "wysiwyg" => $htmlField,
         "email" => $emailField,
         "select" => $selectField,
+        "url" => $urlField,
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -143,16 +148,18 @@ test('Failed to update the entry content', function () {
                     'id' => (string)$relatedEntry->_id
                 ],
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
-                'select' => 'test-failed'
+                'select' => 'test-failed',
+                'url' => 'babaganouj',
             ]
         ], false);
-        //print_r($errors);
+//        \SailCMS\Debug::ray($errors);
         expect($errors->length)->toBeGreaterThan(0);
         expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
         expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
         expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
         expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
         expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
+        expect($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX));
     } catch (Exception $exception) {
         //print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -183,7 +190,8 @@ and must keep it through all the process',
                 ],
                 'wysiwyg' => '<p><strong>Test</strong></p>',
                 'email' => 'email-test@email.com',
-                'select' => 'test'
+                'select' => 'test',
+                'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12'
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -197,6 +205,7 @@ and must keep it through all the process',
         expect($entryUpdated->content->get('text'))->toBe('Not empty');
         expect($entryUpdated->content->get('description'))->toContain(PHP_EOL);
         expect($entryUpdated->content->get('related.id'))->toBe((string)$relatedEntry->_id);
+        expect($entryUpdated->content->get('url'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($errors);
