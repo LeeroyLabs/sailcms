@@ -265,10 +265,12 @@ class Entry extends Model implements Validator, Castable
              */
             $content = $this->content->get($key);
 
+            $parsedFieldContent = $modelField->parse($content);
+
             $parsedContent->pushKeyValue($key, [
                 'type' => $modelField->storingType(),
                 'handle' => $modelField->handle,
-                'content' => $content ?? '',
+                'content' => $parsedFieldContent ?? '',
                 'key' => $key
             ]);
         });
@@ -842,9 +844,15 @@ class Entry extends Model implements Validator, Castable
 
         if (!$cache) {
             $this->clearCacheForModel();
-            return $qs->exec();
+            $entry = $qs->exec();
+        } else {
+            $entry = $qs->exec($cacheKey, $cacheTtl);
         }
-        return $qs->exec($cacheKey, $cacheTtl);
+        // Override type to get the good one
+        $entry->entryType = $this->entryType;
+        $entry->entry_type_id = $this->entry_type_id;
+
+        return $entry;
     }
 
     /**

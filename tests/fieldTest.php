@@ -197,15 +197,17 @@ and must keep it through all the process',
         expect($errors->length)->toBe(0);
 
         $entryModel = EntryType::getEntryModelByHandle('field-test');
+
         $entryUpdated = $entryModel->one([
             '_id' => $entryId
         ]);
+        $content = $entryUpdated->getContent();
 
-        expect($entryUpdated->content->get('float'))->toBe('0.03');
-        expect($entryUpdated->content->get('text'))->toBe('Not empty');
-        expect($entryUpdated->content->get('description'))->toContain(PHP_EOL);
-        expect($entryUpdated->content->get('related.id'))->toBe((string)$relatedEntry->_id);
-        expect($entryUpdated->content->get('url'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12');
+        expect($content->get('float.content'))->toBe('0.03')
+            ->and($content->get('text.content'))->toBe('Not empty')
+            ->and($content->get('description.content'))->toContain(PHP_EOL)
+            ->and((string)$content->get('related.content._id'))->toBe((string)$relatedEntry->_id)
+            ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($errors);

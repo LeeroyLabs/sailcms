@@ -218,6 +218,20 @@ abstract class Field
 
     /**
      *
+     * Parse the content for the Entry->getContent()
+     *  can be overridden in child class to adapt according to the field content
+     *
+     * @param mixed $content
+     * @return mixed
+     *
+     */
+    public function parse(mixed $content): mixed
+    {
+        return $content;
+    }
+
+    /**
+     *
      * Return the description of the field for the field info
      *
      * @return string
@@ -254,7 +268,7 @@ abstract class Field
 
     /**
      *
-     * THe extra validation for the field
+     * The extra validation for the field
      *
      * @param Collection $content
      * @return Collection|null

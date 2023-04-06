@@ -14,7 +14,6 @@ use SailCMS\Types\StoringType;
 class EntryField extends Field
 {
     // TODO : change input field for a select field that choices are entry and entry type ??
-    // TODO : add parse method to include in Entry content Getter ??
 
     /* Error */
     const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
@@ -28,7 +27,7 @@ class EntryField extends Field
 
     public function storingType(): string
     {
-        return StoringType::ARRAY->name;
+        return StoringType::ARRAY->value;
     }
 
     public function defaultSettings(): Collection
@@ -83,5 +82,24 @@ class EntryField extends Field
         }
 
         return $errors;
+    }
+
+    public function parse($content): mixed
+    {
+        if ($content instanceof \stdClass) {
+            $entryId = $content->id;
+            $entryTypeHandle = $content->typeHandle;
+
+            try {
+                $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
+                $entry = $entryModel->getById($entryId);
+            } catch (EntryException $exception) {
+                // Fail silently
+                return [];
+            }
+            return $entry->simplify(null);
+        }
+
+        return $content;
     }
 }
