@@ -40,7 +40,6 @@ use SailCMS\Types\Pagination;
 use SailCMS\Types\PublicationDates;
 use SailCMS\Types\PublicationStatus;
 use SailCMS\Types\QueryOptions;
-use SailCMS\Types\StoringType;
 use SodiumException;
 use stdClass;
 
@@ -265,9 +264,6 @@ class Entry extends Model implements Validator, Castable
              * @var Field $modelField
              */
             $content = $this->content->get($key);
-            if ($modelField->storingType() === StoringType::ARRAY->value) {
-                $content = json_encode($content ?? []);
-            }
 
             $parsedContent->pushKeyValue($key, [
                 'type' => $modelField->storingType(),
