@@ -488,9 +488,10 @@ trait QueryObject
 
         $this->currentOp = 'distinct';
         $this->currentField = $field;
-        $this->isSingle = true;
+        $this->isSingle = false;
         $this->currentQuery = $query;
-        $this->currentLimit = 1;
+        $this->currentSkip = $options->skip;
+        $this->currentLimit = $options->limit;
         $this->currentSort = $options->sort ?? [];
         $this->currentProjection = $options->projection ?? [];
         $this->currentCollation = $options->collation;
