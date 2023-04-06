@@ -179,10 +179,7 @@ trait QueryObject
 
         try {
             if ($this->currentOp === 'distinct') {
-                $results = call_user_func([
-                    $this->active_collection,
-                    $this->currentOp
-                ], $this->currentField, $this->currentQuery, $options);
+                $results = $this->active_collection->distinct($this->currentField, $this->currentQuery, $options);
             } else {
                 $results = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
             }
