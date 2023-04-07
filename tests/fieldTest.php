@@ -166,8 +166,6 @@ test('Failed to update the entry content', function () {
             ]
         ], false);
 
-        \SailCMS\Debug::ray('errors', $errors);
-
         expect($errors->length)->toBeGreaterThan(0)
             ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))

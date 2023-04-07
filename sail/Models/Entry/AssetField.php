@@ -17,7 +17,7 @@ class AssetField extends Field
 
     public function __construct(LocaleField $labels, array|Collection|null $settings = null, bool $isImage = true)
     {
-        $settings['is_image'] = $isImage;
+        $settings['isImage'] = $isImage;
         $this->isImage = $isImage;
 
         parent::__construct($labels, $settings);
@@ -56,7 +56,7 @@ class AssetField extends Field
      */
     public function defaultSettings(): Collection
     {
-        $defaultSettings = new Collection(['required' => false, 'is_image' => true]);
+        $defaultSettings = new Collection(['required' => false, 'isImage' => true]);
         return new Collection([
             $defaultSettings
         ]);
