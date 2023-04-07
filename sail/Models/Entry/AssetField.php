@@ -15,7 +15,7 @@ class AssetField extends Field
 
     const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
 
-    public function __construct(LocaleField $labels, array|Collection|null $settings, bool $isImage = true)
+    public function __construct(LocaleField $labels, array|Collection|null $settings = null, bool $isImage = true)
     {
         $settings['is_image'] = $isImage;
         $this->isImage = $isImage;
@@ -56,7 +56,7 @@ class AssetField extends Field
      */
     public function defaultSettings(): Collection
     {
-        $defaultSettings = new Collection(['required' => true, 'is_image' => true]);
+        $defaultSettings = new Collection(['required' => false, 'is_image' => true]);
         return new Collection([
             $defaultSettings
         ]);
@@ -95,7 +95,7 @@ class AssetField extends Field
         }
 
         if (!$asset) {
-            $errors->push(self::ASSET_DOES_NOT_EXISTS);
+            $errors->push(new Collection([self::ASSET_DOES_NOT_EXISTS]));
         }
 
         return $errors;
@@ -111,20 +111,21 @@ class AssetField extends Field
      */
     public function parse(mixed $content): mixed
     {
-        try {
-            $asset = Asset::getById($content);
-        } catch (Exception $exception) {
-            // fail silently
-            $asset = null;
-        }
+        if ($content) {
+            try {
+                $asset = Asset::getById($content);
+            } catch (Exception $exception) {
+                // fail silently
+                $asset = null;
+            }
 
-        if ($asset) {
-            return (object)[
-                'name' => $asset->name,
-                'url' => $asset->url
-            ];
+            if ($asset) {
+                return (object)[
+                    'name' => $asset->name,
+                    'url' => $asset->url
+                ];
+            }
         }
-
         return $content;
     }
 }

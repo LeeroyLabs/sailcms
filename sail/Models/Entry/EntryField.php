@@ -66,16 +66,19 @@ class EntryField extends Field
         $entryTypeHandle = $content->get('typeHandle');
 
         if ((!$entryId && $entryTypeHandle) || (!$entryTypeHandle && $entryId)) {
+            // This a general field error so it's directly at the root of the errors array
             $errors->push(self::ENTRY_ID_AND_HANDLE);
         } else if ($entryId && $entryTypeHandle) {
             $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
             if (!$entryModel->entry_type_id) {
-                $errors->push(sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle));
+                $typeHandleError = new Collection(['typeHandle' => sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle)]);
+                $errors->push($typeHandleError);
             }
 
             if (!$entryModel->one(['_id' => $entryId])) {
-                $errors->push(self::ENTRY_DOES_NOT_EXISTS);
+                $idError = new Collection(['id' => self::ENTRY_DOES_NOT_EXISTS]);
+                $errors->push($idError);
             }
         }
 
