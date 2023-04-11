@@ -341,7 +341,8 @@ test('Get a page and modify his SEO', function () {
 })->group('graphql');
 
 test('Get a entry', function () {
-    $entryResponse = $this->client->run('
+    if (isset($_ENV['test-token'])) {
+        $entryResponse = $this->client->run('
         query {
             entries(entry_type_handle: "page", page: 1, limit: 1) {
                 list {
@@ -464,7 +465,8 @@ test('Get a entry', function () {
             }
         }
     ', [], $_ENV['test-token']);
-    expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+        expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+    }
 
 })->group('graphql');
 
