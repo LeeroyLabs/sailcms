@@ -62,9 +62,7 @@ afterAll(function () {
 
 test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
-    $entryLayout = $layoutModel->one([
-        'titles.fr' => 'Test des champs'
-    ]);
+    $entryLayout = $layoutModel->bySlug('field-test');
 
     // Field with default settings
     $textField = new TextField(new LocaleField(['en' => 'Text', 'fr' => 'Texte']), [

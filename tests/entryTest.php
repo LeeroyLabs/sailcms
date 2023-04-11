@@ -51,9 +51,7 @@ test('Create an entry layout', function () {
 
 test('Update the config of an entry layout', function () {
     $model = new EntryLayout();
-    $entryLayout = $model->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = $model->bySlug('layout-test');
 
     $entryLayout->updateSchemaConfig('title', [
         'maxLength' => 255,
@@ -82,15 +80,11 @@ test('Update the config of an entry layout', function () {
 
 test('Update a key of a entry layout schema', function () {
     $model = new EntryLayout();
-    $entryLayout = $model->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = $model->bySlug('layout-test');
 
     try {
         $entryLayout->updateSchemaKey('title', 'sub title');
-        $entryLayout = $model->one([
-            'titles.fr' => 'Test de disposition'
-        ]);
+        $entryLayout = $model->bySlug('layout-test');
         expect($entryLayout->schema->get('title'))->toBe(null)
             ->and($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
     } catch (Exception $exception) {
@@ -102,9 +96,7 @@ test('Update a key of a entry layout schema', function () {
 
 test('Failed to update a key of a entry layout schema', function () {
     $model = new EntryLayout();
-    $entryLayout = $model->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = $model->bySlug('layout-test');
 
     try {
         $entryLayout->updateSchemaKey('title', 'sub title');
@@ -233,10 +225,7 @@ test('Create an entry with an entry type', function () {
 
 test('Update an entry type', function () {
     $model = new EntryType();
-
-    $entryLayout = (new EntryLayout())->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = (new EntryLayout())->bySlug('layout-test');
 
     try {
         $result = $model->updateByHandle('test', new Collection([
@@ -553,9 +542,7 @@ test('Hard Delete an entry with the default type', function () {
 
 test('Fail to delete an entry layout because it is used', function () {
     $model = new EntryLayout();
-    $entryLayout = $model->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = $model->bySlug('layout-test');
 
     try {
         $result = $model->delete($entryLayout->_id);
@@ -582,15 +569,11 @@ test('Delete an entry type', function () {
 
 test('Soft delete an entry layout', function () {
     $model = new EntryLayout();
-    $entryLayout = $model->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = $model->bySlug('layout-test');
 
     try {
         $result = $model->delete($entryLayout->_id);
-        $deletedEntryLayout = $model->one([
-            'titles.fr' => 'Test de disposition'
-        ]);
+        $deletedEntryLayout = $model->bySlug('layout-test');
         expect($result)->toBe(true)
             ->and($deletedEntryLayout->is_trashed)->toBe(true);
     } catch (Exception $exception) {
@@ -600,9 +583,7 @@ test('Soft delete an entry layout', function () {
 
 test('Hard delete an entry layout', function () {
     $model = new EntryLayout();
-    $entryLayout = $model->one([
-        'titles.fr' => 'Test de disposition'
-    ]);
+    $entryLayout = $model->bySlug('layout-test');
 
     try {
         $result = $model->delete($entryLayout->_id, false);
