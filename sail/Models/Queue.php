@@ -3,27 +3,29 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Queue\Task;
 use SailCMS\Types\QueryOptions;
+use stdClass;
 
 /**
  *
- * @property string     $name
- * @property int        $scheduled_at
- * @property int        $executed_at
- * @property bool       $executed
- * @property string     $execution_result
- * @property bool       $execution_success
- * @property bool       $locked
- * @property string     $handler
- * @property string     $action
- * @property bool       $retriable
- * @property int        $retry_count
- * @property Collection $settings
- * @property int        $priority
+ * @property string                $name
+ * @property int                   $scheduled_at
+ * @property int                   $executed_at
+ * @property bool                  $executed
+ * @property string                $execution_result
+ * @property bool                  $execution_success
+ * @property bool                  $locked
+ * @property string                $handler
+ * @property string                $action
+ * @property bool                  $retriable
+ * @property int                   $retry_count
+ * @property BSONDocument|stdClass $settings
+ * @property int                   $priority
  *
  */
 class Queue extends Model
