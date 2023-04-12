@@ -2,12 +2,27 @@
 
 namespace SailCMS\Models\Entry;
 
+use Exception;
 use SailCMS\Collection;
+use SailCMS\Models\Asset;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class AssetField extends Field
 {
+    public bool $isImage;
+
+    const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
+
+    public function __construct(LocaleField $labels, array|Collection|null $settings = null, bool $isImage = true)
+    {
+        $settings['isImage'] = $isImage;
+        $this->isImage = $isImage;
+
+        parent::__construct($labels, $settings);
+    }
+
     /**
      *
      * Description for field info
@@ -41,8 +56,9 @@ class AssetField extends Field
      */
     public function defaultSettings(): Collection
     {
+        $defaultSettings = new Collection(['required' => false, 'isImage' => true]);
         return new Collection([
-            InputTextField::defaultSettings()
+            $defaultSettings
         ]);
     }
 
@@ -61,17 +77,55 @@ class AssetField extends Field
 
     /**
      *
-     * There is nothing extra to validate for the text field
+     * Validate the asset existence
      *
-     * @param  mixed  $content
+     * @param mixed $content
      * @return Collection|null
      *
      */
     protected function validate(mixed $content): ?Collection
     {
-        // TODO: VALIDATE EXISTENCE OF ASSET
+        $errors = Collection::init();
 
-        // Nothing to implement
-        return null;
+        try {
+            $asset = Asset::getById($content);
+        } catch (Exception $exception) {
+            // fail silently
+            $asset = null;
+        }
+
+        if (!$asset) {
+            $errors->push(new Collection([self::ASSET_DOES_NOT_EXISTS]));
+        }
+
+        return $errors;
+    }
+
+    /**
+     *
+     * Parse the content to return the asset url and name
+     *
+     * @param mixed $content
+     * @return mixed
+     *
+     */
+    public function parse(mixed $content): mixed
+    {
+        if ($content) {
+            try {
+                $asset = Asset::getById($content);
+            } catch (Exception $exception) {
+                // fail silently
+                $asset = null;
+            }
+
+            if ($asset) {
+                return (object)[
+                    'name' => $asset->name,
+                    'url' => $asset->url
+                ];
+            }
+        }
+        return $content;
     }
 }

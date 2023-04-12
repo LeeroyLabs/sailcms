@@ -36,6 +36,22 @@ beforeEach(function () {
     }
 });
 
+test('Create asset', function () {
+    if (isset($_ENV['test-token'])) {
+        $data = file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt');
+        $newAsset = $this->client->run('
+            mutation {
+                uploadAsset(
+                    src: "' . $data . '"
+                    filename: "graphql-test.jpg"
+                )
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($newAsset->status)->toBe('ok');
+    }
+});
+
 test('Create layout, entry type & entry', function () {
     if (isset($_ENV['test-token'])) {
         $newEntryLayout = $this->client->run('
@@ -131,6 +147,19 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Image", fr: "Image" }
+                            key: "image"
+                            handle: "SailCMS-Models-Entry-AssetField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "isImage", value: "true", type: boolean }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
@@ -160,6 +189,17 @@ test('Create layout, entry type & entry', function () {
                 }
             }
         ', [], $_ENV['test-token']);
+
+        $assets = $this->client->run('
+            {
+                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                    list {
+                        _id
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $assetId = $assets->data->assets->list[0]->_id;
 
         $newEntry = $this->client->run('
             mutation {
@@ -195,6 +235,10 @@ test('Create layout, entry type & entry', function () {
                             key: "select"
                             content: "test"
                         }
+                        {
+                            key: "image"
+                            content: "' . $assetId . '"
+                        }
                     ]
                 ) {
                     errors {
@@ -210,7 +254,6 @@ test('Create layout, entry type & entry', function () {
             expect($newEntryType->status)->toBe('ok');
             expect($newEntry->status)->toBe('ok');
         } catch (Exception $exception) {
-            //print_r($exception->getMessage());
             expect(true)->toBe(false);
         }
     }
@@ -298,7 +341,8 @@ test('Get a page and modify his SEO', function () {
 })->group('graphql');
 
 test('Get a entry', function () {
-    $entryResponse = $this->client->run('
+    if (isset($_ENV['test-token'])) {
+        $entryResponse = $this->client->run('
         query {
             entries(entry_type_handle: "page", page: 1, limit: 1) {
                 list {
@@ -421,7 +465,8 @@ test('Get a entry', function () {
             }
         }
     ', [], $_ENV['test-token']);
-    expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+        expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+    }
 
 })->group('graphql');
 
@@ -478,3 +523,28 @@ test('Delete layout, entry type & entry', function () {
         }
     }
 })->group('graphql');
+
+test('Delete test asset', function () {
+    if (isset($_ENV['test-token'])) {
+        $assets = $this->client->run('
+            {
+                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                    list {
+                        _id
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $assetId = $assets->data->assets->list[0]->_id;
+        expect($assetId)->not()->toBeNull();
+
+        $removeAsset = $this->client->run('
+            mutation {
+                deleteAsset(id: "' . $assetId . '")
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($removeAsset->status)->toBe('ok');
+    }
+});

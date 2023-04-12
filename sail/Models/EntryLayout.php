@@ -194,7 +194,7 @@ class EntryLayout extends Model implements Castable
     {
         $this->hasPermissions(true);
 
-        return $this->one(['slug' => $slug])->exec();
+        return $this->findOne(['slug' => $slug])->exec();
     }
 
     /**

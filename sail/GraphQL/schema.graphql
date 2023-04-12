@@ -213,6 +213,7 @@ type ACL {
 }
 
 type Asset {
+    _id: ID!
     filename: String!
     site_id: String!
     name: String!
