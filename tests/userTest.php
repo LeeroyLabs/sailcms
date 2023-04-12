@@ -166,3 +166,23 @@ test('Create a user and delete it by the instance', function () {
         expect(true)->toBe(false);
     }
 })->group('users');
+
+test('Acquire anonymous user', function () {
+    $anonymous = User::anonymousUser();
+    expect($anonymous->_id)->not()->toBeNull();
+
+    try {
+        $result = (new User())->removeById($anonymous->_id);
+        expect($result)->toBe(false);
+    } catch (Exception $exception) {
+        expect($exception->getMessage())->toBe('9004: Anonymous user cannot be deleted.');
+    }
+
+    try {
+        $result = (new User())->removeByEmail($anonymous->email);
+        expect($result)->toBe(false);
+    } catch (Exception $exception) {
+        expect($exception->getMessage())->toBe('9004: Anonymous user cannot be deleted.');
+    }
+
+})->group('users');

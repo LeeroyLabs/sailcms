@@ -15,6 +15,7 @@ use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Event;
+use SailCMS\Locale;
 use SailCMS\Log;
 use SailCMS\Mail;
 use SailCMS\Middleware;
@@ -66,6 +67,8 @@ class User extends Model
     public const EVENT_CREATE = 'event_create_user';
     public const EVENT_UPDATE = 'event_update_user';
     public const EVENT_LOGIN = 'event_login_user';
+
+    private const ANONYMOUS_EMAIL = 'anonymous@mail.io';
 
     public static ?User $currentUser = null;
 
@@ -211,11 +214,11 @@ class User extends Model
         $skip = $page * $limit - $limit;
         $list = new Collection(
             $this->find($query)
-                 ->skip($skip)
-                 ->limit($limit)
-                 ->collation($collation)
-                 ->sort([$sort => $order])
-                 ->exec()
+                ->skip($skip)
+                ->limit($limit)
+                ->collation($collation)
+                ->sort([$sort => $order])
+                ->exec()
         );
 
         $total = $this->count($query);
@@ -242,16 +245,17 @@ class User extends Model
      *
      */
     public function createRegularUser(
-        Username $name,
-        string $email,
-        string $password,
-        string $locale = 'en',
-        string $avatar = '',
-        ?UserMeta $meta = null,
+        Username         $name,
+        string           $email,
+        string           $password,
+        string           $locale = 'en',
+        string           $avatar = '',
+        ?UserMeta        $meta = null,
         Collection|array $roles = ['general-user'],
-        bool $createWithSetPassword = false,
-        string $emailTemplate = ''
-    ): string {
+        bool             $createWithSetPassword = false,
+        string           $emailTemplate = ''
+    ): string
+    {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
@@ -321,32 +325,32 @@ class User extends Model
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
 
                     $mail->to($email)
-                         ->useEmail($emailName, $locale, [
-                             'replacements' => [
-                                 'name' => $name->first,
-                                 'who' => $who
-                             ],
-                             'verification_code' => $code,
-                             'reset_pass_code' => $passCode,
-                             'user_email' => $email,
-                             'name' => $name->first,
-                             'who' => $who
-                         ])
-                         ->send();
+                        ->useEmail($emailName, $locale, [
+                            'replacements' => [
+                                'name' => $name->first,
+                                'who' => $who
+                            ],
+                            'verification_code' => $code,
+                            'reset_pass_code' => $passCode,
+                            'user_email' => $email,
+                            'name' => $name->first,
+                            'who' => $who
+                        ])
+                        ->send();
                 } else {
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
                     $mail->to($email)
-                         ->useEmail($emailName, $locale, [
-                             'replacements' => [
-                                 'name' => $name->first,
-                                 'who' => $who
-                             ],
-                             'user_email' => $email,
-                             'reset_pass_code' => $passCode,
-                             'verification_code' => $code,
-                             'who' => $who
-                         ])
-                         ->send();
+                        ->useEmail($emailName, $locale, [
+                            'replacements' => [
+                                'name' => $name->first,
+                                'who' => $who
+                            ],
+                            'user_email' => $email,
+                            'reset_pass_code' => $passCode,
+                            'verification_code' => $code,
+                            'who' => $who
+                        ])
+                        ->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
@@ -539,14 +543,15 @@ class User extends Model
      */
     public function update(
         string|ObjectId $id,
-        ?Username $name = null,
-        ?string $email = null,
-        ?string $password = null,
-        ?Collection $roles = null,
-        ?string $avatar = '',
-        ?UserMeta $meta = null,
-        string $locale = ''
-    ): bool {
+        ?Username       $name = null,
+        ?string         $email = null,
+        ?string         $password = null,
+        ?Collection     $roles = null,
+        ?string         $avatar = '',
+        ?UserMeta       $meta = null,
+        string          $locale = ''
+    ): bool
+    {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -617,15 +622,16 @@ class User extends Model
      *
      */
     public function getList(
-        int $page = 0,
-        int $limit = 25,
-        string $search = '',
-        UserSorting $sorting = null,
+        int                 $page = 0,
+        int                 $limit = 25,
+        string              $search = '',
+        UserSorting         $sorting = null,
         UserTypeSearch|null $typeSearch = null,
-        MetaSearch|null $metaSearch = null,
-        bool|null $status = null,
-        bool|null $validated = null
-    ): Listing {
+        MetaSearch|null     $metaSearch = null,
+        bool|null           $status = null,
+        bool|null           $validated = null
+    ): Listing
+    {
         $this->hasPermissions(true);
 
         if (!isset($sorting)) {
@@ -692,11 +698,16 @@ class User extends Model
      * @throws DatabaseException
      * @throws ACLException
      * @throws PermissionException
+     * @throws Exception
      *
      */
     public function remove(): bool
     {
         $this->hasPermissions();
+
+        if (self::anonymousUser()->_id === $this->_id) {
+            throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
 
         $this->deleteById($this->_id);
         Event::dispatch(self::EVENT_DELETE, (string)$this->_id);
@@ -718,6 +729,10 @@ class User extends Model
     {
         $this->hasPermissions();
 
+        if ((string)$id === (string)self::anonymousUser()->_id) {
+            throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
+
         $id = $this->ensureObjectId($id);
         $this->deleteById($id);
         Event::dispatch(self::EVENT_DELETE, (string)$id);
@@ -738,6 +753,10 @@ class User extends Model
     public function removeByEmail(string $email): bool
     {
         $this->hasPermissions();
+
+        if ($email === self::ANONYMOUS_EMAIL) {
+            throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
 
         $this->deleteOne(['email' => $email]);
         Event::dispatch(self::EVENT_DELETE, $email);
@@ -1116,6 +1135,38 @@ class User extends Model
         );
 
         return true;
+    }
+
+    /**
+     *
+     * Get anonymous user
+     *
+     * @return User
+     * @throws DatabaseException
+     *
+     */
+    public static function anonymousUser(): User
+    {
+        $model = new User();
+        $anonymous = $model->getByEmail(self::ANONYMOUS_EMAIL);
+
+        if (!$anonymous->_id) {
+            $model->insert([
+                'name' => new Username('Anonymous'),
+                'avatar' => '',
+                'email' => self::ANONYMOUS_EMAIL,
+                'roles' => new Collection(['super-administrator']),
+                'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
+                'status' => true,
+                'password' => "",
+                'locale' => Locale::default(),
+                'validated' => true,
+                'created_at' => strtotime('01-01-2003')
+            ]);
+            $anonymous = $model->getByEmail(self::ANONYMOUS_EMAIL);
+        }
+
+        return $anonymous;
     }
 
     /**
