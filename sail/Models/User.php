@@ -22,6 +22,7 @@ use SailCMS\Middleware;
 use SailCMS\Sail;
 use SailCMS\Security;
 use SailCMS\Session;
+use SailCMS\Text;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
@@ -1150,7 +1151,7 @@ class User extends Model
         $model = new User();
         $anonymous = $model->getByEmail(self::ANONYMOUS_EMAIL);
 
-        if (!$anonymous->_id) {
+        if (!$anonymous) {
             $model->insert([
                 'name' => new Username('Anonymous'),
                 'avatar' => '',
@@ -1158,7 +1159,7 @@ class User extends Model
                 'roles' => new Collection(['super-administrator']),
                 'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
                 'status' => true,
-                'password' => "",
+                'password' => Text::randomString(16),
                 'locale' => Locale::default(),
                 'validated' => true,
                 'created_at' => strtotime('01-01-2003')
