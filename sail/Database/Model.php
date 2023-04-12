@@ -18,12 +18,13 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\User;
+use SailCMS\Sail;
 use SailCMS\Text;
 
 /**
  *
  * @property ObjectId $_id
- * @property string   $id
+ * @property string $id
  *
  * @uses Validation
  * @uses Transforms
@@ -105,7 +106,7 @@ abstract class Model implements JsonSerializable
      *
      * Set collection and apply it to the collection resource
      *
-     * @param  string  $collection
+     * @param string $collection
      * @return void
      * @throws DatabaseException
      *
@@ -146,7 +147,7 @@ abstract class Model implements JsonSerializable
      *
      * Make sure the value given is already an ObjectId or transform it to one
      *
-     * @param  string|ObjectId  $id
+     * @param string|ObjectId $id
      * @return ObjectId
      *
      */
@@ -163,8 +164,8 @@ abstract class Model implements JsonSerializable
      *
      * Ensure that every given id in array is an ObjectId (return the cleaned up array/collection)
      *
-     * @param  array|\SailCMS\Collection  $ids
-     * @param  bool                       $returnAsArray
+     * @param array|\SailCMS\Collection $ids
+     * @param bool $returnAsArray
      * @return \SailCMS\Collection|array
      *
      */
@@ -191,7 +192,7 @@ abstract class Model implements JsonSerializable
      *
      * Check if ID is a valid MongoDB ID
      *
-     * @param  string|ObjectId  $id
+     * @param string|ObjectId $id
      * @return bool
      *
      */
@@ -213,7 +214,7 @@ abstract class Model implements JsonSerializable
      *
      * Get a property dynamically
      *
-     * @param  string  $name
+     * @param string $name
      * @return mixed|string|null
      *
      */
@@ -234,7 +235,7 @@ abstract class Model implements JsonSerializable
      *
      * Set a properties value
      *
-     * @param  string  $name
+     * @param string $name
      * @param          $value
      * @return void
      *
@@ -252,7 +253,7 @@ abstract class Model implements JsonSerializable
      *
      * Check if a property is set
      *
-     * @param  string  $name
+     * @param string $name
      * @return bool
      *
      */
@@ -266,7 +267,7 @@ abstract class Model implements JsonSerializable
      * Make a value safe for querying. You should never query using a value
      * that is not either a string or number, unless you are sure that it's safe.
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return string|array|bool|int|float
      * @throws JsonException
      *
@@ -291,7 +292,7 @@ abstract class Model implements JsonSerializable
      *
      * A reusable permission checker
      *
-     * @param  bool  $read
+     * @param bool $read
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -300,6 +301,10 @@ abstract class Model implements JsonSerializable
      */
     protected function hasPermissions(bool $read = false): void
     {
+        if (Sail::isCLI()) {
+            return;
+        }
+        
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
 
         if (!User::$currentUser) {
@@ -331,7 +336,7 @@ abstract class Model implements JsonSerializable
      *
      * Fill an instance with the give object or array of data
      *
-     * @param  mixed  $doc
+     * @param mixed $doc
      * @return self
      *
      */
@@ -356,7 +361,7 @@ abstract class Model implements JsonSerializable
      *
      * Build a cache key with the given name
      *
-     * @param  string  $key
+     * @param string $key
      * @return string
      *
      */
