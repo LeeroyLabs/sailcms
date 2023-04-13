@@ -187,8 +187,14 @@ class EntryVersion extends Model
             'alternates' => $entryVersion->entry->get('alternates'),
         ];
 
-        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type')->_id)->exec();
-        $entryModel = $entryType->getEntryModel($entryType);
+        $entryType = $entryVersion->entry->get('entry_type');
+
+        if (!$entryType) {
+            $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'))->exec();
+            $entryModel = $entryType->getEntryModel($entryType);
+        } else {
+            $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
+        }
 
         try {
             $result = $entryModel->updateById($entryVersion->entry->get('_id'), $data, true, true);
