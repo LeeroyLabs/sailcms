@@ -803,7 +803,7 @@ class EntryLayout extends Model implements Castable
      */
     private function softDelete(EntryLayout $entryLayout): bool
     {
-        $author = User::$currentUser ?? User::anonymousUserg();
+        $author = User::$currentUser ?? User::anonymousUser();
         $authors = Authors::deleted($entryLayout->authors, $author->_id);
         $dates = Dates::deleted($entryLayout->dates);
 
