@@ -61,6 +61,14 @@ class UserMeta implements Castable, \JsonSerializable
     {
         $output = new stdClass();
 
+        if (!isset($this->flags)) {
+            $this->flags = new stdClass();
+
+            foreach (self::$registeredFlags as $flag) {
+                $this->flags->{$flag} = false;
+            }
+        }
+
         $output->flags = $this->flags;
 
         if (isset($this->customMeta)) {
