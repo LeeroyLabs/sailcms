@@ -416,4 +416,30 @@ trait Transforms
         $this->internalString = rtrim($this->internalString);
         return $this;
     }
+
+    /**
+     *
+     * Convert binary string to hexadecimal string
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function hex(): self
+    {
+        $this->internalString = bin2hex($this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Convert hexadecimal string to binary string
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function bin(): self
+    {
+        $this->internalString = hex2bin($this->internalString);
+        return $this;
+    }
 }

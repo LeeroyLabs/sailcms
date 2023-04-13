@@ -61,4 +61,42 @@ trait Utilities
     {
         return $this->substr($offset, $length);
     }
+
+    public function concat(string|Text $string, string $glue = ''): self
+    {
+        if (is_object($string)) {
+            $string = $string->value();
+        }
+
+        $this->internalString .= $glue . $string;
+        return $this;
+    }
+
+    /**
+     *
+     * Alias of concat
+     *
+     * @param  string|Text  $string
+     * @param  string       $glue
+     * @return Text|Utilities
+     *
+     */
+    public function merge(string|Text $string, string $glue = ''): self
+    {
+        return $this->concat($string, $glue);
+    }
+
+    /**
+     *
+     * Alias of concat
+     *
+     * @param  string|Text  $string
+     * @param  string       $glue
+     * @return Text|Utilities
+     *
+     */
+    public function with(string|Text $string, string $glue = ''): self
+    {
+        return $this->concat($string, $glue);
+    }
 }
