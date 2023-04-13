@@ -77,7 +77,7 @@ class EntryVersion extends Model
 
     /**
      *
-     *
+     * Get last version by entry id
      *
      * @param string|ObjectId $entryId
      * @return EntryVersion|null

@@ -550,9 +550,16 @@ class Entries
         if (!isset($obj['current'])) {
             if ($info->fieldName === "content") {
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
-                $entry_type_id = $obj['entry_type_id'];
-                $entryType = (new EntryType())->getById($entry_type_id);
-                $entryModel = $entryType->getEntryModel($entryType);
+                $entryType = $obj['entry_type'] ?? null;
+
+                // This code will be deprecated, since there was a change in the simplify method in Entry.
+                if (!$entryType) {
+                    $entry_type_id = $obj['entry_type_id'];
+                    $entryType = (new EntryType())->getById($entry_type_id);
+                    $entryModel = $entryType->getEntryModel($entryType);
+                } else {
+                    $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
+                }
                 $entryModel->content = new Collection((array)$obj['content']);
                 return $entryModel->getContent();
             }

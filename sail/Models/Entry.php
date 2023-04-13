@@ -347,9 +347,9 @@ class Entry extends Model implements Validator, Castable
      * @return array
      *
      */
-    public function simplify(object|null $currentHomepageEntry): array
+    public function simplify(object|null $currentHomepageEntry, $sendCurrent = true): array
     {
-        return [
+        $simplified = [
             '_id' => $this->_id,
             'entry_type' => $this->entryType->simplify(),
             'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
@@ -364,9 +364,14 @@ class Entry extends Model implements Validator, Castable
             'url' => $this->url,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
-            'categories' => $this->categories->castFrom(),
-            'current' => $this
+            'categories' => $this->categories->castFrom()
         ];
+
+        if ($sendCurrent) {
+            $simplified['current'] = $this;
+        }
+
+        return $simplified;
     }
 
     /**
@@ -1122,7 +1127,7 @@ class Entry extends Model implements Validator, Castable
         // It is almost impossible that an entry has no version, but just to be sure
         if (!$lastVersion) {
             $entry = $this->findById($entryId)->exec();
-            $simplifiedEntry = $entry->simplify(null);
+            $simplifiedEntry = $entry->simplify(null, false);
             $simplifiedEntry['content'] = $entry->content;
             $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
             $entryUrl = $simplifiedEntry['url'];
@@ -1477,7 +1482,7 @@ class Entry extends Model implements Validator, Castable
         $entry->entryType = $this->entryType;
 
         // Version save with simplify entry
-        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry = $entry->simplify(null, false);
         $simplifiedEntry['content'] = $entry->content;
         (new EntryVersion)->create($author, $simplifiedEntry);
 
@@ -1583,7 +1588,7 @@ class Entry extends Model implements Validator, Castable
         $entry->entryType = $this->entryType;
 
         // Version save with simplified entry
-        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry = $entry->simplify(null, false);
         $simplifiedEntry['content'] = $entry->content;
         $versionId = (new EntryVersion)->create($author, $simplifiedEntry);
 
