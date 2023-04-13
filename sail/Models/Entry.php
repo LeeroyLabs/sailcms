@@ -1110,7 +1110,7 @@ class Entry extends Model implements Validator, Castable
      */
     public function publish(string $entryId, int $publicationDate, int $expirationDate, string $siteId = null): string
     {
-        $author = User::$currentUser;
+        $author = User::$currentUser ?? User::anonymousUser();
 
         if (!$siteId) {
             $siteId = Sail::siteId();
@@ -1411,7 +1411,7 @@ class Entry extends Model implements Validator, Castable
         $template = $data->get('template');
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
-        $author = User::$currentUser;
+        $author = User::$currentUser ?? User::anonymousUser();
         $alternates = $data->get('alternates', []);
         $parent = $data->get('parent');
         $content = $data->get('content');
@@ -1510,7 +1510,7 @@ class Entry extends Model implements Validator, Castable
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
     {
         $update = [];
-        $author = User::$currentUser;
+        $author = User::$currentUser ?? User::anonymousUser();
         $slug = $entry->slug;
         $locale = $entry->locale;
         $site_id = $entry->site_id;
@@ -1608,11 +1608,14 @@ class Entry extends Model implements Validator, Castable
      * @param Entry $entry
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function softDelete(Entry $entry): bool
     {
-        $authors = Authors::deleted($entry->authors, User::$currentUser->_id);
+        $user = User::$currentUser ?? User::anonymousUser();
+
+        $authors = Authors::deleted($entry->authors, $user->_id);
         $dates = Dates::deleted($entry->dates);
 
         try {
