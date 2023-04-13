@@ -99,7 +99,7 @@ class EntryLayout extends Model implements Castable
         $count = (new EntryLayout())->count($filters);
 
         if ($count > 0) {
-            preg_match("/(?<base>[\w\d-]+-)(?<increment>\d+)$/", $slug, $matches);
+            preg_match("/(?<base>[\w-]+-)(?<increment>\d+)$/", $slug, $matches);
 
             if (count($matches) > 0) {
                 $increment = (int)$matches['increment'];
@@ -723,7 +723,8 @@ class EntryLayout extends Model implements Castable
     private function createWithoutPermission(LocaleField $titles, Collection $schema, string $slug = null): EntryLayout
     {
         $dates = Dates::init();
-        $authors = Authors::init(User::$currentUser);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::init($author);
 
         $slug = !isset($slug) ? Text::slugify($titles->{Locale::default()}) : $slug;
         $slug = self::generateSlug($slug);
@@ -752,13 +753,16 @@ class EntryLayout extends Model implements Castable
      * @param Collection $data
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function updateWithoutPermission(EntryLayout $entryLayout, Collection $data): bool
     {
+        $author = User::$currentUser ?? User::anonymousUser();
+
         $update = [
             'dates' => Dates::updated($entryLayout->dates),
-            'authors' => Authors::updated($entryLayout->authors, User::$currentUser->_id)
+            'authors' => Authors::updated($entryLayout->authors, $author->_id)
         ];
 
         $titles = $data->get('titles');
@@ -794,11 +798,13 @@ class EntryLayout extends Model implements Castable
      * @param EntryLayout $entryLayout
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function softDelete(EntryLayout $entryLayout): bool
     {
-        $authors = Authors::deleted($entryLayout->authors, User::$currentUser->_id);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::deleted($entryLayout->authors, $author->_id);
         $dates = Dates::deleted($entryLayout->dates);
 
         try {
