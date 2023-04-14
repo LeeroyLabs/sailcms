@@ -140,20 +140,25 @@ trait Validators
         return $this->isPostal('us');
     }
 
-    // is
-
     /**
      *
      * Does the string start with given string?
      *
      * @param  string|Text  $string
+     * @param  bool         $sensitive
      * @return bool
      *
      */
-    public function startsWith(string|Text $string): bool
+    public function startsWith(string|Text $string, bool $sensitive = false): bool
     {
         if (is_object($string)) {
             $string = $string->value();
+        }
+
+        if (!$sensitive) {
+            $v = $this->lower()->value();
+            $string = strtolower($string);
+            return str_starts_with($v, $string);
         }
 
         return str_starts_with($this->internalString, $string);
@@ -164,13 +169,20 @@ trait Validators
      * Does the string end with given string?
      *
      * @param  string|Text  $string
+     * @param  bool         $sensitive
      * @return bool
      *
      */
-    public function endsWith(string|Text $string): bool
+    public function endsWith(string|Text $string, bool $sensitive = false): bool
     {
         if (is_object($string)) {
             $string = $string->value();
+        }
+
+        if (!$sensitive) {
+            $v = $this->lower()->value();
+            $string = strtolower($string);
+            return str_ends_with($v, $string);
         }
 
         return str_ends_with($this->internalString, $string);
@@ -181,13 +193,19 @@ trait Validators
      * Does the string contain given string?
      *
      * @param  string|Text  $string
+     * @param  bool         $sensitive
      * @return bool
-     *
      */
-    public function contains(string|Text $string): bool
+    public function contains(string|Text $string, bool $sensitive = false): bool
     {
         if (is_object($string)) {
             $string = $string->value();
+        }
+
+        if (!$sensitive) {
+            $v = $this->lower()->value();
+            $string = strtolower($string);
+            return str_contains($v, $string);
         }
 
         return str_contains($this->internalString, $string);

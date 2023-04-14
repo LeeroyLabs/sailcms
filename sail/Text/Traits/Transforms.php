@@ -446,6 +446,47 @@ trait Transforms
 
     /**
      *
+     * Text to binary (like apple to 1100001 1110000....)
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function binary(): self
+    {
+        $characters = str_split($this->internalString);
+
+        $binary = [];
+        foreach ($characters as $character) {
+            $data = unpack('H*', $character);
+            $binary[] = base_convert($data[1], 16, 2);
+        }
+
+        $this->internalString = implode(' ', $binary);
+        return $this;
+    }
+
+    /**
+     *
+     * binary to text
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function text(): self
+    {
+        $binaries = explode(' ', $this->internalString);
+
+        $string = null;
+        foreach ($binaries as $binary) {
+            $string .= pack('H*', dechex(bindec($binary)));
+        }
+
+        $this->internalString = $string;
+        return $this;
+    }
+
+    /**
+     *
      * Pad the string up to given length with give character and direction
      *
      * @param  int          $length
@@ -454,7 +495,7 @@ trait Transforms
      * @return Transforms|Text
      *
      */
-    public function pad(int $length, string|Text $char, int $direction = STR_PAD_RIGHT): self
+    public function pad(int $length, string|Text $char = ' ', int $direction = STR_PAD_RIGHT): self
     {
         $this->internalString = str_pad($this->internalString, $length, $char, $direction);
         return $this;
@@ -618,7 +659,7 @@ trait Transforms
     {
         // Only process if string is longer than required length
         if (mb_strlen($this->internalString) > $length - strlen($end)) {
-            $this->internalString = mb_substr($this->internalString, 0, $length) . $end;
+            $this->internalString = mb_substr($this->internalString, 0, $length - strlen($end)) . $end;
         }
 
         return $this;
@@ -626,16 +667,16 @@ trait Transforms
 
     /**
      *
-     * Truncate to the closest word that matches the length
+     * Truncate to the closest word that matches the length (hence safe)
      *
      * @param  int     $count
      * @param  string  $end
      * @return Transforms|Text
      *
      */
-    public function truncateWords(int $count, string $end = '...'): self
+    public function safeTruncate(int $count, string $end = '...'): self
     {
-        $parts = preg_split('/([\s\n\r]+)/u', $this->internalString, null, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('/([\s\n\r]+)/u', $this->internalString, 0, PREG_SPLIT_DELIM_CAPTURE);
         $partsCount = count($parts);
         $addEnd = false;
 
@@ -682,12 +723,169 @@ trait Transforms
      */
     public function url(): self
     {
-        $this->internalString = str_replace(
-            '//',
-            '/',
-            env('SITE_URL') . '/' . $this->internalString
-        );
+        $base = 'http://localhost';
+        $url = $this->internalString;
 
+        if (function_exists('env')) {
+            $base = env('SITE_URL', 'http://localhost');
+        }
+
+        // Remove / on base url (if present)
+        if (str_ends_with($base, '/')) {
+            $base = substr($base, 0, -1);
+        }
+
+        // Add slash at start of path (if not present)
+        if (!str_starts_with($url, '/')) {
+            $url = '/' . $url;
+        }
+
+        $this->internalString = $base . $url;
         return $this;
+    }
+
+    /**
+     *
+     * Get extension of file in string (can be full path or just filename)
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function extension(): self
+    {
+        $string = $basename = basename($this->internalString);
+        $n = strrpos($string, ".");
+
+        if ($n === false) {
+            return new self('');
+        }
+
+        return new self(substr($string, $n + 1));
+    }
+
+    /**
+     *
+     * Switch new lines to BR tags
+     *
+     * @return Text|Utilities
+     *
+     */
+    public function br(): self
+    {
+        $this->internalString = str_replace(PHP_EOL, '<br/>', $this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * switch BR tags to new lines
+     *
+     * @return Text|Utilities
+     *
+     */
+    public function nl(): self
+    {
+        $this->internalString = str_ireplace(['<br>', '<br >', '<br/>', '<br />'], PHP_EOL, $this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Censor string if it has the given blacklisted words
+     *
+     * @param  array|Collection  $blacklist
+     * @return Text|Utilities
+     *
+     */
+    public function censor(array|Collection $blacklist): self
+    {
+        $blacklistWords = [];
+
+        foreach ($blacklist as $word) {
+            $length = strlen($word);
+            $blacklistWords[$word] = str_pad('', $length, '*');
+        }
+
+        $toReplace = array_keys($blacklistWords);
+        $replaceBy = array_values($blacklistWords);
+
+        $this->internalString = str_ireplace($toReplace, $replaceBy, $this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Add substring to the string (with or without glue character)
+     *
+     * @param  string|Text  $string
+     * @param  string       $glue
+     * @return Text|Utilities
+     *
+     */
+    public function concat(string|Text $string, string $glue = ''): self
+    {
+        if (is_object($string)) {
+            $string = $string->value();
+        }
+
+        $this->internalString .= $glue . $string;
+        return $this;
+    }
+
+    /**
+     *
+     * Alias of concat
+     *
+     * @param  string|Text  $string
+     * @param  string       $glue
+     * @return Text|Utilities
+     *
+     */
+    public function merge(string|Text $string, string $glue = ''): self
+    {
+        return $this->concat($string, $glue);
+    }
+
+    /**
+     *
+     * Alias of concat
+     *
+     * @param  string|Text  $string
+     * @param  string       $glue
+     * @return Text|Utilities
+     *
+     */
+    public function with(string|Text $string, string $glue = ''): self
+    {
+        return $this->concat($string, $glue);
+    }
+
+    /**
+     *
+     * Multibyte enabled substr
+     *
+     * @param  int       $offset
+     * @param  int|null  $length
+     * @return Text|Utilities
+     *
+     */
+    public function substr(int $offset, int $length = null): self
+    {
+        $this->internalString = mb_substr($this->internalString, $offset, $length);
+        return $this;
+    }
+
+    /**
+     *
+     * Alias for substr
+     *
+     * @param  int       $offset
+     * @param  int|null  $length
+     * @return Utilities|Text
+     *
+     */
+    public function substring(int $offset, int $length = null): self
+    {
+        return $this->substr($offset, $length);
     }
 }
