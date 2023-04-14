@@ -20,12 +20,13 @@ use SodiumException;
 
 /**
  *
- * @property int $created_at
- * @property string $user_id
- * @property string $user_full_name
- * @property string $user_email
- * @property string $entry_id
+ * @property int        $created_at
+ * @property string     $user_id
+ * @property string     $user_full_name
+ * @property string     $user_email
+ * @property string     $entry_id
  * @property Collection $entry
+ * @property ?string    $copy_id = null
  *
  */
 class EntryVersion extends Model
@@ -44,7 +45,7 @@ class EntryVersion extends Model
      *
      * Get an entry version by id
      *
-     * @param string|ObjectId $entryVersionId
+     * @param  string|ObjectId  $entryVersionId
      * @return EntryVersion|null
      * @throws ACLException
      * @throws DatabaseException
@@ -61,7 +62,7 @@ class EntryVersion extends Model
      *
      * Get entry versions for a given entry id
      *
-     * @param string|ObjectId $entryId
+     * @param  string|ObjectId  $entryId
      * @return array|Model|EntryVersion|null
      * @throws ACLException
      * @throws DatabaseException
@@ -79,7 +80,7 @@ class EntryVersion extends Model
      *
      * Get last version by entry id
      *
-     * @param string|ObjectId $entryId
+     * @param  string|ObjectId  $entryId
      * @return EntryVersion|null
      * @throws ACLException
      * @throws DatabaseException
@@ -97,8 +98,8 @@ class EntryVersion extends Model
      *
      * Create a new version for an entry, automatically called in the create and update of an entry.
      *
-     * @param User $user
-     * @param array $simplifyEntry
+     * @param  User   $user
+     * @param  array  $simplifyEntry
      * @return string
      * @throws EntryException
      *
@@ -125,7 +126,7 @@ class EntryVersion extends Model
      *
      * Delete all version by entry id
      *
-     * @param string $entryId
+     * @param  string  $entryId
      * @return bool
      * @throws EntryException
      *
@@ -144,9 +145,8 @@ class EntryVersion extends Model
     /**
      *
      * Apply a version to an entry
-     *  TODO maybe manage this call to not be able to apply an already applied version. It's possible to apply a same version multiple times.
      *
-     * @param string $entry_version_id
+     * @param  string  $entry_version_id
      * @return bool
      * @throws DatabaseException
      * @throws EntryException
@@ -170,7 +170,8 @@ class EntryVersion extends Model
         // Check if not the last version
         $lastVersion = $this->getLastVersionByEntryId($entryVersion->entry_id);
 
-        if ((string)$lastVersion->_id === (string)$entryVersion->_id) {
+        if ((string)$lastVersion->_id === (string)$entryVersion->_id
+            || (string)$lastVersion->copy_id === (string)$entryVersion->_id) {
             throw new EntryException(self::CANNOT_APPLY_LAST_VERSION);
         }
 
@@ -202,6 +203,16 @@ class EntryVersion extends Model
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'applying') . PHP_EOL . $exception->getMessage());
         }
 
+        // Update new created version to specify that it's copy of the applied version
+        $lastVersion = $this->getLastVersionByEntryId($entryVersion->entry_id);
+        try {
+            $this->updateOne(['_id' => $lastVersion->_id], [
+                '$set' => ['copy_id' => $entry_version_id]
+            ]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating the copy of') . PHP_EOL . $exception->getMessage());
+        }
+
         return $result->length === 0;
     }
 
@@ -209,8 +220,8 @@ class EntryVersion extends Model
      *
      * Fake an apply of version directly on an entry object
      *
-     * @param Entry $entry
-     * @param string $entry_version_id
+     * @param  Entry   $entry
+     * @param  string  $entry_version_id
      * @return Entry
      * @throws DatabaseException
      * @throws EntryException
