@@ -27,8 +27,8 @@ class Command extends CMD
 
         $type = strtolower($input->getArgument('type'));
 
-        $location = ucfirst(Text::camelCase(Text::deburr($input->getArgument('location'))));
-        $name = ucfirst(Text::camelCase(Text::deburr($input->getArgument('name'))));
+        $location = Text::from($input->getArgument('location'))->deburr()->camel()->capitalize(true)->value();
+        $name = Text::from($input->getArgument('name'))->deburr()->camel()->capitalize(true)->value();
 
         Tools::outputInfo('creating', "Creating command [b]{$name}[/b]");
 

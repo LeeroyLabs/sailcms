@@ -15,11 +15,11 @@ use SailCMS\Types\LocaleField;
 
 /**
  *
- * @property string $collection_name
- * @property string $title
- * @property string $handle
+ * @property string      $collection_name
+ * @property string      $title
+ * @property string      $handle
  * @property LocaleField $url_prefix
- * @property ?string $entry_layout_id
+ * @property ?string     $entry_layout_id
  *
  */
 class EntryType extends Model implements Validator
@@ -78,8 +78,8 @@ class EntryType extends Model implements Validator
      *
      * Validate properties before insertion
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  string  $key
+     * @param  mixed   $value
      * @return void
      * @throws EntryException
      *
@@ -117,7 +117,7 @@ class EntryType extends Model implements Validator
      *
      * Get a list of all available types
      *
-     * @param bool $api
+     * @param  bool  $api
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -138,7 +138,7 @@ class EntryType extends Model implements Validator
      *
      * Find all entry type according to the given filters
      *
-     * @param array|Collection $filters
+     * @param  array|Collection  $filters
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -161,8 +161,8 @@ class EntryType extends Model implements Validator
      *
      * Use the settings to create the default type
      *
-     * @param bool $api
-     * @param bool $avoidUpdate
+     * @param  bool  $api
+     * @param  bool  $avoidUpdate
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -209,8 +209,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entry type by his collection name
      *
-     * @param string $collectionName
-     * @param bool $api
+     * @param  string  $collectionName
+     * @param  bool    $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -237,8 +237,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entry model instance by entry type handle
      *
-     * @param string $handle
-     * @param bool $api
+     * @param  string  $handle
+     * @param  bool    $api
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -265,7 +265,7 @@ class EntryType extends Model implements Validator
      *
      * Shortcut to get entry model and make queries
      *
-     * @param EntryType|null $entryType
+     * @param  EntryType|null  $entryType
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -287,8 +287,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entryType by id
      *
-     * @param string $id
-     * @param bool $api
+     * @param  string  $id
+     * @param  bool    $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
@@ -308,8 +308,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entryType by handle
      *
-     * @param string $handle
-     * @param bool $api
+     * @param  string  $handle
+     * @param  bool    $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
@@ -334,11 +334,11 @@ class EntryType extends Model implements Validator
      *
      * Wrapper to handle permission for entry creation
      *
-     * @param string $handle
-     * @param string $title
-     * @param LocaleField $urlPrefix
-     * @param string|ObjectId|null $entryLayoutId
-     * @param bool $getObject
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  LocaleField           $urlPrefix
+     * @param  string|ObjectId|null  $entryLayoutId
+     * @param  bool                  $getObject
      * @return array|EntryType|string|null
      * @throws ACLException
      * @throws DatabaseException
@@ -359,8 +359,8 @@ class EntryType extends Model implements Validator
      *
      * Wrapper to handle permission for entry modification by handle
      *
-     * @param string $handle
-     * @param Collection $data
+     * @param  string      $handle
+     * @param  Collection  $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -393,7 +393,7 @@ class EntryType extends Model implements Validator
      *
      * Real deletion on the entry types
      *
-     * @param string|ObjectId $entryTypeId
+     * @param  string|ObjectId  $entryTypeId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -429,7 +429,7 @@ class EntryType extends Model implements Validator
      *
      * Check if handle is available
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -454,24 +454,24 @@ class EntryType extends Model implements Validator
      *
      * Get collection name with handle
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return string
      *
      */
     private function getCollectionName(string $handle): string
     {
-        return Text::snakeCase(Text::deburr(Text::pluralize($handle)));
+        return Text::from($handle)->pluralize()->deburr()->snake()->value();
     }
 
     /**
      *
      * Create an entry type
      *
-     * @param string $handle
-     * @param string $title
-     * @param LocaleField $urlPrefix
-     * @param string|ObjectId|null $entryLayoutId
-     * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  LocaleField           $urlPrefix
+     * @param  string|ObjectId|null  $entryLayoutId
+     * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
      * @throws DatabaseException
      * @throws EntryException
@@ -505,10 +505,10 @@ class EntryType extends Model implements Validator
      *
      * Update the entry type
      *
-     * @param EntryType $entryType
-     * @param string|null $title
-     * @param LocaleField|null $urlPrefix
-     * @param string|bool|null $entryLayoutId
+     * @param  EntryType         $entryType
+     * @param  string|null       $title
+     * @param  LocaleField|null  $urlPrefix
+     * @param  string|bool|null  $entryLayoutId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException

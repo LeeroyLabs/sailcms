@@ -177,7 +177,7 @@ class Asset extends Model
         $ext = end($info);
 
         // Add the unique id to the asset now
-        $the_name = Text::slugify(basename($filename));
+        $the_name = Text::from($filename)->basename()->slug()->value();
         $filename = str_replace(".{$ext}", "-{$upload_id}.{$ext}", $filename);
 
         // Check support formats for post-processing

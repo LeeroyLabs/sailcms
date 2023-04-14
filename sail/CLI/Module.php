@@ -30,7 +30,7 @@ class Module extends Command
 
         Tools::outputInfo('create', "Creating Module [b]{$input->getArgument('name')}[/b]");
 
-        $name = ucfirst(Text::camelCase(Text::deburr($input->getArgument('name'))));
+        $name = Text::from($input->getArgument('name'))->deburr()->camel()->capitalize(true)->value();
         $path = "root://modules/{$name}";
 
         if (!$fs->directoryExists($path)) {

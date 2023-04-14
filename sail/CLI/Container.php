@@ -30,7 +30,7 @@ class Container extends Command
 
         Tools::outputInfo('create', "Creating Container [b]{$input->getArgument('name')}[/b]");
 
-        $name = ucfirst(Text::camelCase(Text::deburr($input->getArgument('name'))));
+        $name = Text::from($input->getArgument('name'))->deburr()->camel()->capitalize(true)->value();
         $path = "root://containers/{$name}";
 
         if (!$fs->directoryExists($path)) {

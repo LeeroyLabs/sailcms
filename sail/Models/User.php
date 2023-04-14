@@ -38,20 +38,20 @@ use stdClass;
 /**
  *
  *
- * @property Username $name
- * @property Collection $roles
- * @property string $email
- * @property string $status
- * @property string $password
- * @property string $avatar
+ * @property Username          $name
+ * @property Collection        $roles
+ * @property string            $email
+ * @property string            $status
+ * @property string            $password
+ * @property string            $avatar
  * @property UserMeta|stdClass $meta
- * @property string $temporary_token
- * @property string $auth_token
- * @property string $locale
- * @property string $validation_code
- * @property string $reset_code
- * @property bool $validated
- * @property int $created_at
+ * @property string            $temporary_token
+ * @property string            $auth_token
+ * @property string            $locale
+ * @property string            $validation_code
+ * @property string            $reset_code
+ * @property bool              $validated
+ * @property int               $created_at
  *
  */
 class User extends Model
@@ -151,8 +151,8 @@ class User extends Model
      *
      * Get a user by id
      *
-     * @param string $id
-     * @param bool $api
+     * @param  string  $id
+     * @param  bool    $api
      * @return User|null
      * @throws ACLException
      * @throws DatabaseException
@@ -172,7 +172,7 @@ class User extends Model
      *
      * Get a user by id but skip permission checking
      *
-     * @param string $id
+     * @param  string  $id
      * @return User|null
      * @throws DatabaseException
      *
@@ -186,7 +186,7 @@ class User extends Model
      *
      * Get a user by his email
      *
-     * @param string $email
+     * @param  string  $email
      * @return User|null
      * @throws DatabaseException
      *
@@ -200,12 +200,12 @@ class User extends Model
      *
      * Get List of users with given query and settings
      *
-     * @param array $query
-     * @param string $sort
-     * @param int $order
-     * @param int $page
-     * @param int $limit
-     * @param string $collation
+     * @param  array   $query
+     * @param  string  $sort
+     * @param  int     $order
+     * @param  int     $page
+     * @param  int     $limit
+     * @param  string  $collation
      * @return Listing
      * @throws DatabaseException
      *
@@ -215,11 +215,11 @@ class User extends Model
         $skip = $page * $limit - $limit;
         $list = new Collection(
             $this->find($query)
-                ->skip($skip)
-                ->limit($limit)
-                ->collation($collation)
-                ->sort([$sort => $order])
-                ->exec()
+                 ->skip($skip)
+                 ->limit($limit)
+                 ->collation($collation)
+                 ->sort([$sort => $order])
+                 ->exec()
         );
 
         $total = $this->count($query);
@@ -232,31 +232,30 @@ class User extends Model
      *
      * Create a regular user (usually user from the site) with no roles.
      *
-     * @param Username $name
-     * @param string $email
-     * @param string $password
-     * @param string $locale
-     * @param string $avatar
-     * @param UserMeta|null $meta
-     * @param Collection|array $roles
-     * @param bool $createWithSetPassword
-     * @param string $emailTemplate
+     * @param  Username          $name
+     * @param  string            $email
+     * @param  string            $password
+     * @param  string            $locale
+     * @param  string            $avatar
+     * @param  UserMeta|null     $meta
+     * @param  Collection|array  $roles
+     * @param  bool              $createWithSetPassword
+     * @param  string            $emailTemplate
      * @return string
      * @throws DatabaseException
      *
      */
     public function createRegularUser(
-        Username         $name,
-        string           $email,
-        string           $password,
-        string           $locale = 'en',
-        string           $avatar = '',
-        ?UserMeta        $meta = null,
+        Username $name,
+        string $email,
+        string $password,
+        string $locale = 'en',
+        string $avatar = '',
+        ?UserMeta $meta = null,
         Collection|array $roles = ['general-user'],
-        bool             $createWithSetPassword = false,
-        string           $emailTemplate = ''
-    ): string
-    {
+        bool $createWithSetPassword = false,
+        string $emailTemplate = ''
+    ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
@@ -326,32 +325,32 @@ class User extends Model
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
 
                     $mail->to($email)
-                        ->useEmail($emailName, $locale, [
-                            'replacements' => [
-                                'name' => $name->first,
-                                'who' => $who
-                            ],
-                            'verification_code' => $code,
-                            'reset_pass_code' => $passCode,
-                            'user_email' => $email,
-                            'name' => $name->first,
-                            'who' => $who
-                        ])
-                        ->send();
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'verification_code' => $code,
+                             'reset_pass_code' => $passCode,
+                             'user_email' => $email,
+                             'name' => $name->first,
+                             'who' => $who
+                         ])
+                         ->send();
                 } else {
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
                     $mail->to($email)
-                        ->useEmail($emailName, $locale, [
-                            'replacements' => [
-                                'name' => $name->first,
-                                'who' => $who
-                            ],
-                            'user_email' => $email,
-                            'reset_pass_code' => $passCode,
-                            'verification_code' => $code,
-                            'who' => $who
-                        ])
-                        ->send();
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'user_email' => $email,
+                             'reset_pass_code' => $passCode,
+                             'verification_code' => $code,
+                             'who' => $who
+                         ])
+                         ->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
@@ -378,7 +377,7 @@ class User extends Model
      *
      * Resend a validation email
      *
-     * @param string $email
+     * @param  string  $email
      * @return bool
      * @return bool
      *
@@ -406,13 +405,13 @@ class User extends Model
      *
      * Create a new user
      *
-     * @param Username $name
-     * @param string $email
-     * @param string $password
-     * @param Collection|array $roles
-     * @param string $locale
-     * @param string $avatar
-     * @param UserMeta|null $meta
+     * @param  Username          $name
+     * @param  string            $email
+     * @param  string            $password
+     * @param  Collection|array  $roles
+     * @param  string            $locale
+     * @param  string            $avatar
+     * @param  UserMeta|null     $meta
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -528,14 +527,14 @@ class User extends Model
      *
      * Update a user
      *
-     * @param string|ObjectId $id
-     * @param Username|null $name
-     * @param string|null $email
-     * @param string|null $password
-     * @param Collection|null $roles
-     * @param string|null $avatar
-     * @param UserMeta|null $meta
-     * @param string $locale
+     * @param  string|ObjectId  $id
+     * @param  Username|null    $name
+     * @param  string|null      $email
+     * @param  string|null      $password
+     * @param  Collection|null  $roles
+     * @param  string|null      $avatar
+     * @param  UserMeta|null    $meta
+     * @param  string           $locale
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -544,15 +543,14 @@ class User extends Model
      */
     public function update(
         string|ObjectId $id,
-        ?Username       $name = null,
-        ?string         $email = null,
-        ?string         $password = null,
-        ?Collection     $roles = null,
-        ?string         $avatar = '',
-        ?UserMeta       $meta = null,
-        string          $locale = ''
-    ): bool
-    {
+        ?Username $name = null,
+        ?string $email = null,
+        ?string $password = null,
+        ?Collection $roles = null,
+        ?string $avatar = '',
+        ?UserMeta $meta = null,
+        string $locale = ''
+    ): bool {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -608,14 +606,14 @@ class User extends Model
      *
      * Get a list of users
      *
-     * @param int $page
-     * @param int $limit
-     * @param string $search
-     * @param UserSorting|null $sorting
-     * @param UserTypeSearch|null $typeSearch
-     * @param MetaSearch|null $metaSearch
-     * @param bool|null $status
-     * @param bool|null $validated
+     * @param  int                  $page
+     * @param  int                  $limit
+     * @param  string               $search
+     * @param  UserSorting|null     $sorting
+     * @param  UserTypeSearch|null  $typeSearch
+     * @param  MetaSearch|null      $metaSearch
+     * @param  bool|null            $status
+     * @param  bool|null            $validated
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -623,16 +621,15 @@ class User extends Model
      *
      */
     public function getList(
-        int                 $page = 0,
-        int                 $limit = 25,
-        string              $search = '',
-        UserSorting         $sorting = null,
+        int $page = 0,
+        int $limit = 25,
+        string $search = '',
+        UserSorting $sorting = null,
         UserTypeSearch|null $typeSearch = null,
-        MetaSearch|null     $metaSearch = null,
-        bool|null           $status = null,
-        bool|null           $validated = null
-    ): Listing
-    {
+        MetaSearch|null $metaSearch = null,
+        bool|null $status = null,
+        bool|null $validated = null
+    ): Listing {
         $this->hasPermissions(true);
 
         if (!isset($sorting)) {
@@ -719,7 +716,7 @@ class User extends Model
      *
      * Delete a user by his id
      *
-     * @param string|ObjectId $id
+     * @param  string|ObjectId  $id
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
@@ -744,7 +741,7 @@ class User extends Model
      *
      * Delete a user by his email
      *
-     * @param string $email
+     * @param  string  $email
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
@@ -774,8 +771,8 @@ class User extends Model
      * key = use this key to log in without resending the user's email and password
      * error = user does not exist or password is wrong
      *
-     * @param string $email
-     * @param string $password
+     * @param  string  $email
+     * @param  string  $password
      * @return LoginResult
      * @throws DatabaseException
      *
@@ -825,7 +822,7 @@ class User extends Model
      *
      * Authenticate a user by its temporary token
      *
-     * @param string $token
+     * @param  string  $token
      * @return User|null
      * @throws DatabaseException
      *
@@ -859,8 +856,8 @@ class User extends Model
      *
      * Log user in
      *
-     * @param string $email
-     * @param string $password
+     * @param  string  $email
+     * @param  string  $password
      * @return bool
      * @throws DatabaseException
      *
@@ -920,7 +917,7 @@ class User extends Model
      *
      * Check if a user has the given flag in his metadata
      *
-     * @param string $key
+     * @param  string  $key
      * @return bool
      *
      */
@@ -934,7 +931,7 @@ class User extends Model
      *
      * Set a flag in the user's metadata
      *
-     * @param string $key
+     * @param  string  $key
      * @return void
      * @throws DatabaseException
      *
@@ -951,7 +948,7 @@ class User extends Model
      *
      * Get users that are flagged with given flag
      *
-     * @param string $flag
+     * @param  string  $flag
      * @return Collection
      * @throws DatabaseException
      * @throws ACLException
@@ -969,7 +966,7 @@ class User extends Model
      *
      * Get users who are not flagged with the given flag
      *
-     * @param string $flag
+     * @param  string  $flag
      * @return Collection
      * @throws DatabaseException
      * @throws ACLException
@@ -992,7 +989,7 @@ class User extends Model
      *
      * Remove a role from all users
      *
-     * @param string $role
+     * @param  string  $role
      * @return void
      * @throws DatabaseException
      *
@@ -1007,7 +1004,7 @@ class User extends Model
      *
      * Validate an account with the given code
      *
-     * @param string $code
+     * @param  string  $code
      * @return bool
      * @throws DatabaseException
      *
@@ -1030,7 +1027,7 @@ class User extends Model
      *
      * Login a user that was allowed to be by the 2FA rescue system
      *
-     * @param string $id
+     * @param  string  $id
      * @return User|null
      * @throws DatabaseException
      *
@@ -1061,7 +1058,7 @@ class User extends Model
      *
      * Forgot password handler
      *
-     * @param string $email
+     * @param  string  $email
      * @return bool
      * @throws DatabaseException
      * @throws FileException
@@ -1109,8 +1106,8 @@ class User extends Model
      *
      * Change the password using the reset code
      *
-     * @param string $code
-     * @param string $password
+     * @param  string  $code
+     * @param  string  $password
      * @return bool
      * @throws DatabaseException
      *
@@ -1159,7 +1156,7 @@ class User extends Model
                 'roles' => new Collection(['super-administrator']),
                 'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
                 'status' => true,
-                'password' => Security::hashPassword(Text::randomString(16)),
+                'password' => Security::hashPassword(Text::init()->random(16)),
                 'locale' => Locale::default(),
                 'validated' => true,
                 'created_at' => strtotime('01-01-2003')
@@ -1178,7 +1175,7 @@ class User extends Model
      * This call is not permission protected because it would require some use case to give too much power
      * to a normal user.
      *
-     * @param array|Collection $ids
+     * @param  array|Collection  $ids
      * @return Collection
      * @throws DatabaseException
      *
@@ -1202,9 +1199,9 @@ class User extends Model
      *
      * Validate email
      *
-     * @param string $email
-     * @param string $id
-     * @param bool $throw
+     * @param  string  $email
+     * @param  string  $id
+     * @param  bool    $throw
      * @return void
      * @throws DatabaseException
      *
@@ -1236,9 +1233,9 @@ class User extends Model
      *
      * Override the BaseModel for a more complex version
      *
-     * @param bool $read
-     * @param bool $advanced
-     * @param string|null $id
+     * @param  bool         $read
+     * @param  bool         $advanced
+     * @param  string|null  $id
      * @return void
      * @throws ACLException
      * @throws DatabaseException

@@ -28,7 +28,14 @@ trait Validators
      */
     public function isDomain(): bool
     {
-        return filter_var($this->internalString, FILTER_VALIDATE_DOMAIN);
+        $regex = "([a-z0-9+!*(),;?&=\$_.-]+(\:[a-z0-9+!*(),;?&=\$_.-]+)?@)?";
+        $regex .= "([a-z0-9-.]*)\.([a-z]{2,3})";
+
+        if (preg_match("/^$regex$/i", $this->internalString)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -40,7 +47,19 @@ trait Validators
      */
     public function isURL(): bool
     {
-        return filter_var($this->internalString, FILTER_VALIDATE_URL);
+        $regex = "((https?|ftp)\:\/\/)?";
+        $regex .= "([a-z0-9+!*(),;?&=\$_.-]+(\:[a-z0-9+!*(),;?&=\$_.-]+)?@)?";
+        $regex .= "([a-z0-9-.]*)\.([a-z]{2,3})";
+        $regex .= "(\:[0-9]{2,5})?";
+        $regex .= "(\/([a-z0-9+\$_-]\.?)+)*\/?";
+        $regex .= "(\?[a-z+&\$_.-][a-z0-9;:@&%=+\/\$_.-]*)?";
+        $regex .= "(#[a-z_.-][a-z0-9+\$_.-]*)?";
+
+        if (preg_match("/^$regex$/i", $this->internalString)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -77,7 +96,7 @@ trait Validators
     public function isJSON(): bool
     {
         // Validate 2 basic first characters ([ or {)
-        if (!str_starts_with('[', $this->internalString) && !str_starts_with('{', $this->internalString)) {
+        if (!str_starts_with($this->internalString, '[') && !str_starts_with($this->internalString, '{')) {
             return false;
         }
 
@@ -85,6 +104,7 @@ trait Validators
             json_decode($this->internalString, true, 512, JSON_THROW_ON_ERROR);
             return true;
         } catch (JsonException $e) {
+            echo $e->getMessage();
             return false;
         }
     }
@@ -119,7 +139,7 @@ trait Validators
     {
         return $this->isPostal('us');
     }
-    
+
     // is
 
     /**

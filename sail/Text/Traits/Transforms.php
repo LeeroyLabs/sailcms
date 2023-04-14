@@ -3,6 +3,8 @@
 namespace SailCMS\Text\Traits;
 
 use PhpInflector\Inflector;
+use SailCMS\Collection;
+use SailCMS\Sail;
 use SailCMS\Text;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\String\UnicodeString;
@@ -306,11 +308,10 @@ trait Transforms
      *
      * Change string to kebab case
      *
-     * @param  string  $string
      * @return Transforms|Text
      *
      */
-    public function kebab(string $string): self
+    public function kebab(): self
     {
         $this->internalString = str_replace([' ', '/', '\\', '&'], ['-', '-', '-', '-'], $this->lower()->deburr()->value());
         return $this;
@@ -440,6 +441,253 @@ trait Transforms
     public function bin(): self
     {
         $this->internalString = hex2bin($this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Pad the string up to given length with give character and direction
+     *
+     * @param  int          $length
+     * @param  string|Text  $char
+     * @param  int          $direction
+     * @return Transforms|Text
+     *
+     */
+    public function pad(int $length, string|Text $char, int $direction = STR_PAD_RIGHT): self
+    {
+        $this->internalString = str_pad($this->internalString, $length, $char, $direction);
+        return $this;
+    }
+
+    /**
+     *
+     * Replace one or many words in the string, in case-insensitive mode or not
+     *
+     * @param  array|string  $list
+     * @param  array|string  $replacements
+     * @param  bool          $insensitive
+     * @return Transforms|Text
+     *
+     */
+    public function replace(array|string $list, array|string $replacements, bool $insensitive = false): self
+    {
+        if ($insensitive) {
+            $this->internalString = str_ireplace($list, $replacements, $this->internalString);
+            return $this;
+        }
+
+        $this->internalString = str_replace($list, $replacements, $this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Shuffle the characters in the string
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function shuffle(): self
+    {
+        $this->internalString = str_shuffle($this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Make string safe to use in database or display to users
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function safe(): self
+    {
+        $str = htmlspecialchars(stripslashes(strip_tags($this->internalString)), ENT_QUOTES, 'UTF-8');
+        $this->internalString = $str;
+        return $this;
+    }
+
+    /**
+     *
+     * Strip tags and allow only given tags
+     *
+     * @param  array|string  $allowedTags
+     * @return Transforms|Text
+     *
+     */
+    public function stripTags(array|string $allowedTags = ''): self
+    {
+        $this->internalString = strip_tags($this->internalString, $allowedTags);
+        return $this;
+    }
+
+    /**
+     *
+     * Split string into substrings
+     *
+     * @param  string  $breaker
+     * @return Collection&string[]
+     *
+     */
+    public function split(string $breaker): Collection
+    {
+        $list = explode($breaker, $this->internalString);
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Alias for split
+     *
+     * @param  string  $breaker
+     * @return Collection
+     *
+     */
+    public function explode(string $breaker): Collection
+    {
+        return $this->split($breaker);
+    }
+
+    /**
+     *
+     * Encode special characters
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function specialChars(): self
+    {
+        $this->internalString = htmlspecialchars($this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * encode html entities
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function entities(): self
+    {
+        $this->internalString = htmlentities($this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Split string in chunks
+     *
+     * @param  int  $length
+     * @return Collection&string[]
+     *
+     */
+    public function chunks(int $length): Collection
+    {
+        $chunks = mb_str_split($this->internalString, $length, 'UTF-8');
+        return new Collection($chunks);
+    }
+
+    /**
+     *
+     * Format a string (sprintf)
+     *
+     * @param  array|Collection  $values
+     * @return Transforms|Text
+     *
+     */
+    public function format(array|Collection $values): self
+    {
+        $this->internalString = vsprintf($this->internalString, $values);
+        return $this;
+    }
+
+    /**
+     *
+     * Truncate a string at requested length (length - length of end string)
+     * so this method always returns the length you asked for never the length + length
+     * of end string
+     *
+     * @param  int     $length
+     * @param  string  $end
+     * @return Transforms|Text
+     *
+     */
+    public function truncate(int $length, string $end = '...'): self
+    {
+        // Only process if string is longer than required length
+        if (mb_strlen($this->internalString) > $length - strlen($end)) {
+            $this->internalString = mb_substr($this->internalString, 0, $length) . $end;
+        }
+
+        return $this;
+    }
+
+    /**
+     *
+     * Truncate to the closest word that matches the length
+     *
+     * @param  int     $count
+     * @param  string  $end
+     * @return Transforms|Text
+     *
+     */
+    public function truncateWords(int $count, string $end = '...'): self
+    {
+        $parts = preg_split('/([\s\n\r]+)/u', $this->internalString, null, PREG_SPLIT_DELIM_CAPTURE);
+        $partsCount = count($parts);
+        $addEnd = false;
+
+        $length = 0;
+        $last_part = 0;
+
+        for (; $last_part < $partsCount; ++$last_part) {
+            $length += strlen($parts[$last_part]);
+
+            if ($length > $count) {
+                $addEnd = true;
+                break;
+            }
+        }
+
+        $this->internalString = implode(array_slice($parts, 0, $last_part));
+
+        if ($addEnd) {
+            $this->internalString .= $end;
+        }
+
+        return $this;
+    }
+
+    /**
+     *
+     * Basename of the given filepath
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function basename(): self
+    {
+        $this->internalString = basename($this->internalString);
+        return $this;
+    }
+
+    /**
+     *
+     * Add the site url to the url string
+     *
+     * @return Transforms|Text
+     *
+     */
+    public function url(): self
+    {
+        $this->internalString = str_replace(
+            '//',
+            '/',
+            env('SITE_URL') . '/' . $this->internalString
+        );
+
         return $this;
     }
 }

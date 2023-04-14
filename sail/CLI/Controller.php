@@ -30,10 +30,10 @@ class Controller extends Command
         $container = $input->getArgument('container');
         $name = $input->getArgument('name');
 
-        $container = ucfirst(Text::camelCase(Text::deburr($container)));
+        $container = Text::from($container)->deburr()->camel()->capitalize(true)->value();
         $path = "root://containers/{$container}";
 
-        $name = ucfirst(Text::camelCase(Text::deburr($name)));
+        $name = Text::from($name)->deburr()->camel()->capitalize(true)->value();
 
         if ($fs->directoryExists($path)) {
             Tools::outputInfo('create', "Creating Controller [b]{$input->getArgument('name')}[/b]");

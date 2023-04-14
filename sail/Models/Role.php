@@ -52,7 +52,7 @@ class Role extends Model
         $this->hasPermissions();
 
         $totalACL = ACL::count();
-        $slug = Text::slugify($name);
+        $slug = Text::from($name)->slug()->value();
 
         // Validate, if not usable, throw an exception
         $this->usable($slug, '', true);
@@ -240,7 +240,7 @@ class Role extends Model
      */
     public function getByName(string $role): ?Role
     {
-        return $this->findOne(['slug' => strtolower(Text::deburr($role))])->exec();
+        return $this->findOne(['slug' => Text::from($role)->deburr()->lower()->value()])->exec();
     }
 
     /**

@@ -52,12 +52,12 @@ class Navigation extends Model
         }
 
         $title = $name;
-        $name = Text::slugify($name);
+        $name = Text::from($name)->slug()->value();
         $count = self::query()->count(['name' => $name]);
 
         // Set a number next to the name to make it unique
         if ($count > 0) {
-            $name .= '-' . Text::randomString(4, false);
+            $name .= '-' . Text::init()->random(4, false);
         }
 
         $id = $this->insert([
