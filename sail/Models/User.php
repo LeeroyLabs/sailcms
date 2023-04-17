@@ -215,11 +215,11 @@ class User extends Model
         $skip = $page * $limit - $limit;
         $list = new Collection(
             $this->find($query)
-                ->skip($skip)
-                ->limit($limit)
-                ->collation($collation)
-                ->sort([$sort => $order])
-                ->exec()
+                 ->skip($skip)
+                 ->limit($limit)
+                 ->collation($collation)
+                 ->sort([$sort => $order])
+                 ->exec()
         );
 
         $total = $this->count($query);
@@ -246,17 +246,16 @@ class User extends Model
      *
      */
     public function createRegularUser(
-        Username         $name,
-        string           $email,
-        string           $password,
-        string           $locale = 'en',
-        string           $avatar = '',
-        ?UserMeta        $meta = null,
+        Username $name,
+        string $email,
+        string $password,
+        string $locale = 'en',
+        string $avatar = '',
+        ?UserMeta $meta = null,
         Collection|array $roles = ['general-user'],
-        bool             $createWithSetPassword = false,
-        string           $emailTemplate = ''
-    ): string
-    {
+        bool $createWithSetPassword = false,
+        string $emailTemplate = ''
+    ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
@@ -326,32 +325,32 @@ class User extends Model
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
 
                     $mail->to($email)
-                        ->useEmail($emailName, $locale, [
-                            'replacements' => [
-                                'name' => $name->first,
-                                'who' => $who
-                            ],
-                            'verification_code' => $code,
-                            'reset_pass_code' => $passCode,
-                            'user_email' => $email,
-                            'name' => $name->first,
-                            'who' => $who
-                        ])
-                        ->send();
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'verification_code' => $code,
+                             'reset_pass_code' => $passCode,
+                             'user_email' => $email,
+                             'name' => $name->first,
+                             'who' => $who
+                         ])
+                         ->send();
                 } else {
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
                     $mail->to($email)
-                        ->useEmail($emailName, $locale, [
-                            'replacements' => [
-                                'name' => $name->first,
-                                'who' => $who
-                            ],
-                            'user_email' => $email,
-                            'reset_pass_code' => $passCode,
-                            'verification_code' => $code,
-                            'who' => $who
-                        ])
-                        ->send();
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'user_email' => $email,
+                             'reset_pass_code' => $passCode,
+                             'verification_code' => $code,
+                             'who' => $who
+                         ])
+                         ->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
@@ -544,15 +543,14 @@ class User extends Model
      */
     public function update(
         string|ObjectId $id,
-        ?Username       $name = null,
-        ?string         $email = null,
-        ?string         $password = null,
-        ?Collection     $roles = null,
-        ?string         $avatar = '',
-        ?UserMeta       $meta = null,
-        string          $locale = ''
-    ): bool
-    {
+        ?Username $name = null,
+        ?string $email = null,
+        ?string $password = null,
+        ?Collection $roles = null,
+        ?string $avatar = '',
+        ?UserMeta $meta = null,
+        string $locale = ''
+    ): bool {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -623,16 +621,15 @@ class User extends Model
      *
      */
     public function getList(
-        int                 $page = 0,
-        int                 $limit = 25,
-        string              $search = '',
-        UserSorting         $sorting = null,
+        int $page = 0,
+        int $limit = 25,
+        string $search = '',
+        UserSorting $sorting = null,
         UserTypeSearch|null $typeSearch = null,
-        MetaSearch|null     $metaSearch = null,
-        bool|null           $status = null,
-        bool|null           $validated = null
-    ): Listing
-    {
+        MetaSearch|null $metaSearch = null,
+        bool|null $status = null,
+        bool|null $validated = null
+    ): Listing {
         $this->hasPermissions(true);
 
         if (!isset($sorting)) {
@@ -1131,6 +1128,36 @@ class User extends Model
                 '$set' => [
                     'password' => Security::hashPassword($password),
                     'reset_code' => ''
+                ]
+            ]
+        );
+
+        return true;
+    }
+
+    /**
+     *
+     * Change user password for given user id
+     *
+     * @param  string  $id
+     * @param  string  $password
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public static function changePasswordWithID(string $id, string $password): bool
+    {
+        // Validate password
+        $valid = Security::validatePassword($password);
+
+        if (!$valid) {
+            return false;
+        }
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($id)],
+            [
+                '$set' => [
+                    'password' => Security::hashPassword($password)
                 ]
             ]
         );

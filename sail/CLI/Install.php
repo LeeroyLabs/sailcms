@@ -3,12 +3,20 @@
 namespace SailCMS\CLI;
 
 use League\Flysystem\FilesystemException;
+use RuntimeException;
 use SailCMS\CLI;
+use SailCMS\Errors\ACLException;
+use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
+use SailCMS\Models\Role;
+use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Security;
+use SailCMS\Types\Username;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 
 class Install extends Command
 {
@@ -16,8 +24,13 @@ class Install extends Command
     protected static $defaultName = 'run:install';
 
     /**
-     *
+     * @param  InputInterface   $input
+     * @param  OutputInterface  $output
+     * @return int
      * @throws FilesystemException
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -82,7 +95,7 @@ class Install extends Command
 
             if (!file_exists($concurrentDirectory)) {
                 if (!mkdir($concurrentDirectory) && !is_dir($concurrentDirectory)) {
-                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
                 }
             }
         }
@@ -110,12 +123,42 @@ class Install extends Command
 
         // Generate Admin user
         Tools::outputInfo('create', 'Generating Admin user', 'bg-sky-400');
-        Tools::outputInfo('created', "User is 'admin' and the password is 'entergeneratedpasswordhere'", 'bg-green-500');
 
-        // TODO : FINISH THIS
+        // Ask user email
+        $helper = $this->getHelper('question');
+        $question = new Question('Email for your user: ', '');
+        $email = $helper->ask($input, $output, $question);
+
+        if ($email === '') {
+            $email = 'no@email.com';
+        }
+
+        // Generate password
+        $password = substr(Security::hashPassword(Security::secureTemporaryKey()), 0, 16);
+
+        // Create user
+        $userModel = new User();
+        $userModel->create(
+            new Username('Administrator', ''),
+            $email,
+            $password,
+            ['super-administrator']
+        );
+
+        // Create Super Admin and Admin roles
+        $roleModel = new Role();
+        try {
+            $roleModel->create('Super Administrator', 'Can administrate the entire system', ['*'], 1000);
+            $roleModel->create('Administrator', 'Can administrate the almost the entire system', ['*'], 950);
+        } catch (RuntimeException $e) {
+            // Already created
+        }
+
+        // Done for user
+        Tools::outputInfo('created', "User {$email} and the password is [b]{$password}[/b]", 'bg-green-500');
 
         Tools::outputInfo('optimizing', 'Making sure everything is optimized in the database', 'bg-sky-400');
-        // TODO : FINISH THIS
+        Sail::ensurePerformance();
 
         // TODO: CREATE BASIC EMAIL TEMPLATES (ex: Account, Forgot Password)
 
