@@ -45,20 +45,20 @@ use stdClass;
 
 /**
  *
- * @property string $entry_type_id
+ * @property string       $entry_type_id
  * @property ?EntryParent $parent
- * @property ?string $site_id
- * @property string $locale
- * @property Collection $alternates
- * @property bool $trashed = false
- * @property string $title
- * @property string $template
- * @property ?string $slug
- * @property string $url
- * @property Authors $authors
- * @property Dates $dates
- * @property Collection $categories
- * @property Collection $content
+ * @property ?string      $site_id
+ * @property string       $locale
+ * @property Collection   $alternates
+ * @property bool         $trashed = false
+ * @property string       $title
+ * @property string       $template
+ * @property ?string      $slug
+ * @property string       $url
+ * @property Authors      $authors
+ * @property Dates        $dates
+ * @property Collection   $categories
+ * @property Collection   $content
  *
  */
 class Entry extends Model implements Validator, Castable
@@ -99,6 +99,8 @@ class Entry extends Model implements Validator, Castable
     private const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
     private const ENTRY_CATEGORY_CACHE = 'entries_by_category_'; // Add category id
 
+    private const PARENT_ENTRY_LIMIT = 2;
+
     public const EVENT_DELETE = 'event_delete_entry';
     public const EVENT_CREATE = 'event_create_entry';
     public const EVENT_UPDATE = 'event_update_entry';
@@ -111,8 +113,8 @@ class Entry extends Model implements Validator, Castable
      *
      *  Get the model according to the collection
      *
-     * @param string $collection
-     * @param EntryType|null $entryType
+     * @param  string          $collection
+     * @param  EntryType|null  $entryType
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -155,8 +157,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Validate fields
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  string  $key
+     * @param  mixed   $value
      * @return void
      * @throws EntryException
      *
@@ -194,8 +196,9 @@ class Entry extends Model implements Validator, Castable
      *
      * Cast to for EntryAlternate elements
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return EntryAlternate
+     * @throws EntryException
      *
      */
     public function castTo(mixed $value): EntryAlternate
@@ -208,7 +211,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Get basic entry document by its id
      *
-     * @param string|ObjectId $id
+     * @param  string|ObjectId  $id
      * @return Entry|null
      * @throws DatabaseException
      *
@@ -216,6 +219,30 @@ class Entry extends Model implements Validator, Castable
     public function getById(string|ObjectId $id): ?Entry
     {
         return $this->findById($id)->exec('entry_' . (string)$id);
+    }
+
+
+    /**
+     *
+     * Get the entry parent
+     *
+     * @return Entry|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function getParent(): ?Entry
+    {
+        $entry = null;
+
+        if ($this->parent) {
+            $entryType = (new EntryType())->getByHandle($this->parent->handle);
+            $entry = $entryType->getEntryModel()->getById($this->parent->parent_id);
+        }
+
+        return $entry;
     }
 
     /**
@@ -282,7 +309,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Get All SEO data for this entry
      *
-     * @param bool $refresh
+     * @param  bool  $refresh
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -343,11 +370,12 @@ class Entry extends Model implements Validator, Castable
      *
      * Parse the entry into an array for api
      *
-     * @param object|null $currentHomepageEntry
+     * @param  object|null  $currentHomepageEntry
+     * @param  bool         $sendCurrent
      * @return array
      *
      */
-    public function simplify(object|null $currentHomepageEntry, $sendCurrent = true): array
+    public function simplify(object|null $currentHomepageEntry, bool $sendCurrent = true): array
     {
         $simplified = [
             '_id' => $this->_id,
@@ -421,13 +449,13 @@ class Entry extends Model implements Validator, Castable
      *
      * Get all entries by entry type handle
      *
-     * @param string $entryTypeHandle
-     * @param string $search
-     * @param int $page
-     * @param int $limit
-     * @param string $sort
-     * @param int $direction
-     * @param bool $ignoreTrash
+     * @param  string  $entryTypeHandle
+     * @param  string  $search
+     * @param  int     $page
+     * @param  int     $limit
+     * @param  string  $sort
+     * @param  int     $direction
+     * @param  bool    $ignoreTrash
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -478,7 +506,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Index all entries for search.
      *
-     * @param string $entryTypeHandle
+     * @param  string  $entryTypeHandle
      * @return int
      * @throws ACLException
      * @throws DatabaseException
@@ -506,8 +534,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Get homepage configs
      *
-     * @param string $siteId
-     * @param string|null $locale
+     * @param  string       $siteId
+     * @param  string|null  $locale
      * @return object|null
      * @throws DatabaseException
      * @throws FilesystemException
@@ -536,9 +564,9 @@ class Entry extends Model implements Validator, Castable
      *
      * Get homepage entry !
      *
-     * @param string $siteId
-     * @param string $locale
-     * @param bool $simplify
+     * @param  string  $siteId
+     * @param  string  $locale
+     * @param  bool    $simplify
      * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -573,11 +601,11 @@ class Entry extends Model implements Validator, Castable
      *
      * Find a content by the url
      *
-     * @param string $url
-     * @param string|null $siteId
-     * @param bool $fromRequest
-     * @param bool $preview
-     * @param string $previewVersion
+     * @param  string       $url
+     * @param  string|null  $siteId
+     * @param  bool         $fromRequest
+     * @param  bool         $preview
+     * @param  string       $previewVersion
      * @return Entry|array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -607,8 +635,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Find entries of all types by category id
      *
-     * @param string $categoryId
-     * @param string|null $siteId
+     * @param  string       $categoryId
+     * @param  string|null  $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -640,12 +668,12 @@ class Entry extends Model implements Validator, Castable
      *
      * Get a validated slug that is not already existing in the db
      *
-     * @param LocaleField $urlPrefix
-     * @param string $slug
-     * @param string $siteId
-     * @param string $locale
-     * @param string|null $currentId
-     * @param Collection|null $availableTypes
+     * @param  LocaleField      $urlPrefix
+     * @param  string           $slug
+     * @param  string           $siteId
+     * @param  string           $locale
+     * @param  string|null      $currentId
+     * @param  Collection|null  $availableTypes
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -692,9 +720,9 @@ class Entry extends Model implements Validator, Castable
      *
      * Get the relative url of the entry
      *
-     * @param LocaleField $urlPrefix
-     * @param string $slug
-     * @param string $locale
+     * @param  LocaleField  $urlPrefix
+     * @param  string       $slug
+     * @param  string       $locale
      * @return string
      *
      */
@@ -738,7 +766,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Process content from graphQL to be able to create/update
      *
-     * @param Collection|null $content
+     * @param  Collection|null  $content
      * @return Collection
      *
      */
@@ -765,8 +793,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Combine and update content for GraphQL
      *
-     * @param string $entryId
-     * @param Collection $newContent
+     * @param  string      $entryId
+     * @param  Collection  $newContent
      * @return Collection
      * @throws DatabaseException
      *
@@ -810,7 +838,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Process errors for GraphQL
      *
-     * @param Collection $errors
+     * @param  Collection  $errors
      * @return Collection
      *
      */
@@ -831,8 +859,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Get an entry with filters
      *
-     * @param array $filters
-     * @param bool $cache
+     * @param  array  $filters
+     * @param  bool   $cache
      * @return Entry|null
      * @throws DatabaseException
      *
@@ -864,7 +892,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Get the count according to given filters
      *
-     * @param array $filters
+     * @param  array  $filters
      * @return int
      *
      */
@@ -877,16 +905,16 @@ class Entry extends Model implements Validator, Castable
      *
      * Get all entries of the current type without pagination
      *
-     * @param bool $ignoreTrash
-     * @param ?array $filters
+     * @param  bool   $keepTrashed
+     * @param ?array  $filters
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function all(bool $ignoreTrash = true, ?array $filters = []): Collection
+    public function all(bool $keepTrashed = true, ?array $filters = []): Collection
     {
         // Fast selection of only valid entry (not thrashed)
-        if (!$ignoreTrash && !in_array('trashed', $filters)) {
+        if (!$keepTrashed && !in_array('trashed', $filters)) {
             // Want everything but trash
             $filters['trashed'] = false;
         }
@@ -911,7 +939,7 @@ class Entry extends Model implements Validator, Castable
      * Count entries for the current entry type
      *  (according to the __construct method)
      *
-     * @param bool $ignoreTrash
+     * @param  bool  $ignoreTrash
      * @return int
      */
     public function countEntries(bool $ignoreTrash = false): int
@@ -932,13 +960,13 @@ class Entry extends Model implements Validator, Castable
      *      - categories default empty Collection
      *      - content default empty Collection
      *
-     * @param bool $isHomepage
-     * @param string $locale
-     * @param string $title
-     * @param string $template
-     * @param string|null $slug
-     * @param array|Collection $extraData
-     * @param bool $throwErrors
+     * @param  bool              $isHomepage
+     * @param  string            $locale
+     * @param  string            $title
+     * @param  string            $template
+     * @param  string|null       $slug
+     * @param  array|Collection  $extraData
+     * @param  bool              $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -980,10 +1008,10 @@ class Entry extends Model implements Validator, Castable
      *
      * Update an entry with a given entry id or entry instance
      *
-     * @param Entry|string $entry or id
-     * @param array|Collection $data
-     * @param bool $throwErrors
-     * @param bool $bypassContentValidation
+     * @param  Entry|string      $entry  or id
+     * @param  array|Collection  $data
+     * @param  bool              $throwErrors
+     * @param  bool              $bypassContentValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1024,7 +1052,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Update entries url according to an url prefix (normally comes from entry type)
      *
-     * @param LocaleField $urlPrefix
+     * @param  LocaleField  $urlPrefix
      * @return void
      * @throws DatabaseException
      *
@@ -1053,8 +1081,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Update all content keys with a new given key
      *
-     * @param string $key
-     * @param string $newKey
+     * @param  string  $key
+     * @param  string  $newKey
      * @return true
      * @throws DatabaseException
      * @throws EntryException
@@ -1099,10 +1127,10 @@ class Entry extends Model implements Validator, Castable
      * Create an entry version then an entry publication
      *  TODO add parent url to the publication
      *
-     * @param string $entryId
-     * @param int $publicationDate
-     * @param int $expirationDate
-     * @param string|null $siteId
+     * @param  string       $entryId
+     * @param  int          $publicationDate
+     * @param  int          $expirationDate
+     * @param  string|null  $siteId
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -1153,7 +1181,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Remove all entry publication to unpublish
      *
-     * @param string $entryId
+     * @param  string  $entryId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -1170,8 +1198,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Delete an entry in soft mode or definitively
      *
-     * @param string|ObjectId $entryId
-     * @param bool $soft
+     * @param  string|ObjectId  $entryId
+     * @param  bool             $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -1213,8 +1241,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Get schema from entryLayout
      *
-     * @param bool $silent
-     * @param bool $simplified
+     * @param  bool  $silent
+     * @param  bool  $simplified
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1253,11 +1281,65 @@ class Entry extends Model implements Validator, Castable
         return $result;
     }
 
+    private function validateParent(string $entryId, EntryParent $entryParent): void
+    {
+        // Test if same locale and site
+
+        // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
+        $childCount = $this->countMaxChildren($entryId);
+
+        // If not throw errors
+    }
+
+    /**
+     *
+     * Count children WIP!!!
+     *
+     * @param  string  $entryId
+     * @return int
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    private function countMaxChildren(string $entryId): int
+    {
+        $count = 0;
+        $filters = [
+            "parent.parent_id" => $entryId
+        ];
+
+        $availableTypes = EntryType::getAll();
+        $availableTypes->each(function ($key, $entryType) use ($filters, &$count) {
+            /**
+             * @var EntryType $entryType
+             */
+            $entryModel = $entryType->getEntryModel();
+
+            $result = $entryModel->all(false, $filters);
+            foreach ($result as $child) {
+                $count = 1;
+                $currentCount = $this->countMaxChildren($child->_id);
+                if ($currentCount > 0) {
+                    $count += $currentCount;
+                }
+            }
+        });
+
+        return $count;
+    }
+
+    private function countParent(): int
+    {
+
+    }
+
     /**
      *
      * Validate content from the entry type layout schema
      *
-     * @param Collection $content
+     * @param  Collection  $content
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1317,8 +1399,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Handle homepage config after update
      *
-     * @param Entry $oldEntry
-     * @param Collection $newData
+     * @param  Entry       $oldEntry
+     * @param  Collection  $newData
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1353,8 +1435,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Set the current entry has homepage
      *
-     * @param string $siteId
-     * @param string $locale
+     * @param  string  $siteId
+     * @param  string  $locale
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1376,9 +1458,9 @@ class Entry extends Model implements Validator, Castable
      *
      * Empty the homepage for the current site
      *
-     * @param string $siteId
-     * @param string $locale
-     * @param object|array|null $currentConfig
+     * @param  string             $siteId
+     * @param  string             $locale
+     * @param  object|array|null  $currentConfig
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
@@ -1400,8 +1482,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Create an entry
      *
-     * @param Collection $data
-     * @param bool $throwErrors
+     * @param  Collection  $data
+     * @param  bool        $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -1501,10 +1583,10 @@ class Entry extends Model implements Validator, Castable
      *
      * Update an entry without permission protection
      *
-     * @param Entry $entry
-     * @param Collection $data
-     * @param bool $throwErrors
-     * @param bool $bypassContentValidation
+     * @param  Entry       $entry
+     * @param  Collection  $data
+     * @param  bool        $throwErrors
+     * @param  bool        $bypassContentValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1610,7 +1692,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Put an entry in the trash
      *
-     * @param Entry $entry
+     * @param  Entry  $entry
      * @return bool
      * @throws EntryException
      * @throws DatabaseException
@@ -1643,7 +1725,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Delete an entry definitively
      *
-     * @param string|ObjectId $entryId
+     * @param  string|ObjectId  $entryId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -1688,8 +1770,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Find entry content by entry publication
      *
-     * @param string $url
-     * @param string|null $siteId
+     * @param  string       $url
+     * @param  string|null  $siteId
      * @return Entry|null
      * @throws ACLException
      * @throws CollectionException
@@ -1728,8 +1810,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Find by url from entry types
      *
-     * @param string $url
-     * @param string|null $previewVersion
+     * @param  string       $url
+     * @param  string|null  $previewVersion
      * @return Entry|null
      * @throws ACLException
      * @throws DatabaseException
@@ -1783,7 +1865,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Parse and throw the content errors
      *
-     * @param Collection $errors
+     * @param  Collection  $errors
      * @return void
      * @throws EntryException
      *
@@ -1831,8 +1913,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Generate cache key from filters
      *
-     * @param string $handle
-     * @param Collection|array $filters
+     * @param  string            $handle
+     * @param  Collection|array  $filters
      * @return string
      *
      */
@@ -1845,7 +1927,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Iterate into filters recursively.
      *
-     * @param mixed $iterableOrValue
+     * @param  mixed  $iterableOrValue
      * @return string
      *
      */
