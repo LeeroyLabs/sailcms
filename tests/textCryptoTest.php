@@ -3,6 +3,11 @@
 use SailCMS\Sail;
 use SailCMS\Text;
 
+class EncryptTest
+{
+    public static string $enc;
+}
+
 beforeAll(function ()
 {
     Sail::setupForTests(__DIR__);
@@ -40,12 +45,13 @@ test('crc32', function ()
 
 test('encrypt', function ()
 {
-    expect(Text::from('Hello World')->encrypt())->toContain('.');
+    EncryptTest::$enc = Text::from('Hello World')->encrypt();
+    expect(EncryptTest::$enc)->toContain('.');
 })->group('text');
 
 test('decrypt', function ()
 {
-    expect(Text::from('440d86e6e44fe1d15fcfb1340904efe0ead0139f5cbb7a18cdd173.c5a400067300bea7a29d28d78c29735280d320e1c3e1e99f')->decrypt())->toBe('Hello World');
+    expect(Text::from(EncryptTest::$enc)->decrypt())->toBe('Hello World');
 })->group('text');
 
 test('encode', function ()
