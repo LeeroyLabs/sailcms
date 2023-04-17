@@ -1,6 +1,8 @@
 type Query {
     version: String
 
+    temp(entryId: String!): String
+
     # Users
     user(id: ID!): User
     users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean): UserListing

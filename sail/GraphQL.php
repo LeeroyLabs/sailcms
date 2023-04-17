@@ -393,6 +393,7 @@ final class GraphQL
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
 
+        self::addQueryResolver('temp', Entries::class, 'temp');
         self::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
         self::addQueryResolver('entryType', Entries::class, 'entryType');
         self::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
@@ -559,8 +560,7 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver)
-        {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

@@ -403,6 +403,15 @@ class Entries
         return Entry::processErrorsForGraphQL($errors);
     }
 
+    public function temp(mixed $obj, Collection $args, Context $context): string
+    {
+        $entryId = $args->get('entryId');
+        
+        $count = (new Entry())->countMaxChildren($entryId);
+
+        return "Count is {$count}";
+    }
+
     /**
      *
      * Update entry SEO

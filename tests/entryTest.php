@@ -170,7 +170,7 @@ test('Access to default SEO data', function () {
 
     expect($seo->title)->toBe($entry->title)
         ->and($seo->_id)->not->toBeNull();
-});
+})->group('entry');
 
 test('Update seo data for an entry', function () {
     $entry = (new Entry())->one(['title' => 'Home']);

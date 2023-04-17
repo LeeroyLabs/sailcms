@@ -11,6 +11,7 @@ use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -1303,7 +1304,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function countMaxChildren(string $entryId): int
+    public function countMaxChildren(string $entryId): int
     {
         $count = 0;
         $filters = [
@@ -1318,7 +1319,9 @@ class Entry extends Model implements Validator, Castable
             $entryModel = $entryType->getEntryModel();
 
             $result = $entryModel->all(false, $filters);
+            Debug::ray($result, $filters);
             foreach ($result as $child) {
+                Debug::ray($child);
                 $count = 1;
                 $currentCount = $this->countMaxChildren($child->_id);
                 if ($currentCount > 0) {
