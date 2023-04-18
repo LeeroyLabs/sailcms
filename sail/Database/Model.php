@@ -212,6 +212,32 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Get all properties
+     *
+     * @return array
+     *
+     */
+    public function properties(): array
+    {
+        return $this->properties;
+    }
+
+    /**
+     *
+     * Set value of property in a more standard way
+     *
+     * @param  string  $name
+     * @param  mixed   $value
+     * @return void
+     *
+     */
+    public function setProperty(string $name, mixed $value): void
+    {
+        $this->properties[$name] = $value;
+    }
+
+    /**
+     *
      * Get a property dynamically
      *
      * @param  string  $name
