@@ -135,6 +135,53 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 
     /**
      *
+     * Create a collection from a json string
+     *
+     * @param  string  $json
+     * @return Collection
+     * @throws CollectionException
+     * @throws JsonException
+     *
+     */
+    public static function fromJSON(string $json): Collection
+    {
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        if (!is_array($data)) {
+            throw new CollectionException('Cannot creation Collection from json object', 0500);
+        }
+
+        return new self($data);
+    }
+
+    /**
+     *
+     * Create a collection from a json file
+     *
+     * @param  string  $file
+     * @return Collection
+     * @throws CollectionException
+     * @throws JsonException
+     *
+     */
+    public static function fromJSONFile(string $file): Collection
+    {
+        if (file_exists($file)) {
+            $json = file_get_contents($file);
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+            if (!is_array($data)) {
+                throw new CollectionException('Cannot creation Collection from json object file', 0500);
+            }
+
+            return new self($data);
+        }
+
+        throw new CollectionException('JSON file does not exist', 0404);
+    }
+
+    /**
+     *
      * Unwrap a static back to a raw array
      *
      * @return array
