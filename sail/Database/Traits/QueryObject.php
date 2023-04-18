@@ -867,6 +867,15 @@ trait QueryObject
         $this->isSingle = false;
     }
 
+    /**
+     *
+     * Handle populate feature (with subpopulation)
+     *
+     * @param  Model  $doc
+     * @param         $populate
+     * @return Model
+     *
+     */
     private static function parsePopulate(Model $doc, $populate)
     {
         $instance = new $populate['class']();
@@ -874,8 +883,6 @@ trait QueryObject
         $target = $populate['targetField'];
         $subpop = $populate['subpopulates'];
 
-        $list = [];
-        $targetList = [];
         $isArray = false;
         $isObject = false;
         $isCollection = false;
@@ -908,6 +915,7 @@ trait QueryObject
         }
 
         if ($isArray) {
+            // Process a field within an array (every object gets that property) with support for subpopulation
             foreach ($fieldValue as $k => $v) {
                 $obj = $instance->findById($v[$sub])->exec();
                 $v->{$target} = $obj;
