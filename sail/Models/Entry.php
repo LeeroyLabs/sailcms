@@ -1282,19 +1282,22 @@ class Entry extends Model implements Validator, Castable
         return $result;
     }
 
-    private function validateParent(string $entryId, EntryParent $entryParent): void
+    private function validateParent(Entry $entry, EntryParent $entryParent): void
     {
         // Test if same locale and site
 
-        // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
-        $childCount = $this->countMaxChildren($entryId);
 
-        // If not throw errors
+        // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
+        $childCount = $this->countMaxChildren($entry->_id);
+        $parentCount = $this->countParent($entry);
+
+        // If not ok throw errors
     }
 
     /**
      *
-     * Count children WIP!!!
+     * Recursive count of children until we reach the limit
+     *  TODO must test with more entry types
      *
      * @param  string  $entryId
      * @return int
@@ -1313,19 +1316,31 @@ class Entry extends Model implements Validator, Castable
 
         $availableTypes = EntryType::getAll();
         $availableTypes->each(function ($key, $entryType) use ($filters, &$count) {
+            if ($count >= self::PARENT_ENTRY_LIMIT) {
+                // The limit is reached, not useful to continue the count
+                return;
+            }
+
             /**
              * @var EntryType $entryType
              */
             $entryModel = $entryType->getEntryModel();
 
             $result = $entryModel->all(false, $filters);
-            Debug::ray($result, $filters);
+
             foreach ($result as $child) {
-                Debug::ray($child);
-                $count = 1;
+                if ($count === 0) {
+                    $count = 1;
+                }
+
                 $currentCount = $this->countMaxChildren($child->_id);
                 if ($currentCount > 0) {
                     $count += $currentCount;
+                }
+
+                if ($count >= self::PARENT_ENTRY_LIMIT) {
+                    // The limit is reached, not useful to continue the count
+                    break;
                 }
             }
         });
@@ -1333,9 +1348,46 @@ class Entry extends Model implements Validator, Castable
         return $count;
     }
 
-    private function countParent(): int
+    /**
+     *
+     * Count parent until
+     *
+     * @param  Entry     $entry
+     * @param  int|null  $count
+     * @return int
+     *
+     */
+    public function countParent(Entry $entry, ?int $count = null): int
     {
+        if (!isset($count)) {
+            $count = 0;
+        }
 
+        if ($entry->parent) {
+
+            try {
+                $entryModel = EntryType::getEntryModelByHandle($entry->parent->handle);
+                $parent = $entryModel->getById($entry->parent->parent_id);
+            } catch (Exception $exception) {
+                Debug::error("Error when a parent has been queried : " . PHP_EOL . $exception->getMessage());
+
+                // If there is an error with the queries return the limit, so the parent will not be added.
+                return self::PARENT_ENTRY_LIMIT;
+            }
+
+            if ($parent) {
+                $count += 1;
+
+                if ($count >= self::PARENT_ENTRY_LIMIT) {
+                    // Stop the recursion since the limit is reached
+                    return $count;
+                }
+
+                $count = $this->countParent($parent, $count);
+            }
+        }
+
+        return $count;
     }
 
     /**
