@@ -19,6 +19,7 @@ use SailCMS\CLI\Model;
 use SailCMS\CLI\Module;
 use SailCMS\CLI\Password;
 use SailCMS\CLI\Queue;
+use SailCMS\CLI\ResetAdminPass;
 use SailCMS\CLI\Schema;
 use SailCMS\CLI\Test;
 use SailCMS\CLI\Version;
@@ -87,6 +88,7 @@ final class CLI
         $application->add(new BasicAuth());
         $application->add(new InstallOfficial());
         $application->add(new Password());
+        $application->add(new ResetAdminPass());
 
         // Custom commands
         if (!isset(self::$registeredCommands)) {
