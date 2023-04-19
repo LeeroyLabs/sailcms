@@ -1,0 +1,9 @@
+<?php
+
+return [
+    'headerTitle' => 'SailCMS Changelog',
+    'types' => ['feat', 'fix', 'perf', 'docs', 'chore'],
+    'ignorePatterns' => [
+        '/chore\(changelog\)[:].*/i'
+    ],
+];
