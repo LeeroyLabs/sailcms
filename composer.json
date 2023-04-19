@@ -14,7 +14,7 @@
             "email": "marc@leeroy.ca"
         },
         {
-            "name": "Philippe Bédard De Launière",
+            "name": "Philippe B\u00e9dard De Launi\u00e8re",
             "email": "philippe@leeroy.ca"
         }
     ],
@@ -66,7 +66,8 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^1.10",
-        "pestphp/pest": "^v2.2.2"
+        "pestphp/pest": "^v2.2.2",
+        "marcocesarato/php-conventional-changelog": "^1.17"
     },
     "config": {
         "allow-plugins": {
@@ -75,6 +76,11 @@
         }
     },
     "scripts": {
+        "changelog": "conventional-changelog",
+        "release": "conventional-changelog --commit",
+        "release:patch": "conventional-changelog --patch --commit",
+        "release:minor": "conventional-changelog --minor --commit",
+        "release:major": "conventional-changelog --major --commit",
         "test": "./vendor/bin/pest",
         "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
         "testall": "composer test; composer analyze"
@@ -82,5 +88,6 @@
     "sailcms": {
         "containers": [],
         "modules": []
-    }
+    },
+    "version": "0.0.1"
 }
