@@ -20,7 +20,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Event;
 use SailCMS\Http\Request;
 use SailCMS\Locale;
-use SailCMS\Log as SailLog;
+use SailCMS\Log;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Entry as MEntry;
@@ -91,7 +91,7 @@ class Entry extends Model implements Validator, Castable
     public const CONTENT_ERROR = ['5005: The content has theses errors :' . PHP_EOL, 5005];
     public const DOES_NOT_EXISTS = ['5006: Entry "%s" does not exist.', 5006];
     public const DATABASE_ERROR = ['5007: Exception when "%s" an entry.', 5007];
-    public const INVALID_ALTERNATE_LOCALE = ['5008: The "%s" locale is not set in the project', 5008];
+    public const INVALID_LOCALE = ['5008: The "%s" locale is not set in the project', 5008];
     public const ENTRY_LIMIT_REACHED = ['5008: The parent can\'t be added because the limit of parent has been reached', 5009];
 
     /* Cache */
@@ -1013,7 +1013,7 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry|string      $entry  or id
      * @param  array|Collection  $data
      * @param  bool              $throwErrors
-     * @param  bool              $bypassContentValidation
+     * @param  bool              $bypassValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1024,7 +1024,7 @@ class Entry extends Model implements Validator, Castable
      * @throws SodiumException
      *
      */
-    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
+    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true, bool $bypassValidation = false): Collection
     {
         $this->hasPermissions();
 
@@ -1041,7 +1041,7 @@ class Entry extends Model implements Validator, Castable
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS[0], $entryId), self::DOES_NOT_EXISTS[1]);
         }
 
-        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors, $bypassContentValidation);
+        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors, $bypassValidation);
 
         if ($updateErrors->length <= 0) {
             $this->handleHomepageUpdate($entry, $data);
@@ -1266,7 +1266,7 @@ class Entry extends Model implements Validator, Castable
             throw new EntryException($errorMessage);
         } else {
             if (!$entryLayout) {
-                SailLog::logger()->warning($errorMessage);
+                Log::error($errorMessage, ['entry' => $this]);
             }
         }
 
@@ -1283,23 +1283,40 @@ class Entry extends Model implements Validator, Castable
         return $result;
     }
 
-    private function validateParent(Entry $entry, EntryParent $entryParent): void
+    /**
+     *
+     * Validate entry parent before saving it
+     *
+     * @param  EntryParent  $entryParent
+     * @param  string       $entryLocale
+     * @param  string       $entrySiteId
+     * @param  string|null  $entryId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    private function validateParent(EntryParent $entryParent, string $entryLocale, string $entrySiteId, ?string $entryId = null): void
     {
-        // Test if same locale and site
+        $entryModel = EntryType::getEntryModelByHandle($entryParent->handle);
+        $parent = $entryModel->getById($entryParent->parent_id);
+        $errorContext = ["parent" => $parent, "entryId" => $entryId, "entryLocale" => $entryLocale, "entrySiteId" => $entrySiteId];
 
+        // Test if same locale and site
+        // TODO
 
         // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
-        $childCount = $this->countMaxChildren($entry->_id);
-        $parentCount = $this->countParent($entry);
+        $childCount = $entryId ? $this->countMaxChildren($entryParent->parent_id) : 0;
+        $parentCount = $this->countParent($parent) + 1;
 
         if ($parentCount + $childCount >= self::PARENT_ENTRY_LIMIT) {
             if ($parentCount + $childCount > self::PARENT_ENTRY_LIMIT) {
-                Debug::error("PARENT_ENTRY_LIMIT exceeded with entry #{$entry->_id} of type {$entry->entryType->handle}");
+                Log::warning("PARENT_ENTRY_LIMIT exceeded", $errorContext);
             }
             throw new EntryException(self::ENTRY_LIMIT_REACHED[0], self::ENTRY_LIMIT_REACHED[1]);
         }
-
-        // If not ok throw errors
     }
 
     /**
@@ -1586,8 +1603,8 @@ class Entry extends Model implements Validator, Castable
         // Validate locale
         $locales = Locale::getAvailableLocales();
         if (!$locales->contains($locale)) {
-            $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
-            throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
+            $errorMsg = sprintf(self::INVALID_LOCALE[0], $locale);
+            throw new EntryException($errorMsg, self::INVALID_LOCALE[1]);
         }
 
         // Get the validated slug
@@ -1649,7 +1666,7 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry       $entry
      * @param  Collection  $data
      * @param  bool        $throwErrors
-     * @param  bool        $bypassContentValidation
+     * @param  bool        $bypassValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1657,7 +1674,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
+    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassValidation = false): Collection
     {
         $update = [];
         $author = User::$currentUser ?? User::anonymousUser();
@@ -1665,16 +1682,7 @@ class Entry extends Model implements Validator, Castable
         $locale = $entry->locale;
         $site_id = $entry->site_id;
 
-        // Validations
-        if (in_array('locale', $data->keys()->unwrap())) {
-            $locale = $data->get('locale');
-            // Validate locale
-            $locales = Locale::getAvailableLocales();
-            if (!$locales->contains($locale)) {
-                $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
-                throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
-            }
-        }
+        // Data format
         if (in_array('site_id', $data->keys()->unwrap())) {
             $site_id = $data->get('site_id');
         }
@@ -1682,23 +1690,43 @@ class Entry extends Model implements Validator, Castable
             $slug = $data->get('slug');
             $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
-        if (in_array('alternates', $data->keys()->unwrap())) {
-            $alternates = $data->get('alternates');
-            $alternates->each(function ($key, $alternate) {
-                // It's on a construction test to valid the locale
-                new EntryAlternate($alternate->locale, $alternate->entry_id);
-            });
-        }
 
-        // We bypass content validation when we apply a version
-        if (!$bypassContentValidation && in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
-            $errors = $this->validateContent($data->get('content'));
+        // Validation could be bypassed when the version is applied or with an attribute in the graphql query.
+        if (!$bypassValidation) {
+            $locales = Locale::getAvailableLocales();
 
-            if ($errors->length > 0) {
-                if ($throwErrors) {
-                    self::throwErrorContent($errors);
-                } else {
-                    return $errors;
+            if (in_array('alternates', $data->keys()->unwrap())) {
+                $alternates = $data->get('alternates');
+                $alternates->each(function ($key, $alternate) use ($locales) {
+                    if (isset($alternate->locale) && !$locales->contains($alternate->locale)) {
+                        $errorMsg = sprintf(Entry::INVALID_LOCALE[0], $alternate->locale);
+                        throw new EntryException($errorMsg, Entry::INVALID_LOCALE[1]);
+                    }
+                });
+            }
+
+            if (in_array('locale', $data->keys()->unwrap())) {
+                $locale = $data->get('locale');
+                // Validate locale
+                if (!$locales->contains($locale)) {
+                    $errorMsg = sprintf(self::INVALID_LOCALE[0], $locale);
+                    throw new EntryException($errorMsg, self::INVALID_LOCALE[1]);
+                }
+            }
+
+            if (in_array('parent', $data->keys()->unwrap())) {
+                $this->validateParent($data->get('parent'), $locale, $site_id, (string)$entry->_id);
+            }
+
+            if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
+                $errors = $this->validateContent($data->get('content'));
+
+                if ($errors->length > 0) {
+                    if ($throwErrors) {
+                        self::throwErrorContent($errors);
+                    } else {
+                        return $errors;
+                    }
                 }
             }
         }
