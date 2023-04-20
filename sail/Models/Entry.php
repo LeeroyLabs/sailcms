@@ -92,6 +92,7 @@ class Entry extends Model implements Validator, Castable
     public const DOES_NOT_EXISTS = ['5006: Entry "%s" does not exist.', 5006];
     public const DATABASE_ERROR = ['5007: Exception when "%s" an entry.', 5007];
     public const INVALID_ALTERNATE_LOCALE = ['5008: The "%s" locale is not set in the project', 5008];
+    public const ENTRY_LIMIT_REACHED = ['5008: The parent can\'t be added because the limit of parent has been reached', 5009];
 
     /* Cache */
     private const HOMEPAGE_CACHE = 'homepage_entry_';         // Add site id and locale at the end
@@ -1290,6 +1291,13 @@ class Entry extends Model implements Validator, Castable
         // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
         $childCount = $this->countMaxChildren($entry->_id);
         $parentCount = $this->countParent($entry);
+
+        if ($parentCount + $childCount >= self::PARENT_ENTRY_LIMIT) {
+            if ($parentCount + $childCount > self::PARENT_ENTRY_LIMIT) {
+                Debug::error("PARENT_ENTRY_LIMIT exceeded with entry #{$entry->_id} of type {$entry->entryType->handle}");
+            }
+            throw new EntryException(self::ENTRY_LIMIT_REACHED[0], self::ENTRY_LIMIT_REACHED[1]);
+        }
 
         // If not ok throw errors
     }
