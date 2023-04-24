@@ -4,6 +4,18 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [0.0.4](https://github.com/LeeroyLabs/sailcms/compare/v0.0.3...v0.0.4) (2023-04-24)
+
+### Features
+
+
+##### Core
+
+* New Convert class ([16f679](https://github.com/LeeroyLabs/sailcms/commit/16f6792622d6147b2eba7095bed2d38912f68534))
+
+
+---
+
 ## [0.0.3](https://github.com/LeeroyLabs/sailcms/compare/v0.0.2...v0.0.3) (2023-04-24)
 
 ### Features
