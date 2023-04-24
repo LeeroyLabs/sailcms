@@ -91,10 +91,11 @@ class Entry extends Model implements Validator, Castable
     public const CONTENT_ERROR = ['5005: The content has theses errors :' . PHP_EOL, 5005];
     public const DOES_NOT_EXISTS = ['5006: Entry "%s" does not exist.', 5006];
     public const DATABASE_ERROR = ['5007: Exception when "%s" an entry.', 5007];
-    public const INVALID_LOCALE = ['5008: The "%s" locale is not set in the project', 5008];
-    public const ENTRY_LIMIT_REACHED = ['5008: The parent can\'t be added because the limit of parent has been reached', 5009];
+    public const INVALID_LOCALE = ['5008: The "%s" locale is not set in the project.', 5008];
+    public const ENTRY_PARENT_LIMIT_REACHED = ['5009: The parent can\'t be added because the limit of parent has been reached.', 5009];
+    public const ENTRY_PARENT_INVALID = ['5010: The parent locale and siteId must be the same as the target entry.', 5010];
 
-    /* Cache */
+    /* Cache  */
     private const HOMEPAGE_CACHE = 'homepage_entry_';         // Add site id and locale at the end
     private const ONE_CACHE_BY_ID = 'entry_';                 // Add id at the end
     private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';   // Add handle at the end
@@ -1304,18 +1305,26 @@ class Entry extends Model implements Validator, Castable
         $parent = $entryModel->getById($entryParent->parent_id);
         $errorContext = ["parent" => $parent, "entryId" => $entryId, "entryLocale" => $entryLocale, "entrySiteId" => $entrySiteId];
 
+        // Test if parent exists
+        if (!$parent) {
+            $errorMsg = sprintf(self::DOES_NOT_EXISTS[0], $entryParent->parent_id . "(" . $entryParent->handle . ")");
+            throw new EntryException($errorMsg, self::DOES_NOT_EXISTS[1]);
+        }
+
         // Test if same locale and site
-        // TODO
+        if ($parent->locale !== $entryLocale || $parent->site_id !== $entrySiteId) {
+            throw new EntryException(self::ENTRY_PARENT_INVALID[0], self::ENTRY_PARENT_INVALID[1]);
+        }
 
         // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
         $childCount = $entryId ? $this->countMaxChildren($entryParent->parent_id) : 0;
-        $parentCount = $this->countParent($parent) + 1;
-
+        $parentCount = $this->countParent($parent);
+        
         if ($parentCount + $childCount >= self::PARENT_ENTRY_LIMIT) {
             if ($parentCount + $childCount > self::PARENT_ENTRY_LIMIT) {
                 Log::warning("PARENT_ENTRY_LIMIT exceeded", $errorContext);
             }
-            throw new EntryException(self::ENTRY_LIMIT_REACHED[0], self::ENTRY_LIMIT_REACHED[1]);
+            throw new EntryException(self::ENTRY_PARENT_LIMIT_REACHED[0], self::ENTRY_PARENT_LIMIT_REACHED[1]);
         }
     }
 
@@ -1583,6 +1592,11 @@ class Entry extends Model implements Validator, Castable
         $parent = $data->get('parent');
         $content = $data->get('content');
         $categories = $data->get('categories');
+
+        if ($parent) {
+            $parent = (new EntryParent())->castTo($parent);
+            $this->validateParent($parent, $locale, $site_id);
+        }
 
         // VALIDATION & PARSING
         if ($content instanceof Collection && $content->length > 0) {
