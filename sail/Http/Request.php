@@ -2,10 +2,12 @@
 
 namespace SailCMS\Http;
 
+use finfo;
 use SailCMS\Collection;
 use SailCMS\Http\Input\Get;
 use SailCMS\Http\Input\Post;
 use SailCMS\Models\User;
+use SailCMS\Types\UploadFile;
 
 class Request
 {
@@ -28,7 +30,7 @@ class Request
         $this->_get = new Get();
         $this->user = User::$currentUser;
 
-        // Make sure all headers are lowercased
+        // Make sure all headers are lowercase
         $headers = getallheaders();
         $cleaned = [];
 
@@ -37,6 +39,73 @@ class Request
         }
 
         $this->_headers = new Collection($cleaned);
+    }
+
+    /**
+     *
+     * Get a cookie from the request
+     *
+     * @param  string  $name
+     * @return mixed
+     *
+     */
+    public function cookie(string $name): mixed
+    {
+        return $_COOKIE[$name] ?? null;
+    }
+
+    /**
+     *
+     * Get an uploaded file
+     *
+     * @param  string  $name
+     * @param  int     $index
+     * @return UploadFile|null
+     *
+     */
+    public function file(string $name, int $index = 0): ?UploadFile
+    {
+        if (!empty($_FILES[$name])) {
+            if (is_array($_FILES[$name]['name'])) {
+                // Get real file type
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $type = $finfo->file($_FILES[$name]['tmp_name'][$index]);
+
+                return new UploadFile(
+                    $_FILES[$name]['name'][$index],
+                    $type,
+                    $_FILES[$name]['tmp_name'][$index],
+                    $_FILES[$name]['error'][$index],
+                    $_FILES[$name]['size'][$index]
+                );
+            }
+
+            // Get real file type
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $type = $finfo->file($_FILES[$name]['tmp_name']);
+
+            return new UploadFile(
+                $_FILES[$name]['name'],
+                $type,
+                $_FILES[$name]['tmp_name'],
+                $_FILES[$name]['error'],
+                $_FILES[$name]['size']
+            );
+        }
+
+        return null;
+    }
+
+    /**
+     *
+     * Get access token if set
+     *
+     * @return string
+     *
+     */
+    public function token(): string
+    {
+        return $this->header('x-access-token') ?? '';
     }
 
     /**
@@ -140,6 +209,20 @@ class Request
 
     /**
      *
+     * Does the request have the required header set and not empty
+     *
+     * @param  string  $key
+     * @return bool
+     *
+     */
+    public function hasHeader(string $key): bool
+    {
+        $h = $this->_headers->get(strtolower($key), '');
+        return (!empty($h));
+    }
+
+    /**
+     *
      * Get all headers
      *
      * @return Collection
@@ -178,10 +261,10 @@ class Request
      *
      * Figure out the ip strategy
      *
-     * @return mixed|string
+     * @return string
      *
      */
-    private function getUserIp()
+    private function getUserIp(): string
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             return $_SERVER['HTTP_CLIENT_IP'];
