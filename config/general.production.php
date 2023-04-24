@@ -120,6 +120,7 @@ return [
         'transformOutputFormat' => 'webp',
         'transformQuality' => 92, // 92%
         'maxUploadSize' => 5, // in MB
+        'extensionBlackList' => ['exe', 'php', 'sh', 'sql'],
         'onUploadTransforms' => [
             'thumbnail' => ['width' => 100, 'height' => 100, 'crop' => Transformer::CROP_CC]
         ]

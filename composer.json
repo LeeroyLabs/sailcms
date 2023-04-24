@@ -62,7 +62,8 @@
     "intervention/image": "^2.7",
     "leeroy/clockwork": "^5.1",
     "predis/predis": "^2.1",
-    "leeroy/php-inflector": "^1.0.1"
+    "leeroy/php-inflector": "^1.0.1",
+    "league/csv": "^9.0"
   },
   "require-dev": {
     "phpstan/phpstan": "^1.10",
@@ -89,5 +90,5 @@
     "containers": [],
     "modules": []
   },
-  "version": "0.0.1"
+  "version": "0.0.4"
 }
