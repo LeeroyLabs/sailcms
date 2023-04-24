@@ -392,8 +392,7 @@ final class GraphQL
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
-
-        self::addQueryResolver('temp', Entries::class, 'temp');
+        
         self::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
         self::addQueryResolver('entryType', Entries::class, 'entryType');
         self::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
