@@ -5,6 +5,7 @@ namespace SailCMS\Http;
 use SailCMS\Collection;
 use SailCMS\Http\Input\Get;
 use SailCMS\Http\Input\Post;
+use SailCMS\Models\User;
 
 class Request
 {
@@ -15,6 +16,7 @@ class Request
     private Post $_post;
     private Get $_get;
     private Collection $_headers;
+    private ?User $user;
 
     public function __construct()
     {
@@ -24,6 +26,7 @@ class Request
         $this->_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'CLI';
         $this->_post = new Post();
         $this->_get = new Get();
+        $this->user = User::$currentUser;
 
         // Make sure all headers are lowercased
         $headers = getallheaders();
@@ -147,6 +150,37 @@ class Request
         return $this->_headers;
     }
 
+    /**
+     *
+     * Get active user (if any)
+     *
+     * @return User|null
+     *
+     */
+    public function user(): ?User
+    {
+        return $this->user;
+    }
+
+    /**
+     *
+     * Is a user logged in
+     *
+     * @return bool
+     *
+     */
+    public function isLoggedIn(): bool
+    {
+        return isset($this->user);
+    }
+
+    /**
+     *
+     * Figure out the ip strategy
+     *
+     * @return mixed|string
+     *
+     */
     private function getUserIp()
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
