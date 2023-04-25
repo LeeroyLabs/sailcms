@@ -402,7 +402,7 @@ class EntryLayout extends Model implements Castable
         $this->hasPermissions();
 
         // Check if there is and entry type is using the layout
-        if ($this->hasEntryTypes($entryLayoutId)) {
+        if (self::hasEntryTypes($entryLayoutId)) {
             throw new EntryException(self::SCHEMA_IS_USED);
         }
 
@@ -507,14 +507,12 @@ class EntryLayout extends Model implements Castable
                     }
                     $entryLayout->updateSchemaConfig($updateInput->key, $settings, $inputKey, $labels);
                 });
-            } else {
-                if (isset($updateInput->labels)) {
-                    /**
-                     * @var object $updateInput
-                     */
-                    $labels = new LocaleField($updateInput->labels->unwrap());
-                    $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
-                }
+            } elseif (isset($updateInput->labels)) {
+                /**
+                 * @var object $updateInput
+                 */
+                $labels = new LocaleField($updateInput->labels->unwrap());
+                $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
             }
         });
     }
@@ -601,20 +599,14 @@ class EntryLayout extends Model implements Castable
     {
         if ($type === "boolean") {
             $result = !($value === "false");
+        } elseif ($type === "array") {
+            $result = $options;
+        } elseif ($type === "integer") {
+            $result = (integer)$value;
+        } elseif ($type === "float") {
+            $result = (float)$value;
         } else {
-            if ($type === "array") {
-                $result = $options;
-            } else {
-                if ($type === "integer") {
-                    $result = (integer)$value;
-                } else {
-                    if ($type === "float") {
-                        $result = (float)$value;
-                    } else {
-                        $result = $value;
-                    }
-                }
-            }
+            $result = $value;
         }
         return $result;
     }
