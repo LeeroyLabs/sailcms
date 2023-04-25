@@ -145,4 +145,31 @@ class Queue extends Model
 
         $this->updateOne(['_id' => $id], $update);
     }
+
+    /**
+     *
+     * Get the amount of task of given name the system has
+     *
+     * @param  string  $task
+     * @return int
+     *
+     */
+    public function getCountForTask(string $task): int
+    {
+        return self::query()->count(['action' => $task]);
+    }
+
+    /**
+     *
+     * Does the given task exist already
+     *
+     * @param  string  $task
+     * @return bool
+     *
+     */
+    public static function taskExists(string $task): bool
+    {
+        $count = (new self)->getCountForTask($task);
+        return ($count > 0);
+    }
 }

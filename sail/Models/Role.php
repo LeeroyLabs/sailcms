@@ -40,14 +40,14 @@ class Role extends Model
      * @param  string            $name
      * @param  string            $description
      * @param  Collection|array  $permissions
+     * @param  int               $level
      * @return bool
-     * @throws DatabaseException
      * @throws ACLException
-     * @throws RuntimeException
+     * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function create(string $name, string $description, Collection|array $permissions): bool
+    public function create(string $name, string $description, Collection|array $permissions, int $level = 100): bool
     {
         $this->hasPermissions();
 
@@ -73,7 +73,8 @@ class Role extends Model
                 'name' => $name,
                 'slug' => $slug,
                 'description' => $description,
-                'permissions' => $permissions
+                'permissions' => $permissions,
+                'level' => $level
             ]);
 
             return true;

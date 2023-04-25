@@ -457,7 +457,14 @@ class Sail
         }
     }
 
-    private static function ensurePerformance(): void
+    /**
+     *
+     * Run the indexing system for all available models for the cms
+     *
+     * @return void
+     *
+     */
+    public static function ensurePerformance(): void
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
@@ -655,7 +662,7 @@ class Sail
             self::$cacheDirectory = self::$workingDirectory . '/storage/cache';
 
             self::setupEnv();
-            
+
             $config = include self::$workingDirectory . '/config/general.dev.php';
             $settings = new Collection($config);
 

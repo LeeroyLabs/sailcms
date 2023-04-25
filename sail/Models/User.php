@@ -1137,6 +1137,36 @@ class User extends Model
 
     /**
      *
+     * Change user password for given user id
+     *
+     * @param  string  $id
+     * @param  string  $password
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public static function changePasswordWithID(string $id, string $password): bool
+    {
+        // Validate password
+        $valid = Security::validatePassword($password);
+
+        if (!$valid) {
+            return false;
+        }
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($id)],
+            [
+                '$set' => [
+                    'password' => Security::hashPassword($password)
+                ]
+            ]
+        );
+
+        return true;
+    }
+
+    /**
+     *
      * Get anonymous user
      *
      * @return User
@@ -1253,7 +1283,7 @@ class User extends Model
         }
 
         if ($advanced) {
-            if ((string)self::$currentUser->_id === $id) {
+            if ((string)self::$currentUser->_id !== $id) {
                 if ($read) {
                     if (!ACL::hasPermission(self::$currentUser, ACL::read('user'), ACL::write('user'))) {
                         throw new PermissionException('0403: Permission Denied', 0403);
