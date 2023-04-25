@@ -11,7 +11,6 @@ use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -251,13 +250,16 @@ class Entry extends Model implements Validator, Castable
      *
      * Get parent url
      *
+     * @param  object            $currentHomepage
+     * @param  EntryParent|null  $entryParent
      * @return string
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
-    public function getRecursiveParentUrls(?EntryParent $entryParent = null): string
+    public function getRecursiveParentUrls(object $currentHomepage, ?EntryParent $entryParent = null): string
     {
         $url = "";
 
@@ -269,8 +271,12 @@ class Entry extends Model implements Validator, Castable
         }
 
         if ($parent) {
-            $url .= $parent->getRecursiveParentUrls();
-            $url .= "/" . $parent->url;
+            $url .= $parent->getRecursiveParentUrls($currentHomepage);
+
+            // If the parent is not the homepage
+            if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$parent->_id) {
+                $url .= "/" . $parent->url;
+            }
         } else {
             return $url;
         }
@@ -458,6 +464,7 @@ class Entry extends Model implements Validator, Castable
              * @var Field $field
              */
             $field = $schema->get($key);
+
             $isSearchable = $field::SEARCHABLE && $field;
 
             if ($isSearchable) {
@@ -1157,7 +1164,6 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Create an entry version then an entry publication
-     *  TODO add parent url to the publication
      *
      * @param  string       $entryId
      * @param  int          $publicationDate
@@ -1190,11 +1196,13 @@ class Entry extends Model implements Validator, Castable
             $simplifiedEntry = $entry->simplify(null, false);
             $simplifiedEntry['content'] = $entry->content;
             $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
-            $entryUrl = $simplifiedEntry['url'];
+
+            $lastVersion = $entryVersionModel->getLastVersionByEntryId($entryId);
         }
 
         $entryVersionID = !isset($entryVersionID) ? $lastVersion->_id : $entryVersionID;
-        $entryUrl = !isset($entryUrl) ? $lastVersion->entry->get('url') : $entryUrl;
+        $entryUrl = $lastVersion->entry->get('url');
+        $entryParent = (new EntryParent())->castTo($lastVersion->entry->get('parent'));
 
         // Must override entryUrl if it's the homepage
         $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
@@ -1204,6 +1212,9 @@ class Entry extends Model implements Validator, Castable
             if ($entryLocale !== Locale::default()) {
                 $entryUrl = $entryLocale . "/";
             }
+        } else {
+            $parentUrl = $this->getRecursiveParentUrls($currentHomepage, $entryParent);
+            $entryUrl = $parentUrl ? $parentUrl . "/" . $entryUrl : $entryUrl;
         }
 
         return (new EntryPublication())->create($author, $entryId, $siteId, $entryUrl, (string)$entryVersionID, $publicationDate, $expirationDate);
@@ -1316,6 +1327,7 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Validate entry parent before saving it
+     *  # TODO maybe validate is the entry is homepage before adding a parent (?)
      *
      * @param  EntryParent  $entryParent
      * @param  string       $entryLocale
@@ -1431,7 +1443,7 @@ class Entry extends Model implements Validator, Castable
                 $entryModel = EntryType::getEntryModelByHandle($entry->parent->handle);
                 $parent = $entryModel->getById($entry->parent->parent_id);
             } catch (Exception $exception) {
-                Debug::error("Error when a parent has been queried : " . PHP_EOL . $exception->getMessage());
+                Log::warning("Error when a parent is queried" . PHP_EOL, ['exception' => $exception]);
 
                 // If there is an error with the queries return the limit, so the parent will not be added.
                 return self::PARENT_ENTRY_LIMIT;
@@ -1757,7 +1769,8 @@ class Entry extends Model implements Validator, Castable
             }
 
             if (in_array('parent', $data->keys()->unwrap())) {
-                $this->validateParent($data->get('parent'), $locale, $site_id, (string)$entry->_id);
+                $entryParent = (new EntryParent())->castTo($data->get('parent'));
+                $this->validateParent($entryParent, $locale, $site_id, (string)$entry->_id);
             }
 
             if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
