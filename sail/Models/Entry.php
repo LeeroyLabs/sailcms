@@ -1346,15 +1346,15 @@ class Entry extends Model implements Validator, Castable
         $currentLocale = $newLocale ?? $oldEntry->locale;
 
         // According to the changes, update and/or remove entry from homepage.
-        if (($newSiteId && $newSiteId != $currentSiteId) || ($newLocale && $newLocale != $currentLocale) || $homepageChange === true) {
+        if (($newSiteId && $newSiteId !== $currentSiteId) || ($newLocale && $newLocale !== $currentLocale) || $homepageChange === true) {
             // Remove homepage
-            self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+            $this->emptyHomepage($oldEntry->site_id, $oldEntry->locale);
             // Add homepage
             $oldEntry->setAsHomepage($currentSiteId, $currentLocale);
         } else {
             if ($homepageChange === false) {
                 // Remove homepage
-                self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+                $this->emptyHomepage($oldEntry->site_id, $oldEntry->locale);
             }
         }
     }
@@ -1410,8 +1410,8 @@ class Entry extends Model implements Validator, Castable
      *
      * Create an entry
      *
-     * @param  Collection  $data
-     * @param  bool        $throwErrors
+     * @param  Collection|array  $data
+     * @param  bool              $throwErrors
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -1419,7 +1419,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function createWithoutPermission(Collection $data, bool $throwErrors = true): array|Entry|Collection|null
+    private function createWithoutPermission(Collection|array $data, bool $throwErrors = true): array|Entry|Collection|null
     {
         $locale = $data->get('locale');
         $title = $data->get('title');
