@@ -157,7 +157,7 @@ final class ACL
             return false;
         }
 
-        $role = Text::kebabCase(Text::deburr($role));
+        $role = Text::from($role)->deburr()->kebab()->value();
 
         if (is_string($user)) {
             $userModel = new User();

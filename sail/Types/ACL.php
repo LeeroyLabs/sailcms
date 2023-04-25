@@ -14,7 +14,10 @@ class ACL
 
     public function __construct(string $name, ACLType $type)
     {
-        $this->value = $type->value . '_' . Text::snakeCase(Text::deburr($name));
+        $this->value = Text::from($type->value)->concat(
+            Text::from($name)->deburr()->snake()->value(),
+            '_'
+        )->value();
 
         switch ($type) {
             case ACLType::WRITE:
@@ -32,8 +35,8 @@ class ACL
         }
 
         $this->type = $type;
-        $this->providedName = strtolower(Text::deburr($name));
+        $this->providedName = Text::from($name)->deburr()->lower()->value();
         $this->category = $shortType;
-        $this->name = strtoupper(Text::deburr($name)) . '_' . $shortType;
+        $this->name = Text::from($name)->deburr()->upper()->concat($shortType, '_')->value();
     }
 }

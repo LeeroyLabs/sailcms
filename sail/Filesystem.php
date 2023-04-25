@@ -72,6 +72,20 @@ final class Filesystem
 
     /**
      *
+     * Get file extension from filepath or filename
+     * Logical place to find this method
+     *
+     * @param  string  $file
+     * @return string
+     *
+     */
+    public static function getExtension(string $file): string
+    {
+        return Text::from($file)->extension();
+    }
+
+    /**
+     *
      * Initialize the fs manager
      *
      * @return void

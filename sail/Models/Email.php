@@ -113,7 +113,7 @@ class Email extends Model
     ): bool {
         $this->hasPermissions();
 
-        $slug = Text::deburr(Text::snakeCase($name));
+        $slug = Text::from($name)->deburr()->snake()->value();
         $record = $this->findOne(['slug' => $slug])->exec();
 
         if ($record) {

@@ -207,6 +207,7 @@ class EntryLayout extends Model implements Castable
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
     public function one(array $filters): ?EntryLayout
     {
@@ -297,6 +298,7 @@ class EntryLayout extends Model implements Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
     public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
     {
@@ -507,14 +509,12 @@ class EntryLayout extends Model implements Castable
                     }
                     $entryLayout->updateSchemaConfig($updateInput->key, $settings, $inputKey, $labels);
                 });
-            } else {
-                if (isset($updateInput->labels)) {
-                    /**
-                     * @var object $updateInput
-                     */
-                    $labels = new LocaleField($updateInput->labels->unwrap());
-                    $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
-                }
+            } elseif (isset($updateInput->labels)) {
+                /**
+                 * @var object $updateInput
+                 */
+                $labels = new LocaleField($updateInput->labels->unwrap());
+                $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
             }
         });
     }
@@ -596,26 +596,22 @@ class EntryLayout extends Model implements Castable
      * @param  string           $value
      * @param  Collection|null  $options
      * @return string|Collection
+     *
      */
     private static function parseSettingValue(string $type, string $value, Collection $options = null): string|Collection
     {
         if ($type === "boolean") {
             $result = !($value === "false");
+        } elseif ($type === "array") {
+            $result = $options;
+        } elseif ($type === "integer") {
+            $result = (integer)$value;
+        } elseif ($type === "float") {
+            $result = (float)$value;
         } else {
-            if ($type === "array") {
-                $result = $options;
-            } else {
-                if ($type === "integer") {
-                    $result = (integer)$value;
-                } else {
-                    if ($type === "float") {
-                        $result = (float)$value;
-                    } else {
-                        $result = $value;
-                    }
-                }
-            }
+            $result = $value;
         }
+
         return $result;
     }
 
@@ -625,6 +621,7 @@ class EntryLayout extends Model implements Castable
      *
      * @param  Collection|null  $options
      * @return Collection|null
+     *
      */
     public static function parseOptions(Collection|null $options): ?Collection
     {
@@ -744,7 +741,7 @@ class EntryLayout extends Model implements Castable
         $author = User::$currentUser ?? User::anonymousUser();
         $authors = Authors::init($author);
 
-        $slug = !isset($slug) ? Text::slugify($titles->{Locale::default()}) : $slug;
+        $slug = $slug ?? Text::from($titles->{Locale::default()})->slug()->value();
         $slug = self::generateSlug($slug);
 
         try {

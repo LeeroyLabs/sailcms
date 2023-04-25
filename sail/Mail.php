@@ -188,7 +188,7 @@ class Mail
     public function embed(string $path, string $name): static
     {
         $fs = Filesystem::manager();
-        $this->email->embed($fs->readStream($path), Text::kebabCase(Text::deburr($name)));
+        $this->email->embed($fs->readStream($path), Text::from($name)->deburr()->kebab()->value());
         return $this;
     }
 
