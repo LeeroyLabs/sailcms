@@ -145,7 +145,58 @@ trait QueryObject
 
             // Run all population requests
             foreach ($this->currentPopulation as $populate) {
-                $doc = self::parsePopulate($doc, $populate);
+                $instance = new $populate['class']();
+                $field = $populate['field'];
+                $target = $populate['targetField'];
+                $subpop = $populate['subpopulates'];
+
+                // Make sure to run only if field is not null and not empty string
+                if ($doc->{$field} !== null && $doc->{$field} !== '') {
+                    $list = [];
+                    $targetList = [];
+                    $is_array = false;
+
+                    if (is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
+                        $targetList = $doc->{$field}->unwrap();
+                        $is_array = true;
+                    } elseif (is_array($doc->{$field})) {
+                        $targetList = $doc->{$field};
+                        $is_array = true;
+                    }
+
+                    if ($is_array) {
+                        foreach ($targetList as $item) {
+                            if (!empty($item) && !is_object($item)) {
+                                $obj = $instance->findById($item);
+
+                                if (count($subpop) > 1) {
+                                    foreach ($subpop as $pop) {
+                                        $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                                    }
+                                }
+
+                                $list[] = $obj->exec();
+                            }
+                        }
+
+                        $doc->{$target} = new Collection($list);
+                    } else {
+                        if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
+                            $obj = $instance->findById($doc->{$field});
+
+                            if (count($subpop) >= 1) {
+                                foreach ($subpop as $pop) {
+                                    $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
+                                }
+                            }
+
+                            $doc->{$target} = $obj->exec();
+                        }
+                    }
+                } else {
+                    // Nullify the field, most probably going to be called from GraphQL
+                    $doc->{$target} = null;
+                }
             }
 
             $doc->exists = true;
