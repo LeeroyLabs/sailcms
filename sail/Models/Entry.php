@@ -40,7 +40,6 @@ use SailCMS\Types\Pagination;
 use SailCMS\Types\PublicationDates;
 use SailCMS\Types\PublicationStatus;
 use SailCMS\Types\QueryOptions;
-use SailCMS\Types\StoringType;
 use SodiumException;
 use stdClass;
 
@@ -265,14 +264,13 @@ class Entry extends Model implements Validator, Castable
              * @var Field $modelField
              */
             $content = $this->content->get($key);
-            if ($modelField->storingType() === StoringType::ARRAY->value) {
-                $content = json_encode($content ?? []);
-            }
+
+            $parsedFieldContent = $modelField->parse($content);
 
             $parsedContent->pushKeyValue($key, [
                 'type' => $modelField->storingType(),
                 'handle' => $modelField->handle,
-                'content' => $content ?? '',
+                'content' => $parsedFieldContent ?? '',
                 'key' => $key
             ]);
         });
@@ -580,6 +578,7 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws CollectionException
      *
      */
     public static function findByURL(string $url, ?string $siteId = null, bool $fromRequest = true, bool $preview = false, string $previewVersion = ""): Entry|array|null
@@ -845,9 +844,15 @@ class Entry extends Model implements Validator, Castable
 
         if (!$cache) {
             $this->clearCacheForModel();
-            return $qs->exec();
+            $entry = $qs->exec();
+        } else {
+            $entry = $qs->exec($cacheKey, $cacheTtl);
         }
-        return $qs->exec($cacheKey, $cacheTtl);
+        // Override type to get the good one
+        $entry->entryType = $this->entryType;
+        $entry->entry_type_id = $this->entry_type_id;
+
+        return $entry;
     }
 
     /**
@@ -1105,7 +1110,7 @@ class Entry extends Model implements Validator, Castable
      */
     public function publish(string $entryId, int $publicationDate, int $expirationDate, string $siteId = null): string
     {
-        $author = User::$currentUser;
+        $author = User::$currentUser ?? User::anonymousUser();
 
         if (!$siteId) {
             $siteId = Sail::siteId();
@@ -1406,7 +1411,7 @@ class Entry extends Model implements Validator, Castable
         $template = $data->get('template');
         $slug = $data->get('slug', Text::slugify($title, $locale));
         $site_id = $data->get('site_id', Sail::siteId());
-        $author = User::$currentUser;
+        $author = User::$currentUser ?? User::anonymousUser();
         $alternates = $data->get('alternates', []);
         $parent = $data->get('parent');
         $content = $data->get('content');
@@ -1505,7 +1510,7 @@ class Entry extends Model implements Validator, Castable
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
     {
         $update = [];
-        $author = User::$currentUser;
+        $author = User::$currentUser ?? User::anonymousUser();
         $slug = $entry->slug;
         $locale = $entry->locale;
         $site_id = $entry->site_id;
@@ -1603,11 +1608,14 @@ class Entry extends Model implements Validator, Castable
      * @param Entry $entry
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function softDelete(Entry $entry): bool
     {
-        $authors = Authors::deleted($entry->authors, User::$currentUser->_id);
+        $user = User::$currentUser ?? User::anonymousUser();
+
+        $authors = Authors::deleted($entry->authors, $user->_id);
         $dates = Dates::deleted($entry->dates);
 
         try {
@@ -1698,7 +1706,7 @@ class Entry extends Model implements Validator, Castable
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
             $entryType = $publication->version->entry->get('entry_type');
             if (!$entryType) {
-                // Must deprecate that...
+                // Add a deprecation message
                 $entryTypeId = $publication->version->entry->get('entry_type_id');
             } else {
                 $entryTypeId = $entryType->_id;
@@ -1722,6 +1730,8 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws CollectionException
+     *
      */
     private static function findByUrlFromEntryTypes(string $url, ?string $previewVersion): ?Entry
     {

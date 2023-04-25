@@ -91,7 +91,7 @@ type Mutation {
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
     unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
-    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
+    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!, slug: String): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
     updateEntryLayoutSchemaKey(id: ID!, key: String!, newKey: String!): Boolean
     deleteEntryLayout(id: ID!, soft: Boolean): Boolean
@@ -213,6 +213,7 @@ type ACL {
 }
 
 type Asset {
+    _id: ID!
     filename: String!
     site_id: String!
     name: String!
@@ -264,6 +265,7 @@ type EntryType {
 
 type EntryLayout {
     _id: ID!
+    slug: String # Add a deprecation message to put it required
     titles: LocaleField!
     schema: [LayoutField]!
     authors: Authors!

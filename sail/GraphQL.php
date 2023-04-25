@@ -323,7 +323,7 @@ final class GraphQL
                             'locations' => (isset($error['trace'])) ? [['line' => $error['trace'][0]['line'], 'column' => 1]] : $locations,
                             'file' => $error['trace'][0]['file'] ?? 'unknown file',
                             'stack' => $error['trace'] ?? [],
-                            'path' => ['']
+                            'path' => $error['path'] ?? ['']
                         ]
                     ];
                 }

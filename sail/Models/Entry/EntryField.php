@@ -13,13 +13,10 @@ use SailCMS\Types\StoringType;
 
 class EntryField extends Field
 {
-    // TODO : change input field for a select field that choices are entry and entry type
-    // TODO : add parse method to include in Entry content Getter ??
-
     /* Error */
     const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
     const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';
-    const ENTRY_ID_AND_HANDLE = '6161: Entry id and entry type handle must be set both or none';
+    const ENTRY_ID_AND_HANDLE = '6162: Entry id and entry type handle must be set both or none';
 
     public function description(): string
     {
@@ -28,7 +25,7 @@ class EntryField extends Field
 
     public function storingType(): string
     {
-        return StoringType::ARRAY->name;
+        return StoringType::ARRAY->value;
     }
 
     public function defaultSettings(): Collection
@@ -69,19 +66,53 @@ class EntryField extends Field
         $entryTypeHandle = $content->get('typeHandle');
 
         if ((!$entryId && $entryTypeHandle) || (!$entryTypeHandle && $entryId)) {
+            // This a general field error so it's directly at the root of the errors array
             $errors->push(self::ENTRY_ID_AND_HANDLE);
         } else if ($entryId && $entryTypeHandle) {
             $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
             if (!$entryModel->entry_type_id) {
-                $errors->push(sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle));
+                $typeHandleError = new Collection(['typeHandle' => sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle)]);
+                $errors->push($typeHandleError);
             }
 
             if (!$entryModel->one(['_id' => $entryId])) {
-                $errors->push(self::ENTRY_DOES_NOT_EXISTS);
+                $idError = new Collection(['id' => self::ENTRY_DOES_NOT_EXISTS]);
+                $errors->push($idError);
             }
         }
 
         return $errors;
+    }
+
+    /**
+     *
+     * Parent override to get the entry
+     *
+     * @param $content
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function parse($content): mixed
+    {
+        if ($content instanceof \stdClass) {
+            $entryId = $content->id;
+            $entryTypeHandle = $content->typeHandle;
+
+            try {
+                $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
+                $entry = $entryModel->getById($entryId);
+            } catch (EntryException $exception) {
+                // Fail silently
+                return new \stdClass();
+            }
+            // Get publication instead ?
+            return $entry->simplify(null);
+        }
+
+        return $content;
     }
 }

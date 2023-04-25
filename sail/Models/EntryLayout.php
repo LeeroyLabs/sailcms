@@ -2,17 +2,19 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Locale;
 use SailCMS\Models\Entry\Field as ModelField;
+use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\Fields\Field;
@@ -22,6 +24,9 @@ use stdClass;
 
 /**
  *
+ * todo add cache
+ *
+ * @property string $slug
  * @property LocaleField $titles
  * @property array|Collection $schema
  * @property Authors $authors
@@ -48,6 +53,7 @@ class EntryLayout extends Model implements Castable
     public const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
     public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
+
 
     /**
      *
@@ -76,6 +82,39 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
+     * Generate slug to be unique
+     *
+     * @param string $slug
+     * @param string|null $entryLayoutId
+     * @return string
+     *
+     */
+    private static function generateSlug(string $slug, string $entryLayoutId = null): string
+    {
+        $filters = ['slug' => $slug];
+        if ($entryLayoutId) {
+            $filters['_id'] = ['$ne' => new ObjectId($entryLayoutId)];
+        }
+
+        $count = (new EntryLayout())->count($filters);
+
+        if ($count > 0) {
+            preg_match("/(?<base>[\w-]+-)(?<increment>\d+)$/", $slug, $matches);
+
+            if (count($matches) > 0) {
+                $increment = (int)$matches['increment'];
+                $newSlug = $matches['base'] . ($increment + 1);
+            } else {
+                $newSlug = $slug . "-2";
+            }
+
+            return self::generateSlug($newSlug, $entryLayoutId);
+        }
+        return $slug;
+    }
+
+    /**
+     *
      * Parse the entry into an array for api
      *
      * @return array
@@ -85,6 +124,7 @@ class EntryLayout extends Model implements Castable
     {
         return [
             '_id' => (string)$this->_id,
+            'slug' => $this->slug,
             'titles' => $this->titles->castFrom(),
             'schema' => $this->simplifySchema(),
             'authors' => $this->authors->castFrom(),
@@ -141,6 +181,24 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
+     * Get entry layout by slug.
+     *
+     * @param string $slug
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function bySlug(string $slug): ?EntryLayout
+    {
+        $this->hasPermissions(true);
+
+        return $this->findOne(['slug' => $slug])->exec();
+    }
+
+    /**
+     *
      * Find one user with filters
      *
      * @param array $filters
@@ -161,10 +219,11 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Create an entry layout with
+     * Create an entry layout
      *
      * @param LocaleField $titles
      * @param Collection $schema
+     * @param string|null $slug slug is set to $title->{Locale::default()}
      * @return EntryLayout
      * @throws ACLException
      * @throws DatabaseException
@@ -172,7 +231,7 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function create(LocaleField $titles, Collection $schema): EntryLayout
+    public function create(LocaleField $titles, Collection $schema, ?string $slug = null): EntryLayout
     {
         $this->hasPermissions();
 
@@ -180,7 +239,7 @@ class EntryLayout extends Model implements Castable
         self::validateSchema($schema);
         $schema = $this->processSchemaOnStore($schema);
 
-        return $this->createWithoutPermission($titles, $schema);
+        return $this->createWithoutPermission($titles, $schema, $slug);
     }
 
     /**
@@ -276,6 +335,7 @@ class EntryLayout extends Model implements Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function updateSchemaKey(string $key, string $newKey): bool
@@ -461,6 +521,10 @@ class EntryLayout extends Model implements Castable
     {
         $apiSchema = Collection::init();
 
+        if (is_array($this->schema)) {
+            $this->schema = new Collection($this->schema);
+        }
+
         $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
             $layoutFieldConfigs = Collection::init();
             $layoutFieldSettings = Collection::init();
@@ -543,7 +607,7 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Parse options 
+     * Parse options
      *
      * @param Collection|null $options
      * @return Collection|null
@@ -650,18 +714,24 @@ class EntryLayout extends Model implements Castable
      *
      * @param LocaleField $titles
      * @param Collection $schema
+     * @param string|null $slug
      * @return EntryLayout
      * @throws DatabaseException
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(LocaleField $titles, Collection $schema): EntryLayout
+    private function createWithoutPermission(LocaleField $titles, Collection $schema, string $slug = null): EntryLayout
     {
         $dates = Dates::init();
-        $authors = Authors::init(User::$currentUser);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::init($author);
+
+        $slug = !isset($slug) ? Text::slugify($titles->{Locale::default()}) : $slug;
+        $slug = self::generateSlug($slug);
 
         try {
             $entryLayoutId = $this->insert([
+                'slug' => $slug,
                 'titles' => $titles,
                 'schema' => $schema,
                 'authors' => $authors,
@@ -683,13 +753,16 @@ class EntryLayout extends Model implements Castable
      * @param Collection $data
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function updateWithoutPermission(EntryLayout $entryLayout, Collection $data): bool
     {
+        $author = User::$currentUser ?? User::anonymousUser();
+
         $update = [
             'dates' => Dates::updated($entryLayout->dates),
-            'authors' => Authors::updated($entryLayout->authors, User::$currentUser->_id)
+            'authors' => Authors::updated($entryLayout->authors, $author->_id)
         ];
 
         $titles = $data->get('titles');
@@ -700,6 +773,11 @@ class EntryLayout extends Model implements Castable
         $schema = $data->get('schema');
         if ($schema) {
             $update['schema'] = $schema;
+        }
+
+        $slug = $data->get('slug');
+        if ($slug) {
+            $update['slug'] = $slug;
         }
 
         try {
@@ -720,11 +798,13 @@ class EntryLayout extends Model implements Castable
      * @param EntryLayout $entryLayout
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function softDelete(EntryLayout $entryLayout): bool
     {
-        $authors = Authors::deleted($entryLayout->authors, User::$currentUser->_id);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::deleted($entryLayout->authors, $author->_id);
         $dates = Dates::deleted($entryLayout->dates);
 
         try {

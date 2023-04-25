@@ -11,7 +11,6 @@ use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -20,8 +19,8 @@ use SailCMS\Filesystem;
 use SailCMS\Locale;
 use SailCMS\Sail;
 use SailCMS\Text;
-use SailCMS\Types\LocaleField;
 use SailCMS\Types\Listing;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 
@@ -206,8 +205,6 @@ class Asset extends Model
             $size = new Size(0, 0);
         }
 
-        file_put_contents(Sail::getWorkingDirectory() . '/test-output.txt', $path . $timePath . $filename . "\n");
-
         // Store asset
         $fs->write($path . $timePath . $filename, $data, ['visibility' => 'public']);
 
@@ -304,8 +301,7 @@ class Asset extends Model
                 // Check to see if already processed
                 $cache = null;
 
-                $this->transforms->each(function ($key, $value) use (&$cache, $name)
-                {
+                $this->transforms->each(function ($key, $value) use (&$cache, $name) {
                     if ($value->transform === $name) {
                         $cache = $value;
                     }

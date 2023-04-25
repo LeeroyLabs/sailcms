@@ -61,6 +61,14 @@ class UserMeta implements Castable, \JsonSerializable
     {
         $output = new stdClass();
 
+        if (!isset($this->flags)) {
+            $this->flags = new stdClass();
+
+            foreach (self::$registeredFlags as $flag) {
+                $this->flags->{$flag} = false;
+            }
+        }
+
         $output->flags = $this->flags;
 
         if (isset($this->customMeta)) {
@@ -76,7 +84,7 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Get a dynamic property
      *
-     * @param string $name
+     * @param  string  $name
      * @return mixed
      *
      */
@@ -93,8 +101,8 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Set a dynamic property
      *
-     * @param string $name
-     * @param mixed $value
+     * @param  string  $name
+     * @param  mixed   $value
      * @return void
      */
     public function __set(string $name, mixed $value): void
@@ -116,7 +124,7 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Check if property exists with any type of value
      *
-     * @param string $name
+     * @param  string  $name
      * @return bool
      *
      */
@@ -133,9 +141,9 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Register an available meta
      *
-     * @param string $key
-     * @param int $type
-     * @param callable|null $callback
+     * @param  string         $key
+     * @param  int            $type
+     * @param  callable|null  $callback
      * @return void
      *
      */
@@ -148,7 +156,7 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Register a flag
      *
-     * @param string $key
+     * @param  string  $key
      * @return void
      *
      */
@@ -161,7 +169,7 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Get all available meta registered in the system
      *
-     * @param bool $inputs
+     * @param  bool  $inputs
      * @return string
      *
      */
@@ -190,7 +198,7 @@ class UserMeta implements Castable, \JsonSerializable
 
                 case self::TYPE_CUSTOM:
                     $input = ($inputs) ? 'Input' : '';
-                    $graphql .= Text::snakeCase($key) . ": {$key}{$input}!\n";
+                    $graphql .= Text::snakeCase($key) . ": {$key}{$input}\n";
                     break;
             }
         }
@@ -251,7 +259,7 @@ class UserMeta implements Castable, \JsonSerializable
      *
      * Cast to UserMeta
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return UserMeta
      *
      */

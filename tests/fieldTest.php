@@ -1,6 +1,8 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Models\Asset;
+use SailCMS\Models\Entry\AssetField;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\HTMLField;
@@ -8,6 +10,7 @@ use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\UrlField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
@@ -16,6 +19,7 @@ use SailCMS\Types\Fields\InputMultipleSelectField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
 
 beforeAll(function () {
@@ -28,6 +32,10 @@ beforeAll(function () {
 
     $entryType->getEntryModel($entryType)->create(false, 'fr', 'Home Field Test', 'page');
     $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
+
+    $asset = new Asset();
+    $data = base64_decode(file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt'));
+    $asset->upload($data, 'field_test.jpg');
 });
 
 afterAll(function () {
@@ -48,13 +56,14 @@ afterAll(function () {
         'titles.fr' => 'Test des champs'
     ]);
     $layoutModel->delete((string)$entryLayout->_id, false);
+
+    $item = Asset::getByName('field-test-webp');
+    $item->remove();
 });
 
 test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
-    $entryLayout = $layoutModel->one([
-        'titles.fr' => 'Test des champs'
-    ]);
+    $entryLayout = $layoutModel->bySlug('field-test');
 
     // Field with default settings
     $textField = new TextField(new LocaleField(['en' => 'Text', 'fr' => 'Texte']), [
@@ -114,6 +123,10 @@ test('Add all fields to the layout', function () {
         ]
     ]);
 
+    $urlField = new UrlField(new LocaleField(['en' => 'Url', 'fr' => 'Url']));
+
+    $assetField = new AssetField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -125,6 +138,8 @@ test('Add all fields to the layout', function () {
         "email" => $emailField,
         "select" => $selectField,
         "multipleSelect" => $multipleSelectField
+        "url" => $urlField,
+        "image" => $assetField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -157,17 +172,22 @@ test('Failed to update the entry content', function () {
                 ],
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'select' => 'test-failed',
-                'multipleSelect' => ['test', 'test-failed']
+                'multipleSelect' => ['test', 'test-failed'],
+                'url' => 'babaganouj',
+                'image' => 'bad1d12345678901234bad1d' // Bad id...
             ]
         ], false);
         //print_r($errors);
-        expect($errors->length)->toBeGreaterThan(0);
-        expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
-        expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
-        expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
-        expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
-        expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
-        expect($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID);
+
+        expect($errors->length)->toBeGreaterThan(0)
+            ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
+            ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
+            ->and($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"))
+            ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
+            ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
+            ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
+            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID);
     } catch (Exception $exception) {
         //print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -183,6 +203,7 @@ test('Update content with success', function () {
     $relatedEntry = $entryModel->one([
         'title' => 'Related Page Test'
     ]);
+    $item = Asset::getByName('field-test-webp');
 
     try {
         $errors = $entryModel->updateById($entry, [
@@ -199,20 +220,29 @@ and must keep it through all the process',
                 'wysiwyg' => '<p><strong>Test</strong></p>',
                 'email' => 'email-test@email.com',
                 'select' => 'test',
+                'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
+                'image' => (string)$item->_id,
                 'multipleSelect' => ['test', 'test2']
             ]
         ], false);
         expect($errors->length)->toBe(0);
 
         $entryModel = EntryType::getEntryModelByHandle('field-test');
+
         $entryUpdated = $entryModel->one([
             '_id' => $entryId
         ]);
+        $content = $entryUpdated->getContent();
 
-        expect($entryUpdated->content->get('float'))->toBe('0.03');
-        expect($entryUpdated->content->get('text'))->toBe('Not empty');
-        expect($entryUpdated->content->get('description'))->toContain(PHP_EOL);
-        expect($entryUpdated->content->get('related.id'))->toBe((string)$relatedEntry->_id);
+        expect($content->get('float.content'))->toBe('0.03')
+            ->and($content->get('text.content'))->toBe('Not empty')
+            ->and($content->get('description.content'))->toContain(PHP_EOL)
+            ->and((string)$content->get('related.content._id'))->toBe((string)$relatedEntry->_id)
+            ->and($content->get('wysiwyg.content'))->toBe('<p><strong>Test</strong></p>')
+            ->and($content->get('email.content'))->toBe('email-test@email.com')
+            ->and($content->get('select.content'))->toBe('test')
+            ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12')
+            ->and($content->get('image.content.name'))->toBe('field-test-webp');
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($errors);

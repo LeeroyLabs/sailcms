@@ -18,6 +18,7 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\User;
+use SailCMS\Sail;
 use SailCMS\Text;
 
 /**
@@ -211,6 +212,32 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Get all properties
+     *
+     * @return array
+     *
+     */
+    public function properties(): array
+    {
+        return $this->properties;
+    }
+
+    /**
+     *
+     * Set value of property in a more standard way
+     *
+     * @param  string  $name
+     * @param  mixed   $value
+     * @return void
+     *
+     */
+    public function setProperty(string $name, mixed $value): void
+    {
+        $this->properties[$name] = $value;
+    }
+
+    /**
+     *
      * Get a property dynamically
      *
      * @param  string  $name
@@ -300,6 +327,10 @@ abstract class Model implements JsonSerializable
      */
     protected function hasPermissions(bool $read = false): void
     {
+        if (Sail::isCLI()) {
+            return;
+        }
+
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
 
         if (!User::$currentUser) {
@@ -320,6 +351,7 @@ abstract class Model implements JsonSerializable
      * Support for json_encode triggering
      *
      * @return array
+     * @throws JsonException
      *
      */
     public function jsonSerialize(): array
@@ -350,6 +382,18 @@ abstract class Model implements JsonSerializable
     public function clearCacheForModel(): void
     {
         Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
+    }
+
+    /**
+     *
+     * Run optimizer code for all models (create required indexes to make database fast)
+     *
+     * @return void
+     *
+     */
+    public static function ensureIndexes(): void
+    {
+        // Implement this in each model for optimized install
     }
 
     /**
