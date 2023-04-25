@@ -87,7 +87,7 @@ abstract class Model implements JsonSerializable
         if ($this->collection === '') {
             // Setup using name of class
             $name = array_reverse(explode('\\', get_class($this)))[0];
-            $name = Text::snakeCase(Text::pluralize($name));
+            $name = Text::from($name)->pluralize()->snake()->value();
             $this->collection = $name;
         }
 
@@ -381,7 +381,7 @@ abstract class Model implements JsonSerializable
      */
     public function clearCacheForModel(): void
     {
-        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
+        Cache::removeUsingPrefix(Text::from(get_class($this))->snake()->value());
     }
 
     /**
@@ -406,6 +406,6 @@ abstract class Model implements JsonSerializable
      */
     private function assembleCacheKey(string $key): string
     {
-        return Text::snakeCase(get_class($this)) . ':' . $key;
+        return Text::from(get_class($this))->snake()->concat($key, ':')->value();
     }
 }

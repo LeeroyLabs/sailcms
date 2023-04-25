@@ -156,7 +156,7 @@ test('Create an entry with the default type', function () {
 
         expect($entry->title)->toBe('Home')
             ->and($entry->locale)->toBe('fr')
-            ->and($entry->slug)->toBe(Text::slugify($entry->title, "fr"));
+            ->and($entry->slug)->toBe(Text::from($entry->title)->slug('fr')->value());
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -170,7 +170,7 @@ test('Access to default SEO data', function () {
 
     expect($seo->title)->toBe($entry->title)
         ->and($seo->_id)->not->toBeNull();
-})->group('entry');
+});
 
 test('Update seo data for an entry', function () {
     $entry = (new Entry())->one(['title' => 'Home']);
@@ -440,7 +440,6 @@ test('Get entry versions failed to apply the last version and apply one', functi
         // The first versions has empty content
         expect($entry->content->length)->toBe(0)
             ->and($entry->slug)->toBe('test');
-
     } catch (EntryException $e) {
 //        print_r($e->getMessage());
         expect(true)->toBe(false);

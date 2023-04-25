@@ -94,11 +94,11 @@ class Entry extends Model implements Validator, Castable
     public const ENTRY_PARENT_LIMIT_REACHED = ['5009: The parent can\'t be added because the limit of parent has been reached.', 5009];
     public const ENTRY_PARENT_INVALID = ['5010: The parent locale and siteId must be the same as the target entry.', 5010];
 
-    /* Cache  */
-    private const HOMEPAGE_CACHE = 'homepage_entry_';         // Add site id and locale at the end
-    private const ONE_CACHE_BY_ID = 'entry_';                 // Add id at the end
-    private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';   // Add handle at the end
-    private const ENTRY_FILTERED_CACHE = 'entries_filtered_'; // Add result of generateFilteredCacheKey
+    /* Cache */
+    private const HOMEPAGE_CACHE = 'homepage_entry_';            // Add site id and locale at the end
+    private const ONE_CACHE_BY_ID = 'entry_';                    // Add id at the end
+    private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';      // Add handle at the end
+    private const ENTRY_FILTERED_CACHE = 'entries_filtered_';    // Add result of generateFilteredCacheKey
     private const ENTRY_CATEGORY_CACHE = 'entries_by_category_'; // Add category id
 
     private const PARENT_ENTRY_LIMIT = 2;
@@ -409,7 +409,10 @@ class Entry extends Model implements Validator, Castable
      * Parse the entry into an array for api
      *
      * @param  object|null  $currentHomepageEntry
+     * <<<<<<< HEAD
      * @param  bool         $sendCurrent
+     * =======
+     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return array
      *
      */
@@ -723,7 +726,7 @@ class Entry extends Model implements Validator, Castable
     public static function getValidatedSlug(LocaleField $urlPrefix, string $slug, string $siteId, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
     {
         // Just to be sure that the slug is ok
-        $slug = Text::slugify($slug, $locale);
+        $slug = Text::from($slug)->slug($locale)->value();
 
         // Form the url to find if it already exists
         $url = self::getRelativeUrl($urlPrefix, $slug, $locale);
@@ -944,7 +947,11 @@ class Entry extends Model implements Validator, Castable
      *
      * Get all entries of the current type without pagination
      *
+     * <<<<<<< HEAD
      * @param  bool   $keepTrashed
+     * =======
+     * @param  bool   $ignoreTrash
+     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @param ?array  $filters
      * @return Collection
      * @throws DatabaseException
@@ -1050,7 +1057,11 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry|string      $entry  or id
      * @param  array|Collection  $data
      * @param  bool              $throwErrors
+     *                                   <<<<<<< HEAD
      * @param  bool              $bypassValidation
+     *                                   =======
+     * @param  bool              $bypassContentValidation
+     *                                   >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1547,15 +1558,15 @@ class Entry extends Model implements Validator, Castable
         $currentLocale = $newLocale ?? $oldEntry->locale;
 
         // According to the changes, update and/or remove entry from homepage.
-        if (($newSiteId && $newSiteId != $currentSiteId) || ($newLocale && $newLocale != $currentLocale) || $homepageChange === true) {
+        if (($newSiteId && $newSiteId !== $currentSiteId) || ($newLocale && $newLocale !== $currentLocale) || $homepageChange === true) {
             // Remove homepage
-            self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+            $this->emptyHomepage($oldEntry->site_id, $oldEntry->locale);
             // Add homepage
             $oldEntry->setAsHomepage($currentSiteId, $currentLocale);
         } else {
             if ($homepageChange === false) {
                 // Remove homepage
-                self::emptyHomepage($oldEntry->site_id, $oldEntry->locale);
+                $this->emptyHomepage($oldEntry->site_id, $oldEntry->locale);
             }
         }
     }
@@ -1611,8 +1622,13 @@ class Entry extends Model implements Validator, Castable
      *
      * Create an entry
      *
-     * @param  Collection  $data
-     * @param  bool        $throwErrors
+     * <<<<<<< HEAD
+     * @param  Collection        $data
+     * @param  bool              $throwErrors
+     * =======
+     * @param  Collection|array  $data
+     * @param  bool              $throwErrors
+     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -1620,12 +1636,12 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function createWithoutPermission(Collection $data, bool $throwErrors = true): array|Entry|Collection|null
+    private function createWithoutPermission(Collection|array $data, bool $throwErrors = true): array|Entry|Collection|null
     {
         $locale = $data->get('locale');
         $title = $data->get('title');
         $template = $data->get('template');
-        $slug = $data->get('slug', Text::slugify($title, $locale));
+        $slug = $data->get('slug', Text::from($title)->slug($locale)->value());
         $site_id = $data->get('site_id', Sail::siteId());
         $author = User::$currentUser ?? User::anonymousUser();
         $alternates = $data->get('alternates', []);
@@ -1720,7 +1736,11 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry       $entry
      * @param  Collection  $data
      * @param  bool        $throwErrors
+     * <<<<<<< HEAD
      * @param  bool        $bypassValidation
+     * =======
+     * @param  bool        $bypassContentValidation
+     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1788,7 +1808,6 @@ class Entry extends Model implements Validator, Castable
 
         $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'content', 'alternates'])) {
-
                 $update[$key] = $value;
             }
         });

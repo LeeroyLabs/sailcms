@@ -198,7 +198,7 @@ class UserMeta implements Castable, \JsonSerializable
 
                 case self::TYPE_CUSTOM:
                     $input = ($inputs) ? 'Input' : '';
-                    $graphql .= Text::snakeCase($key) . ": {$key}{$input}\n";
+                    $graphql .= Text::from($key)->snake()->concat("{$key}{$input}\n", ': ')->value();
                     break;
             }
         }
