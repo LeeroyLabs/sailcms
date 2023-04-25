@@ -201,7 +201,6 @@ class Entry extends Model implements Validator, Castable
      *
      * @param  mixed  $value
      * @return EntryAlternate
-     * @throws EntryException
      *
      */
     public function castTo(mixed $value): EntryAlternate
@@ -246,6 +245,36 @@ class Entry extends Model implements Validator, Castable
         }
 
         return $entry;
+    }
+
+    /**
+     *
+     * Get parent url
+     *
+     * @return string
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     */
+    public function getRecursiveParentUrls(?EntryParent $entryParent = null): string
+    {
+        $url = "";
+
+        if ($entryParent) {
+            $entryType = (new EntryType())->getByHandle($entryParent->handle);
+            $parent = $entryType->getEntryModel()->getById($entryParent->parent_id);
+        } else {
+            $parent = $this->getParent();
+        }
+
+        if ($parent) {
+            $url .= $parent->getRecursiveParentUrls();
+            $url .= "/" . $parent->url;
+        } else {
+            return $url;
+        }
+        return $url;
     }
 
     /**
@@ -1319,7 +1348,7 @@ class Entry extends Model implements Validator, Castable
         // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
         $childCount = $entryId ? $this->countMaxChildren($entryParent->parent_id) : 0;
         $parentCount = $this->countParent($parent);
-        
+
         if ($parentCount + $childCount >= self::PARENT_ENTRY_LIMIT) {
             if ($parentCount + $childCount > self::PARENT_ENTRY_LIMIT) {
                 Log::warning("PARENT_ENTRY_LIMIT exceeded", $errorContext);
@@ -1331,7 +1360,6 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Recursive count of children until we reach the limit
-     *  TODO must test with more entry types
      *
      * @param  string  $entryId
      * @return int
@@ -1384,7 +1412,7 @@ class Entry extends Model implements Validator, Castable
 
     /**
      *
-     * Count parent until
+     * Count parent until it reach the PARENT_ENTRY_LIMIT
      *
      * @param  Entry     $entry
      * @param  int|null  $count
