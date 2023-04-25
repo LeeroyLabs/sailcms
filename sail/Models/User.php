@@ -1186,7 +1186,7 @@ class User extends Model
                 'roles' => new Collection(['super-administrator']),
                 'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
                 'status' => true,
-                'password' => Security::hashPassword(Text::randomString(16)),
+                'password' => Security::hashPassword(Text::init()->random(16)),
                 'locale' => Locale::default(),
                 'validated' => true,
                 'created_at' => strtotime('01-01-2003')
