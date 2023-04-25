@@ -207,6 +207,7 @@ class EntryLayout extends Model implements Castable
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
     public function one(array $filters): ?EntryLayout
     {
@@ -297,6 +298,7 @@ class EntryLayout extends Model implements Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
     public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
     {
@@ -594,6 +596,7 @@ class EntryLayout extends Model implements Castable
      * @param  string           $value
      * @param  Collection|null  $options
      * @return string|Collection
+     *
      */
     private static function parseSettingValue(string $type, string $value, Collection $options = null): string|Collection
     {
@@ -608,6 +611,7 @@ class EntryLayout extends Model implements Castable
         } else {
             $result = $value;
         }
+
         return $result;
     }
 
@@ -617,6 +621,7 @@ class EntryLayout extends Model implements Castable
      *
      * @param  Collection|null  $options
      * @return Collection|null
+     *
      */
     public static function parseOptions(Collection|null $options): ?Collection
     {

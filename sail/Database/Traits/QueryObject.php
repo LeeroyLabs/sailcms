@@ -930,7 +930,7 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $v->{$target}->{$pop[0]} = self::parsePopulate($v->{$target}, $thepop);
+                        $v->{$target}->{$pop[1]} = self::parsePopulate($v->{$target}, $thepop);
                     }
                 }
 
@@ -956,7 +956,7 @@ trait QueryObject
                         'subpopulates' => $pop[3] ?? []
                     ];
 
-                    $doc->{$field}->{$target}->{$pop[0]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
+                    $doc->{$field}->{$target}->{$pop[1]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
                 }
             }
         } else {
@@ -974,7 +974,7 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $doc->{$target}->{$pop[0]} = self::parsePopulate($doc->{$target}, $thepop);
+                        $doc->{$target}->{$pop[1]} = self::parsePopulate($doc->{$target}, $thepop);
                     }
                 }
             } else {
