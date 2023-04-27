@@ -93,6 +93,8 @@ class Entry extends Model implements Validator, Castable
     public const INVALID_LOCALE = ['5008: The "%s" locale is not set in the project.', 5008];
     public const ENTRY_PARENT_LIMIT_REACHED = ['5009: The parent can\'t be added because the limit of parent has been reached.', 5009];
     public const ENTRY_PARENT_INVALID = ['5010: The parent locale and siteId must be the same as the target entry.', 5010];
+    public const ENTRY_PARENT_HOMEPAGE_ERROR = ['5011: Cannot add a parent to an homepage.', 5011];
+    public const ENTRY_PARENT_ITSELF_ERROR = ['5012: Cannot add a parent to itself.', 5012];
 
     /* Cache */
     private const HOMEPAGE_CACHE = 'homepage_entry_';            // Add site id and locale at the end
@@ -1024,7 +1026,8 @@ class Entry extends Model implements Validator, Castable
             'locale' => $locale,
             'title' => $title,
             'template' => $template,
-            'slug' => $slug
+            'slug' => $slug,
+            'isHomepage' => $isHomepage
         ]);
 
         // Add the optional data to the creation
@@ -1270,7 +1273,7 @@ class Entry extends Model implements Validator, Castable
 
         // Update homepage if needed
         if ($result) {
-            $currentHomepages = Entry::getHomepage($entry->site_id);
+            $currentHomepages = self::getHomepage($entry->site_id);
             $currentHomepage = $currentHomepages->{$entry->locale} ?? false;
             if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === (string)$entryId) {
                 $this->emptyHomepage($entry->site_id, $entry->locale, $currentHomepages);
@@ -1327,21 +1330,25 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Validate entry parent before saving it
-     *  # TODO maybe validate is the entry is homepage before adding a parent (?)
      *
      * @param  EntryParent  $entryParent
      * @param  string       $entryLocale
      * @param  string       $entrySiteId
      * @param  string|null  $entryId
+     * @param  bool         $isHomepage
      * @return void
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
-    private function validateParent(EntryParent $entryParent, string $entryLocale, string $entrySiteId, ?string $entryId = null): void
+    private function validateParent(EntryParent $entryParent, string $entryLocale, string $entrySiteId, ?string $entryId = null, bool $isHomepage = false): void
     {
+        $currentHomepage = self::getHomepage($entrySiteId, $entryLocale);
         $entryModel = EntryType::getEntryModelByHandle($entryParent->handle);
         $parent = $entryModel->getById($entryParent->parent_id);
         $errorContext = ["parent" => $parent, "entryId" => $entryId, "entryLocale" => $entryLocale, "entrySiteId" => $entrySiteId];
@@ -1350,6 +1357,16 @@ class Entry extends Model implements Validator, Castable
         if (!$parent) {
             $errorMsg = sprintf(self::DOES_NOT_EXISTS[0], $entryParent->parent_id . "(" . $entryParent->handle . ")");
             throw new EntryException($errorMsg, self::DOES_NOT_EXISTS[1]);
+        }
+
+        // Test if the entry is a homepage
+        if (($entryId && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) || $isHomepage) {
+            throw new EntryException(self::ENTRY_PARENT_HOMEPAGE_ERROR[0], self::ENTRY_PARENT_HOMEPAGE_ERROR[1]);
+        }
+
+        // Test if entry and parent is the same
+        if ($entryId && $entryId === (string)$parent->_id) {
+            throw new EntryException(self::ENTRY_PARENT_ITSELF_ERROR[0], self::ENTRY_PARENT_ITSELF_ERROR[1]);
         }
 
         // Test if same locale and site
@@ -1618,7 +1635,11 @@ class Entry extends Model implements Validator, Castable
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
+     *
      */
     private function createWithoutPermission(Collection|array $data, bool $throwErrors = true): array|Entry|Collection|null
     {
@@ -1635,7 +1656,7 @@ class Entry extends Model implements Validator, Castable
 
         if ($parent) {
             $parent = (new EntryParent())->castTo($parent);
-            $this->validateParent($parent, $locale, $site_id);
+            $this->validateParent($parent, $locale, $site_id, null, $data->get('isHomepage', false));
         }
 
         // VALIDATION & PARSING
@@ -1725,7 +1746,10 @@ class Entry extends Model implements Validator, Castable
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassValidation = false): Collection
