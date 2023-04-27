@@ -4,6 +4,7 @@ namespace SailCMS\Models;
 
 use JsonException;
 use MongoDB\BSON\ObjectId;
+use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
@@ -54,6 +55,9 @@ class EntryLayout extends Model implements Castable
     public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
+    /* Cache */
+    private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
+    private const ENTRY_LAYOUT_BY_SLUG = 'entry_layout_';
 
     /**
      *
@@ -145,8 +149,7 @@ class EntryLayout extends Model implements Castable
     public static function generateLayoutSchema(Collection $fields): Collection
     {
         $schema = Collection::init();
-        $fields->each(function ($key, $field) use ($schema)
-        {
+        $fields->each(function ($key, $field) use ($schema) {
             if (!$field instanceof ModelField) {
                 throw new FieldException(self::SCHEMA_MUST_CONTAIN_FIELDS);
             }
@@ -177,7 +180,10 @@ class EntryLayout extends Model implements Castable
             $filters = ['is_trashed' => false];
         }
 
-        return $this->find($filters)->exec();
+        // Cache Time To Live value from setting or default
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+
+        return $this->find($filters)->exec(self::ENTRY_LAYOUT_CACHE_ALL, $cacheTtl);
     }
 
     /**
@@ -195,7 +201,11 @@ class EntryLayout extends Model implements Castable
     {
         $this->hasPermissions(true);
 
-        return $this->findOne(['slug' => $slug])->exec();
+        // Cache Time To Live value from setting or default
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+        $cacheKey = self::ENTRY_LAYOUT_BY_SLUG . $slug;
+
+        return $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
     }
 
     /**
@@ -261,8 +271,7 @@ class EntryLayout extends Model implements Castable
      */
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels)
-        {
+        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
             /**
              * @var ModelField $field
              */
@@ -355,8 +364,7 @@ class EntryLayout extends Model implements Castable
         }
 
         $newSchema = Collection::init();
-        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey)
-        {
+        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey) {
             /**
              * @var ModelField $modelField
              */
@@ -373,8 +381,7 @@ class EntryLayout extends Model implements Castable
                 'entry_layout_id' => (string)$this->_id
             ]);
 
-            $entryTypes->each(function ($k, $entryType) use ($key, $newKey)
-            {
+            $entryTypes->each(function ($k, $entryType) use ($key, $newKey) {
                 /**
                  * @var EntryType $entryType
                  */
@@ -452,11 +459,9 @@ class EntryLayout extends Model implements Castable
             }
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs)
-            {
+            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
                 $settings = Collection::init();
-                $fieldsData->settings->each(function ($key, $setting) use (&$settings)
-                {
+                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
                     $options = EntryLayout::parseOptions($setting->options ?? null);
                     $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value, $options));
                 });
@@ -486,20 +491,17 @@ class EntryLayout extends Model implements Castable
      */
     public static function updateSchemaFromGraphQL(Collection $schemaUpdate, EntryLayout $entryLayout): void
     {
-        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout)
-        {
+        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout) {
             if (isset($updateInput->inputSettings)) {
                 /**
                  * @var object $updateInput
                  */
-                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput)
-                {
+                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
                     $settings = [];
 
                     $inputKey = $toUpdate->inputKey ?? $index;
 
-                    $toUpdate->settings->each(function ($k, $setting) use (&$settings)
-                    {
+                    $toUpdate->settings->each(function ($k, $setting) use (&$settings) {
                         $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
                     });
 
@@ -534,21 +536,18 @@ class EntryLayout extends Model implements Castable
             $this->schema = new Collection($this->schema);
         }
 
-        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema)
-        {
+        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
             $layoutFieldConfigs = Collection::init();
             $layoutFieldSettings = Collection::init();
 
-            $layoutField->configs->each(function ($fieldIndex, $input) use (&$layoutFieldSettings)
-            {
+            $layoutField->configs->each(function ($fieldIndex, $input) use (&$layoutFieldSettings) {
                 /**
                  * @var Field $input
                  */
                 $settings = new Collection($input->castFrom()->settings);
                 $fieldSettings = Collection::init();
 
-                $settings->each(function ($name, $value) use ($fieldSettings, $input)
-                {
+                $settings->each(function ($name, $value) use ($fieldSettings, $input) {
                     if (is_bool($value)) {
                         $value = $value ? 'true' : 'false';
                     }
@@ -627,8 +626,7 @@ class EntryLayout extends Model implements Castable
     {
         if ($options) {
             $parseOptions = Collection::init();
-            $options->each(function ($key, $option) use ($parseOptions)
-            {
+            $options->each(function ($key, $option) use ($parseOptions) {
                 $parseOptions->pushKeyValue($option->value, $option->label);
             });
             return $parseOptions;
@@ -647,8 +645,7 @@ class EntryLayout extends Model implements Castable
      */
     private static function validateSchema(Collection $schema): void
     {
-        $schema->each(function ($key, $value)
-        {
+        $schema->each(function ($key, $value) {
             if (!$value instanceof LayoutField) {
                 throw new EntryException(self::INVALID_SCHEMA);
             }
@@ -671,8 +668,7 @@ class EntryLayout extends Model implements Castable
 
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
-        $schemaFromDb->each(function ($key, $value) use (&$schema)
-        {
+        $schemaFromDb->each(function ($key, $value) use (&$schema) {
             foreach ($value->configs as $input) {
                 if (array_key_exists('options', (array)$input->settings)) {
                     (array)$input->settings['options'] = new Collection((array)$input->settings['options']);
@@ -696,8 +692,7 @@ class EntryLayout extends Model implements Castable
     private function processSchemaOnStore(Collection $schema): Collection
     {
         $schemaForDb = Collection::init();
-        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb)
-        {
+        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb) {
             /**
              * @var LayoutField $layoutField
              */
