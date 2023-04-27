@@ -19,7 +19,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Event;
 use SailCMS\Http\Request;
 use SailCMS\Locale;
-use SailCMS\Log as SailLog;
+use SailCMS\Log;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Entry as MEntry;
@@ -90,7 +90,9 @@ class Entry extends Model implements Validator, Castable
     public const CONTENT_ERROR = ['5005: The content has theses errors :' . PHP_EOL, 5005];
     public const DOES_NOT_EXISTS = ['5006: Entry "%s" does not exist.', 5006];
     public const DATABASE_ERROR = ['5007: Exception when "%s" an entry.', 5007];
-    public const INVALID_ALTERNATE_LOCALE = ['5008: The "%s" locale is not set in the project', 5008];
+    public const INVALID_LOCALE = ['5008: The "%s" locale is not set in the project.', 5008];
+    public const ENTRY_PARENT_LIMIT_REACHED = ['5009: The parent can\'t be added because the limit of parent has been reached.', 5009];
+    public const ENTRY_PARENT_INVALID = ['5010: The parent locale and siteId must be the same as the target entry.', 5010];
 
     /* Cache */
     private const HOMEPAGE_CACHE = 'homepage_entry_';            // Add site id and locale at the end
@@ -98,6 +100,8 @@ class Entry extends Model implements Validator, Castable
     private const ENTRY_CACHE_BY_HANDLE_ALL = 'all_entry_';      // Add handle at the end
     private const ENTRY_FILTERED_CACHE = 'entries_filtered_';    // Add result of generateFilteredCacheKey
     private const ENTRY_CATEGORY_CACHE = 'entries_by_category_'; // Add category id
+
+    private const PARENT_ENTRY_LIMIT = 2;
 
     public const EVENT_DELETE = 'event_delete_entry';
     public const EVENT_CREATE = 'event_create_entry';
@@ -182,8 +186,7 @@ class Entry extends Model implements Validator, Castable
         }
 
         $castedAlternates = [];
-        $this->alternates->each(function ($key, $alternate) use (&$castedAlternates)
-        {
+        $this->alternates->each(function ($key, $alternate) use (&$castedAlternates) {
             if ($alternate instanceof EntryAlternate) {
                 $castedAlternates[] = $alternate->castFrom();
             } // Else it's not an Entry Alternate object, so we ignore it
@@ -217,6 +220,67 @@ class Entry extends Model implements Validator, Castable
     public function getById(string|ObjectId $id): ?Entry
     {
         return $this->findById($id)->exec('entry_' . (string)$id);
+    }
+
+
+    /**
+     *
+     * Get the entry parent
+     *
+     * @return Entry|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function getParent(): ?Entry
+    {
+        $entry = null;
+
+        if ($this->parent) {
+            $entryType = (new EntryType())->getByHandle($this->parent->handle);
+            $entry = $entryType->getEntryModel()->getById($this->parent->parent_id);
+        }
+
+        return $entry;
+    }
+
+    /**
+     *
+     * Get parent url
+     *
+     * @param  object            $currentHomepage
+     * @param  EntryParent|null  $entryParent
+     * @return string
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function getRecursiveParentUrls(object $currentHomepage, ?EntryParent $entryParent = null): string
+    {
+        $url = "";
+
+        if ($entryParent) {
+            $entryType = (new EntryType())->getByHandle($entryParent->handle);
+            $parent = $entryType->getEntryModel()->getById($entryParent->parent_id);
+        } else {
+            $parent = $this->getParent();
+        }
+
+        if ($parent) {
+            $url .= $parent->getRecursiveParentUrls($currentHomepage);
+
+            // If the parent is not the homepage
+            if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$parent->_id) {
+                $url .= "/" . $parent->url;
+            }
+        } else {
+            return $url;
+        }
+        return $url;
     }
 
     /**
@@ -260,8 +324,7 @@ class Entry extends Model implements Validator, Castable
 
         $schema = $this->getSchema(true);
 
-        $schema->each(function ($key, $modelField) use (&$parsedContent)
-        {
+        $schema->each(function ($key, $modelField) use (&$parsedContent) {
             /**
              * @var Field $modelField
              */
@@ -346,12 +409,13 @@ class Entry extends Model implements Validator, Castable
      * Parse the entry into an array for api
      *
      * @param  object|null  $currentHomepageEntry
+     * @param  bool         $sendCurrent
      * @return array
      *
      */
-    public function simplify(object|null $currentHomepageEntry): array
+    public function simplify(object|null $currentHomepageEntry, bool $sendCurrent = true): array
     {
-        return [
+        $simplified = [
             '_id' => $this->_id,
             'entry_type' => $this->entryType->simplify(),
             'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
@@ -366,9 +430,14 @@ class Entry extends Model implements Validator, Castable
             'url' => $this->url,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
-            'categories' => $this->categories->castFrom(),
-            'current' => $this
+            'categories' => $this->categories->castFrom()
         ];
+
+        if ($sendCurrent) {
+            $simplified['current'] = $this;
+        }
+
+        return $simplified;
     }
 
     /**
@@ -388,14 +457,14 @@ class Entry extends Model implements Validator, Castable
             'entry_type_handle' => $this->entryType->handle
         ];
         $schema = $this->getSchema(true);
-        $this->content->each(function ($key, $content) use (&$parsedContents, $schema)
-        {
+        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
             $parsedContent = $content;
 
             /**
              * @var Field $field
              */
             $field = $schema->get($key);
+
             $isSearchable = $field::SEARCHABLE && $field;
 
             if ($isSearchable) {
@@ -452,8 +521,7 @@ class Entry extends Model implements Validator, Castable
         if ($search) {
             $searchResults = (new SailSearch())->search($search);
             $entryIds = [];
-            $searchResults->results->each(function ($key, $searchResult) use (&$entryIds)
-            {
+            $searchResults->results->each(function ($key, $searchResult) use (&$entryIds) {
                 $entryIds[] = $searchResult->document_id;
             });
 
@@ -491,8 +559,7 @@ class Entry extends Model implements Validator, Castable
 
         $entries = $entryModel->all(false);
 
-        $entries->each(function ($key, $entry)
-        {
+        $entries->each(function ($key, $entry) {
             /**
              * @var Entry $entry
              */
@@ -622,8 +689,7 @@ class Entry extends Model implements Validator, Castable
         $allEntries = Collection::init();
         $siteId = $siteId ?? Sail::siteId();
 
-        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries)
-        {
+        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries) {
             $entry = new Entry($entryType->collection_name);
             $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
             $entries = $entry->find([
@@ -673,8 +739,7 @@ class Entry extends Model implements Validator, Castable
         if (!$availableTypes) {
             $availableTypes = EntryType::getAll();
         }
-        $availableTypes->each(function ($key, $value) use ($filters, &$found)
-        {
+        $availableTypes->each(function ($key, $value) use ($filters, &$found) {
             // We already find one no need to continue the search
             if ($found > 0) {
                 return;
@@ -748,8 +813,7 @@ class Entry extends Model implements Validator, Castable
     {
         $parsedContent = Collection::init();
 
-        $content?->each(function ($i, $toParse) use (&$parsedContent)
-        {
+        $content?->each(function ($i, $toParse) use (&$parsedContent) {
             $content = json_decode($toParse->content);
 
             if (is_array($content) || $content instanceof stdClass) {
@@ -779,8 +843,7 @@ class Entry extends Model implements Validator, Castable
         $entry = $this->findById($entryId)->exec();
 
         if (isset($entry->_id)) {
-            $entry->content->each(function ($key, $content) use (&$newContent)
-            {
+            $entry->content->each(function ($key, $content) use (&$newContent) {
                 $currentNewContent = $newContent->get($key);
 
                 if ($currentNewContent instanceof Collection) {
@@ -801,8 +864,7 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Ensure that all content are arrays
-        $newContent->each(function ($key, &$content) use (&$newContent)
-        {
+        $newContent->each(function ($key, &$content) use (&$newContent) {
             if ($content instanceof stdClass) {
                 $newContent->pushKeyValue($key, (array)$content);
             }
@@ -822,8 +884,7 @@ class Entry extends Model implements Validator, Castable
     public static function processErrorsForGraphQL(Collection $errors): Collection
     {
         $parsedErrors = Collection::init();
-        $errors->each(function ($key, $errors) use (&$parsedErrors)
-        {
+        $errors->each(function ($key, $errors) use (&$parsedErrors) {
             $parsedErrors->push([
                 'key' => $key,
                 'errors' => $errors
@@ -883,16 +944,16 @@ class Entry extends Model implements Validator, Castable
      *
      * Get all entries of the current type without pagination
      *
-     * @param  bool   $ignoreTrash
+     * @param  bool   $keepTrashed
      * @param ?array  $filters
      * @return Collection
      * @throws DatabaseException
      *
      */
-    public function all(bool $ignoreTrash = true, ?array $filters = []): Collection
+    public function all(bool $keepTrashed = true, ?array $filters = []): Collection
     {
         // Fast selection of only valid entry (not thrashed)
-        if (!$ignoreTrash && !in_array('trashed', $filters)) {
+        if (!$keepTrashed && !in_array('trashed', $filters)) {
             // Want everything but trash
             $filters['trashed'] = false;
         }
@@ -989,7 +1050,7 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry|string      $entry  or id
      * @param  array|Collection  $data
      * @param  bool              $throwErrors
-     * @param  bool              $bypassContentValidation
+     * @param  bool              $bypassValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1000,7 +1061,7 @@ class Entry extends Model implements Validator, Castable
      * @throws SodiumException
      *
      */
-    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
+    public function updateById(Entry|string $entry, array|Collection $data, bool $throwErrors = true, bool $bypassValidation = false): Collection
     {
         $this->hasPermissions();
 
@@ -1017,7 +1078,7 @@ class Entry extends Model implements Validator, Castable
             throw new EntryException(sprintf(self::DOES_NOT_EXISTS[0], $entryId), self::DOES_NOT_EXISTS[1]);
         }
 
-        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors, $bypassContentValidation);
+        $updateErrors = $this->updateWithoutPermission($entry, $data, $throwErrors, $bypassValidation);
 
         if ($updateErrors->length <= 0) {
             $this->handleHomepageUpdate($entry, $data);
@@ -1072,11 +1133,9 @@ class Entry extends Model implements Validator, Castable
         $entries = $this->all();
 
         $updates = [];
-        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey)
-        {
+        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey) {
             $newContent = Collection::init();
-            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey)
-            {
+            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey) {
                 if ($currentKey == $key) {
                     $currentKey = $newKey;
                 }
@@ -1105,7 +1164,6 @@ class Entry extends Model implements Validator, Castable
     /**
      *
      * Create an entry version then an entry publication
-     *  TODO add parent url to the publication
      *
      * @param  string       $entryId
      * @param  int          $publicationDate
@@ -1135,14 +1193,16 @@ class Entry extends Model implements Validator, Castable
         // It is almost impossible that an entry has no version, but just to be sure
         if (!$lastVersion) {
             $entry = $this->findById($entryId)->exec();
-            $simplifiedEntry = $entry->simplify(null);
+            $simplifiedEntry = $entry->simplify(null, false);
             $simplifiedEntry['content'] = $entry->content;
             $entryVersionID = (new EntryVersion)->create($author, $simplifiedEntry);
-            $entryUrl = $simplifiedEntry['url'];
+
+            $lastVersion = $entryVersionModel->getLastVersionByEntryId($entryId);
         }
 
         $entryVersionID = !isset($entryVersionID) ? $lastVersion->_id : $entryVersionID;
-        $entryUrl = !isset($entryUrl) ? $lastVersion->entry->get('url') : $entryUrl;
+        $entryUrl = $lastVersion->entry->get('url');
+        $entryParent = (new EntryParent())->castTo($lastVersion->entry->get('parent'));
 
         // Must override entryUrl if it's the homepage
         $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
@@ -1152,6 +1212,9 @@ class Entry extends Model implements Validator, Castable
             if ($entryLocale !== Locale::default()) {
                 $entryUrl = $entryLocale . "/";
             }
+        } else {
+            $parentUrl = $this->getRecursiveParentUrls($currentHomepage, $entryParent);
+            $entryUrl = $parentUrl ? $parentUrl . "/" . $entryUrl : $entryUrl;
         }
 
         return (new EntryPublication())->create($author, $entryId, $siteId, $entryUrl, (string)$entryVersionID, $publicationDate, $expirationDate);
@@ -1244,7 +1307,7 @@ class Entry extends Model implements Validator, Castable
             throw new EntryException($errorMessage);
         } else {
             if (!$entryLayout) {
-                SailLog::logger()->warning($errorMessage);
+                Log::error($errorMessage, ['entry' => $this]);
             }
         }
 
@@ -1259,6 +1322,146 @@ class Entry extends Model implements Validator, Castable
         }
 
         return $result;
+    }
+
+    /**
+     *
+     * Validate entry parent before saving it
+     *  # TODO maybe validate is the entry is homepage before adding a parent (?)
+     *
+     * @param  EntryParent  $entryParent
+     * @param  string       $entryLocale
+     * @param  string       $entrySiteId
+     * @param  string|null  $entryId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    private function validateParent(EntryParent $entryParent, string $entryLocale, string $entrySiteId, ?string $entryId = null): void
+    {
+        $entryModel = EntryType::getEntryModelByHandle($entryParent->handle);
+        $parent = $entryModel->getById($entryParent->parent_id);
+        $errorContext = ["parent" => $parent, "entryId" => $entryId, "entryLocale" => $entryLocale, "entrySiteId" => $entrySiteId];
+
+        // Test if parent exists
+        if (!$parent) {
+            $errorMsg = sprintf(self::DOES_NOT_EXISTS[0], $entryParent->parent_id . "(" . $entryParent->handle . ")");
+            throw new EntryException($errorMsg, self::DOES_NOT_EXISTS[1]);
+        }
+
+        // Test if same locale and site
+        if ($parent->locale !== $entryLocale || $parent->site_id !== $entrySiteId) {
+            throw new EntryException(self::ENTRY_PARENT_INVALID[0], self::ENTRY_PARENT_INVALID[1]);
+        }
+
+        // Test if child + parent lower than self::PARENT_ENTRY_LIMIT
+        $childCount = $entryId ? $this->countMaxChildren($entryParent->parent_id) : 0;
+        $parentCount = $this->countParent($parent);
+
+        if ($parentCount + $childCount >= self::PARENT_ENTRY_LIMIT) {
+            if ($parentCount + $childCount > self::PARENT_ENTRY_LIMIT) {
+                Log::warning("PARENT_ENTRY_LIMIT exceeded", $errorContext);
+            }
+            throw new EntryException(self::ENTRY_PARENT_LIMIT_REACHED[0], self::ENTRY_PARENT_LIMIT_REACHED[1]);
+        }
+    }
+
+    /**
+     *
+     * Recursive count of children until we reach the limit
+     *
+     * @param  string  $entryId
+     * @return int
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function countMaxChildren(string $entryId): int
+    {
+        $count = 0;
+        $filters = [
+            "parent.parent_id" => $entryId
+        ];
+
+        $availableTypes = EntryType::getAll();
+        $availableTypes->each(function ($key, $entryType) use ($filters, &$count) {
+            if ($count >= self::PARENT_ENTRY_LIMIT) {
+                // The limit is reached, not useful to continue the count
+                return;
+            }
+
+            /**
+             * @var EntryType $entryType
+             */
+            $entryModel = $entryType->getEntryModel();
+
+            $result = $entryModel->all(false, $filters);
+
+            foreach ($result as $child) {
+                if ($count === 0) {
+                    $count = 1;
+                }
+
+                $currentCount = $this->countMaxChildren($child->_id);
+                if ($currentCount > 0) {
+                    $count += $currentCount;
+                }
+
+                if ($count >= self::PARENT_ENTRY_LIMIT) {
+                    // The limit is reached, not useful to continue the count
+                    break;
+                }
+            }
+        });
+
+        return $count;
+    }
+
+    /**
+     *
+     * Count parent until it reach the PARENT_ENTRY_LIMIT
+     *
+     * @param  Entry     $entry
+     * @param  int|null  $count
+     * @return int
+     *
+     */
+    public function countParent(Entry $entry, ?int $count = null): int
+    {
+        if (!isset($count)) {
+            $count = 0;
+        }
+
+        if ($entry->parent) {
+
+            try {
+                $entryModel = EntryType::getEntryModelByHandle($entry->parent->handle);
+                $parent = $entryModel->getById($entry->parent->parent_id);
+            } catch (Exception $exception) {
+                Log::warning("Error when a parent is queried" . PHP_EOL, ['exception' => $exception]);
+
+                // If there is an error with the queries return the limit, so the parent will not be added.
+                return self::PARENT_ENTRY_LIMIT;
+            }
+
+            if ($parent) {
+                $count += 1;
+
+                if ($count >= self::PARENT_ENTRY_LIMIT) {
+                    // Stop the recursion since the limit is reached
+                    return $count;
+                }
+
+                $count = $this->countParent($parent, $count);
+            }
+        }
+
+        return $count;
     }
 
     /**
@@ -1290,8 +1493,7 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Validate content from schema
-        $schema->each(function ($key, $modelField) use ($content, $errors)
-        {
+        $schema->each(function ($key, $modelField) use ($content, $errors) {
             /**
              * @var ModelField $modelField
              */
@@ -1313,8 +1515,7 @@ class Entry extends Model implements Validator, Castable
             }
         });
 
-        $content->each(function ($key, $content) use ($schema)
-        {
+        $content->each(function ($key, $content) use ($schema) {
             if (!$schema->get($key)) {
                 throw new EntryException(sprintf(self::CONTENT_KEY_ERROR[0], $key), self::CONTENT_KEY_ERROR[1]);
             }
@@ -1410,6 +1611,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Create an entry
      *
+     *
      * @param  Collection|array  $data
      * @param  bool              $throwErrors
      * @return array|Entry|Collection|null
@@ -1417,7 +1619,6 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
     private function createWithoutPermission(Collection|array $data, bool $throwErrors = true): array|Entry|Collection|null
     {
@@ -1431,6 +1632,11 @@ class Entry extends Model implements Validator, Castable
         $parent = $data->get('parent');
         $content = $data->get('content');
         $categories = $data->get('categories');
+
+        if ($parent) {
+            $parent = (new EntryParent())->castTo($parent);
+            $this->validateParent($parent, $locale, $site_id);
+        }
 
         // VALIDATION & PARSING
         if ($content instanceof Collection && $content->length > 0) {
@@ -1451,8 +1657,8 @@ class Entry extends Model implements Validator, Castable
         // Validate locale
         $locales = Locale::getAvailableLocales();
         if (!$locales->contains($locale)) {
-            $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
-            throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
+            $errorMsg = sprintf(self::INVALID_LOCALE[0], $locale);
+            throw new EntryException($errorMsg, self::INVALID_LOCALE[1]);
         }
 
         // Get the validated slug
@@ -1492,7 +1698,7 @@ class Entry extends Model implements Validator, Castable
         $entry->entryType = $this->entryType;
 
         // Version save with simplify entry
-        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry = $entry->simplify(null, false);
         $simplifiedEntry['content'] = $entry->content;
         (new EntryVersion)->create($author, $simplifiedEntry);
 
@@ -1514,7 +1720,7 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry       $entry
      * @param  Collection  $data
      * @param  bool        $throwErrors
-     * @param  bool        $bypassContentValidation
+     * @param  bool        $bypassValidation
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1522,7 +1728,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassContentValidation = false): Collection
+    private function updateWithoutPermission(Entry $entry, Collection $data, bool $throwErrors = true, bool $bypassValidation = false): Collection
     {
         $update = [];
         $author = User::$currentUser ?? User::anonymousUser();
@@ -1530,16 +1736,7 @@ class Entry extends Model implements Validator, Castable
         $locale = $entry->locale;
         $site_id = $entry->site_id;
 
-        // Validations
-        if (in_array('locale', $data->keys()->unwrap())) {
-            $locale = $data->get('locale');
-            // Validate locale
-            $locales = Locale::getAvailableLocales();
-            if (!$locales->contains($locale)) {
-                $errorMsg = sprintf(self::INVALID_ALTERNATE_LOCALE[0], $locale);
-                throw new EntryException($errorMsg, self::INVALID_ALTERNATE_LOCALE[1]);
-            }
-        }
+        // Data format
         if (in_array('site_id', $data->keys()->unwrap())) {
             $site_id = $data->get('site_id');
         }
@@ -1547,30 +1744,49 @@ class Entry extends Model implements Validator, Castable
             $slug = $data->get('slug');
             $update['slug'] = self::getValidatedSlug($this->entryType->url_prefix, $slug, $site_id, $locale, $entry->_id);
         }
-        if (in_array('alternates', $data->keys()->unwrap())) {
-            $alternates = $data->get('alternates');
-            $alternates->each(function ($key, $alternate)
-            {
-                // It's on a construction test to valid the locale
-                new EntryAlternate($alternate->locale, $alternate->entry_id);
-            });
-        }
 
-        // We bypass content validation when we apply a version
-        if (!$bypassContentValidation && in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
-            $errors = $this->validateContent($data->get('content'));
+        // Validation could be bypassed when the version is applied or with an attribute in the graphql query.
+        if (!$bypassValidation) {
+            $locales = Locale::getAvailableLocales();
 
-            if ($errors->length > 0) {
-                if ($throwErrors) {
-                    self::throwErrorContent($errors);
-                } else {
-                    return $errors;
+            if (in_array('alternates', $data->keys()->unwrap())) {
+                $alternates = $data->get('alternates');
+                $alternates->each(function ($key, $alternate) use ($locales) {
+                    if (isset($alternate->locale) && !$locales->contains($alternate->locale)) {
+                        $errorMsg = sprintf(Entry::INVALID_LOCALE[0], $alternate->locale);
+                        throw new EntryException($errorMsg, Entry::INVALID_LOCALE[1]);
+                    }
+                });
+            }
+
+            if (in_array('locale', $data->keys()->unwrap())) {
+                $locale = $data->get('locale');
+                // Validate locale
+                if (!$locales->contains($locale)) {
+                    $errorMsg = sprintf(self::INVALID_LOCALE[0], $locale);
+                    throw new EntryException($errorMsg, self::INVALID_LOCALE[1]);
+                }
+            }
+
+            if (in_array('parent', $data->keys()->unwrap())) {
+                $entryParent = (new EntryParent())->castTo($data->get('parent'));
+                $this->validateParent($entryParent, $locale, $site_id, (string)$entry->_id);
+            }
+
+            if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
+                $errors = $this->validateContent($data->get('content'));
+
+                if ($errors->length > 0) {
+                    if ($throwErrors) {
+                        self::throwErrorContent($errors);
+                    } else {
+                        return $errors;
+                    }
                 }
             }
         }
 
-        $data->each(function ($key, $value) use (&$update)
-        {
+        $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'content', 'alternates'])) {
                 $update[$key] = $value;
             }
@@ -1599,7 +1815,7 @@ class Entry extends Model implements Validator, Castable
         $entry->entryType = $this->entryType;
 
         // Version save with simplified entry
-        $simplifiedEntry = $entry->simplify(null);
+        $simplifiedEntry = $entry->simplify(null, false);
         $simplifiedEntry['content'] = $entry->content;
         $versionId = (new EntryVersion)->create($author, $simplifiedEntry);
 
@@ -1755,8 +1971,7 @@ class Entry extends Model implements Validator, Castable
         $availableTypes = EntryType::getAll();
         $content = null;
 
-        $availableTypes->each(function ($key, $value) use ($url, $previewVersion, &$content)
-        {
+        $availableTypes->each(function ($key, $value) use ($url, $previewVersion, &$content) {
             // Search for what collection has this url (if any)
             $entry = new Entry($value->collection_name);
             $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
@@ -1804,8 +2019,7 @@ class Entry extends Model implements Validator, Castable
     {
         $errorsStrings = [];
 
-        $errors->each(function ($key, $errorsArray) use (&$errorsStrings)
-        {
+        $errors->each(function ($key, $errorsArray) use (&$errorsStrings) {
             foreach ($errorsArray as $fieldKey => $error) {
                 if (is_array($error)) {
                     foreach ($error as $fieldError) {
