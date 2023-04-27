@@ -409,10 +409,7 @@ class Entry extends Model implements Validator, Castable
      * Parse the entry into an array for api
      *
      * @param  object|null  $currentHomepageEntry
-     * <<<<<<< HEAD
      * @param  bool         $sendCurrent
-     * =======
-     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return array
      *
      */
@@ -947,11 +944,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Get all entries of the current type without pagination
      *
-     * <<<<<<< HEAD
      * @param  bool   $keepTrashed
-     * =======
-     * @param  bool   $ignoreTrash
-     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @param ?array  $filters
      * @return Collection
      * @throws DatabaseException
@@ -1057,11 +1050,7 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry|string      $entry  or id
      * @param  array|Collection  $data
      * @param  bool              $throwErrors
-     *                                   <<<<<<< HEAD
      * @param  bool              $bypassValidation
-     *                                   =======
-     * @param  bool              $bypassContentValidation
-     *                                   >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1622,19 +1611,14 @@ class Entry extends Model implements Validator, Castable
      *
      * Create an entry
      *
-     * <<<<<<< HEAD
-     * @param  Collection        $data
-     * @param  bool              $throwErrors
-     * =======
+     *
      * @param  Collection|array  $data
      * @param  bool              $throwErrors
-     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return array|Entry|Collection|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
     private function createWithoutPermission(Collection|array $data, bool $throwErrors = true): array|Entry|Collection|null
     {
@@ -1736,11 +1720,7 @@ class Entry extends Model implements Validator, Castable
      * @param  Entry       $entry
      * @param  Collection  $data
      * @param  bool        $throwErrors
-     * <<<<<<< HEAD
      * @param  bool        $bypassValidation
-     * =======
-     * @param  bool        $bypassContentValidation
-     * >>>>>>> 991a62d251d0f8d15dbf840e9329f676b1236c40
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException

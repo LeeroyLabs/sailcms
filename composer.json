@@ -33,6 +33,7 @@
     "ext-intl": "*",
     "ext-mongodb": "*",
     "ext-curl": "*",
+    "ext-dom": "*",
     "vlucas/phpdotenv": "^v5.5.0",
     "myclabs/php-enum": "^1.8.4",
     "filp/whoops": "2.15.1",
