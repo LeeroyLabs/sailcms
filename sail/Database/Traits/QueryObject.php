@@ -169,7 +169,7 @@ trait QueryObject
                             if (!empty($item) && !is_object($item)) {
                                 $obj = $instance->findById($item);
 
-                                if (count($subpop) > 1) {
+                                if (count($subpop) >= 1) {
                                     foreach ($subpop as $pop) {
                                         $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                                     }
@@ -184,7 +184,7 @@ trait QueryObject
                         if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
                             $obj = $instance->findById($doc->{$field});
 
-                            if (count($subpop) > 1) {
+                            if (count($subpop) >= 1) {
                                 foreach ($subpop as $pop) {
                                     $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                                 }
