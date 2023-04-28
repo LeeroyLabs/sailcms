@@ -2,29 +2,19 @@
 
 namespace SailCMS\Types;
 
-use SailCMS\Errors\EntryException;
-use SailCMS\Locale;
-use SailCMS\Models\Entry;
-
 class EntryAlternate
 {
     /**
      *
-     * @param string|null $locale
-     * @param string $entry_id
-     * @throws EntryException
+     * @param  string|null  $locale
+     * @param  string       $entry_id
+     *
      */
     public function __construct(
         public ?string $locale = null,
-        public string  $entry_id = ''
+        public string  $entry_id = '',
     )
     {
-        $locales = Locale::getAvailableLocales();
-
-        if (isset($locale) && !$locales->contains($locale)) {
-            $errorMsg = sprintf(Entry::INVALID_ALTERNATE_LOCALE[0], $locale);
-            throw new EntryException($errorMsg, Entry::INVALID_ALTERNATE_LOCALE[1]);
-        }
     }
 
     /**
@@ -46,9 +36,8 @@ class EntryAlternate
      *
      * Cast to EntryAlternate
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return EntryAlternate
-     * @throws EntryException
      *
      */
     public function castTo(mixed $value): self
