@@ -528,8 +528,8 @@ input EmailInput {
 }
 
 type PasswordChangeResult {
-    passwordCheck: Boolean!
-    codeCheck: Boolean!
+    password_check: Boolean!
+    code_check: Boolean!
 }
 
 type RegisteredExtensions {
@@ -549,7 +549,7 @@ type Container {
     info: ContainerInfo!
     class: String!
     middlewares: [Middleware!]!
-    graphql: [GraphQLInfo!]!
+    graphql: GraphQLInfo!
     routes: Routes!
 }
 
@@ -579,6 +579,7 @@ type Middleware {
 type GraphQLInfo {
     queries: [QueryInfo!]!
     mutations: [MutationInfo!]!
+    resolvers: [ResolverInfo!]!
 }
 
 type QueryInfo {
@@ -588,6 +589,12 @@ type QueryInfo {
 }
 
 type MutationInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type ResolverInfo {
     operation: String!
     handler: String!
     method: String!

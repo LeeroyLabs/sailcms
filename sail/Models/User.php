@@ -28,6 +28,7 @@ use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
+use SailCMS\Types\PasswordChangeResult;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
@@ -677,6 +678,9 @@ class User extends Model
             $query['validated'] = $validated;
         }
 
+        // Never show the anonymous user
+        $query['email'] = ['$ne' => 'anonymous@mail.io'];
+
         // Pagination
         $total = $this->count($query);
         $pages = ceil($total / $limit);
@@ -1108,19 +1112,32 @@ class User extends Model
      *
      * @param  string  $code
      * @param  string  $password
-     * @return bool
+     * @return PasswordChangeResult
      * @throws DatabaseException
      *
      */
-    public static function changePassword(string $code, string $password): bool
+    public static function changePassword(string $code, string $password): PasswordChangeResult
     {
         $instance = new static();
+
+        $passCheck = true;
+        $codeCheck = true;
 
         // Validate password
         $valid = Security::validatePassword($password);
 
         if (!$valid) {
-            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            $passCheck = false;
+        }
+
+        $user = $instance->findOne(['reset_code' => $code])->exec();
+
+        if (!$user) {
+            $codeCheck = false;
+        }
+
+        if (!$passCheck || !$codeCheck) {
+            return new PasswordChangeResult($passCheck, $codeCheck);
         }
 
         $instance->updateOne(['reset_code' => $code],
@@ -1132,7 +1149,7 @@ class User extends Model
             ]
         );
 
-        return true;
+        return new PasswordChangeResult(true, true);
     }
 
     /**
