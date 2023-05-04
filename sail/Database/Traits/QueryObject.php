@@ -220,6 +220,20 @@ trait QueryObject
 
     /**
      *
+     * Get all records without any limits
+     * Note: Be careful with the use of this method
+     *
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public static function allRecords(): Collection
+    {
+        return new Collection(self::query()->find()->exec());
+    }
+
+    /**
+     *
      * Get Last record added to collection
      *
      * @return static|null

@@ -138,7 +138,8 @@ class Users
             $userTypeSearch ?? null,
             $metaSearch ?? null,
             $args->get('status'),
-            $args->get('validated')
+            $args->get('validated'),
+            $args->get('group_id', '')
         );
 
         $list->list->each(function ($key, $value)
@@ -435,6 +436,10 @@ class Users
             }
 
             return $obj->meta;
+        }
+
+        if (($info->fieldName === 'group') && !isset($obj->group)) {
+            return '';
         }
 
         if ($info->fieldName === 'permissions') {

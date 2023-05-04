@@ -3,7 +3,7 @@ type Query {
 
     # Users
     user(id: ID!): User
-    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean): UserListing
+    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean, group_id: String): UserListing
 
     # Authentication
     resendValidationEmail(email: String!): Boolean!
@@ -50,6 +50,10 @@ type Query {
     # Navigation
     navigation(name: String!): [NavigationItem!]!
     navigationDetails(name: String!): Navigation
+
+    # Groups
+    group(id: ID!): Group
+    groups: [Group!]!
 
     #{CUSTOM_QUERIES}#
 }
@@ -108,6 +112,11 @@ type Mutation {
     updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
     deleteNavigation(name: String!): Boolean!
 
+    # Groups
+    createGroup(name: String!): Boolean!
+    updateGroup(id: ID!, name: String!): Boolean!
+    deleteGroup(id: ID!): Boolean!
+
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -151,6 +160,7 @@ type User {
     created_at: Int!
     validated: Boolean!
     locale: String!
+    group: String
 }
 
 type UserListing {
@@ -641,6 +651,13 @@ type Navigation {
     name: String!
     structure: [NavigationItem!]!
     locale: String!
+}
+
+type Group {
+    _id: ID!
+    name: String!
+    slug: String!
+    user_count: Int!
 }
 
 #{CUSTOM_TYPES}#
