@@ -20,6 +20,7 @@ use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
 use SailCMS\Types\MiddlewareType;
+use SailCMS\Types\PasswordChangeResult;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
@@ -137,7 +138,8 @@ class Users
             $userTypeSearch ?? null,
             $metaSearch ?? null,
             $args->get('status'),
-            $args->get('validated')
+            $args->get('validated'),
+            $args->get('group_id', '')
         );
 
         $list->list->each(function ($key, $value)
@@ -396,11 +398,11 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
+     * @return PasswordChangeResult
      * @throws DatabaseException
      *
      */
-    public function changePassword(mixed $obj, Collection $args, Context $context): bool
+    public function changePassword(mixed $obj, Collection $args, Context $context): PasswordChangeResult
     {
         return User::changePassword($args->get('code', ''), $args->get('password', ''));
     }
@@ -434,6 +436,10 @@ class Users
             }
 
             return $obj->meta;
+        }
+
+        if (($info->fieldName === 'group') && !isset($obj->group)) {
+            return '';
         }
 
         if ($info->fieldName === 'permissions') {

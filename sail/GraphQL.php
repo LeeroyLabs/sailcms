@@ -26,6 +26,7 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
@@ -392,7 +393,7 @@ final class GraphQL
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
-        
+
         self::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
         self::addQueryResolver('entryType', Entries::class, 'entryType');
         self::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
@@ -448,6 +449,14 @@ final class GraphQL
         self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
         self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
         self::addMutationResolver('deleteNavigation', Navigation::class, 'deleteNavigation');
+
+        // Groups
+        self::addQueryResolver('group', Groups::class, 'group');
+        self::addQueryResolver('groups', Groups::class, 'groups');
+        self::addMutationResolver('createGroup', Groups::class, 'createGroup');
+        self::addMutationResolver('updateGroup', Groups::class, 'updateGroup');
+        self::addMutationResolver('deleteGroup', Groups::class, 'deleteGroup');
+        self::addResolver('Group', Groups::class, 'groupResolver');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
@@ -559,7 +568,8 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver)
+        {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 
