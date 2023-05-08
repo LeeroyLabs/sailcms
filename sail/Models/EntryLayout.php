@@ -668,13 +668,16 @@ class EntryLayout extends Model implements Castable
 
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
-        $schemaFromDb->each(function ($key, $value) use (&$schema) {
-            foreach ($value->configs as $input) {
-                if (array_key_exists('options', (array)$input->settings)) {
-                    (array)$input->settings['options'] = new Collection((array)$input->settings['options']);
+        $schemaFromDb->each(function ($key, $field) use (&$schema) {
+            foreach ($field->configs as &$input) {
+                if (isset($input->settings)) {
+                    if (array_key_exists('options', (array)$input->settings)) {
+                        $input->settings['options'] = new Collection((array)$input->settings['options']);
+                    }
                 }
             }
-            $valueParsed = ModelField::fromLayoutField($value);
+
+            $valueParsed = ModelField::fromLayoutField($field);
             $schema->pushKeyValue($key, $valueParsed);
         });
 
