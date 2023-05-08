@@ -58,6 +58,7 @@ class EntryLayout extends Model implements Castable
     /* Cache */
     private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
     private const ENTRY_LAYOUT_BY_SLUG = 'entry_layout_';
+    private const ENTRY_LAYOUT_ID_ = 'entry_layout_id_';
 
     /**
      *
@@ -224,7 +225,10 @@ class EntryLayout extends Model implements Castable
         $this->hasPermissions(true);
 
         if (isset($filters['_id'])) {
-            return $this->findById($filters['_id'])->exec();
+            // Cache Time To Live value from setting or default
+            $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+            $cacheKey = self::ENTRY_LAYOUT_ID_ . $filters['_id'];
+            return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
         }
         return $this->findOne($filters)->exec();
     }

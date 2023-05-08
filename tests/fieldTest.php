@@ -216,7 +216,7 @@ and must keep it through all the process',
             '_id' => $entryId
         ]);
         $content = $entryUpdated->getContent();
-
+        
         expect($content->get('float.content'))->toBe('0.03')
             ->and($content->get('text.content'))->toBe('Not empty')
             ->and($content->get('description.content'))->toContain(PHP_EOL)
