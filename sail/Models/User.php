@@ -28,6 +28,7 @@ use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
+use SailCMS\Types\PasswordChangeResult;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
@@ -52,6 +53,7 @@ use stdClass;
  * @property string            $reset_code
  * @property bool              $validated
  * @property int               $created_at
+ * @property string            $group
  *
  */
 class User extends Model
@@ -311,7 +313,8 @@ class User extends Model
             'validation_code' => $code,
             'validated' => !$validate,
             'reset_code' => ($createWithSetPassword) ? $passCode : '',
-            'created_at' => time()
+            'created_at' => time(),
+            'group' => ''
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
@@ -476,7 +479,8 @@ class User extends Model
             'validation_code' => $code,
             'validated' => !$validate,
             'reset_code' => $passCode,
-            'created_at' => time()
+            'created_at' => time(),
+            'group' => ''
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
@@ -614,6 +618,7 @@ class User extends Model
      * @param  MetaSearch|null      $metaSearch
      * @param  bool|null            $status
      * @param  bool|null            $validated
+     * @param  string               $groupId
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -628,7 +633,8 @@ class User extends Model
         UserTypeSearch|null $typeSearch = null,
         MetaSearch|null $metaSearch = null,
         bool|null $status = null,
-        bool|null $validated = null
+        bool|null $validated = null,
+        string $groupId = ''
     ): Listing {
         $this->hasPermissions(true);
 
@@ -677,6 +683,14 @@ class User extends Model
             $query['validated'] = $validated;
         }
 
+        // Never show the anonymous user
+        $query['email'] = ['$ne' => 'anonymous@mail.io'];
+
+        // Filter by group
+        if ($groupId !== '') {
+            $query['group'] = $groupId;
+        }
+
         // Pagination
         $total = $this->count($query);
         $pages = ceil($total / $limit);
@@ -686,6 +700,149 @@ class User extends Model
         $list = $this->find($query, $options)->exec();
 
         return new Listing($pagination, new Collection($list));
+    }
+
+    /**
+     *
+     * Get user count of given group
+     *
+     * @param  string  $groupId
+     * @return int
+     *
+     */
+    public static function countForGroup(string $groupId): int
+    {
+        return self::query()->count(['group' => $groupId]);
+    }
+
+    /**
+     *
+     * Check if user is part of given group (id or slug)
+     *
+     * @param  string  $group
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function partOf(string $group): bool
+    {
+        if ($group === '') {
+            return false;
+        }
+
+        if ($this->isValidId($group)) {
+            return ($this->group === $group);
+        }
+
+        $groupObj = UserGroup::getBy('slug', $group);
+
+        if ($groupObj) {
+            return ($this->group === $groupObj->id);
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Check if user is part of one of the given groups
+     *
+     * @param  array|Collection  $groups
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function partOfAny(array|Collection $groups): bool
+    {
+        $idList = [];
+
+        foreach ($groups as $group) {
+            if ($this->isValidId($group)) {
+                $idList[] = $group;
+            } elseif ($group !== '') {
+                $g = UserGroup::getBy('slug', $group);
+
+                if ($g) {
+                    $idList[] = $g->id;
+                }
+            }
+        }
+
+        return in_array($this->group, $idList, true);
+    }
+
+    /**
+     *
+     * Activerecord style add to group
+     *
+     * @param  string  $groupId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function setGroup(string $groupId): void
+    {
+        $this->hasPermissions();
+        $this->group = $groupId;
+        $this->save();
+    }
+
+    /**
+     *
+     * Activerecord style remove group
+     *
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function removeGroup(): void
+    {
+        $this->hasPermissions();
+        $this->group = '';
+        $this->save();
+    }
+
+    /**
+     *
+     * Add a user to a group
+     *
+     * @param  string  $userId
+     * @param  string  $groupId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function addToGroup(string $userId, string $groupId): void
+    {
+        $instance = new self;
+        $instance->hasPermissions();
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($userId)], ['$set' => ['group' => $groupId]]);
+    }
+
+    /**
+     *
+     * Remove a user from its group
+     *
+     * @param  string  $userId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function removeFromGroup(string $userId): void
+    {
+        $instance = new self;
+        $instance->hasPermissions();
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($userId)], ['$set' => ['group' => '']]);
     }
 
     /**
@@ -1108,19 +1265,32 @@ class User extends Model
      *
      * @param  string  $code
      * @param  string  $password
-     * @return bool
+     * @return PasswordChangeResult
      * @throws DatabaseException
      *
      */
-    public static function changePassword(string $code, string $password): bool
+    public static function changePassword(string $code, string $password): PasswordChangeResult
     {
         $instance = new static();
+
+        $passCheck = true;
+        $codeCheck = true;
 
         // Validate password
         $valid = Security::validatePassword($password);
 
         if (!$valid) {
-            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            $passCheck = false;
+        }
+
+        $user = $instance->findOne(['reset_code' => $code])->exec();
+
+        if (!$user) {
+            $codeCheck = false;
+        }
+
+        if (!$passCheck || !$codeCheck) {
+            return new PasswordChangeResult($passCheck, $codeCheck);
         }
 
         $instance->updateOne(['reset_code' => $code],
@@ -1132,7 +1302,7 @@ class User extends Model
             ]
         );
 
-        return true;
+        return new PasswordChangeResult(true, true);
     }
 
     /**
@@ -1186,7 +1356,7 @@ class User extends Model
                 'roles' => new Collection(['super-administrator']),
                 'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
                 'status' => true,
-                'password' => Security::hashPassword(Text::randomString(16)),
+                'password' => Security::hashPassword(Text::init()->random(16)),
                 'locale' => Locale::default(),
                 'validated' => true,
                 'created_at' => strtotime('01-01-2003')

@@ -169,7 +169,7 @@ trait QueryObject
                             if (!empty($item) && !is_object($item)) {
                                 $obj = $instance->findById($item);
 
-                                if (count($subpop) > 1) {
+                                if (count($subpop) >= 1) {
                                     foreach ($subpop as $pop) {
                                         $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                                     }
@@ -184,7 +184,7 @@ trait QueryObject
                         if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
                             $obj = $instance->findById($doc->{$field});
 
-                            if (count($subpop) > 1) {
+                            if (count($subpop) >= 1) {
                                 foreach ($subpop as $pop) {
                                     $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                                 }
@@ -216,6 +216,20 @@ trait QueryObject
         $this->debugCall('', $qt);
         $this->clearOps();
         return $docs;
+    }
+
+    /**
+     *
+     * Get all records without any limits
+     * Note: Be careful with the use of this method
+     *
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public static function allRecords(): Collection
+    {
+        return new Collection(self::query()->find()->exec());
     }
 
     /**
@@ -930,7 +944,7 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $v->{$target}->{$pop[0]} = self::parsePopulate($v->{$target}, $thepop);
+                        $v->{$target}->{$pop[1]} = self::parsePopulate($v->{$target}, $thepop);
                     }
                 }
 
@@ -956,7 +970,7 @@ trait QueryObject
                         'subpopulates' => $pop[3] ?? []
                     ];
 
-                    $doc->{$field}->{$target}->{$pop[0]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
+                    $doc->{$field}->{$target}->{$pop[1]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
                 }
             }
         } else {
@@ -974,7 +988,7 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $doc->{$target}->{$pop[0]} = self::parsePopulate($doc->{$target}, $thepop);
+                        $doc->{$target}->{$pop[1]} = self::parsePopulate($doc->{$target}, $thepop);
                     }
                 }
             } else {

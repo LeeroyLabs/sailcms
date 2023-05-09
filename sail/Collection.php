@@ -666,7 +666,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         usort($this->_internal, static function ($a, $b) use ($key)
         {
             if (is_string($a->{$key})) {
-                return strcasecmp(Text::deburr($a->{$key}), Text::deburr($b->{$key}));
+                return strcasecmp(Text::from($a->{$key})->deburr()->value(), Text::from($b->{$key})->deburr()->value());
             }
 
             if (is_numeric($a->{$key})) {

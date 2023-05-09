@@ -84,7 +84,7 @@ final class Route
 
             $instance->setRoute($this);
 
-            Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
+            Debug::route($this->method, $url, $class . ':' . $this->method, Text::from($url)->slug()->value());
 
             call_user_func_array([$instance, $this->method], []);
             return $instance->getResponse();
@@ -110,7 +110,7 @@ final class Route
                 $instance->setRoute($this);
 
                 if (!str_contains($url, '__clockwork')) {
-                    Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
+                    Debug::route($this->method, $url, $class . ':' . $this->method, Text::from($url)->slug()->value());
                 }
 
                 call_user_func_array([$instance, $this->method], $matches);

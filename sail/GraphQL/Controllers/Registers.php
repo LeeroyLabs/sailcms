@@ -2,13 +2,8 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
-use SailCMS\ACL;
 use SailCMS\Collection;
-use SailCMS\Errors\ACLException;
-use SailCMS\Errors\DatabaseException;
-use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
-use SailCMS\Models\User;
 use SailCMS\Register;
 
 class Registers
