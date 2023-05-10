@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
@@ -21,8 +20,6 @@ class SelectField extends Field
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
-        if ($labels->fr === "Selection")
-            Debug::ray($settings);
         parent::__construct($labels, $settings);
     }
 

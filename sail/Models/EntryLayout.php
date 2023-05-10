@@ -220,11 +220,15 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function one(array $filters): ?EntryLayout
+    public function one(array $filters, bool $cache = true): ?EntryLayout
     {
         $this->hasPermissions(true);
 
         if (isset($filters['_id'])) {
+            if (!$cache) {
+                return $this->findById($filters['_id'])->exec();
+            }
+
             // Cache Time To Live value from setting or default
             $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
             $cacheKey = self::ENTRY_LAYOUT_ID_ . $filters['_id'];
