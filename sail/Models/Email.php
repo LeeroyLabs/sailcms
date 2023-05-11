@@ -35,7 +35,7 @@ class Email extends Model
         'title' => LocaleField::class,
         'content' => LocaleField::class,
         'cta' => LocaleField::class,
-        'cta_link' => LocaleField::class
+        'cta_title' => LocaleField::class
     ];
 
     protected string $permissionGroup = 'emails';
@@ -113,7 +113,7 @@ class Email extends Model
     ): bool {
         $this->hasPermissions();
 
-        $slug = Text::deburr(Text::snakeCase($name));
+        $slug = Text::from($name)->deburr()->snake()->value();
         $record = $this->findOne(['slug' => $slug])->exec();
 
         if ($record) {

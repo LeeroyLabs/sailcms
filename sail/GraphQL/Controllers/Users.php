@@ -5,21 +5,22 @@ namespace SailCMS\GraphQL\Controllers;
 use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
+use SailCMS\Middleware;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
+use SailCMS\Types\MiddlewareType;
+use SailCMS\Types\PasswordChangeResult;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
@@ -113,7 +114,7 @@ class Users
 
         $meta = $args->get('meta', '');
         $userType = $args->get('type', '');
-        $sorting = $args->get('sorting', null);
+        $sorting = $args->get('sorting');
 
         if ($meta) {
             $metaSearch = new MetaSearch($meta->get('key'), $meta->get('value'));
@@ -136,8 +137,9 @@ class Users
             $sorting,
             $userTypeSearch ?? null,
             $metaSearch ?? null,
-            $args->get('status', null),
-            $args->get('validated', null)
+            $args->get('status'),
+            $args->get('validated'),
+            $args->get('group_id', '')
         );
 
         $list->list->each(function ($key, $value)
@@ -193,23 +195,31 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
+     * @return User|null
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
      *
      */
-    public function verifyTFA(mixed $obj, Collection $args, Context $context): bool
+    public function verifyTFA(mixed $obj, Collection $args, Context $context): ?User
     {
         $model = new Tfa();
         $tfa = new TwoFactorAuthentication();
         $setup = $model->getForUser($args->get('user_id'));
 
         if ($setup) {
-            return $tfa->validate($setup->secret, $args->get('code'));
+            $result = $tfa->validate($setup->secret, $args->get('code'));
+
+            if ($result) {
+                $user = User::get($args->get('user_id'));
+
+                if ($user) {
+                    return (new User())->verifyTemporaryToken($user->temporary_token);
+                }
+            }
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -219,28 +229,11 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
-     * @throws DatabaseException
-     *
-     */
-    public function createUser(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $this->createUserShared($args);
-        return (!empty($id));
-    }
-
-    /**
-     *
-     * Create a regular user and return its id
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
      * @return string
      * @throws DatabaseException
      *
      */
-    public function createUserGetId(mixed $obj, Collection $args, Context $context): string
+    public function createUser(mixed $obj, Collection $args, Context $context): string
     {
         return $this->createUserShared($args);
     }
@@ -267,7 +260,7 @@ class Users
             $args->get('locale', 'en'),
             $args->get('avatar', ''),
             $meta,
-            $args->get('role', ''),
+            $args->get('roles', []),
             $args->get('createWithSetPassword', false),
             $args->get('useEmailTemplate', '')
         );
@@ -280,19 +273,19 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
+     * @return string
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function createAdminUser(mixed $obj, Collection $args, Context $context): bool
+    public function createAdminUser(mixed $obj, Collection $args, Context $context): string
     {
         $user = new User();
 
         $name = Username::initWith($args->get('name'));
         $meta = ($args->get('meta')) ? new UserMeta($args->get('meta')) : null;
-        $id = $user->create(
+        return $user->create(
             $name,
             $args->get('email'),
             '', // no password for admins
@@ -301,8 +294,6 @@ class Users
             $args->get('avatar', ''),
             $meta
         );
-
-        return (!empty($id));
     }
 
     /**
@@ -321,9 +312,9 @@ class Users
     public function updateUser(mixed $obj, Collection $args, Context $context): bool
     {
         $user = new User();
-        $roles = $args->get('roles', null);
-        $meta = $args->get('meta', null);
-        $name = $args->get('name', null);
+        $roles = $args->get('roles');
+        $meta = $args->get('meta');
+        $name = $args->get('name');
 
         if ($roles && is_array($roles)) {
             $roles = new Collection($roles);
@@ -340,12 +331,12 @@ class Users
         return $user->update(
             $args->get('id'),
             $name,
-            $args->get('email', null),
-            $args->get('password', null),
+            $args->get('email'),
+            $args->get('password'),
             $roles,
-            $args->get('avatar', null),
+            $args->get('avatar'),
             $meta,
-            $args->get('locale', '')
+            $args->get('locale')
         );
     }
 
@@ -407,11 +398,11 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return mixed
+     * @return PasswordChangeResult
      * @throws DatabaseException
      *
      */
-    public function changePassword(mixed $obj, Collection $args, Context $context): mixed
+    public function changePassword(mixed $obj, Collection $args, Context $context): PasswordChangeResult
     {
         return User::changePassword($args->get('code', ''), $args->get('password', ''));
     }
@@ -429,20 +420,12 @@ class Users
      */
     public function resolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
-        if ($info->fieldName === 'name') {
-            return $obj->name->castFrom();
-        }
-
-        if ($info->fieldName === 'permissions') {
-            return $obj->permissions()->unwrap();
-        }
-
-        if ($info->fieldName === 'roles') {
-            return $obj->roles->unwrap();
-        }
-
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
+            // Ask Middleware
+            $data = new Middleware\Data(Middleware\Login::Meta, $obj);
+            $obj = Middleware::execute(MiddlewareType::LOGIN, $data)->data;
+
             if (is_object($obj->meta) && get_class($obj->meta) === stdClass::class) {
                 $meta = new UserMeta();
                 return $meta->castTo($obj->meta)->castFrom();
@@ -453,6 +436,14 @@ class Users
             }
 
             return $obj->meta;
+        }
+
+        if (($info->fieldName === 'group') && !isset($obj->group)) {
+            return '';
+        }
+
+        if ($info->fieldName === 'permissions') {
+            return $obj->permissions();
         }
 
         return $obj->{$info->fieldName};

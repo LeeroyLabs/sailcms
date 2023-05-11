@@ -17,8 +17,8 @@ abstract class Field implements Castable
      *
      * Structure to replicate an html input
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
@@ -62,7 +62,7 @@ abstract class Field implements Castable
      *
      * Validate the input from a given content
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -72,8 +72,8 @@ abstract class Field implements Castable
      *
      * Valid a value by Field types
      *
-     * @param string $type
-     * @param mixed $value
+     * @param  string  $type
+     * @param  mixed   $value
      * @return bool
      *
      */
@@ -82,7 +82,8 @@ abstract class Field implements Castable
         return match ($type) {
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false, "1", "0", 1, 0, "true", "false"], true),
             InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
-            InputSettings::INPUT_TYPE_REGEX => is_string($value),
+            InputSettings::INPUT_TYPE_STRING => is_string($value),
+            InputSettings::INPUT_TYPE_OPTIONS => is_array($value) || $value instanceof Collection,
             default => false
         };
     }
@@ -91,8 +92,8 @@ abstract class Field implements Castable
      *
      * Validate settings before the schema creation in an entry layout
      *
-     * @param Collection|array|null $settings
-     * @param Collection $defaultSettings
+     * @param  Collection|array|null  $settings
+     * @param  Collection             $defaultSettings
      * @return Collection
      *
      */
@@ -121,8 +122,8 @@ abstract class Field implements Castable
      *
      * Get setting type from a field
      *
-     * @param string $name
-     * @param mixed $value
+     * @param  string  $name
+     * @param  mixed   $value
      * @return string
      *
      */
@@ -134,6 +135,7 @@ abstract class Field implements Castable
                 $type = match ($setting->type) {
                     "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
                     "checkbox" => StoringType::BOOLEAN->value,
+                    "options" => StoringType::ARRAY->value,
                     default => StoringType::STRING->value
                 };
             }
@@ -163,7 +165,7 @@ abstract class Field implements Castable
      *
      * Cast to Field Child
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return $this
      *
      */

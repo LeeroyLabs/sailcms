@@ -8,6 +8,8 @@ use SailCMS\Types\StoringType;
 
 class TextField extends Field
 {
+    public const SEARCHABLE = true;
+
     /**
      *
      * Description for field info
@@ -17,7 +19,7 @@ class TextField extends Field
      */
     public function description(): string
     {
-        return 'Field to implement an text html input.';
+        return 'Field to implement a text html input.';
     }
 
     /**

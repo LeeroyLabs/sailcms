@@ -9,41 +9,42 @@ class Executor extends Model
 {
     /**
      *
-     * Set Collection
-     *
-     * @param  string  $collection
-     * @return void
-     *
-     */
-    public function setCollection(string $collection)
-    {
-        $this->collection = $collection;
-    }
-
-    /**
-     *
      * Run update code
      *
-     * @param $update
+     * @param  array  $update
      * @return void
      * @throws DatabaseException
-     *
      */
-    public function runUpdate($update): void
+    public function runUpdate(array $update): void
     {
         $this->updateMany([], $update);
     }
 
     /**
      *
-     * Run insert code
+     * Run update code
      *
-     * @param $record
+     * @param  string  $field
+     * @param  array   $update
      * @return void
      * @throws DatabaseException
      *
      */
-    public function runInsert($record): void
+    public function runUpdateIfNotSet(string $field, array $update): void
+    {
+        $this->updateMany([$field => ['$exists' => false]], $update);
+    }
+
+    /**
+     *
+     * Run insert code
+     *
+     * @param  object|array  $record
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public function runInsert(object|array $record): void
     {
         $this->insert($record);
     }

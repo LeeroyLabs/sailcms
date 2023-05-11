@@ -3,27 +3,29 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Queue\Task;
 use SailCMS\Types\QueryOptions;
+use stdClass;
 
 /**
  *
- * @property string     $name
- * @property int        $scheduled_at
- * @property int        $executed_at
- * @property bool       $executed
- * @property string     $execution_result
- * @property bool       $execution_success
- * @property bool       $locked
- * @property string     $handler
- * @property string     $action
- * @property bool       $retriable
- * @property int        $retry_count
- * @property Collection $settings
- * @property int        $priority
+ * @property string                $name
+ * @property int                   $scheduled_at
+ * @property int                   $executed_at
+ * @property bool                  $executed
+ * @property string                $execution_result
+ * @property bool                  $execution_success
+ * @property bool                  $locked
+ * @property string                $handler
+ * @property string                $action
+ * @property bool                  $retriable
+ * @property int                   $retry_count
+ * @property BSONDocument|stdClass $settings
+ * @property int                   $priority
  *
  */
 class Queue extends Model
@@ -67,7 +69,7 @@ class Queue extends Model
      * @throws DatabaseException
      *
      */
-    public function get(int $limit = 0): Collection
+    public function getList(int $limit = 0): Collection
     {
         $options = new QueryOptions();
         $options->limit = $limit;
@@ -142,5 +144,32 @@ class Queue extends Model
         }
 
         $this->updateOne(['_id' => $id], $update);
+    }
+
+    /**
+     *
+     * Get the amount of task of given name the system has
+     *
+     * @param  string  $task
+     * @return int
+     *
+     */
+    public function getCountForTask(string $task): int
+    {
+        return self::query()->count(['action' => $task]);
+    }
+
+    /**
+     *
+     * Does the given task exist already
+     *
+     * @param  string  $task
+     * @return bool
+     *
+     */
+    public static function taskExists(string $task): bool
+    {
+        $count = (new self)->getCountForTask($task);
+        return ($count > 0);
     }
 }

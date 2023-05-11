@@ -19,8 +19,8 @@ use SailCMS\Filesystem;
 use SailCMS\Locale;
 use SailCMS\Sail;
 use SailCMS\Text;
-use SailCMS\Types\LocaleField;
 use SailCMS\Types\Listing;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 
@@ -44,7 +44,7 @@ use SailCMS\Types\QueryOptions;
 class Asset extends Model
 {
     protected string $collection = 'assets';
-    protected string $permissionGroup = 'assets';
+    protected string $permissionGroup = 'asset';
     protected array $casting = [
         'title' => LocaleField::class,
         'size' => Size::class,
@@ -146,7 +146,7 @@ class Asset extends Model
         $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
 
         // Options
-        $adapter = setting('assets.adapter', 'local://');
+        $adapter = setting('assets.adapter', 'local');
         $maxSize = setting('assets.maxUploadSize', 5);
         $optimize = setting('assets.optimizeOnUpload', true);
         $transforms = setting('assets.onUploadTransforms', []);
@@ -166,7 +166,7 @@ class Asset extends Model
         // Local adapter is special
         if ($adapter === 'local') {
             $basePath = 'local://';
-            $path = 'local://uploads/';
+            $path = 'local://storage/fs/uploads/';
         }
 
         // All folders are Year/Month (of upload)
@@ -176,7 +176,7 @@ class Asset extends Model
         $ext = end($info);
 
         // Add the unique id to the asset now
-        $the_name = Text::slugify(basename($filename));
+        $the_name = Text::from($filename)->basename()->slug()->value();
         $filename = str_replace(".{$ext}", "-{$upload_id}.{$ext}", $filename);
 
         // Check support formats for post-processing
@@ -237,11 +237,12 @@ class Asset extends Model
             'is_image' => $isImage,
             'filesize' => $sizeBytes,
             'size' => $size,
-            'uploader_id' => $uploader_id,
+            'uploader_id' => ($uploader_id !== '') ? $uploader_id : null,
             'public' => ($uploader_id === ''),
             'transforms' => [],
             'created_at' => time(),
-            'folder' => $folder
+            'folder' => $folder,
+            'site_id' => Sail::siteId()
         ]);
 
         // Run all transforms on upload configured
@@ -300,8 +301,7 @@ class Asset extends Model
                 // Check to see if already processed
                 $cache = null;
 
-                $this->transforms->each(function ($key, $value) use (&$cache, $name)
-                {
+                $this->transforms->each(function ($key, $value) use (&$cache, $name) {
                     if ($value->transform === $name) {
                         $cache = $value;
                     }

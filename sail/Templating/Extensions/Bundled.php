@@ -20,15 +20,22 @@ class Bundled extends AbstractExtension
     public function getFunctions(): array
     {
         return [
+            new TwigFunction('version', [$this, 'version']),
             new TwigFunction('header', [$this, 'header']),
             new TwigFunction('debug', [$this, 'debug']),
             new TwigFunction('env', [$this, 'env']),
             new TwigFunction('publicPath', [$this, 'publicPath']),
             new TwigFunction('locale', [$this, 'getLocale']),
+            new TwigFunction('defaultLocale', [$this, 'defaultLocale']),
             new TwigFunction('__', [$this, 'translate']),
             new TwigFunction('twoFactor', [$this, 'twoFactor']),
             new TwigFunction('csrf', [$this, 'csrf']),
-            new TwigFunction('transform', [$this, 'transform'])
+            new TwigFunction('transform', [$this, 'transform']),
+            new TwigFunction('json_encode', [$this, 'jsonEncode']),
+            new TwigFunction('jsonEncode', [$this, 'jsonEncode']),
+            new TwigFunction('json', [$this, 'jsonEncode']),
+            new TwigFunction('json_decode', [$this, 'jsonDecode']),
+            new TwigFunction('jsonDecode', [$this, 'jsonDecode']),
         ];
     }
 
@@ -40,6 +47,18 @@ class Bundled extends AbstractExtension
     public function header(): void
     {
         // TODO: Implement for SEO
+    }
+
+    /**
+     *
+     * Get current sail version
+     *
+     * @return string
+     *
+     */
+    public function version(): string
+    {
+        return Sail::SAIL_VERSION;
     }
 
     /**
@@ -60,12 +79,27 @@ class Bundled extends AbstractExtension
      * Get an .env variable
      *
      * @param  string  $key
+     * @param  mixed   $default
      * @return string|array|bool
      *
      */
-    public function env(string $key): string|array|bool
+    public function env(string $key, mixed $default): mixed
     {
-        return getenv($key);
+        return env($key);
+    }
+
+    /**
+     *
+     * get a setting
+     *
+     * @param  string  $key
+     * @param  mixed   $default
+     * @return mixed
+     *
+     */
+    public function setting(string $key, mixed $default): mixed
+    {
+        return setting($key);
     }
 
     /**
@@ -90,6 +124,18 @@ class Bundled extends AbstractExtension
     public function getLocale(): string
     {
         return Locale::$current;
+    }
+
+    /**
+     *
+     * Get default locale
+     *
+     * @return string
+     *
+     */
+    public function defaultLocale(): string
+    {
+        return Locale::default();
     }
 
     /**
@@ -163,13 +209,18 @@ class Bundled extends AbstractExtension
      * @throws Exception
      *
      */
-    public function csrf(): string
+    public function csrf(bool $returnAsFormElement = false): string
     {
         $use = setting('CSRF.use', true);
+        $csrfName = setting('CSRF.fieldName', '_csrf_');
+
+        if ($use && $returnAsFormElement) {
+            $token = Security::csrf();
+            return '<input type="hidden" name="' . $csrfName . '" value="' . $token . '" />';
+        }
 
         if ($use) {
-            $token = Security::csrf();
-            return '<input type="hidden" name="_csrf_" value="' . $token . '" />';
+            return Security::csrf();
         }
 
         return '';
@@ -193,5 +244,91 @@ class Bundled extends AbstractExtension
     public function transform(string $id, string $name, ?int $width = null, ?int $height = null, string $crop = Transformer::CROP_CC): string
     {
         return Asset::transformById($id, $name, $width, $height);
+    }
+
+    /**
+     *
+     * Obfuscate an email address
+     *
+     * @param  string  $email
+     * @return string
+     * @throws Exception
+     *
+     */
+    public function obfuscateEmail(string $email): string
+    {
+        $alwaysEncode = ['.', ':', '@'];
+        $result = '';
+
+        // Encode string using oct and hex character codes
+        $length = strlen($email);
+        for ($i = 0; $i < $length; $i++) {
+            // Encode 25% of characters including several that always should be encoded
+            if (in_array($email[$i], $alwaysEncode) || random_int(1, 100) < 25) {
+                if (random_int(0, 1)) {
+                    $result .= '&#' . ord($email[$i]) . ';';
+                } else {
+                    $result .= '&#x' . dechex(ord($email[$i])) . ';';
+                }
+            } else {
+                $result .= $email[$i];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     *
+     * Create an obfuscated mailto link with optional label
+     *
+     * @param  string  $email
+     * @param  string  $label
+     * @return string
+     * @throws Exception
+     *
+     */
+    public function obfuscateMailto(string $email, string $label = ''): string
+    {
+        $email = $this->obfuscateEmail($email);
+
+        if ($label === '') {
+            $label = $email;
+        }
+
+        return '<a href="mailt&#111;&#58;' . $email . '" rel="nofollow">' . $label . '</a>';
+    }
+
+    /**
+     *
+     * Encode JSON
+     *
+     * @param  mixed  $item
+     * @param  bool   $pretty
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public function jsonEncode(mixed $item, bool $pretty = false): string
+    {
+        if ($pretty) {
+            return json_encode($item, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        }
+
+        return json_encode($item, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     *
+     * Encode JSON
+     *
+     * @param  string  $json
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public function jsonDecode(string $json): string
+    {
+        return json_decode($json, false, 512, JSON_THROW_ON_ERROR);
     }
 }

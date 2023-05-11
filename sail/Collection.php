@@ -8,7 +8,12 @@ use SailCMS\Errors\CollectionException;
 use SailCMS\Types\Sorting;
 
 /**
+ *
  * @property mixed $length
+ * @property mixed $first
+ * @property mixed $last
+ * @property bool  $empty
+ *
  */
 class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 {
@@ -126,6 +131,53 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         }
 
         return new self($value);
+    }
+
+    /**
+     *
+     * Create a collection from a json string
+     *
+     * @param  string  $json
+     * @return Collection
+     * @throws CollectionException
+     * @throws JsonException
+     *
+     */
+    public static function fromJSON(string $json): Collection
+    {
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        if (!is_array($data)) {
+            throw new CollectionException('Cannot creation Collection from json object', 0500);
+        }
+
+        return new self($data);
+    }
+
+    /**
+     *
+     * Create a collection from a json file
+     *
+     * @param  string  $file
+     * @return Collection
+     * @throws CollectionException
+     * @throws JsonException
+     *
+     */
+    public static function fromJSONFile(string $file): Collection
+    {
+        if (file_exists($file)) {
+            $json = file_get_contents($file);
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+            if (!is_array($data)) {
+                throw new CollectionException('Cannot creation Collection from json object file', 0500);
+            }
+
+            return new self($data);
+        }
+
+        throw new CollectionException('JSON file does not exist', 0404);
     }
 
     /**
@@ -354,6 +406,19 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 
     /**
      *
+     * Get element at given key
+     *
+     * @param  string  $key
+     * @return mixed
+     *
+     */
+    public function atKey(string $key): mixed
+    {
+        return $this->_internal[$key] ?? null;
+    }
+
+    /**
+     *
      * Alias for at method
      *
      * @param  int  $index
@@ -469,7 +534,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
     public function contains(mixed $value): bool
     {
         $index = array_search($value, $this->_internal, true);
-        return $index !== '';
+        // Add $index !== false, because array_search return false when not found.
+        return $index !== "" && $index !== false;
     }
 
     /**
@@ -600,7 +666,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         usort($this->_internal, static function ($a, $b) use ($key)
         {
             if (is_string($a->{$key})) {
-                return strcasecmp(Text::deburr($a->{$key}), Text::deburr($b->{$key}));
+                return strcasecmp(Text::from($a->{$key})->deburr()->value(), Text::from($b->{$key})->deburr()->value());
             }
 
             if (is_numeric($a->{$key})) {
@@ -646,19 +712,28 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         $parts = explode('.', $dotNotation);
         $value = $this->_internal;
 
+        if (!str_contains($dotNotation, '.')) {
+            return $value[$dotNotation] ?? $defaultValue;
+        }
+
         foreach ($parts as $num => $part) {
-            if ($value instanceof static) {
-                $slice = array_slice($parts, $num, count($parts), false);
-                $value = $value->get(implode('.', $slice));
-            } elseif (is_object($value)) {
-                $value = $value->{$part} ?? $defaultValue;
-            } elseif (is_array($value)) {
-                if (is_numeric($part)) {
-                    $value = $value[(int)$part] ?? $defaultValue;
-                } else {
-                    $value = $value[$part] ?? $defaultValue;
-                }
+            if (is_object($value) && get_class($value) === self::class) {
+                $next = implode('.', array_slice($parts, $num, 1));
+                $value = $value->get($next, $defaultValue);
+                // Add the object handling
+            } elseif (is_object($value) && isset($value->{$part})) {
+                $value = $value->{$part};
+                // Add is_array to be sure it's okay
+            } elseif (is_array($value) && isset($value[$part])) {
+                $value = $value[$part];
+            } else {
+                $value = $defaultValue;
+                break;
             }
+        }
+
+        if (is_array($value)) {
+            return new self($value);
         }
 
         return $value ?? $defaultValue;
@@ -932,6 +1007,46 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
                         }
                     }
                 } elseif (isset($v->{$key}) && $v->{$key} === $value) {
+                    $list[] = $v;
+                }
+            }
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Return elements that do not match key/value
+     *
+     * This does not keep indexes
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return Collection
+     *
+     */
+    public function whereNot(string $key, mixed $value): Collection
+    {
+        $list = [];
+
+        foreach ($this->_internal as $k => $v) {
+            if (is_array($v)) {
+                foreach ($v as $_k => $_v) {
+                    if ($_k === $key && $_v !== $v) {
+                        $list[] = $v;
+                    }
+                }
+            } elseif (is_object($v)) {
+                if (get_class($v) === static::class) {
+                    $arr = $v->unwrap();
+
+                    foreach ($arr as $_k => $_v) {
+                        if ($_k === $key && $_v !== $value) {
+                            $list[] = $v;
+                        }
+                    }
+                } elseif (isset($v->{$key}) && $v->{$key} !== $value) {
                     $list[] = $v;
                 }
             }

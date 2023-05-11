@@ -12,9 +12,13 @@ use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Utils\AST;
 use GraphQL\Utils\BuildSchema;
+use GraphQL\Validator\DocumentValidator;
+use GraphQL\Validator\Rules\DisableIntrospection;
+use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
+use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
@@ -22,6 +26,8 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\Groups;
+use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -263,11 +269,28 @@ final class GraphQL
             $schema = BuildSchema::build($document, [self::class, 'handleCustomTypes']);
 
             $rawInput = file_get_contents('php://input');
-            $input = json_decode($rawInput, true, setting('graphql.depthLimit', 5), JSON_THROW_ON_ERROR); // N+1 protection
+            $input = json_decode($rawInput, true, 256, JSON_THROW_ON_ERROR);
             $query = $input['query'] ?? $input['mutation'] ?? '';
             $variableValues = $input['variables'] ?? null;
 
             $data = ['query' => $query, 'variables' => $variableValues];
+
+            // Disable Introspection (if set to false)
+            $introspection = setting('graphql.introspection', true);
+            if (!$introspection) {
+                $rule = new DisableIntrospection(DisableIntrospection::ENABLED);
+                DocumentValidator::addRule($rule);
+            }
+
+            // Depth Limiting (n+1)
+            $limit = setting('graphql.depthLimit', 5);
+
+            if ($introspection) {
+                $limit = 11;
+            }
+
+            $rule = new QueryDepth($limit);
+            DocumentValidator::addRule($rule);
 
             if (!empty($input['query'])) {
                 $mresult = Middleware::execute(MiddlewareType::GRAPHQL, new Data(MGQL::BeforeQuery, data: $data));
@@ -297,11 +320,11 @@ final class GraphQL
                     $mresult->data->errors = [
                         [
                             'message' => $error['debugMessage'] ?? $error['message'],
-                            'extensions' => ['category' => 'internal'],
+                            'extensions' => $error['extensions'] ?? ['category' => 'internal'],
                             'locations' => (isset($error['trace'])) ? [['line' => $error['trace'][0]['line'], 'column' => 1]] : $locations,
                             'file' => $error['trace'][0]['file'] ?? 'unknown file',
                             'stack' => $error['trace'] ?? [],
-                            'path' => ['']
+                            'path' => $error['path'] ?? ['']
                         ]
                     ];
                 }
@@ -358,6 +381,7 @@ final class GraphQL
         self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
         self::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
         self::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+        self::addResolver('Asset', Assets::class, 'assetResolver');
 
         // Emails
         self::addQueryResolver('email', Emails::class, 'email');
@@ -378,10 +402,17 @@ final class GraphQL
 
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
+        self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
+        self::addMutationResolver('publishEntry', Entries::class, 'publishEntry');
+        self::addMutationResolver('unpublishEntry', Entries::class, 'unpublishEntry');
         self::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
+
+        self::addQueryResolver('entryVersion', Entries::class, 'entryVersion');
+        self::addQueryResolver('entryVersions', Entries::class, 'entryVersions');
+        self::addMutationResolver('applyVersion', Entries::class, 'applyVersion');
 
         self::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
         self::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
@@ -391,6 +422,12 @@ final class GraphQL
         self::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
 
         self::addQueryResolver('fields', Entries::class, 'fields');
+
+        // Types and Resolvers
+        self::addResolver('Entry', Entries::class, 'entryResolver');
+        self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
+        self::addResolver('Authors', Entries::class, 'authorsResolver');
+        self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
@@ -405,6 +442,21 @@ final class GraphQL
         self::addMutationResolver('updateCategoryOrders', Categories::class, 'updateCategoryOrders');
         self::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
         self::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
+
+        // Navigation
+        self::addQueryResolver('navigation', Navigation::class, 'navigation');
+        self::addQueryResolver('navigationDetails', Navigation::class, 'navigationDetails');
+        self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
+        self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
+        self::addMutationResolver('deleteNavigation', Navigation::class, 'deleteNavigation');
+
+        // Groups
+        self::addQueryResolver('group', Groups::class, 'group');
+        self::addQueryResolver('groups', Groups::class, 'groups');
+        self::addMutationResolver('createGroup', Groups::class, 'createGroup');
+        self::addMutationResolver('updateGroup', Groups::class, 'updateGroup');
+        self::addMutationResolver('deleteGroup', Groups::class, 'deleteGroup');
+        self::addResolver('Group', Groups::class, 'groupResolver');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
@@ -437,7 +489,19 @@ final class GraphQL
         } elseif (is_object($objectValue)) {
             if (isset($objectValue->{$fieldName})) {
                 if (is_object($objectValue->{$fieldName}) && get_class($objectValue->{$fieldName}) === Collection::class) {
+                    // Unwrap collections before heading out
                     $property = $objectValue->{$fieldName}->unwrap();
+                } elseif (is_object($objectValue->{$fieldName})) {
+                    // Simplify objects that are castable
+                    $implements = class_implements($objectValue->{$fieldName});
+                    $implements = array_values($implements);
+
+                    // When simplified, return them right away because the type cannot be resolved to native json type
+                    if (count($implements) > 0 && $implements[0] === Castable::class) {
+                        return $objectValue->{$fieldName}->castFrom();
+                    }
+
+                    $property = $objectValue->{$fieldName};
                 } else {
                     $property = $objectValue->{$fieldName};
                 }
@@ -457,7 +521,7 @@ final class GraphQL
         if ($type === 'Query') {
             foreach (self::$queries as $name => $query) {
                 if ($fieldName === $name) {
-                    return (new $query->class())->{$query->method}($objectValue, new Collection($args), $contextValue);
+                    return DI::resolve($query->class)->{$query->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -467,7 +531,7 @@ final class GraphQL
         if ($type === 'Mutation') {
             foreach (self::$mutations as $name => $mutation) {
                 if ($fieldName === $name) {
-                    return (new $mutation->class())->{$mutation->method}($objectValue, new Collection($args), $contextValue);
+                    return DI::resolve($mutation->class)->{$mutation->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -477,7 +541,7 @@ final class GraphQL
         // One last try on the resolvers
         foreach (self::$resolvers as $name => $resolver) {
             if ($type === $name) {
-                return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                return DI::resolve($resolver->class)->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
             }
         }
 

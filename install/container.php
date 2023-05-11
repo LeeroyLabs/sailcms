@@ -11,7 +11,14 @@ class Container extends AppContainer
 {
     public function info(): ContainerInformation
     {
-        return new ContainerInformation('[NAME]', 'your description', 1.0, '1.0.0');
+        return new ContainerInformation(
+            '[NAME]',
+            'your description',
+            1.0,
+            '1.0.0',
+            'Your Name',
+            'Your Link'
+        );
     }
 
     public function routes(): void

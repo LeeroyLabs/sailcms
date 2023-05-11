@@ -114,7 +114,7 @@ class Roles
     {
         return (new Role())->update(
             $args->get('id'),
-            $args->get('name' . ''),
+            $args->get('name', ''),
             $args->get('level', -1),
             $args->get('description', ''),
             $args->get('permissions', [])
@@ -136,6 +136,6 @@ class Roles
      */
     public function delete(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Role())->remove($args->get('id'));
+        return (new Role())->delete($args->get('id'));
     }
 }

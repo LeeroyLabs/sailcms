@@ -8,6 +8,7 @@ use SailCMS\Types\MiddlewareType;
 abstract class Login implements AppMiddleware
 {
     public const LogIn = 'LogIn';
+    public const Meta = 'Meta';
     public const ForgotPassword = 'ForgotPassword';
 
     abstract public function process(Data $data): Data;
