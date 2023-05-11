@@ -25,7 +25,6 @@ use stdClass;
 
 /**
  *
- * todo add cache
  *
  * @property string           $slug
  * @property LocaleField      $titles
@@ -214,6 +213,7 @@ class EntryLayout extends Model implements Castable
      * Find one user with filters
      *
      * @param  array  $filters
+     * @param  bool   $cache
      * @return EntryLayout|null
      * @throws ACLException
      * @throws DatabaseException
