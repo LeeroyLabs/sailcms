@@ -145,6 +145,7 @@ abstract class Field
         $configsData = new Collection((array)$data->configs);
 
         $configsData->each(function ($key, $field) use (&$settings) {
+            // FIX : for when and EntryLayout is from the cache.
             if (!isset($field->settings)) {
                 $fieldSettings = (array)$field;
                 unset($fieldSettings['labels']);
