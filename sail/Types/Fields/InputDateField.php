@@ -2,7 +2,6 @@
 
 namespace SailCMS\Types\Fields;
 
-use Cassandra\Date;
 use SailCMS\Collection;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
@@ -28,11 +27,12 @@ class InputDateField extends Field
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly ?string $format = 'timestamp',
-        public readonly bool $required = false,
-        public readonly ?string $min = null,
-        public readonly ?string $max = null,
-    ) {
+        public readonly ?string      $format = 'timestamp',
+        public readonly bool         $required = false,
+        public readonly ?string      $min = null,
+        public readonly ?string      $max = null,
+    )
+    {
     }
 
     /**
@@ -93,20 +93,20 @@ class InputDateField extends Field
     {
         $errors = Collection::init();
 
-        if (!is_int($content)) {
-            $errors->push(self::FIELD_REQUIRED);
-        }
+        $contentCasted = strtotime($content);
+        $minCasted = $this->min ? strtotime($this->min) : 0;
+        $maxCasted = $this->max ? strtotime($this->max) : 0;
 
         // Since "0" is treat as false, the condition for empty is stricter
         if ($this->required && $content === "") {
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($contentCasted < $this->min) {
+        if ($minCasted > 0 && $contentCasted < $minCasted) {
             $errors->push(sprintf(self::FIELD_TOO_SMALL, $this->min));
         }
 
-        if ($this->max > 0 && $contentCasted > $this->max) {
+        if ($maxCasted > 0 && $contentCasted > $maxCasted) {
             $errors->push(sprintf(self::FIELD_TOO_BIG, $this->max));
         }
 
@@ -127,8 +127,7 @@ class InputDateField extends Field
             'settings' => [
                 'required' => $this->required,
                 'min' => $this->min,
-                'max' => $this->max,
-                'step' => $this->step
+                'max' => $this->max
             ]
         ];
     }

@@ -241,7 +241,6 @@ and must keep it through all the process',
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($errors);
-        \SailCMS\Debug::ray($errors);
         expect(true)->toBe(false);
     }
 });
