@@ -304,7 +304,7 @@ class Entry extends Model implements Validator, Castable
 
             $this->entryLayout = (new EntryLayout())->one([
                 '_id' => $this->entryType->entry_layout_id
-            ]);
+            ], false);
         }
         return $this->entryLayout;
     }
