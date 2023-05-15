@@ -137,7 +137,7 @@ test('Add all fields to the layout', function () {
         "wysiwyg" => $htmlField,
         "email" => $emailField,
         "select" => $selectField,
-        "multipleSelect" => $multipleSelectField
+        "multipleSelect" => $multipleSelectField,
         "url" => $urlField,
         "image" => $assetField
     ]);
