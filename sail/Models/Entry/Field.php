@@ -225,6 +225,19 @@ abstract class Field
 
     /**
      *
+     * Convert the content for the save and update of the Entry
+     *  can be overridden in child class to adapt according to the field content
+     *
+     * @param  mixed  $content
+     * @return mixed
+     */
+    public function convert(mixed $content): mixed
+    {
+        return $content;
+    }
+
+    /**
+     *
      * Parse the content for the Entry->getContent()
      *  can be overridden in child class to adapt according to the field content
      *
