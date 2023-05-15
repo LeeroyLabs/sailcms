@@ -3,6 +3,7 @@
 namespace SailCMS\Types\Fields;
 
 use SailCMS\Collection;
+use SailCMS\Models\Entry\DateField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
@@ -19,7 +20,7 @@ class InputDateField extends Field
      * Input text field from html input:number attributes
      *
      * @param  LocaleField|null  $labels
-     * @param  string|null       $format
+     * @param  string|null       $format  Should be a format from https://www.php.net/manual/en/datetime.format.php
      * @param  bool              $required
      * @param  string|null       $min
      * @param  string|null       $max
@@ -27,7 +28,7 @@ class InputDateField extends Field
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly ?string      $format = 'timestamp',
+        public readonly ?string      $format = null,
         public readonly bool         $required = false,
         public readonly ?string      $min = null,
         public readonly ?string      $max = null,
@@ -45,7 +46,7 @@ class InputDateField extends Field
     public static function defaultSettings(): Collection
     {
         return new Collection([
-            'format' => 'timestamp',
+            'format' => DateField::DATE_FORMAT_DEFAULT,
             'required' => false,
             'min' => null,
             'max' => null,
@@ -72,13 +73,12 @@ class InputDateField extends Field
     /**
      *
      * Get the type of how it's store in the database
-     *  > it could be an integer or a float
      *
      * @return string
      */
     public static function storingType(): string
     {
-        return StoringType::DATE->value;
+        return StoringType::STRING->value;
     }
 
     /**
