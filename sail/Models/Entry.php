@@ -23,7 +23,6 @@ use SailCMS\Log;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Entry as MEntry;
-use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Search as SailSearch;
@@ -328,7 +327,7 @@ class Entry extends Model implements Validator, Castable
 
         $schema->each(function ($key, $modelField) use (&$parsedContent) {
             /**
-             * @var Field $modelField
+             * @var ModelField $modelField
              */
             $content = $this->content->get($key);
 
@@ -343,6 +342,38 @@ class Entry extends Model implements Validator, Castable
         });
 
         return $parsedContent;
+    }
+
+    /**
+     *
+     * Process content before saving in database
+     *
+     * @param  Collection  $content
+     * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     */
+    private function processContentBeforeSave(Collection $content): array
+    {
+        $processedContents = [];
+        $schema = $this->getSchema(true);
+
+        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
+            $fieldContent = $content->get($key);
+
+            if ($fieldContent) {
+                /**
+                 * @var ModelField $modelField
+                 */
+                $processedFieldContent = $modelField->convert($fieldContent);
+
+                $processedContents[$key] = $processedFieldContent;
+            }
+        });
+
+        return $processedContents;
     }
 
     /**
@@ -463,7 +494,7 @@ class Entry extends Model implements Validator, Castable
             $parsedContent = $content;
 
             /**
-             * @var Field $field
+             * @var ModelField $field
              */
             $field = $schema->get($key);
 
@@ -1672,7 +1703,7 @@ class Entry extends Model implements Validator, Castable
                 }
             }
 
-            $content = $content->unwrap();
+            $content = $this->processContentBeforeSave($content);
         }
 
         // Validate locale
@@ -1810,8 +1841,13 @@ class Entry extends Model implements Validator, Castable
             }
         }
 
+        if ($data->get('content')) {
+            // Add it to the update
+            $update['content'] = $this->processContentBeforeSave($data->get('content'));
+        }
+
         $data->each(function ($key, $value) use (&$update) {
-            if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'content', 'alternates'])) {
+            if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'alternates'])) {
                 $update[$key] = $value;
             }
         });
@@ -1840,7 +1876,7 @@ class Entry extends Model implements Validator, Castable
 
         // Version save with simplified entry
         $simplifiedEntry = $entry->simplify(null, false);
-        $simplifiedEntry['content'] = $entry->content;
+        $simplifiedEntry['content'] = $this->processContentBeforeSave($entry->content);
         $versionId = (new EntryVersion)->create($author, $simplifiedEntry);
 
         // Update search
@@ -1922,7 +1958,7 @@ class Entry extends Model implements Validator, Castable
         (new EntryPublication())->deleteAllByEntryId((string)$entryId, false);
 
         // And entry versions too
-        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
+//        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
 
         // And search
         (new SailSearch())->remove($entryId);

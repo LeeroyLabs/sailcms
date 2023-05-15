@@ -12,6 +12,7 @@ use SailCMS\Locale;
 use SailCMS\Types\UserMeta;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Schema extends Command
@@ -30,6 +31,7 @@ class Schema extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $hidecms = $input->getOption('hidecms');
         Tools::outputInfo('compile', "Compiling AST schema for [b]GraphQL[/b]");
 
         $pathAST = 'cache://graphql.ast';
@@ -58,28 +60,46 @@ class Schema extends Command
             $localeString .= "{$locale}: String\n";
         }
 
-        $schemaContent = file_get_contents(dirname(__DIR__) . '/GraphQL/schema.graphql');
-        $schemaContent = str_replace(
-            [
-                '#{CUSTOM_QUERIES}#',
-                '#{CUSTOM_MUTATIONS}#',
-                '#{CUSTOM_TYPES}#',
-                '#{CUSTOM_FLAGS}#',
-                '#{CUSTOM_META}#',
-                '#{CUSTOM_META_INPUT}#',
-                '#{LOCALE_FIELDS}#'
-            ],
-            [
-                implode("\n", $queries),
-                implode("\n", $mutations),
-                implode("\n", $types),
-                UserMeta::getAvailableFlags(),
-                UserMeta::getAvailableMeta(),
-                UserMeta::getAvailableMeta(true),
-                $localeString
-            ],
-            $schemaContent
-        );
+        if ($hidecms !== null) {
+            $schemaContent = file_get_contents(dirname(__DIR__) . '/GraphQL/schema.graphql');
+            $schemaContent = str_replace(
+                [
+                    '#{CUSTOM_QUERIES}#',
+                    '#{CUSTOM_MUTATIONS}#',
+                    '#{CUSTOM_TYPES}#',
+                    '#{CUSTOM_FLAGS}#',
+                    '#{CUSTOM_META}#',
+                    '#{CUSTOM_META_INPUT}#',
+                    '#{LOCALE_FIELDS}#'
+                ],
+                [
+                    implode("\n", $queries),
+                    implode("\n", $mutations),
+                    implode("\n", $types),
+                    UserMeta::getAvailableFlags(),
+                    UserMeta::getAvailableMeta(),
+                    UserMeta::getAvailableMeta(true),
+                    $localeString
+                ],
+                $schemaContent
+            );
+        } else {
+            Tools::outputInfo('OPTION', "Compiling without SailCMS");
+            $schemaContent = file_get_contents(dirname(__DIR__) . '/GraphQL/empty_schema.graphql');
+            $schemaContent = str_replace(
+                [
+                    '#{CUSTOM_QUERIES}#',
+                    '#{CUSTOM_MUTATIONS}#',
+                    '#{CUSTOM_TYPES}#'
+                ],
+                [
+                    implode("\n", $queries),
+                    implode("\n", $mutations),
+                    implode("\n", $types),
+                ],
+                $schemaContent
+            );
+        }
 
         // Parse schema
         $document = Parser::parse($schemaContent);
@@ -93,6 +113,7 @@ class Schema extends Command
 
     protected function configure(): void
     {
+        $this->addOption('hidecms', null, InputOption::VALUE_OPTIONAL, 'HideCMS in AST', false);
         $this->setHelp("Build an optimized AST version of the GraphQL Schema for production");
     }
 }

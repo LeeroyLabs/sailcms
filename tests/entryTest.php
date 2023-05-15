@@ -409,7 +409,7 @@ test('Failed to find the entry by url', function () {
     expect($entry)->toBe(null);
 })->group('entry');
 
-test('Get entry versions failed to apply the last version and apply one', function () {
+test('Get entry versions, failed to apply the last version and apply one', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test'
