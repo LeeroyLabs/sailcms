@@ -35,7 +35,7 @@ class InputUrlField extends Field
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('pattern', InputSettings::INPUT_TYPE_REGEX),
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING),
         ]);
     }
 
