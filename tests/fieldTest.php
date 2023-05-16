@@ -16,6 +16,7 @@ use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
+use SailCMS\Types\Fields\InputDateField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
@@ -120,8 +121,7 @@ test('Add all fields to the layout', function () {
         [
             'required' => true,
             'min' => "2018-01-01",
-            'max' => "2025-12-31",
-            'step' => 1
+            'max' => "2025-12-31"
         ]
     ]);
 
@@ -171,10 +171,12 @@ test('Failed to update the entry content', function () {
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'select' => 'test-failed',
                 'url' => 'babaganouj',
-                'image' => 'bad1d12345678901234bad1d' // Bad id...
+                'image' => 'bad1d12345678901234bad1d', // Bad id...
+                'date' => '2027-02-02'
             ]
         ], false);
 
+        \SailCMS\Debug::ray($errors);
         expect($errors->length)->toBeGreaterThan(0)
             ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
@@ -182,7 +184,8 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
-            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS);
+            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"));
     } catch (Exception $exception) {
 //        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);

@@ -11,8 +11,8 @@ use stdClass;
 class InputDateField extends Field
 {
     /* Errors from 6141 to 6159 */
-    public const FIELD_TOO_BIG = '6141: The value is too big (%s)';
-    public const FIELD_TOO_SMALL = '6142: The value is too small (%s)';
+    public const FIELD_TOO_BIG = '6141: The value is greater than %s';
+    public const FIELD_TOO_SMALL = '6142: The value is smaller than %s';
 
     /**
      *
@@ -65,8 +65,8 @@ class InputDateField extends Field
         return new Collection([
             new InputSettings('format', InputSettings::INPUT_TYPE_STRING),
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('min', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('max', InputSettings::INPUT_TYPE_NUMBER),
+            new InputSettings('min', InputSettings::INPUT_TYPE_STRING),
+            new InputSettings('max', InputSettings::INPUT_TYPE_STRING),
         ]);
     }
 
@@ -93,20 +93,20 @@ class InputDateField extends Field
     {
         $errors = Collection::init();
 
-        $contentCasted = strtotime($content);
-        $minCasted = $this->min ? strtotime($this->min) : 0;
-        $maxCasted = $this->max ? strtotime($this->max) : 0;
+        $contentCasted = \DateTime::createFromFormat($this->format, $content);
+        $minCasted = $this->min ? \DateTime::createFromFormat($this->format, $this->min) : "";
+        $maxCasted = $this->max ? \DateTime::createFromFormat($this->format, $this->max) : "";
 
         // Since "0" is treat as false, the condition for empty is stricter
         if ($this->required && $content === "") {
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($minCasted > 0 && $contentCasted < $minCasted) {
+        if ($minCasted !== "" && $contentCasted < $minCasted) {
             $errors->push(sprintf(self::FIELD_TOO_SMALL, $this->min));
         }
 
-        if ($maxCasted > 0 && $contentCasted > $maxCasted) {
+        if ($maxCasted !== "" && $contentCasted > $maxCasted) {
             $errors->push(sprintf(self::FIELD_TOO_BIG, $this->max));
         }
 
@@ -125,6 +125,7 @@ class InputDateField extends Field
         return (object)[
             'labels' => $this->labels->castFrom(),
             'settings' => [
+                'format' => $this->format,
                 'required' => $this->required,
                 'min' => $this->min,
                 'max' => $this->max
@@ -144,10 +145,10 @@ class InputDateField extends Field
     {
         return new self(
             $value->labels,
+            $value->settings->format,
             $value->settings->required,
             $value->settings->min,
-            $value->settings->max,
-            $value->settings->step
+            $value->settings->max
         );
     }
 }

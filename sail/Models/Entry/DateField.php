@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Types\Fields\InputDateField;
 use SailCMS\Types\StoringType;
 
@@ -86,7 +85,7 @@ class DateField extends Field
     {
         $format = $this->configs->first->format ?? self::DATE_FORMAT_DEFAULT;
         $date = \DateTime::createFromFormat($format, $content);
-        Debug::ray($date, $content);
+        
         return $date->getTimestamp();
     }
 
