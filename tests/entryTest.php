@@ -442,6 +442,7 @@ test('Get entry versions, failed to apply the last version and apply one', funct
             ->and($entry->slug)->toBe('test');
     } catch (EntryException $e) {
 //        print_r($e->getMessage());
+        SailCMS\Debug::ray($e);
         expect(true)->toBe(false);
     }
 })->group('entry-version');

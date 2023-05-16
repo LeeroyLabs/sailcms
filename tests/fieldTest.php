@@ -174,6 +174,7 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS);
     } catch (Exception $exception) {
         //print_r($exception->getMessage());
+        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 });
