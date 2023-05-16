@@ -184,8 +184,7 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS);
     } catch (Exception $exception) {
-        //print_r($exception->getMessage());
-        \SailCMS\Debug::ray($exception);
+//        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 });
