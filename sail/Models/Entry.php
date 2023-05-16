@@ -1876,7 +1876,7 @@ class Entry extends Model implements Validator, Castable
 
         // Version save with simplified entry
         $simplifiedEntry = $entry->simplify(null, false);
-        $simplifiedEntry['content'] = $this->processContentBeforeSave($entry->content);
+        $simplifiedEntry['content'] = $entry->content;
         $versionId = (new EntryVersion)->create($author, $simplifiedEntry);
 
         // Update search
