@@ -43,7 +43,7 @@ class DateTimeField extends Field
         // If one input is required all began required to avoid parsing
         if (($this->configs->get('date.required') || $this->configs->get('time.required'))
             && (!$content->get('date') || !$content->get('time'))) {
-            return new Collection([Field::]);
+            return new Collection([]);
         }
         return null;
     }
