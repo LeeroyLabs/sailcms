@@ -8,6 +8,7 @@ use SailCMS\Types\StoringType;
 
 class TimeField extends Field
 {
+    const TIME_FORMAT_DEFAULT = 'H:i';
 
     public function description(): string
     {
@@ -33,7 +34,7 @@ class TimeField extends Field
         ]);
     }
 
-    protected function validate(Collection $content): ?Collection
+    protected function validate(mixed $content): ?Collection
     {
         // Nothing to implement
         return null;

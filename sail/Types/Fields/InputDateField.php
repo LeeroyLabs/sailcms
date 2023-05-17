@@ -11,8 +11,8 @@ use stdClass;
 class InputDateField extends Field
 {
     /* Errors from 6141 to 6159 */
-    public const FIELD_TOO_BIG = '6141: The value is greater than %s';
-    public const FIELD_TOO_SMALL = '6142: The value is smaller than %s';
+    public const FIELD_TOO_BIG = '6141: The date is greater than %s';
+    public const FIELD_TOO_SMALL = '6142: The date is smaller than %s';
 
     /**
      *
@@ -103,11 +103,11 @@ class InputDateField extends Field
         }
 
         if ($minCasted !== "" && $contentCasted < $minCasted) {
-            $errors->push(sprintf(self::FIELD_TOO_SMALL, $this->min));
+            $errors->push(sprintf(static::FIELD_TOO_SMALL, $this->min));
         }
 
         if ($maxCasted !== "" && $contentCasted > $maxCasted) {
-            $errors->push(sprintf(self::FIELD_TOO_BIG, $this->max));
+            $errors->push(sprintf(static::FIELD_TOO_BIG, $this->max));
         }
 
         return $errors;
