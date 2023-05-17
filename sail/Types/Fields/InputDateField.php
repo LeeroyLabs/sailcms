@@ -17,7 +17,7 @@ class InputDateField extends Field
     /**
      *
      *
-     * Input text field from html input:number attributes
+     * Input date field from html input:date attributes
      *
      * @param  LocaleField|null  $labels
      * @param  string|null       $format  Should be a format from https://www.php.net/manual/en/datetime.format.php
@@ -38,7 +38,7 @@ class InputDateField extends Field
 
     /**
      *
-     * Define default settings for a Input Text Field
+     * Define default settings for a Input Date Field
      *
      * @return Collection
      *
@@ -83,7 +83,7 @@ class InputDateField extends Field
 
     /**
      *
-     * Input text field validation
+     * Input date field validation
      *
      * @param  mixed  $content
      * @return Collection
@@ -115,7 +115,7 @@ class InputDateField extends Field
 
     /**
      *
-     * Cast to simpler form from InputNumberField
+     * Cast to simpler form from InputDateField
      *
      * @return stdClass
      *
@@ -135,7 +135,7 @@ class InputDateField extends Field
 
     /**
      *
-     * Cast to InputNumberField
+     * Cast to InputDateField
      *
      * @param  mixed  $value
      * @return Field
