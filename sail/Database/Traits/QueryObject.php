@@ -934,7 +934,6 @@ trait QueryObject
                 $obj = $instance->findById($v[$sub])->exec();
                 $v->{$target} = $obj;
 
-
                 if (count($subpop) > 0) {
                     foreach ($subpop as $pop) {
                         $thepop = [
@@ -973,6 +972,14 @@ trait QueryObject
                     $doc->{$field}->{$target}->{$pop[1]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
                 }
             }
+        } elseif (is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
+            // handle collections ids
+            $childs = [];
+            foreach ($doc->{$field}->castFrom() as $k => $v) {
+                $obj = $instance->findById($v)->exec();
+                $childs[] = $obj;
+            }
+            $doc->{$target} = new Collection($childs);
         } else {
             // Process a field on a simple model (ex: $mod->user_id to $mod->user) with support for subpopulation.
             if ($doc->{$field}) {
