@@ -11,6 +11,7 @@ use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\TimeField;
 use SailCMS\Models\Entry\UrlField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
@@ -20,6 +21,7 @@ use SailCMS\Types\Fields\InputDateField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputTimeField;
 use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
 
@@ -125,6 +127,13 @@ test('Add all fields to the layout', function () {
         ]
     ]);
 
+    $timeField = new TimeField(new LocaleField(['en' => 'Hour', 'fr' => 'Heure']), [
+        [
+            'required' => true,
+            'min' => "10:00"
+        ]
+    ]);
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -137,7 +146,8 @@ test('Add all fields to the layout', function () {
         "select" => $selectField,
         "url" => $urlField,
         "image" => $assetField,
-        "date" => $dateField
+        "date" => $dateField,
+        "time" => $timeField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -172,11 +182,11 @@ test('Failed to update the entry content', function () {
                 'select' => 'test-failed',
                 'url' => 'babaganouj',
                 'image' => 'bad1d12345678901234bad1d', // Bad id...
-                'date' => '2027-02-02'
+                'date' => '2027-02-02',
+                'time' => '09:59'
             ]
         ], false);
 
-        \SailCMS\Debug::ray($errors);
         expect($errors->length)->toBeGreaterThan(0)
             ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
@@ -185,7 +195,8 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
-            ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"));
+            ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
+            ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"));
     } catch (Exception $exception) {
 //        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
@@ -220,7 +231,8 @@ and must keep it through all the process',
                 'select' => 'test',
                 'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
                 'image' => (string)$item->_id,
-                'date' => "2021-10-10"
+                'date' => "2021-10-10",
+                'time' => "10:00"
             ]
         ], false);
         expect($errors->length)->toBe(0);
