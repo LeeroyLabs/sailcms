@@ -3,6 +3,7 @@
 use SailCMS\Collection;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Entry\AssetField;
+use SailCMS\Models\Entry\DateField;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\HTMLField;
@@ -10,14 +11,17 @@ use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\TimeField;
 use SailCMS\Models\Entry\UrlField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
+use SailCMS\Types\Fields\InputDateField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputTimeField;
 use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
 
@@ -115,6 +119,21 @@ test('Add all fields to the layout', function () {
 
     $assetField = new AssetField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
 
+    $dateField = new DateField(new LocaleField(['en' => 'Date', 'fr' => 'Date']), [
+        [
+            'required' => true,
+            'min' => "2018-01-01",
+            'max' => "2025-12-31"
+        ]
+    ]);
+
+    $timeField = new TimeField(new LocaleField(['en' => 'Hour', 'fr' => 'Heure']), [
+        [
+            'required' => true,
+            'min' => "10:00"
+        ]
+    ]);
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -126,7 +145,9 @@ test('Add all fields to the layout', function () {
         "email" => $emailField,
         "select" => $selectField,
         "url" => $urlField,
-        "image" => $assetField
+        "image" => $assetField,
+        "date" => $dateField,
+        "time" => $timeField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -160,7 +181,9 @@ test('Failed to update the entry content', function () {
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'select' => 'test-failed',
                 'url' => 'babaganouj',
-                'image' => 'bad1d12345678901234bad1d' // Bad id...
+                'image' => 'bad1d12345678901234bad1d', // Bad id...
+                'date' => '2027-02-02',
+                'time' => '09:59'
             ]
         ], false);
 
@@ -171,7 +194,9 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
-            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS);
+            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
+            ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"));
     } catch (Exception $exception) {
 //        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
@@ -205,7 +230,9 @@ and must keep it through all the process',
                 'email' => 'email-test@email.com',
                 'select' => 'test',
                 'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
-                'image' => (string)$item->_id
+                'image' => (string)$item->_id,
+                'date' => "2021-10-10",
+                'time' => "10:00"
             ]
         ], false);
         expect($errors->length)->toBe(0);

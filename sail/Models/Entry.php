@@ -1958,7 +1958,7 @@ class Entry extends Model implements Validator, Castable
         (new EntryPublication())->deleteAllByEntryId((string)$entryId, false);
 
         // And entry versions too
-//        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
+        (new EntryVersion())->deleteAllByEntryId((string)$entryId);
 
         // And search
         (new SailSearch())->remove($entryId);

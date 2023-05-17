@@ -160,6 +160,33 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Date", fr: "Date" }
+                            key: "date"
+                            handle: "SailCMS-Models-Entry-DateField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "format", value: "Y-m-d", type: string },
+                                        { name: "min", value: "2020-03-01", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Hour", fr: "Heure" }
+                            key: "time"
+                            handle: "SailCMS-Models-Entry-TimeField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
@@ -238,6 +265,14 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "image"
                             content: "' . $assetId . '"
+                        }
+                        {
+                            key: "date"
+                            content: "2021-03-01"
+                        }
+                        {
+                            key: "time"
+                            content: "10:00"
                         }
                     ]
                 ) {
