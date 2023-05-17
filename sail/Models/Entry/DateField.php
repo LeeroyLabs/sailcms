@@ -31,12 +31,12 @@ class DateField extends Field
      */
     public function storingType(): string
     {
-        return StoringType::INTEGER->value;
+        return StoringType::STRING->value;
     }
 
     /**
      *
-     * Sets the default settings from the input text field
+     * Sets the default settings from the input date field
      *
      * @return Collection
      *
@@ -50,7 +50,7 @@ class DateField extends Field
 
     /**
      *
-     * The text field contain only an input text field
+     * The date field contain only an input date field
      *
      * @return void
      */
@@ -63,7 +63,7 @@ class DateField extends Field
 
     /**
      *
-     * There is nothing extra to validate for the text field
+     * There is nothing extra to validate for the date field
      *
      * @param  mixed  $content
      * @return Collection|null
@@ -85,7 +85,7 @@ class DateField extends Field
     {
         $format = $this->configs->first->format ?? self::DATE_FORMAT_DEFAULT;
         $date = \DateTime::createFromFormat($format, $content);
-        
+
         return $date->getTimestamp();
     }
 
