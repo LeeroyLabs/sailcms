@@ -9,7 +9,7 @@ use SailCMS\Types\StoringType;
 
 class DateTimeField extends Field
 {
-    const DATE_TIME_ARE_REQUIRED = '';
+    const DATE_TIME_ARE_REQUIRED = '6145: Date and time are required since one of them is';
 
     public function description(): string
     {
@@ -43,7 +43,9 @@ class DateTimeField extends Field
         // If one input is required all began required to avoid parsing
         if (($this->configs->get('date.required') || $this->configs->get('time.required'))
             && (!$content->get('date') || !$content->get('time'))) {
-            return new Collection([]);
+            return new Collection([
+                self::DATE_TIME_ARE_REQUIRED
+            ]);
         }
         return null;
     }
