@@ -9,6 +9,7 @@ use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -255,6 +256,7 @@ class User extends Model
         string $avatar = '',
         ?UserMeta $meta = null,
         Collection|array $roles = ['general-user'],
+        string $group = '',
         bool $createWithSetPassword = false,
         string $emailTemplate = ''
     ): string {
@@ -314,7 +316,7 @@ class User extends Model
             'validated' => !$validate,
             'reset_code' => ($createWithSetPassword) ? $passCode : '',
             'created_at' => time(),
-            'group' => ''
+            'group' => $group
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
@@ -1393,6 +1395,46 @@ class User extends Model
         }
 
         return new Collection($this->find(['_id' => ['$in' => $list]])->exec());
+    }
+
+    /**
+     *
+     * Change status of given list of users
+     *
+     * @param  array|Collection  $ids
+     * @param  bool              $status
+     * @return bool
+     *
+     */
+    public function changeUserStatus(array|Collection $ids, bool $status): bool
+    {
+        try {
+            $this->hasPermissions();
+
+            // Get Level of current user (cannot enable/disable higher level)
+            $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+
+            if (is_object($ids)) {
+                $ids = $ids->unwrap();
+            }
+
+            foreach ($ids as $num => $id) {
+                $user = $this->findById($id)->project(['roles' => 1])->exec();
+                $highest = Role::getHighestLevel($user->roles);
+
+                if ($currentLevel < $highest) {
+                    unset($ids[$num]);
+                }
+            }
+
+            $ids = array_values($ids);
+            $idlist = $this->ensureObjectIds($ids);
+
+            $this->updateMany(['_id' => ['$in' => $idlist->unwrap()]], ['$set' => ['status' => $status]]);
+            return true;
+        } catch (ACLException|DatabaseException|PermissionException $e) {
+            return false;
+        }
     }
 
     /**
