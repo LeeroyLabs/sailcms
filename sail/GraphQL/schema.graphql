@@ -20,6 +20,8 @@ type Query {
     # Assets
     asset(id: ID!): Asset
     assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
+    assetFolders: [Folder!]!
+    assetConfig: AssetConfig!
 
     # Emails
     email(id: ID!): Email
@@ -73,10 +75,14 @@ type Mutation {
     deleteRole(id: ID!): Boolean!
 
     # Assets
-    uploadAsset(src: String!, filename: String!, folder: String): String!
+    uploadAsset(src: String!, filename: String!, folder: String): Asset
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
-    deleteAsset(id: ID!): Boolean!
+    removeAssets(assets: [ID!]!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
+    customTransformAsset(id: ID!, name: String!, src: String!): String!
+    moveFiles(ids: [ID!]!, folder: String!): Boolean!
+    addFolder(folder: String!): Int!
+    removeFolder(folder: String, move_to: String!): Boolean!
 
     # Emails
     createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
@@ -238,9 +244,20 @@ type Asset {
     transforms: [Transform!]!
 }
 
+type Folder {
+    slug: String!
+    name: String!
+    deletable: Boolean!
+}
+
 type AssetListing {
     pagination: Pagination!
     list: [Asset!]!
+}
+
+type AssetConfig {
+    maxSize: Int!
+    blacklist: [String!]!
 }
 
 type Entry {
