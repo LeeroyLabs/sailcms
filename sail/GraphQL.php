@@ -358,6 +358,7 @@ final class GraphQL
         self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
         self::addMutationResolver('updateUser', Users::class, 'updateUser');
         self::addMutationResolver('deleteUser', Users::class, 'deleteUser');
+        self::addMutationResolver('deleteUsers', Users::class, 'deleteUsers');
         self::addMutationResolver('validateAccount', Users::class, 'validateAccount');
         self::addMutationResolver('changeUserStatus', Users::class, 'changeUserStatus');
 

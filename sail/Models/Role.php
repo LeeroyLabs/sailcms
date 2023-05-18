@@ -259,6 +259,11 @@ class Role extends Model
             $list = $list->unwrap();
         }
 
+        // No permission = level 0
+        if (count($list) === 0) {
+            return 0;
+        }
+
         $instance = new static();
         return (new Collection($instance->find(['slug' => ['$in' => $list]])->exec()))->maxBy('level');
     }

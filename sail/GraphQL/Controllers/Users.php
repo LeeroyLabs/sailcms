@@ -363,6 +363,24 @@ class Users
 
     /**
      *
+     * Delete users from given list
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function deleteUsers(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new User())->removeByIdList($args->get('ids'));
+    }
+
+    /**
+     *
      * Validate an account with given code
      *
      * @param  mixed       $obj
