@@ -22,6 +22,7 @@ type Query {
     assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
     assetFolders: [Folder!]!
     assetConfig: AssetConfig!
+    assetTransformForId(id: ID!, transform_name: String!): String!
 
     # Emails
     email(id: ID!): Email

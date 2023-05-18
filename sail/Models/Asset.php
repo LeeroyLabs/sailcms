@@ -83,6 +83,35 @@ class Asset extends Model
 
     /**
      *
+     * Get a transform for given image, if the transform does not exist, the full size image is returned
+     *
+     * @param  string|ObjectId  $id
+     * @param  string           $transformName
+     * @return string
+     * @throws DatabaseException
+     *
+     */
+    public static function getTransformURL(string|ObjectId $id, string $transformName): string
+    {
+        $asset = self::getById($id);
+
+        if ($asset) {
+            $url = $asset->url;
+
+            foreach ($asset->transforms->unwrap() as $transform) {
+                if ($transform->transform === $transformName) {
+                    $url = $transform->url;
+                }
+            }
+
+            return $url;
+        }
+
+        return '';
+    }
+
+    /**
+     *
      * Get list of assets
      *
      * @param  int     $page

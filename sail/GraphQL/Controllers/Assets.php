@@ -107,6 +107,21 @@ class Assets
 
     /**
      *
+     * Get transform url if exists, full size url otherwise
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return string
+     *
+     */
+    public function assetTransformForId(mixed $obj, Collection $args, Context $context): string
+    {
+        return Asset::getTransformURL($args->get('id'), $args->get('transform_name'));
+    }
+
+    /**
+     *
      * Create an asset
      *
      * @param  mixed       $obj

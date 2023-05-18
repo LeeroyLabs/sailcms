@@ -379,6 +379,7 @@ final class GraphQL
         self::addQueryResolver('assets', Assets::class, 'assets');
         self::addQueryResolver('assetFolders', Assets::class, 'assetFolders');
         self::addQueryResolver('assetConfig', Assets::class, 'assetConfig');
+        self::addQueryResolver('assetTransformForId', Assets::class, 'assetTransformForId');
         self::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
         self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
         self::addMutationResolver('removeAssets', Assets::class, 'removeAssets');
