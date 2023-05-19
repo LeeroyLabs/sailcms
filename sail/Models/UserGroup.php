@@ -104,7 +104,18 @@ class UserGroup extends Model
     public static function delete(string $id): bool
     {
         (new self())->hasPermissions();
+
+        $group = self::get($id);
+
+        if (!$group) {
+            return false;
+        }
+
         self::query()->deleteById($id);
+
+        // Remove everyone from that group
+        User::removeGroupFromAll($group->slug);
+
         return true;
     }
 }

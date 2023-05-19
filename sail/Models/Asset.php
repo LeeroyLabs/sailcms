@@ -11,6 +11,7 @@ use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -82,6 +83,35 @@ class Asset extends Model
 
     /**
      *
+     * Get a transform for given image, if the transform does not exist, the full size image is returned
+     *
+     * @param  string|ObjectId  $id
+     * @param  string           $transformName
+     * @return string
+     * @throws DatabaseException
+     *
+     */
+    public static function getTransformURL(string|ObjectId $id, string $transformName): string
+    {
+        $asset = self::getById($id);
+
+        if ($asset) {
+            $url = $asset->url;
+
+            foreach ($asset->transforms->unwrap() as $transform) {
+                if ($transform->transform === $transformName) {
+                    $url = $transform->url;
+                }
+            }
+
+            return $url;
+        }
+
+        return '';
+    }
+
+    /**
+     *
      * Get list of assets
      *
      * @param  int     $page
@@ -117,7 +147,7 @@ class Asset extends Model
             ->populate('uploader_id', 'uploader', User::class)
             ->exec("list_{$page}_{$limit}");
 
-        $count = $this->count([]);
+        $count = $this->count($query);
         $total = ceil($count / $limit);
 
         $pagination = new Pagination($page, (int)$total, $count);
@@ -132,14 +162,14 @@ class Asset extends Model
      * @param  string                $filename
      * @param  string                $folder
      * @param  ObjectId|User|string  $uploader
-     * @return string
+     * @return self
      * @throws DatabaseException
      * @throws FileException
      * @throws FilesystemException
      * @throws ImagickException
      *
      */
-    public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = ''): string
+    public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = ''): self
     {
         $fs = Filesystem::manager();
 
@@ -256,11 +286,7 @@ class Asset extends Model
         }
 
         // Return the URL for the asset
-        if ($adapter === 'local') {
-            return env('site_url', 'http://localhost') . $fs->publicUrl($basePath . $timePath . $filename);
-        }
-
-        return $fs->publicUrl($basePath . $timePath . $filename);
+        return self::query()->findById($id)->populate('uploader_id', 'uploader', User::class)->exec();
     }
 
     /**
@@ -301,7 +327,8 @@ class Asset extends Model
                 // Check to see if already processed
                 $cache = null;
 
-                $this->transforms->each(function ($key, $value) use (&$cache, $name) {
+                $this->transforms->each(function ($key, $value) use (&$cache, $name)
+                {
                     if ($value->transform === $name) {
                         $cache = $value;
                     }
@@ -382,6 +409,72 @@ class Asset extends Model
 
     /**
      *
+     * Create a custom transform using a cropping tool
+     *
+     * @param  string|ObjectId  $id
+     * @param  string           $name
+     * @param  string           $data
+     * @return string
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws ImagickException
+     *
+     */
+    public static function transformCustom(string|ObjectId $id, string $name, string $data): string
+    {
+        $asset = static::getById($id);
+
+        if ($asset && $asset->is_image) {
+            $fs = Filesystem::manager();
+
+            $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
+
+            // Options
+            $quality = setting('assets.transformQuality', 92);
+
+            $info = explode('.', $asset->filename);
+            $ext = end($info);
+
+            // Transform base64 to actual image binary (forced optimization on custom crops)
+            $data = Optimizer::process($data, $quality);
+
+            // Add the unique id to the asset now
+            $filename = str_replace(".{$ext}", "-{$upload_id}-{$name}.webp", $asset->filename);
+
+            // Store asset
+            $fs->write($filename, $data, ['visibility' => 'public']);
+
+            $transforms = $asset->transforms->unwrap();
+
+            // Remove existing crop if exists
+            foreach ($transforms as $num => $transform) {
+                if ($transform->transform === $name) {
+                    unset($transforms[$num]);
+                }
+            }
+
+            // Reset indexes
+            $transforms = array_values($transforms);
+
+            // Create new
+            $transforms[] = [
+                'transform' => $name,
+                'filename' => $filename,
+                'name' => basename($filename),
+                'url' => $fs->publicUrl($filename)
+            ];
+
+            $asset->transforms = $transforms;
+            $asset->save();
+
+            return $fs->publicUrl($filename);
+        }
+
+        return $asset->url ?? '';
+    }
+
+    /**
+     *
      * Update asset's title in the requested locale
      *
      * @param  string  $locale
@@ -414,6 +507,7 @@ class Asset extends Model
      */
     public static function updateById(ObjectId|string $id, string $locale, string $title): bool
     {
+        self::query()->hasPermissions();
         $asset = self::query()->findById($id)->exec((string)$id);
 
         if ($asset) {
@@ -453,6 +547,7 @@ class Asset extends Model
      */
     public static function removeById(ObjectId|string $id): bool
     {
+        self::query()->hasPermissions();
         $asset = self::query()->findById($id)->exec((string)$id);
 
         if ($asset) {
@@ -460,5 +555,63 @@ class Asset extends Model
         }
 
         return false;
+    }
+
+    /**
+     *
+     * Remove all given ids from the database
+     *
+     * @param  Collection|array  $assets
+     * @return bool
+     *
+     */
+    public function removeAll(Collection|array $assets): bool
+    {
+        try {
+            $this->hasPermissions();
+            $ids = $this->ensureObjectIds($assets);
+            $this->deleteMany(['_id' => ['$in' => $ids->unwrap()]]);
+            return true;
+        } catch (ACLException|PermissionException|DatabaseException $e) {
+            return false;
+        }
+    }
+
+    /**
+     *
+     * Add files to given folder
+     *
+     * @param  array|Collection  $ids
+     * @param  string            $folder
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function moveFiles(array|Collection $ids, string $folder): bool
+    {
+        $this->hasPermissions();
+        $oids = $this->ensureObjectIds($ids);
+        $this->updateMany(['_id' => ['$in' => $oids->unwrap()]], ['$set' => ['folder' => $folder]]);
+        return true;
+    }
+
+    /**
+     *
+     * Move all files from one folder to another
+     *
+     * @param  string  $folder
+     * @param  string  $moveTo
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function moveAllFiles(string $folder, string $moveTo): void
+    {
+        $this->hasPermissions();
+        $this->updateMany(['folder' => $folder], ['$set' => ['folder' => $moveTo]]);
     }
 }

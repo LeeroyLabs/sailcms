@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -13,6 +14,7 @@ use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Middleware;
+use SailCMS\Models\Role;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
@@ -261,6 +263,7 @@ class Users
             $args->get('avatar', ''),
             $meta,
             $args->get('roles', []),
+            $args->get('group', ''),
             $args->get('createWithSetPassword', false),
             $args->get('useEmailTemplate', '')
         );
@@ -360,6 +363,24 @@ class Users
 
     /**
      *
+     * Delete users from given list
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function deleteUsers(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new User())->removeByIdList($args->get('ids'));
+    }
+
+    /**
+     *
      * Validate an account with given code
      *
      * @param  mixed       $obj
@@ -409,6 +430,21 @@ class Users
 
     /**
      *
+     * Change status of given users (only users with lower roles will actually change)
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     *
+     */
+    public function changeUserStatus(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new User())->changeUserStatus($args->get('ids'), $args->get('status'));
+    }
+
+    /**
+     *
      * Resolve custom fields
      *
      * @param  mixed        $obj
@@ -416,6 +452,7 @@ class Users
      * @param  Context      $context
      * @param  ResolveInfo  $info
      * @return mixed
+     * @throws DatabaseException
      *
      */
     public function resolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
@@ -444,6 +481,14 @@ class Users
 
         if ($info->fieldName === 'permissions') {
             return $obj->permissions();
+        }
+
+        if ($info->fieldName === 'highest_level') {
+            if ($obj->roles->length > 0) {
+                return Role::getHighestLevel($obj->roles);
+            }
+
+            return 0;
         }
 
         return $obj->{$info->fieldName};
