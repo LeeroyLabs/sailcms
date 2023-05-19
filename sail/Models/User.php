@@ -969,7 +969,7 @@ class User extends Model
         $list = $ids;
         $ids = $this->ensureObjectIds($ids)->unwrap();
         $this->deleteMany(['_id' => ['$in' => $ids]]);
-        
+
         Event::dispatch(self::EVENT_DELETE, $list);
         return true;
     }
@@ -1235,6 +1235,21 @@ class User extends Model
     {
         $instance = new static();
         $instance->updateMany([], ['$pull' => ['roles' => $role]]);
+    }
+
+    /**
+     *
+     * Remove all users from given group
+     *
+     * @param  string  $group
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public static function removeGroupFromAll(string $group): void
+    {
+        $instance = new static();
+        $instance->updateMany(['group' => $group], ['$set' => ['group' => '']]);
     }
 
     /**
