@@ -44,7 +44,9 @@ test('Create asset', function () {
                 uploadAsset(
                     src: "' . $data . '"
                     filename: "graphql-test.jpg"
-                )
+                ) {
+                    _id
+                }
             }
         ', [], $_ENV['test-token']);
 
@@ -594,10 +596,9 @@ test('Delete test asset', function () {
 
         $assetId = $assets->data->assets->list[0]->_id;
         expect($assetId)->not()->toBeNull();
-
         $removeAsset = $this->client->run('
             mutation {
-                deleteAsset(id: "' . $assetId . '")
+                removeAssets(assets: ["' . $assetId . '"])
             }
         ', [], $_ENV['test-token']);
 
