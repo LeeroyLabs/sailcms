@@ -11,16 +11,36 @@ class DateTimeField extends Field
 {
     const DATE_TIME_ARE_REQUIRED = '6145: Date and time are required since one of them is';
 
+    /**
+     *
+     * Description for date time field
+     *
+     * @return string
+     */
     public function description(): string
     {
         return 'Field to implement a date and a time html inputs';
     }
 
+    /**
+     *
+     * How to parse the content of the field
+     *
+     * @return string
+     *
+     */
     public function storingType(): string
     {
         return StoringType::ARRAY->value;
     }
 
+    /**
+     *
+     * Default values
+     *
+     * @return Collection
+     *
+     */
     public function defaultSettings(): Collection
     {
         return new Collection([
@@ -29,6 +49,13 @@ class DateTimeField extends Field
         ]);
     }
 
+    /**
+     *
+     * Base configs
+     *
+     * @return void
+     *
+     */
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
@@ -38,11 +65,18 @@ class DateTimeField extends Field
 
     }
 
+    /**
+     *
+     * The validation of the inputs
+     *
+     * @param  Collection  $content
+     * @return Collection|null
+     *
+     */
     protected function validate(Collection $content): ?Collection
     {
         // If one input is required all began required to avoid parsing
-        if (($this->configs->get('date.required') || $this->configs->get('time.required'))
-            && (!$content->get('date') || !$content->get('time'))) {
+        if ($this->isRequired() && (!$content->get('date') || !$content->get('time'))) {
             return new Collection([
                 self::DATE_TIME_ARE_REQUIRED
             ]);
@@ -51,10 +85,12 @@ class DateTimeField extends Field
     }
 
     /**
+     *
      * Combine the date and time values et convert them to timestamp
      *
      * @param  mixed  $content
      * @return mixed
+     *
      */
     public function convert(mixed $content): mixed
     {
@@ -69,6 +105,14 @@ class DateTimeField extends Field
         return $dateTime->getTimestamp();
     }
 
+    /**
+     *
+     * Ungroup inputs into two separate values
+     *
+     * @param  mixed  $content
+     * @return Collection
+     *
+     */
     public function parse(mixed $content): Collection
     {
         $dateFormat = $this->configs->get('date.format') ?? DateField::DATE_FORMAT_DEFAULT;

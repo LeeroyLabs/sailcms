@@ -187,6 +187,20 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Date/Hour", fr: "Date/Heure" }
+                            key: "datetime"
+                            handle: "SailCMS-Models-Entry-DateTimeField"
+                            inputSettings: [
+                                {
+                                    inputKey: "time"
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                        { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
@@ -273,6 +287,13 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "time"
                             content: "10:00"
+                        }
+                        {
+                            key: "datetime"
+                            content: {
+                                date: "2023-03-02"
+                                time: "10:20"
+                            }
                         }
                     ]
                 ) {
