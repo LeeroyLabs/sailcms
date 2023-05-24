@@ -358,7 +358,9 @@ final class GraphQL
         self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
         self::addMutationResolver('updateUser', Users::class, 'updateUser');
         self::addMutationResolver('deleteUser', Users::class, 'deleteUser');
+        self::addMutationResolver('deleteUsers', Users::class, 'deleteUsers');
         self::addMutationResolver('validateAccount', Users::class, 'validateAccount');
+        self::addMutationResolver('changeUserStatus', Users::class, 'changeUserStatus');
 
         // Authentication
         self::addQueryResolver('authenticate', Users::class, 'authenticate');
@@ -377,10 +379,17 @@ final class GraphQL
         // Assets
         self::addQueryResolver('asset', Assets::class, 'asset');
         self::addQueryResolver('assets', Assets::class, 'assets');
+        self::addQueryResolver('assetFolders', Assets::class, 'assetFolders');
+        self::addQueryResolver('assetConfig', Assets::class, 'assetConfig');
+        self::addQueryResolver('assetTransformForId', Assets::class, 'assetTransformForId');
         self::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
         self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
-        self::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
+        self::addMutationResolver('removeAssets', Assets::class, 'removeAssets');
         self::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+        self::addMutationResolver('customTransformAsset', Assets::class, 'customTransformAsset');
+        self::addMutationResolver('moveFiles', Assets::class, 'moveFiles');
+        self::addMutationResolver('addFolder', Assets::class, 'addFolder');
+        self::addMutationResolver('removeFolder', Assets::class, 'removeFolder');
         self::addResolver('Asset', Assets::class, 'assetResolver');
 
         // Emails

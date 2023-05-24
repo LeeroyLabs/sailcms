@@ -409,7 +409,7 @@ test('Failed to find the entry by url', function () {
     expect($entry)->toBe(null);
 })->group('entry');
 
-test('Get entry versions failed to apply the last version and apply one', function () {
+test('Get entry versions, failed to apply the last version and apply one', function () {
     $entryModel = EntryType::getEntryModelByHandle('test');
     $entry = $entryModel->one([
         'title' => 'Test'
@@ -441,7 +441,7 @@ test('Get entry versions failed to apply the last version and apply one', functi
         expect($entry->content->length)->toBe(0)
             ->and($entry->slug)->toBe('test');
     } catch (EntryException $e) {
-//        print_r($e->getMessage());
+//        SailCMS\Debug::ray($e);
         expect(true)->toBe(false);
     }
 })->group('entry-version');

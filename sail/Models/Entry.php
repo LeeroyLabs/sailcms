@@ -23,7 +23,6 @@ use SailCMS\Log;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Entry as MEntry;
-use SailCMS\Models\Entry\Field;
 use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Search as SailSearch;
@@ -304,7 +303,7 @@ class Entry extends Model implements Validator, Castable
 
             $this->entryLayout = (new EntryLayout())->one([
                 '_id' => $this->entryType->entry_layout_id
-            ]);
+            ], false);
         }
         return $this->entryLayout;
     }
@@ -328,7 +327,7 @@ class Entry extends Model implements Validator, Castable
 
         $schema->each(function ($key, $modelField) use (&$parsedContent) {
             /**
-             * @var Field $modelField
+             * @var ModelField $modelField
              */
             $content = $this->content->get($key);
 
@@ -343,6 +342,38 @@ class Entry extends Model implements Validator, Castable
         });
 
         return $parsedContent;
+    }
+
+    /**
+     *
+     * Process content before saving in database
+     *
+     * @param  Collection  $content
+     * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     */
+    private function processContentBeforeSave(Collection $content): array
+    {
+        $processedContents = [];
+        $schema = $this->getSchema(true);
+
+        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
+            $fieldContent = $content->get($key);
+
+            if ($fieldContent) {
+                /**
+                 * @var ModelField $modelField
+                 */
+                $processedFieldContent = $modelField->convert($fieldContent);
+
+                $processedContents[$key] = $processedFieldContent;
+            }
+        });
+
+        return $processedContents;
     }
 
     /**
@@ -463,7 +494,7 @@ class Entry extends Model implements Validator, Castable
             $parsedContent = $content;
 
             /**
-             * @var Field $field
+             * @var ModelField $field
              */
             $field = $schema->get($key);
 
@@ -816,10 +847,8 @@ class Entry extends Model implements Validator, Castable
         $parsedContent = Collection::init();
 
         $content?->each(function ($i, $toParse) use (&$parsedContent) {
-            $content = json_decode($toParse->content);
-
-            if (is_array($content) || $content instanceof stdClass) {
-                $parsed = new Collection((array)$content);
+            if (is_array($toParse->content) || $toParse->content instanceof stdClass) {
+                $parsed = new Collection((array)$toParse->content);
             } else {
                 $parsed = $toParse->content;
             }
@@ -1672,7 +1701,7 @@ class Entry extends Model implements Validator, Castable
                 }
             }
 
-            $content = $content->unwrap();
+            $content = $this->processContentBeforeSave($content);
         }
 
         // Validate locale
@@ -1810,8 +1839,13 @@ class Entry extends Model implements Validator, Castable
             }
         }
 
+        if ($data->get('content')) {
+            // Add it to the update
+            $update['content'] = $this->processContentBeforeSave($data->get('content'));
+        }
+
         $data->each(function ($key, $value) use (&$update) {
-            if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'content', 'alternates'])) {
+            if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'alternates'])) {
                 $update[$key] = $value;
             }
         });

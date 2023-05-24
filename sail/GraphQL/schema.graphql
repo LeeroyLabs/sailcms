@@ -20,6 +20,9 @@ type Query {
     # Assets
     asset(id: ID!): Asset
     assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
+    assetFolders: [Folder!]!
+    assetConfig: AssetConfig!
+    assetTransformForId(id: ID!, transform_name: String!): String!
 
     # Emails
     email(id: ID!): Email
@@ -60,12 +63,14 @@ type Query {
 
 type Mutation {
     # Users
-    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): ID!
-    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): ID!
+    createUser(name: UserNameInput!, email: String!, password: String!, group: String, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): ID!
+    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, group: String, avatar: String, meta: UserMetaInput!, locale: String): ID!
     updateUser(id: ID!, name: UserNameInput! email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput, locale: String): Boolean!
     deleteUser(id: ID!): Boolean!
+    deleteUsers(ids: [ID!]!): Boolean!
     validateAccount(code: String!): Boolean!
     changePassword(code: String!, password: String!): PasswordChangeResult!
+    changeUserStatus(ids: [ID!]!, status: Boolean!): Boolean!
 
     # Roles
     createRole(name: String!, description: String!, level: Int!, permissions: [String!]!): Boolean!
@@ -73,10 +78,14 @@ type Mutation {
     deleteRole(id: ID!): Boolean!
 
     # Assets
-    uploadAsset(src: String!, filename: String!, folder: String): String!
+    uploadAsset(src: String!, filename: String!, folder: String): Asset
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
-    deleteAsset(id: ID!): Boolean!
+    removeAssets(assets: [ID!]!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
+    customTransformAsset(id: ID!, name: String!, src: String!): String!
+    moveFiles(ids: [ID!]!, folder: String!): Boolean!
+    addFolder(folder: String!): Int!
+    removeFolder(folder: String, move_to: String!): Boolean!
 
     # Emails
     createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
@@ -161,6 +170,7 @@ type User {
     validated: Boolean!
     locale: String!
     group: String
+    highest_level: Int!
 }
 
 type UserListing {
@@ -238,9 +248,20 @@ type Asset {
     transforms: [Transform!]!
 }
 
+type Folder {
+    slug: String!
+    name: String!
+    deletable: Boolean!
+}
+
 type AssetListing {
     pagination: Pagination!
     list: [Asset!]!
+}
+
+type AssetConfig {
+    maxSize: Int!
+    blacklist: [String!]!
 }
 
 type Entry {

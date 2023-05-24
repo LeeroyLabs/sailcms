@@ -9,6 +9,7 @@ use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -255,6 +256,7 @@ class User extends Model
         string $avatar = '',
         ?UserMeta $meta = null,
         Collection|array $roles = ['general-user'],
+        string $group = '',
         bool $createWithSetPassword = false,
         string $emailTemplate = ''
     ): string {
@@ -314,7 +316,7 @@ class User extends Model
             'validated' => !$validate,
             'reset_code' => ($createWithSetPassword) ? $passCode : '',
             'created_at' => time(),
-            'group' => ''
+            'group' => $group
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
@@ -884,13 +886,91 @@ class User extends Model
     {
         $this->hasPermissions();
 
+        // Do not delete anonymous user
         if ((string)$id === (string)self::anonymousUser()->_id) {
             throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
+
+        // Are we allowed to delete the user?
+        $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+        $user = self::get($id);
+
+        if (!$user) {
+            return false;
+        }
+
+        $userRole = Role::getHighestLevel($user->roles);
+
+        if ($userRole > $currentLevel) {
+            return false;
         }
 
         $id = $this->ensureObjectId($id);
         $this->deleteById($id);
         Event::dispatch(self::EVENT_DELETE, (string)$id);
+        return true;
+    }
+
+    /**
+     *
+     * Delete a list of users
+     *
+     * @param  array|Collection  $ids
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function removeByIdList(array|Collection $ids): bool
+    {
+        $this->hasPermissions();
+
+        if (is_object($ids)) {
+            $ids = $ids->unwrap();
+        }
+
+        $anonymous = (string)self::anonymousUser()->_id;
+
+        // Remove anonymous from array of ids
+        if (in_array($anonymous, $ids, true)) {
+            array_filter($ids, function ($id) use ($anonymous)
+            {
+                return ($id !== $anonymous);
+            });
+        }
+
+        // Are we allowed to delete the user?
+        $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+
+        // Remove all users that are not allowed (higher level)
+        foreach ($ids as $num => $id) {
+            $user = self::get($id);
+
+            if (!$user) {
+                unset($ids[$num]);
+                continue;
+            }
+
+            $userRole = Role::getHighestLevel($user->roles);
+
+            if ($userRole > $currentLevel) {
+                unset($ids[$num]);
+            }
+        }
+
+        $ids = array_values($ids);
+
+        // Nothing to delete
+        if (count($ids) === 0) {
+            return false;
+        }
+
+        $list = $ids;
+        $ids = $this->ensureObjectIds($ids)->unwrap();
+        $this->deleteMany(['_id' => ['$in' => $ids]]);
+
+        Event::dispatch(self::EVENT_DELETE, $list);
         return true;
     }
 
@@ -1159,6 +1239,21 @@ class User extends Model
 
     /**
      *
+     * Remove all users from given group
+     *
+     * @param  string  $group
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public static function removeGroupFromAll(string $group): void
+    {
+        $instance = new static();
+        $instance->updateMany(['group' => $group], ['$set' => ['group' => '']]);
+    }
+
+    /**
+     *
      * Validate an account with the given code
      *
      * @param  string  $code
@@ -1393,6 +1488,46 @@ class User extends Model
         }
 
         return new Collection($this->find(['_id' => ['$in' => $list]])->exec());
+    }
+
+    /**
+     *
+     * Change status of given list of users
+     *
+     * @param  array|Collection  $ids
+     * @param  bool              $status
+     * @return bool
+     *
+     */
+    public function changeUserStatus(array|Collection $ids, bool $status): bool
+    {
+        try {
+            $this->hasPermissions();
+
+            // Get Level of current user (cannot enable/disable higher level)
+            $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+
+            if (is_object($ids)) {
+                $ids = $ids->unwrap();
+            }
+
+            foreach ($ids as $num => $id) {
+                $user = $this->findById($id)->project(['roles' => 1])->exec();
+                $highest = Role::getHighestLevel($user->roles);
+
+                if ($currentLevel < $highest) {
+                    unset($ids[$num]);
+                }
+            }
+
+            $ids = array_values($ids);
+            $idlist = $this->ensureObjectIds($ids);
+
+            $this->updateMany(['_id' => ['$in' => $idlist->unwrap()]], ['$set' => ['status' => $status]]);
+            return true;
+        } catch (ACLException|DatabaseException|PermissionException $e) {
+            return false;
+        }
     }
 
     /**

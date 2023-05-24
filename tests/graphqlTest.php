@@ -44,7 +44,9 @@ test('Create asset', function () {
                 uploadAsset(
                     src: "' . $data . '"
                     filename: "graphql-test.jpg"
-                )
+                ) {
+                    _id
+                }
             }
         ', [], $_ENV['test-token']);
 
@@ -160,6 +162,47 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Date", fr: "Date" }
+                            key: "date"
+                            handle: "SailCMS-Models-Entry-DateField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "format", value: "Y-m-d", type: string },
+                                        { name: "min", value: "2020-03-01", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Hour", fr: "Heure" }
+                            key: "time"
+                            handle: "SailCMS-Models-Entry-TimeField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Date/Hour", fr: "Date/Heure" }
+                            key: "datetime"
+                            handle: "SailCMS-Models-Entry-DateTimeField"
+                            inputSettings: [
+                                {
+                                    inputKey: "time"
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                        { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
@@ -238,6 +281,21 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "image"
                             content: "' . $assetId . '"
+                        }
+                        {
+                            key: "date"
+                            content: "2021-03-01"
+                        }
+                        {
+                            key: "time"
+                            content: "10:00"
+                        }
+                        {
+                            key: "datetime"
+                            content: {
+                                date: "2023-03-02"
+                                time: "10:20"
+                            }
                         }
                     ]
                 ) {
@@ -538,10 +596,9 @@ test('Delete test asset', function () {
 
         $assetId = $assets->data->assets->list[0]->_id;
         expect($assetId)->not()->toBeNull();
-
         $removeAsset = $this->client->run('
             mutation {
-                deleteAsset(id: "' . $assetId . '")
+                removeAssets(assets: ["' . $assetId . '"])
             }
         ', [], $_ENV['test-token']);
 
