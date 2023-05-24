@@ -696,6 +696,40 @@ trait QueryObject
     }
 
     /**
+     * 
+     * Dump the query to play it on mongo db
+     * 
+     * @return string
+     * 
+     */
+    public function dumpQuery(): string
+    {
+        $sQuery = json_encode($this->currentQuery);
+        $dump = "db.getCollection('{$this->collection}').{$this->currentOp}($sQuery";
+        
+        if (count($this->currentProjection) > 0) {
+            $sProjection = json_encode($this->currentProjection);
+            $dump .= ", $sProjection";
+        }
+        $dump .= ")";
+        if ($this->currentCollation) {
+            $dump .= ".collation({$this->currentCollation})";
+        }
+        if (count($this->currentSort) > 0) {
+            $sSort = json_encode($this->currentSort);
+            $dump .= ".sort($sSort)";
+        }
+        if ($this->currentLimit) {
+            $dump .= ".limit({$this->currentLimit})";
+        }
+        if ($this->currentSkip > 0) {
+            $dump .= ".skip({$this->currentLimit})";
+        }
+
+        return $dump;
+    }
+
+    /**
      *
      * Delete a record
      *
