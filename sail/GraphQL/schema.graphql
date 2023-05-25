@@ -16,11 +16,12 @@ type Query {
     # Roles & ACL
     roles: [Role!]!
     role(id: ID!): RoleConfig
+    permissions: [Permission!]!
 
     # Assets
     asset(id: ID!): Asset
-    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
-    assetFolders: [Folder!]!
+    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder, site_id: String!): AssetListing
+    assetFolders(site_id: String!): [Folder!]!
     assetConfig: AssetConfig!
     assetTransformForId(id: ID!, transform_name: String!): String!
 
@@ -78,14 +79,14 @@ type Mutation {
     deleteRole(id: ID!): Boolean!
 
     # Assets
-    uploadAsset(src: String!, filename: String!, folder: String): Asset
+    uploadAsset(src: String!, filename: String!, folder: String, site_id: String!): Asset
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
     removeAssets(assets: [ID!]!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
     customTransformAsset(id: ID!, name: String!, src: String!): String!
     moveFiles(ids: [ID!]!, folder: String!): Boolean!
-    addFolder(folder: String!): Int!
-    removeFolder(folder: String, move_to: String!): Boolean!
+    addFolder(folder: String!, site_id: String!): Int!
+    removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
 
     # Emails
     createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
@@ -110,8 +111,8 @@ type Mutation {
     deleteEntryLayout(id: ID!, soft: Boolean): Boolean
 
     # Categories
-    createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
-    updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: String!): Boolean!
+    createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
+    updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: ID!): Boolean!
     updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
@@ -122,7 +123,7 @@ type Mutation {
     deleteNavigation(name: String!): Boolean!
 
     # Groups
-    createGroup(name: String!): Boolean!
+    createGroup(name: String!): String!
     updateGroup(id: ID!, name: String!): Boolean!
     deleteGroup(id: ID!): Boolean!
 
@@ -218,6 +219,7 @@ type Role {
     slug: String!
     level: Int!
     permissions: [String!]!
+    member_count: Int!
 }
 
 type RoleConfig {
@@ -679,6 +681,14 @@ type Group {
     name: String!
     slug: String!
     user_count: Int!
+}
+
+type Permission {
+    name: String!
+    unnormalized_name: String!
+    group: String!
+    category: String!
+    description: LocaleField!
 }
 
 #{CUSTOM_TYPES}#

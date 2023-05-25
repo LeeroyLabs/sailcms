@@ -60,13 +60,14 @@ class Assets
         $folder = $args->get('folder', 'root');
         $sort = $args->get('sort', 'name');
         $direction = strtolower($args->get('direction', 'ASC'));
+        $siteId = $args->get('site_id', 'default');
 
         $direction = match ($direction) {
             'desc' => Model::SORT_DESC,
             default => Model::SORT_ASC
         };
 
-        return $asset->getList($page, $limit, $folder, $search, $sort, $direction);
+        return $asset->getList($page, $limit, $folder, $search, $sort, $direction, $siteId);
     }
 
     /**
@@ -84,7 +85,7 @@ class Assets
      */
     public function assetFolders(mixed $obj, Collection $args, Context $context): Collection
     {
-        return AssetFolder::folders();
+        return AssetFolder::folders($args->get('site_id', 'default'));
     }
 
     /**
@@ -140,9 +141,10 @@ class Assets
         $src = $args->get('src', '');
         $folder = $args->get('folder', 'root');
         $filename = $args->get('filename', 'name.jpg');
+        $siteId = $args->get('site_id', 'default');
 
         $uploader = (User::$currentUser) ? (string)User::$currentUser->_id : '';
-        return $asset->upload(base64_decode($src), $filename, $folder, $uploader);
+        return $asset->upload(base64_decode($src), $filename, $folder, $uploader, $siteId);
     }
 
     /**
@@ -269,7 +271,7 @@ class Assets
      */
     public function addFolder(mixed $obj, Collection $args, Context $context): int
     {
-        return AssetFolder::create($args->get('folder'));
+        return AssetFolder::create($args->get('folder'), $args->get('site_id', 'default'));
     }
 
     /**
@@ -287,10 +289,11 @@ class Assets
      */
     public function removeFolder(mixed $obj, Collection $args, Context $context): bool
     {
-        AssetFolder::delete($args->get('folder'));
+        AssetFolder::delete($args->get('folder'), $args->get('site_id', 'default'));
         (new Asset())->moveAllFiles(
             $args->get('folder'),
-            $args->get('move_to', 'root') // failsafe to root
+            $args->get('move_to', 'root'), // failsafe to root
+            $args->get('site_id', 'default')
         );
 
         return true;

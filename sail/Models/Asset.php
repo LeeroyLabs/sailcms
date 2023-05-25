@@ -120,18 +120,19 @@ class Asset extends Model
      * @param  string  $search
      * @param  string  $sort
      * @param  int     $direction
+     * @param  string  $siteId
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = Model::SORT_ASC): Listing
+    public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = Model::SORT_ASC, string $siteId = 'default'): Listing
     {
         $this->hasPermissions(true);
 
         $offset = $page * $limit - $limit;
-        $query = ['site_id' => Sail::siteId(), 'folder' => $folder];
+        $query = ['site_id' => $siteId, 'folder' => $folder];
 
         // Search by name
         if (!empty($search)) {
@@ -162,6 +163,7 @@ class Asset extends Model
      * @param  string                $filename
      * @param  string                $folder
      * @param  ObjectId|User|string  $uploader
+     * @param  string                $siteId
      * @return self
      * @throws DatabaseException
      * @throws FileException
@@ -169,7 +171,7 @@ class Asset extends Model
      * @throws ImagickException
      *
      */
-    public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = ''): self
+    public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = '', string $siteId = 'default'): self
     {
         $fs = Filesystem::manager();
 
@@ -272,7 +274,7 @@ class Asset extends Model
             'transforms' => [],
             'created_at' => time(),
             'folder' => $folder,
-            'site_id' => Sail::siteId()
+            'site_id' => $siteId
         ]);
 
         // Run all transforms on upload configured
@@ -603,15 +605,16 @@ class Asset extends Model
      *
      * @param  string  $folder
      * @param  string  $moveTo
+     * @param  string  $siteId
      * @return void
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function moveAllFiles(string $folder, string $moveTo): void
+    public function moveAllFiles(string $folder, string $moveTo, string $siteId = 'default'): void
     {
         $this->hasPermissions();
-        $this->updateMany(['folder' => $folder], ['$set' => ['folder' => $moveTo]]);
+        $this->updateMany(['folder' => $folder, 'site_id' => $siteId], ['$set' => ['folder' => $moveTo]]);
     }
 }

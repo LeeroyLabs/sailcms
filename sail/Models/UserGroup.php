@@ -86,6 +86,12 @@ class UserGroup extends Model
         $instance = new self;
         $instance->hasPermissions();
 
+        $group = self::getBy('name', $name);
+
+        if ($group && $group->id !== $id) {
+            return false;
+        }
+
         self::query()->updateOne(['_id' => $instance->ensureObjectId($id)], ['$set' => ['name' => $name]]);
         return true;
     }
