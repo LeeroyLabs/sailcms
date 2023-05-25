@@ -138,10 +138,29 @@ test('Create layout, entry type & entry', function () {
                                             value: ""
                                             options: [
                                                 { label: "Big test", value: "test" }
-                                                {
-                                                    label: "The real big test"
-                                                    value: "test2"
-                                                }
+                                                { label: "The real big test", value: "test2" }
+                                            ]
+                                            type: array
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Select multiple", fr: "Selection multiple" }
+                            key: "select-multiple"
+                            handle: "SailCMS-Models-Entry-MultipleSelectField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        {
+                                            name: "options"
+                                            value: ""
+                                            options: [
+                                                { label: "Big test", value: "test" }
+                                                { label: "The real big test", value: "test2" }
+                                                { label: "The real big boom of doom test", value: "test3" }
                                             ]
                                             type: array
                                         }
@@ -277,6 +296,10 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "select"
                             content: "test"
+                        }
+                        {
+                            key: "select-multiple"
+                            content: ["test", "test2"]
                         }
                         {
                             key: "image"

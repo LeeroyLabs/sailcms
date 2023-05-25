@@ -8,6 +8,7 @@ use SailCMS\Models\Entry\DateTimeField;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\HTMLField;
+use SailCMS\Models\Entry\MultipleSelectField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
@@ -117,7 +118,7 @@ test('Add all fields to the layout', function () {
         ]
     ]);
 
-    $multipleSelectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
+    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
         [
             'required' => false,
             'multiple' => true,
@@ -222,7 +223,7 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
-            ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID);
+            ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID)
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
@@ -262,7 +263,6 @@ and must keep it through all the process',
                 'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
                 'image' => (string)$item->_id,
                 'multipleSelect' => ['test', 'test2'],
-                'image' => (string)$item->_id,
                 'date' => "2021-10-10",
                 'time' => "10:00",
                 'datetime' => [

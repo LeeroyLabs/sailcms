@@ -36,7 +36,7 @@ class MultipleSelectField extends Field
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputMultipleSelectField::defaultSettings(true)
+            InputMultipleSelectField::defaultSettings()
         ]);
     }
 

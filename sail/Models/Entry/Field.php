@@ -107,7 +107,7 @@ abstract class Field
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
             $currentContent = $content;
-            if ($content instanceof Collection) {
+            if ($content instanceof Collection && $fieldTypeClass::class !== "SailCMS\Types\Fields\InputMultipleSelectField") {
                 $currentContent = $content->get($index);
             }
             $error = $fieldTypeClass->validate($currentContent);
