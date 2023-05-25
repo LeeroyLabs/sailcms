@@ -102,12 +102,14 @@ class InputDateField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($minCasted !== "" && $contentCasted < $minCasted) {
-            $errors->push(sprintf(static::FIELD_TOO_SMALL, $this->min));
-        }
+        if ($content !== "") {
+            if ($minCasted !== "" && $contentCasted < $minCasted) {
+                $errors->push(sprintf(static::FIELD_TOO_SMALL, $this->min));
+            }
 
-        if ($maxCasted !== "" && $contentCasted > $maxCasted) {
-            $errors->push(sprintf(static::FIELD_TOO_BIG, $this->max));
+            if ($maxCasted !== "" && $contentCasted > $maxCasted) {
+                $errors->push(sprintf(static::FIELD_TOO_BIG, $this->max));
+            }
         }
 
         return $errors;

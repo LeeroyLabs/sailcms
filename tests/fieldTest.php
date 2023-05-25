@@ -4,6 +4,7 @@ use SailCMS\Collection;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Entry\AssetField;
 use SailCMS\Models\Entry\DateField;
+use SailCMS\Models\Entry\DateTimeField;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\HTMLField;
@@ -134,6 +135,13 @@ test('Add all fields to the layout', function () {
         ]
     ]);
 
+    $dateTimeField = new DateTimeField(new LocaleField(['en' => 'Date/Time', 'fr' => 'Date/Hour']), [
+        'date' => [
+            'required' => true,
+            'min' => '2020-03-01'
+        ]
+    ]);
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -147,7 +155,8 @@ test('Add all fields to the layout', function () {
         "url" => $urlField,
         "image" => $assetField,
         "date" => $dateField,
-        "time" => $timeField
+        "time" => $timeField,
+        "datetime" => $dateTimeField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -183,7 +192,11 @@ test('Failed to update the entry content', function () {
                 'url' => 'babaganouj',
                 'image' => 'bad1d12345678901234bad1d', // Bad id...
                 'date' => '2027-02-02',
-                'time' => '09:59'
+                'time' => '09:59',
+                'datetime' => [
+                    'date' => '',
+                    'time' => ''
+                ]
             ]
         ], false);
 
@@ -196,7 +209,8 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
-            ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"));
+            ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
+            ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
     } catch (Exception $exception) {
 //        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
@@ -232,7 +246,11 @@ and must keep it through all the process',
                 'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
                 'image' => (string)$item->_id,
                 'date' => "2021-10-10",
-                'time' => "10:00"
+                'time' => "10:00",
+                'datetime' => [
+                    'date' => '2020-03-02',
+                    'time' => '10:30'
+                ]
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -252,7 +270,13 @@ and must keep it through all the process',
             ->and($content->get('email.content'))->toBe('email-test@email.com')
             ->and($content->get('select.content'))->toBe('test')
             ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12')
-            ->and($content->get('image.content.name'))->toBe('field-test-webp');
+            ->and($content->get('image.content.name'))->toBe('field-test-webp')
+            ->and($content->get('date.content'))->toBe('2021-10-10')
+            ->and($content->get('time.content'))->toBe('10:00')
+            ->and($content->get('datetime.content')->unwrap())->toBe([
+                'date' => '2020-03-02',
+                'time' => '10:30'
+            ]);
     } catch (Exception $exception) {
 //        print_r($exception->getMessage());
 //        print_r($errors);

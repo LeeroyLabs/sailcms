@@ -19,7 +19,7 @@ class DateField extends Field
      */
     public function description(): string
     {
-        return 'Field to implement an date html input.';
+        return 'Field to implement a date html input.';
     }
 
     /**

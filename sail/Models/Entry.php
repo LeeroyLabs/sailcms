@@ -856,10 +856,8 @@ class Entry extends Model implements Validator, Castable
 
         $content?->each(function ($i, $toParse) use (&$parsedContent)
         {
-            $content = json_decode($toParse->content);
-
-            if (is_array($content) || $content instanceof stdClass) {
-                $parsed = new Collection((array)$content);
+            if (is_array($toParse->content) || $toParse->content instanceof stdClass) {
+                $parsed = new Collection((array)$toParse->content);
             } else {
                 $parsed = $toParse->content;
             }

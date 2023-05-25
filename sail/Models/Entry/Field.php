@@ -66,6 +66,13 @@ abstract class Field
         });
     }
 
+    /**
+     *
+     *  Check if required is true in configs
+     *
+     * @return bool
+     *
+     */
     public function isRequired(): bool
     {
         $result = false;
