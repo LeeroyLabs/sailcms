@@ -9,12 +9,14 @@ use SailCMS\Types\StoringType;
 
 class SelectField extends Field
 {
+    const SEARCHABLE = false;
+
     /**
      *
      * Override the constructor to pass a precision to the number
      *
-     * @param LocaleField $labels
-     * @param array|Collection|null $settings
+     * @param  LocaleField            $labels
+     * @param  array|Collection|null  $settings
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
@@ -49,7 +51,7 @@ class SelectField extends Field
      *
      * Select validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

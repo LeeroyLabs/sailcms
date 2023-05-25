@@ -25,7 +25,7 @@ final class Cache
             $host = setting('cache.host', 'tcp://localhost');
 
             $opts = [
-                'host' => setting('cache.host'),
+                'host' => setting('cache.host', 'localhost'),
                 'port' => setting('cache.port', 6379),
                 'database' => setting('cache.database', 10),
             ];

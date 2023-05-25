@@ -198,12 +198,11 @@ class Transformer
      * @param  string  $name
      * @param  string  $type
      * @param  bool    $blob
-     * @return mixed
+     * @return string
      * @throws FilesystemException
      * @throws ImagickException
-     *
      */
-    public function save(string $name, string $type = Transformer::OUTPUT_WEBP, bool $blob = false): mixed
+    public function save(string $name, string $type = Transformer::OUTPUT_WEBP, bool $blob = false): string
     {
         $image = $this->image->getCore();
         $fs = Filesystem::manager();
@@ -235,6 +234,7 @@ class Transformer
         }
 
         $fs->write($name, $imagick->getImageBlob(), ['visibility' => 'public']);
+        return '';
     }
 
     /**

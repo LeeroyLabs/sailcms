@@ -10,6 +10,11 @@ abstract class AppContainer
 {
     protected Router $router;
 
+    public function init(): void
+    {
+        // Not implemented
+    }
+
     abstract public function info(): ContainerInformation;
 
     abstract public function routes(): void;

@@ -6,7 +6,10 @@ use SailCMS\Test\GraphQLClient;
 beforeEach(function () {
     Sail::setupForTests(__DIR__);
 
-    $graphqlUrl = env('GRAPHQL_URL');
+    $graphqlUrl = env('TEST_GRAPHQL_URL');
+    $userEmail = env('TEST_USER_EMAIL');
+    $userPWD = env('TEST_USER_PWD');
+
     if ($graphqlUrl) {
         $this->client = new GraphQLClient($graphqlUrl);
 
@@ -16,7 +19,7 @@ beforeEach(function () {
                     message
                 }
             }
-        ', ['email' => 'philippe@leeroy.ca', 'password' => 'Hell0W0rld!']);
+        ', ['email' => $userEmail, 'password' => $userPWD]);
 
         $tmpToken = $authTmpResponse->data->authenticate->message;
 
@@ -33,12 +36,291 @@ beforeEach(function () {
     }
 });
 
-// TODO Must create a page
+test('Create asset', function () {
+    if (isset($_ENV['test-token'])) {
+        $data = file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt');
+        $newAsset = $this->client->run('
+            mutation {
+                uploadAsset(
+                    src: "' . $data . '"
+                    filename: "graphql-test.jpg"
+                ) {
+                    _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($newAsset->status)->toBe('ok');
+    }
+});
+
+test('Create layout, entry type & entry', function () {
+    if (isset($_ENV['test-token'])) {
+        $newEntryLayout = $this->client->run('
+            mutation createLayout {
+                createEntryLayout(
+                    titles: { fr: "Test des champs graphql", en: "Field tests graphql" }
+                    schema: [
+                        {
+                            labels: { en: "Text", fr: "Texte" }
+                            key: "text"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            inputSettings: [
+                                  {
+                                        settings: [
+                                            { name: "required", value: "1", type: boolean }
+                                            { name: "maxLength", value: "10", type: integer }
+                                            { name: "minLength", value: "5", type: integer }
+                                        ]
+                                 }
+                            ]
+                        }
+                        {
+                            labels: { en: "Integer", fr: "Entier" }
+                            key: "integer"
+                            handle: "SailCMS-Models-Entry-NumberField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "min", value: "-1", type: integer }
+                                        { name: "max", value: "11", type: integer }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Float", fr: "Flottant" }
+                            key: "float"
+                            handle: "SailCMS-Models-Entry-NumberField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                        { name: "min", value: "0.03", type: float }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Description", fr: "Description" }
+                            key: "desc"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            inputSettings: []
+                        }
+                        {
+                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
+                            key: "wysiwyg"
+                            handle: "SailCMS-Models-Entry-HTMLField"
+                            inputSettings: []
+                        }
+                        {
+                            labels: { en: "Email", fr: "Courriel" }
+                            key: "email"
+                            handle: "SailCMS-Models-Entry-EmailField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Select", fr: "Selection" }
+                            key: "select"
+                            handle: "SailCMS-Models-Entry-SelectField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        {
+                                            name: "options"
+                                            value: ""
+                                            options: [
+                                                { label: "Big test", value: "test" }
+                                                {
+                                                    label: "The real big test"
+                                                    value: "test2"
+                                                }
+                                            ]
+                                            type: array
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Image", fr: "Image" }
+                            key: "image"
+                            handle: "SailCMS-Models-Entry-AssetField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "isImage", value: "true", type: boolean }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Date", fr: "Date" }
+                            key: "date"
+                            handle: "SailCMS-Models-Entry-DateField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "format", value: "Y-m-d", type: string },
+                                        { name: "min", value: "2020-03-01", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Hour", fr: "Heure" }
+                            key: "time"
+                            handle: "SailCMS-Models-Entry-TimeField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Date/Hour", fr: "Date/Heure" }
+                            key: "datetime"
+                            handle: "SailCMS-Models-Entry-DateTimeField"
+                            inputSettings: [
+                                {
+                                    inputKey: "time"
+                                    settings: [
+                                        { name: "required", value: "true", type: boolean }
+                                        { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                    ) {
+                    _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $newEntryType = $this->client->run('
+            mutation {
+                createEntryType(
+                    handle: "tests-graphql"
+                    title: "Tests graphql"
+                    url_prefix: {
+                        en: "graphql-tests"
+                        fr: "tests-graphql"
+                    }
+                    entry_layout_id: "' . $newEntryLayout->data->createEntryLayout->_id . '"
+                ) {
+                    _id
+                    title
+                    handle
+                    url_prefix {
+                        fr
+                        en
+                    }
+                    entry_layout_id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $assets = $this->client->run('
+            {
+                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                    list {
+                        _id
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $assetId = $assets->data->assets->list[0]->_id;
+
+        $newEntry = $this->client->run('
+            mutation {
+                createEntry(
+                    entry_type_handle: "tests-graphql"
+                    locale: "en"
+                    is_homepage: false
+                    title: "It just works"
+                    template: ""
+                    slug: "it-just-works"
+                    content: [
+                        {
+                            key: "float"
+                            content: "1.04"
+                        }
+                        {
+                            key: "text"
+                            content: "Not empty"
+                        }
+                        {
+                            key: "desc"
+                            content: "This text contains line returns and must keep it through all the process"
+                        }
+                        {
+                            key: "wysiwyg"
+                            content: "<p><strong>Test</strong></p>"
+                        }
+                        {
+                            key: "email"
+                            content: "testleeroy@leeroy.ca"
+                        }
+                        {
+                            key: "select"
+                            content: "test"
+                        }
+                        {
+                            key: "image"
+                            content: "' . $assetId . '"
+                        }
+                        {
+                            key: "date"
+                            content: "2021-03-01"
+                        }
+                        {
+                            key: "time"
+                            content: "10:00"
+                        }
+                        {
+                            key: "datetime"
+                            content: {
+                                date: "2023-03-02"
+                                time: "10:20"
+                            }
+                        }
+                    ]
+                ) {
+                    errors {
+                        key
+                        errors
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        try {
+            expect($newEntryLayout->status)->toBe('ok');
+            expect($newEntryType->status)->toBe('ok');
+            expect($newEntry->status)->toBe('ok');
+        } catch (Exception $exception) {
+            expect(true)->toBe(false);
+        }
+    }
+})->group('graphql');
 
 test('Get a page and modify his SEO', function () {
     if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('
-            query { 
+            query {
                 entries(entry_type_handle: "page") {
                     list {
                         _id
@@ -116,218 +398,210 @@ test('Get a page and modify his SEO', function () {
     }
 })->group('graphql');
 
-//test('Create layout, entry type & entry', function () {
-//    if (isset($_ENV['test-token'])) {
-//        $newEntryLayout = $this->client->run('
-//            mutation createLayout {
-//                createEntryLayout(
-//                    titles: { fr: "Test des champs graphql", en: "Field tests graphql" }
-//                    schema: [
-//                        {
-//                            labels: { en: "Text", fr: "Texte" }
-//                            key: "text"
-//                            handle: "SailCMS-Models-Entry-TextField"
-//                            inputSettings: [
-//                                  {
-//                                        settings: [
-//                                            { name: "required", value: "1", type: boolean }
-//                                            { name: "maxLength", value: "10", type: integer }
-//                                            { name: "minLength", value: "5", type: integer }
-//                                        ]
-//                                 }
-//                            ]
-//                        }
-//                        {
-//                            labels: { en: "Integer", fr: "Entier" }
-//                            key: "integer"
-//                            handle: "SailCMS-Models-Entry-NumberField"
-//                            inputSettings: [
-//                                {
-//                                    settings: [
-//                                        { name: "min", value: "-1", type: integer }
-//                                        { name: "max", value: "11", type: integer }
-//                                    ]
-//                                }
-//                            ]
-//                        }
-//                        {
-//                            labels: { en: "Float", fr: "Flottant" }
-//                            key: "float"
-//                            handle: "SailCMS-Models-Entry-NumberField"
-//                            inputSettings: [
-//                                {
-//                                    settings: [
-//                                        { name: "required", value: "true", type: boolean }
-//                                        { name: "min", value: "0.03", type: float }
-//                                    ]
-//                                }
-//                            ]
-//                        }
-//                        {
-//                            labels: { en: "Description", fr: "Description" }
-//                            key: "desc"
-//                            handle: "SailCMS-Models-Entry-TextField"
-//                            inputSettings: []
-//                        }
-//                        {
-//                            labels: { en: "Email", fr: "Courriel" }
-//                            key: "email"
-//                            handle: "SailCMS-Models-Entry-EmailField"
-//                            inputSettings: [
-//                                { name: "required", value: "true", type: boolean }
-//                            ]
-//                        }
-//                    ]
-//                    ) {
-//                    _id
-//                }
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        $newEntryType = $this->client->run('
-//            mutation {
-//                createEntryType(
-//                    handle: "tests-graphql"
-//                    title: "Tests graphql"
-//                    url_prefix: {
-//                        en: "graphql-tests"
-//                        fr: "tests-graphql"
-//                    }
-//                    entry_layout_id: "'. $newEntryLayout->data->createEntryLayout->_id .'"
-//                ) {
-//                    _id
-//                    title
-//                    handle
-//                    url_prefix {
-//                        fr
-//                        en
-//                    }
-//                    entry_layout_id
-//                }
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        $newEntry = $this->client->run('
-//            mutation {
-//                createEntry(
-//                    entry_type_handle: "tests-graphql"
-//                    locale: "en"
-//                    is_homepage: false
-//                    status: live
-//                    title: "It just works"
-//                    template: ""
-//                    slug: "it-just-works"
-//                    content: [
-//                        {
-//                            key: "float"
-//                            content: "1.04"
-//                        }
-//                        {
-//                            key: "text"
-//                            content: "Not empty"
-//                        }
-//                        {
-//                            key: "desc"
-//                            content: "This text contains line returns and must keep it through all the process"
-//                        }
-//                        {
-//                            key: "email"
-//                            content: "testleeroy@leeroy.ca"
-//                        }
-//                    ]
-//                ) {
-//                    errors {
-//                        key
-//                        errors
-//                    }
-//                }
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        try {
-//            expect($newEntryLayout->status)->toBe('ok');
-//            expect($newEntryType->status)->toBe('ok');
-//            expect($newEntry->status)->toBe('ok');
-//        } catch (Exception $exception) {
-//            expect(true)->toBe(false);
-//        }
-//    }
-//})->group('graphql');
-//
-//test('Delete layout, entry type & entry', function () {
-//    if (isset($_ENV['test-token'])) {
-//        $entryType = $this->client->run('
-//            {
-//                entryType(handle: "tests-graphql") {
-//                    _id
-//                    handle
-//                    entry_layout_id
-//                }
-//            }
-//        ', [], $_ENV['test-token']);
-//        $entryType = $entryType->data->entryType;
-//
-//        $entry = $this->client->run('
-//            {
-//                entries(
-//                    entry_type_handle: "tests-graphql"
-//                ) {
-//                    list {
-//                        _id
-//                        entry_type_id
-//                        site_id
-//                        locale
-//                        alternates {
-//                            locale
-//                            entry_id
-//                        }
-//                        title
-//                        template
-//                        url
-//                        authors {
-//                            created_by
-//                        }
-//                        dates {
-//                            created
-//                        }
-//                        categories
-//                        content {
-//                            key
-//                            content
-//                        }
-//                        schema {
-//                            key
-//                        }
-//                    }
-//                }
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        $deleteEntry = $this->client->run('
-//            mutation {
-//                deleteEntry(entry_type_handle: "tests-graphql", id: "_____", soft: false)
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        $deleteEntryLayout = $this->client->run('
-//            mutation {
-//                deleteEntryLayout(id: "'. $entryType->entry_layout_id .'", soft: false)
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        $deleteEntryType = $this->client->run('
-//            mutation {
-//                deleteEntryType(id: "'. $entryType->_id .'")
-//            }
-//        ', [], $_ENV['test-token']);
-//
-//        try {
-//            expect($deleteEntry->status)->toBe('ok');
-//            expect($deleteEntryLayout->status)->toBe('ok');
-//            expect($deleteEntryType->status)->toBe('ok');
-//        } catch (Exception $exception) {
+test('Get a entry', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryResponse = $this->client->run('
+        query {
+            entries(entry_type_handle: "page", page: 1, limit: 1) {
+                list {
+                    _id
+                    entry_type {
+                        _id
+                        title
+                        handle
+                        url_prefix {
+                            en
+                            fr
+                        }
+                        entry_layout_id
+                    }
+                    parent {
+                        _id
+                        title
+                        slug
+                        url
+                        locale
+                        site_id
+                    }
+                    site_id
+                    locale
+                    alternates {
+                        locale
+                        url
+                        entry_id
+                    }
+                    is_homepage
+                    trashed
+                    title
+                    template
+                    slug
+                    url
+                    authors {
+                        created_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        updated_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        deleted_by {
+                            _id
+                            email
+                            name {
+                                full
+                            }
+                        }
+                    }
+                    dates {
+                        created
+                        updated
+                        deleted
+                    }
+                    categories {
+                        _id
+                        name {
+                            en
+                            fr
+                        }
+                        slug
+                    }
+                    content {
+                        key
+                        content
+                        handle
+                        type
+                    }
+                    schema {
+                        key
+                        fieldConfigs {
+                            labels {
+                                en
+                                fr
+                            }
+                            handle
+                            inputSettings {
+                                inputKey
+                                settings {
+                                    name
+                                    value
+                                    type
+                                }
+                            }
+                        }
+                    }
+                    seo {
+                        _id
+                        title
+                        alternates {
+                            locale
+                            url
+                            entry_id
+                        }
+                        url
+                        locale
+                        description
+                        keywords
+                        robots
+                        sitemap
+                        default_image
+                        social_metas {
+                            handle
+                            content {
+                                name
+                                content
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ', [], $_ENV['test-token']);
+        expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+    }
+
+})->group('graphql');
+
+test('Delete layout, entry type & entry', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryType = $this->client->run('
+            {
+                entryType(handle: "tests-graphql") {
+                    _id
+                    handle
+                    entry_layout_id
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $entryType = $entryType->data->entryType;
+
+        $entry = $this->client->run('
+            {
+                entries(
+                    entry_type_handle: "tests-graphql"
+                ) {
+                    list {
+                        _id
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntry = $this->client->run('
+            mutation {
+                deleteEntry(entry_type_handle: "tests-graphql", id: "' . $entry->data->entries->list[0]->_id . '", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntryType = $this->client->run('
+            mutation {
+                deleteEntryType(id: "' . $entryType->_id . '")
+            }
+        ', [], $_ENV['test-token']);
+
+        $deleteEntryLayout = $this->client->run('
+            mutation {
+                deleteEntryLayout(id: "' . $entryType->entry_layout_id . '", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        try {
+            expect($deleteEntry->status)->toBe('ok');
+            expect($deleteEntryLayout->status)->toBe('ok');
+            expect($deleteEntryType->status)->toBe('ok');
+        } catch (Exception $exception) {
 //            print_r($exception);
-//            expect(true)->toBe(false);
-//        }
-//    }
-//})->group('graphql');
+            expect(true)->toBe(false);
+        }
+    }
+})->group('graphql');
+
+test('Delete test asset', function () {
+    if (isset($_ENV['test-token'])) {
+        $assets = $this->client->run('
+            {
+                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                    list {
+                        _id
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $assetId = $assets->data->assets->list[0]->_id;
+        expect($assetId)->not()->toBeNull();
+        $removeAsset = $this->client->run('
+            mutation {
+                removeAssets(assets: ["' . $assetId . '"])
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($removeAsset->status)->toBe('ok');
+    }
+});

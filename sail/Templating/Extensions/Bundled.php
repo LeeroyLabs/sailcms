@@ -20,15 +20,22 @@ class Bundled extends AbstractExtension
     public function getFunctions(): array
     {
         return [
+            new TwigFunction('version', [$this, 'version']),
             new TwigFunction('header', [$this, 'header']),
             new TwigFunction('debug', [$this, 'debug']),
             new TwigFunction('env', [$this, 'env']),
             new TwigFunction('publicPath', [$this, 'publicPath']),
             new TwigFunction('locale', [$this, 'getLocale']),
+            new TwigFunction('defaultLocale', [$this, 'defaultLocale']),
             new TwigFunction('__', [$this, 'translate']),
             new TwigFunction('twoFactor', [$this, 'twoFactor']),
             new TwigFunction('csrf', [$this, 'csrf']),
-            new TwigFunction('transform', [$this, 'transform'])
+            new TwigFunction('transform', [$this, 'transform']),
+            new TwigFunction('json_encode', [$this, 'jsonEncode']),
+            new TwigFunction('jsonEncode', [$this, 'jsonEncode']),
+            new TwigFunction('json', [$this, 'jsonEncode']),
+            new TwigFunction('json_decode', [$this, 'jsonDecode']),
+            new TwigFunction('jsonDecode', [$this, 'jsonDecode']),
         ];
     }
 
@@ -40,6 +47,18 @@ class Bundled extends AbstractExtension
     public function header(): void
     {
         // TODO: Implement for SEO
+    }
+
+    /**
+     *
+     * Get current sail version
+     *
+     * @return string
+     *
+     */
+    public function version(): string
+    {
+        return Sail::SAIL_VERSION;
     }
 
     /**
@@ -105,6 +124,18 @@ class Bundled extends AbstractExtension
     public function getLocale(): string
     {
         return Locale::$current;
+    }
+
+    /**
+     *
+     * Get default locale
+     *
+     * @return string
+     *
+     */
+    public function defaultLocale(): string
+    {
+        return Locale::default();
     }
 
     /**
@@ -178,13 +209,18 @@ class Bundled extends AbstractExtension
      * @throws Exception
      *
      */
-    public function csrf(): string
+    public function csrf(bool $returnAsFormElement = false): string
     {
         $use = setting('CSRF.use', true);
+        $csrfName = setting('CSRF.fieldName', '_csrf_');
+
+        if ($use && $returnAsFormElement) {
+            $token = Security::csrf();
+            return '<input type="hidden" name="' . $csrfName . '" value="' . $token . '" />';
+        }
 
         if ($use) {
-            $token = Security::csrf();
-            return '<input type="hidden" name="_csrf_" value="' . $token . '" />';
+            return Security::csrf();
         }
 
         return '';
@@ -261,5 +297,38 @@ class Bundled extends AbstractExtension
         }
 
         return '<a href="mailt&#111;&#58;' . $email . '" rel="nofollow">' . $label . '</a>';
+    }
+
+    /**
+     *
+     * Encode JSON
+     *
+     * @param  mixed  $item
+     * @param  bool   $pretty
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public function jsonEncode(mixed $item, bool $pretty = false): string
+    {
+        if ($pretty) {
+            return json_encode($item, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        }
+
+        return json_encode($item, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     *
+     * Encode JSON
+     *
+     * @param  string  $json
+     * @return string
+     * @throws \JsonException
+     *
+     */
+    public function jsonDecode(string $json): string
+    {
+        return json_decode($json, false, 512, JSON_THROW_ON_ERROR);
     }
 }

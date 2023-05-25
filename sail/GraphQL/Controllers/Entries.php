@@ -7,17 +7,21 @@ use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Field;
 use SailCMS\GraphQL\Context;
+use SailCMS\Models\Category;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
+use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
+use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -30,9 +34,9 @@ class Entries
      *
      * Get the home page entry
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -54,9 +58,9 @@ class Entries
     /**
      * Get all entry types
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -81,9 +85,9 @@ class Entries
     /**
      * Get an entry type by id or by his handle
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -118,9 +122,9 @@ class Entries
      *
      * Create entry type
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array
      * @throws DatabaseException
      * @throws EntryException
@@ -150,9 +154,9 @@ class Entries
      *
      * Update an entry type by handle
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -177,9 +181,9 @@ class Entries
      *
      * Delete an entry type
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -198,9 +202,9 @@ class Entries
      *
      * Get all entries of a given type
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -245,9 +249,9 @@ class Entries
      *
      * Get an entry by id (MUST TESTS)
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -274,11 +278,43 @@ class Entries
 
     /**
      *
+     * Get an entry by url
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     * @throws CollectionException
+     *
+     */
+    public function entryByUrl(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $url = $args->get('url');
+        $siteId = $args->get("site_id", Sail::siteId());
+
+        $entry = Entry::findByURL($url, $siteId);
+
+        if ($entry) {
+            $homepage = Entry::getHomepage($siteId, $entry->locale);
+            return $this->parseEntry($entry->simplify($homepage));
+        }
+        return null;
+    }
+
+    /**
+     *
      * Create an entry and return it
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -296,7 +332,6 @@ class Entries
         $parent = $args->get('parent');
         $locale = $args->get('locale');
         $alternates = $args->get('alternates');
-        $status = $args->get('status');
         $title = $args->get('title');
         $template = $args->get('template');
         $slug = $args->get('slug');
@@ -306,7 +341,7 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
-        $entryOrErrors = $entryModel->create($isHomepage, $locale, $status, $title, $template, $slug, [
+        $entryOrErrors = $entryModel->create($isHomepage, $locale, $title, $template, $slug, [
             'parent' => $parent,
             'alternates' => $alternates,
             'categories' => $categories,
@@ -333,9 +368,9 @@ class Entries
      *
      * Update an entry
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -372,9 +407,9 @@ class Entries
      *
      * Update entry SEO
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -417,11 +452,59 @@ class Entries
 
     /**
      *
+     * Publish an entry
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return string
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function publishEntry(mixed $obj, Collection $args, Context $context): string
+    {
+        $entryId = $args->get('id');
+        $publicationDate = $args->get('publication_date', 0);
+        $expirationDate = $args->get('expiration_date', 0);
+        $siteId = $args->get('site_id');
+
+        return (new Entry())->publish($entryId, $publicationDate, $expirationDate, $siteId);
+    }
+
+    /**
+     *
+     * Unpublish an entry
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function unpublishEntry(mixed $obj, Collection $args, Context $context): bool
+    {
+        $entryId = $args->get('id');
+
+        return (new Entry())->unpublish($entryId);
+    }
+
+    /**
+     *
      * Delete an entry
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -447,25 +530,36 @@ class Entries
      *
      * Resolver for entry model
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
-     * @param ResolveInfo $info
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
      * @return mixed
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
      * @throws PermissionException
+     * @throws SodiumException
      *
      */
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
+        // For EntryVersion
         if (!isset($obj['current'])) {
             if ($info->fieldName === "content") {
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
-                $entry_type_id = $obj['entry_type_id'];
-                $entryType = (new EntryType())->getById($entry_type_id);
-                $entryModel = $entryType->getEntryModel($entryType);
+                $entryType = $obj['entry_type'] ?? null;
+
+                // This code will be deprecated, since there was a change in the simplify method in Entry.
+                if (!$entryType) {
+                    $entry_type_id = $obj['entry_type_id'];
+                    $entryType = (new EntryType())->getById($entry_type_id);
+                    $entryModel = $entryType->getEntryModel($entryType);
+                } else {
+                    $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
+                }
                 $entryModel->content = new Collection((array)$obj['content']);
                 return $entryModel->getContent();
             }
@@ -476,20 +570,118 @@ class Entries
          * @var Entry $entry
          */
         $entry = $obj['current'];
+
         // Entry fields to resolve
         if ($info->fieldName === "content") {
             return $entry->getContent();
         }
 
         if ($info->fieldName === "schema") {
-            return $entry->getSchema()->unwrap();
+            return $entry->getSchema(true, true)->unwrap();
         }
 
         if ($info->fieldName === "seo") {
             return $entry->getSimplifiedSEO();
         }
 
+        if ($info->fieldName === "publication") {
+            return (new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+        }
+
+        if ($info->fieldName === "parent") {
+            if (!$obj['parent']['handle']) {
+                return null;
+            }
+            $parent = $entry->getParent();
+            $parentHomepage = Entry::getHomepage($parent->site_id, $parent->locale);
+            return $parent->simplify($parentHomepage);
+        }
+
+        if ($info->fieldName === "categories") {
+            $categoryIds = $obj['categories'];
+
+            $categories = Category::getByIds($categoryIds);
+
+            foreach ($categories as &$category) {
+                /**
+                 * @var Category $category
+                 */
+                $category = $category->simplify();
+            }
+
+            return $categories;
+        }
+
         return $obj[$info->fieldName];
+    }
+
+    /**
+     *
+     *
+     *
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public function entryAlternateResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === "url") {
+            $publication = (new EntryPublication())->getPublicationByEntryId($obj->entry_id);
+            return $publication->entry_url ?? ""; // We default to an empty string in case the entry is not published
+        }
+
+        return $obj->{$info->fieldName};
+    }
+
+    /**
+     *
+     * Resolver authors of an entry
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function authorsResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        $userId = $obj[$info->fieldName] ?? null;
+
+        if ($userId) {
+            return (new User())->getById($userId);
+        }
+        return null;
+    }
+
+    /**
+     *
+     * Resolver the version for Entry Publication
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryPublicationResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        /**
+         * @var EntryPublication $obj
+         */
+        if ($info->fieldName === "version") {
+            return (new EntryVersion())->getById($obj->entry_version_id);
+        }
+
+        return $obj->{$info->fieldName};
     }
 
 
@@ -497,9 +689,9 @@ class Entries
      *
      * Get entry version by id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return EntryVersion
      * @throws ACLException
      * @throws DatabaseException
@@ -517,9 +709,9 @@ class Entries
      *
      * Get entry versions by entry_id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array
      * @throws ACLException
      * @throws DatabaseException
@@ -537,9 +729,9 @@ class Entries
      *
      * Apply entry version with entry version id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -561,9 +753,9 @@ class Entries
      *
      * Get an entry layout by id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -586,9 +778,9 @@ class Entries
      *
      * Get all entry layouts
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -614,9 +806,9 @@ class Entries
      *
      * Create an entry layout
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -629,6 +821,7 @@ class Entries
     {
         $titles = $args->get('titles');
         $graphqlSchema = $args->get('schema');
+        $slug = $args->get('slug');
 
         $titles = new LocaleField($titles->unwrap());
 
@@ -636,8 +829,7 @@ class Entries
         $generatedSchema = EntryLayout::generateLayoutSchema($schema);
 
         $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->create($titles, $generatedSchema);
-
+        $entryLayout = $entryLayoutModel->create($titles, $generatedSchema, $slug);
         return $entryLayout->simplify();
     }
 
@@ -645,9 +837,9 @@ class Entries
      *
      * Update an entry layout
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -677,14 +869,15 @@ class Entries
      *
      * Update a key in an entry layout schema
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
@@ -707,9 +900,9 @@ class Entries
      *
      * Delete an entry layout
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -731,9 +924,9 @@ class Entries
      *
      * Get all fields Info
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Collection
      *
      */
@@ -747,7 +940,7 @@ class Entries
      * According to the given entry type handle return the Entry Model
      *  - if entry type handle is null, return the default entry type
      *
-     * @param  ?string $entryTypeHandle
+     * @param  ?string  $entryTypeHandle
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -770,7 +963,7 @@ class Entries
      *
      * Parse simplified entry for graphQL
      *
-     * @param array $simplifiedEntry
+     * @param  array  $simplifiedEntry
      * @return array
      */
     private function parseEntry(array $simplifiedEntry): array

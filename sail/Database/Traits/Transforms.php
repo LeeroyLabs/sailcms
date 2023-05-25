@@ -3,12 +3,14 @@
 namespace SailCMS\Database\Traits;
 
 use Carbon\Carbon;
+use Exception;
 use \JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
+use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Security;
 use stdClass;
@@ -100,7 +102,7 @@ trait Transforms
                     case BSONArray::class:
                         // If an array and we are casting into Collection<Type>
                         if (is_array($cast)) {
-                            if ($cast[0] === \SailCMS\Collection::class) {
+                            if ($cast[0] === Collection::class) {
                                 $list = [];
 
                                 foreach ($v->bsonSerialize() as $_value) {
@@ -122,18 +124,24 @@ trait Transforms
                                 $castInstance = new $cast[0]($list);
                                 $instance->{$k} = $castInstance;
                             }
-                        } elseif ($cast === \SailCMS\Collection::class) {
+                        } elseif ($cast === Collection::class) {
                             $castInstance = new $cast();
                             $instance->{$k} = $castInstance->castTo($v->bsonSerialize());
                         } elseif ($cast !== '') {
-                            $list = [];
+                            if (defined("$cast::HANDLE_ARRAY_CASTING") && $cast::HANDLE_ARRAY_CASTING) {
+                                $casted = new $cast();
+                                $instance->{$k} = $casted->castTo($v->bsonSerialize());
+                            } else {
+                                $list = [];
 
-                            foreach ($v->bsonSerialize() as $_value) {
-                                $castInstance = new $cast();
-                                $list[] = $castInstance->castTo($_value);
+
+                                foreach ($v->bsonSerialize() as $_value) {
+                                    $castInstance = new $cast();
+                                    $list[] = $castInstance->castTo($_value);
+                                }
+
+                                $instance->{$k} = $list;
                             }
-
-                            $instance->{$k} = $list;
                         } else {
                             $instance->{$k} = $v->bsonSerialize();
                         }
@@ -229,7 +237,7 @@ trait Transforms
         }
 
         // Process Collection first, because it will pass the is_array test
-        if (is_object($obj) && get_class($obj) === \SailCMS\Collection::class) {
+        if (is_object($obj) && get_class($obj) === Collection::class) {
             return $obj->unwrap();
         }
 
@@ -278,7 +286,7 @@ trait Transforms
      *
      * @param  mixed  $doc
      * @return array
-     * @throws \Exception
+     * @throws Exception
      *
      */
     private function prepareForWrite(mixed $doc): array

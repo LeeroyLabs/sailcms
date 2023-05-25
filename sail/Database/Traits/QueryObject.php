@@ -6,8 +6,10 @@ use Exception;
 use JsonException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BulkWriteResult;
+use MongoDB\Model\BSONArray;
 use SailCMS\Cache;
 use SailCMS\Collection;
+use SailCMS\Database\Model;
 use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Types\QueryOptions;
@@ -33,7 +35,7 @@ trait QueryObject
      *
      * @param  string  $cacheKey
      * @param  int     $cacheTTL
-     * @return array|$this|null
+     * @return $this(SailCMS\Database\Model)|array|null
      * @throws DatabaseException
      *
      */
@@ -88,56 +90,12 @@ trait QueryObject
         // Single query
         if ($this->isSingle) {
             $result = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
-
             if ($result) {
                 $doc = $this->transformDocToModel($result);
 
                 // Run all population requests
                 foreach ($this->currentPopulation as $populate) {
-                    $instance = new $populate['class']();
-                    $field = $populate['field'];
-                    $target = $populate['targetField'];
-                    $subpop = $populate['subpopulates'];
-
-                    $list = [];
-                    $targetList = [];
-                    $is_array = false;
-
-                    if (isset($doc->{$field}) && is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
-                        $targetList = $doc->{$field}->unwrap();
-                        $is_array = true;
-                    } elseif (is_array($doc->{$field})) {
-                        $targetList = $doc->{$field};
-                        $is_array = true;
-                    }
-
-                    if ($is_array) {
-                        foreach ($targetList as $item) {
-                            if (!empty($item) && !is_object($item)) {
-                                $obj = $instance->findById($item);
-
-                                if (count($subpop) > 0) {
-                                    foreach ($subpop as $pop) {
-                                        $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
-                                    }
-                                }
-
-                                $list[] = $obj->exec();
-                            }
-                        }
-
-                        $doc->{$target} = new Collection($list);
-                    } elseif (!empty($doc->{$field}) && !is_object($doc->{$field})) {
-                        $obj = $instance->findById($doc->{$field});
-
-                        if (count($subpop) > 0) {
-                            foreach ($subpop as $pop) {
-                                $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
-                            }
-                        }
-
-                        $doc->{$target} = $obj->exec();
-                    }
+                    $doc = self::parsePopulate($doc, $populate);
                 }
 
                 $this->debugCall('', $qt);
@@ -173,10 +131,8 @@ trait QueryObject
 
         try {
             if ($this->currentOp === 'distinct') {
-                $results = call_user_func([
-                    $this->active_collection,
-                    $this->currentOp
-                ], $this->currentField, $this->currentQuery, $options);
+                $results = $this->active_collection->distinct($this->currentField, $this->currentQuery, $options);
+                return $results;
             } else {
                 $results = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
             }
@@ -213,7 +169,7 @@ trait QueryObject
                             if (!empty($item) && !is_object($item)) {
                                 $obj = $instance->findById($item);
 
-                                if (count($subpop) > 1) {
+                                if (count($subpop) >= 1) {
                                     foreach ($subpop as $pop) {
                                         $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                                     }
@@ -228,7 +184,7 @@ trait QueryObject
                         if (!empty($doc->{$field}) && !is_object($doc->{$field})) {
                             $obj = $instance->findById($doc->{$field});
 
-                            if (count($subpop) > 1) {
+                            if (count($subpop) >= 1) {
                                 foreach ($subpop as $pop) {
                                     $obj->populate($pop[0], $pop[1], $pop[2], $pop[3] ?? []);
                                 }
@@ -260,6 +216,20 @@ trait QueryObject
         $this->debugCall('', $qt);
         $this->clearOps();
         return $docs;
+    }
+
+    /**
+     *
+     * Get all records without any limits
+     * Note: Be careful with the use of this method
+     *
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public static function allRecords(): Collection
+    {
+        return new Collection(self::query()->find()->exec());
     }
 
     /**
@@ -485,9 +455,10 @@ trait QueryObject
 
         $this->currentOp = 'distinct';
         $this->currentField = $field;
-        $this->isSingle = true;
+        $this->isSingle = false;
         $this->currentQuery = $query;
-        $this->currentLimit = 1;
+        $this->currentSkip = $options->skip;
+        $this->currentLimit = $options->limit;
         $this->currentSort = $options->sort ?? [];
         $this->currentProjection = $options->projection ?? [];
         $this->currentCollation = $options->collation;
@@ -907,5 +878,131 @@ trait QueryObject
         $this->currentSkip = 0;
         $this->currentLimit = 10_000;
         $this->currentShowAll = false;
+        $this->isSingle = false;
+    }
+
+    /**
+     *
+     * Handle populate feature (with subpopulation)
+     *
+     * @param  Model  $doc
+     * @param         $populate
+     * @return Model
+     *
+     */
+    private static function parsePopulate(Model $doc, $populate)
+    {
+        $instance = new $populate['class']();
+        $field = $populate['field'];
+        $target = $populate['targetField'];
+        $subpop = $populate['subpopulates'];
+
+        $isArray = false;
+        $isObject = false;
+        $isCollection = false;
+        $hasSub = false;
+        $sub = '';
+
+        if (str_contains($field, '.')) {
+            [$field, $sub] = explode('.', $field);
+            $hasSub = true;
+        }
+
+        if ($hasSub && isset($doc->{$field})) {
+            if (is_array($doc->{$field})) {
+                $isArray = true;
+                $fieldValue = $doc->{$field};
+            } elseif (is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
+                // handle collection
+                $isArray = true;
+                $isCollection = true;
+                $fieldValue = $doc->{$field}->unwrap();
+            } elseif (is_object($doc->{$field}) && get_class($doc->{$field}) === BSONArray::class) {
+                // Handle BSONArray
+                $isArray = true;
+                $fieldValue = $doc->{$field}->bsonSerialize();
+            } elseif (is_object($doc->{$field})) {
+                // Handle object
+                $isObject = true;
+                $fieldValue = $doc->{$field};
+            }
+        }
+
+        if ($isArray) {
+            // Process a field within an array (every object gets that property) with support for subpopulation
+            foreach ($fieldValue as $k => $v) {
+                $obj = $instance->findById($v[$sub])->exec();
+                $v->{$target} = $obj;
+
+                if (count($subpop) > 0) {
+                    foreach ($subpop as $pop) {
+                        $thepop = [
+                            'field' => $pop[0],
+                            'targetField' => $pop[1],
+                            'class' => $pop[2],
+                            'subpopulates' => $pop[3] ?? []
+                        ];
+
+                        $v->{$target}->{$pop[1]} = self::parsePopulate($v->{$target}, $thepop);
+                    }
+                }
+
+                $fieldValue[$k] = $v;
+            }
+
+            if ($isCollection) {
+                $doc->{$field} = new Collection($fieldValue);
+            } else {
+                $doc->{$field} = $fieldValue;
+            }
+        } elseif ($isObject) {
+            // Process a field on an object (ex: $mod->obj->user_id to $mod->obj->user) with support for subpopulation.
+            $obj = $instance->findById($fieldValue->{$sub})->exec();
+            $doc->{$field}->{$target} = $obj;
+
+            if (count($subpop) > 0) {
+                foreach ($subpop as $pop) {
+                    $thepop = [
+                        'field' => $pop[0],
+                        'targetField' => $pop[1],
+                        'class' => $pop[2],
+                        'subpopulates' => $pop[3] ?? []
+                    ];
+
+                    $doc->{$field}->{$target}->{$pop[1]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
+                }
+            }
+        } elseif (is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
+            // handle collections ids
+            $childs = [];
+            foreach ($doc->{$field}->castFrom() as $k => $v) {
+                $obj = $instance->findById($v)->exec();
+                $childs[] = $obj;
+            }
+            $doc->{$target} = new Collection($childs);
+        } else {
+            // Process a field on a simple model (ex: $mod->user_id to $mod->user) with support for subpopulation.
+            if ($doc->{$field}) {
+                $obj = $instance->findById($doc->{$field})->exec();
+                $doc->{$target} = $obj;
+
+                if (count($subpop) > 0) {
+                    foreach ($subpop as $pop) {
+                        $thepop = [
+                            'field' => $pop[0],
+                            'targetField' => $pop[1],
+                            'class' => $pop[2],
+                            'subpopulates' => $pop[3] ?? []
+                        ];
+
+                        $doc->{$target}->{$pop[1]} = self::parsePopulate($doc->{$target}, $thepop);
+                    }
+                }
+            } else {
+                $doc->{$target} = null;
+            }
+        }
+
+        return $doc;
     }
 }

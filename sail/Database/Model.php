@@ -18,12 +18,19 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\User;
+use SailCMS\Sail;
 use SailCMS\Text;
 
 /**
  *
  * @property ObjectId $_id
  * @property string   $id
+ *
+ * @uses Validation
+ * @uses Transforms
+ * @uses ActiveRecord
+ * @uses QueryObject
+ * @uses Debugging
  *
  */
 abstract class Model implements JsonSerializable
@@ -80,7 +87,7 @@ abstract class Model implements JsonSerializable
         if ($this->collection === '') {
             // Setup using name of class
             $name = array_reverse(explode('\\', get_class($this)))[0];
-            $name = Text::snakeCase(Text::pluralize($name));
+            $name = Text::from($name)->pluralize()->snake()->value();
             $this->collection = $name;
         }
 
@@ -205,6 +212,32 @@ abstract class Model implements JsonSerializable
 
     /**
      *
+     * Get all properties
+     *
+     * @return array
+     *
+     */
+    public function properties(): array
+    {
+        return $this->properties;
+    }
+
+    /**
+     *
+     * Set value of property in a more standard way
+     *
+     * @param  string  $name
+     * @param  mixed   $value
+     * @return void
+     *
+     */
+    public function setProperty(string $name, mixed $value): void
+    {
+        $this->properties[$name] = $value;
+    }
+
+    /**
+     *
      * Get a property dynamically
      *
      * @param  string  $name
@@ -294,10 +327,18 @@ abstract class Model implements JsonSerializable
      */
     protected function hasPermissions(bool $read = false): void
     {
+        if (Sail::isCLI()) {
+            return;
+        }
+
         $errorMsg = 'Permission Denied (' . get_class($this) . ')';
 
+        if (!User::$currentUser) {
+            throw new PermissionException('0403: Permission Denied', 0403);
+        }
+
         if ($read) {
-            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->permissionGroup))) {
+            if (!ACL::hasPermission(User::$currentUser, ACL::read($this->permissionGroup), ACL::write($this->permissionGroup))) {
                 throw new PermissionException('0403: ' . $errorMsg, 0403);
             }
         } elseif (!ACL::hasPermission(User::$currentUser, ACL::write($this->permissionGroup))) {
@@ -310,6 +351,7 @@ abstract class Model implements JsonSerializable
      * Support for json_encode triggering
      *
      * @return array
+     * @throws JsonException
      *
      */
     public function jsonSerialize(): array
@@ -339,7 +381,19 @@ abstract class Model implements JsonSerializable
      */
     public function clearCacheForModel(): void
     {
-        Cache::removeUsingPrefix(Text::snakeCase(get_class($this)));
+        Cache::removeUsingPrefix(Text::from(get_class($this))->snake()->value());
+    }
+
+    /**
+     *
+     * Run optimizer code for all models (create required indexes to make database fast)
+     *
+     * @return void
+     *
+     */
+    public static function ensureIndexes(): void
+    {
+        // Implement this in each model for optimized install
     }
 
     /**
@@ -352,6 +406,6 @@ abstract class Model implements JsonSerializable
      */
     private function assembleCacheKey(string $key): string
     {
-        return Text::snakeCase(get_class($this)) . ':' . $key;
+        return Text::from(get_class($this))->snake()->concat($key, ':')->value();
     }
 }

@@ -288,15 +288,18 @@ class EntryType extends Model implements Validator
      * Get an entryType by id
      *
      * @param  string  $id
+     * @param  bool    $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getById(string $id): ?EntryType
+    public function getById(string $id, bool $api = true): ?EntryType
     {
-        $this->hasPermissions(true);
+        if ($api) {
+            $this->hasPermissions(true);
+        }
 
         return $this->findById($id)->exec();
     }
@@ -457,7 +460,7 @@ class EntryType extends Model implements Validator
      */
     private function getCollectionName(string $handle): string
     {
-        return Text::snakeCase(Text::deburr(Text::pluralize($handle)));
+        return Text::from($handle)->pluralize()->deburr()->snake()->value();
     }
 
     /**

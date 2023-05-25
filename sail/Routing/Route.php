@@ -23,7 +23,7 @@ final class Route
     private bool $secure;
 
     private static array $patterns = [
-        ':any' => '([a-zA-Z0-9\-]+)',
+        ':any' => '([a-zA-Z0-9\-\_]+)',
         ':string' => '([a-zA-Z]+)',
         ':id' => '([a-z0-9]{24})',
         ':num' => '([0-9]+)',
@@ -84,7 +84,7 @@ final class Route
 
             $instance->setRoute($this);
 
-            Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
+            Debug::route($this->method, $url, $class . ':' . $this->method, Text::from($url)->slug()->value());
 
             call_user_func_array([$instance, $this->method], []);
             return $instance->getResponse();
@@ -110,7 +110,7 @@ final class Route
                 $instance->setRoute($this);
 
                 if (!str_contains($url, '__clockwork')) {
-                    Debug::route($this->method, $url, $class . ':' . $this->method, Text::slugify($url));
+                    Debug::route($this->method, $url, $class . ':' . $this->method, Text::from($url)->slug()->value());
                 }
 
                 call_user_func_array([$instance, $this->method], $matches);

@@ -18,12 +18,12 @@ class InputTextField extends Field
      *
      * Input text field from html input:text attributes
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
-     * @param int $maxLength
-     * @param int $minLength
-     * @param string $pattern
-     * @param bool $multiline
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
+     * @param  int               $maxLength
+     * @param  int               $minLength
+     * @param  string            $pattern
+     * @param  bool              $multiline
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
@@ -40,7 +40,7 @@ class InputTextField extends Field
      *
      * Define default settings for a Input Text Field
      *
-     * @param bool $multiline
+     * @param  bool  $multiline
      * @return Collection
      *
      */
@@ -59,16 +59,16 @@ class InputTextField extends Field
      *
      * Available properties of the settings
      *
-     * @param array|null $options
      * @return Collection
+     *
      */
-    public static function availableProperties(?array $options = null): Collection
+    public static function availableProperties(): Collection
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('maxLength', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('minLength', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('pattern', InputSettings::INPUT_TYPE_REGEX),
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING),
             new InputSettings('multiline', InputSettings::INPUT_TYPE_CHECKBOX),
         ]);
     }
@@ -88,7 +88,7 @@ class InputTextField extends Field
      *
      * Input text field validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -146,7 +146,7 @@ class InputTextField extends Field
      *
      * Cast to InputTextField
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return InputTextField
      *
      */

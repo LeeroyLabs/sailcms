@@ -7,6 +7,8 @@ use SailCMS\Types\Fields\InputSelectField;
 
 class MultipleSelectField extends SelectField
 {
+    const SEARCHABLE = false;
+
     /**
      *
      * Description for field info

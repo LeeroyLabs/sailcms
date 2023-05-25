@@ -17,8 +17,8 @@ abstract class Field implements Castable
      *
      * Structure to replicate an html input
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
@@ -45,10 +45,10 @@ abstract class Field implements Castable
      *
      * Must define the available properties
      *
-     * @param array|null $options
      * @return Collection
+     *
      */
-    abstract public static function availableProperties(?array $options = null): Collection;
+    abstract public static function availableProperties(): Collection;
 
     /**
      *
@@ -62,7 +62,7 @@ abstract class Field implements Castable
      *
      * Validate the input from a given content
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -72,8 +72,8 @@ abstract class Field implements Castable
      *
      * Valid a value by Field types
      *
-     * @param string $type
-     * @param mixed $value
+     * @param  string  $type
+     * @param  mixed   $value
      * @return bool
      *
      */
@@ -82,8 +82,8 @@ abstract class Field implements Castable
         return match ($type) {
             InputSettings::INPUT_TYPE_CHECKBOX => in_array($value, [true, false, "1", "0", 1, 0, "true", "false"], true),
             InputSettings::INPUT_TYPE_NUMBER => is_int((int)$value),
-            InputSettings::INPUT_TYPE_OPTIONS => get_class($value) === Collection::class,
-            InputSettings::INPUT_TYPE_REGEX => is_string($value),
+            InputSettings::INPUT_TYPE_STRING => is_string($value),
+            InputSettings::INPUT_TYPE_OPTIONS => is_array($value) || $value instanceof Collection,
             default => false
         };
     }
@@ -92,18 +92,16 @@ abstract class Field implements Castable
      *
      * Validate settings before the schema creation in an entry layout
      *
-     * @param Collection|null $settings
-     * @param Collection $defaultSettings
+     * @param  Collection|array|null  $settings
+     * @param  Collection             $defaultSettings
      * @return Collection
      *
      */
-    public static function validateSettings(Collection|null $settings, Collection $defaultSettings): Collection
+    public static function validateSettings(Collection|array|null $settings, Collection $defaultSettings): Collection
     {
         $validSettings = Collection::init();
 
-        $options = $settings?->get('options', []);
-
-        static::availableProperties((array)$options)->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
+        static::availableProperties()->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
             /**
              * @var InputSettings $inputType
              */
@@ -124,20 +122,20 @@ abstract class Field implements Castable
      *
      * Get setting type from a field
      *
-     * @param string $name
-     * @param mixed $value
+     * @param  string  $name
+     * @param  mixed   $value
      * @return string
      *
      */
     public function getSettingType(string $name, mixed $value): string
     {
         $type = StoringType::STRING->value;
-        static::availableProperties($this->options ?? null)->filter(function ($setting) use (&$type, $name, $value) {
+        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value) {
             if ($setting->name === $name) {
                 $type = match ($setting->type) {
-                    InputSettings::INPUT_TYPE_NUMBER => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
-                    InputSettings::INPUT_TYPE_CHECKBOX => StoringType::BOOLEAN->value,
-                    InputSettings::INPUT_TYPE_OPTIONS => StoringType::ARRAY->value,
+                    "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,
+                    "checkbox" => StoringType::BOOLEAN->value,
+                    "options" => StoringType::ARRAY->value,
                     default => StoringType::STRING->value
                 };
             }
@@ -167,7 +165,7 @@ abstract class Field implements Castable
      *
      * Cast to Field Child
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return $this
      *
      */

@@ -8,25 +8,30 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Types\Authors;
+use SailCMS\Types\Dates;
+use SailCMS\Types\EntryParent;
 use SailCMS\Types\QueryOptions;
 use SodiumException;
 
 /**
  *
- * @property int $created_at
- * @property string $user_id
- * @property string $user_full_name
- * @property string $user_email
- * @property string $entry_id
+ * @property int        $created_at
+ * @property string     $user_id
+ * @property string     $user_full_name
+ * @property string     $user_email
+ * @property string     $entry_id
  * @property Collection $entry
+ * @property ?string    $copy_id = null
  *
  */
 class EntryVersion extends Model
 {
-    protected string $collection = 'entry_version';
+    protected string $collection = 'entry_versions';
     protected string $permissionGroup = 'entryversion'; // Usage only in get methods
     protected array $casting = [
         "entry" => Collection::class
@@ -34,12 +39,13 @@ class EntryVersion extends Model
 
     public const DATABASE_ERROR = '5200: Exception when "%s" an entry version.';
     public const CANNOT_APPLY_LAST_VERSION = '5201: Cannot apply last version, it is the same as the current version.';
+    public const DOES_NOT_EXISTS = '5202: There no version for the given id.';
 
     /**
      *
      * Get an entry version by id
      *
-     * @param string|ObjectId $entryVersionId
+     * @param  string|ObjectId  $entryVersionId
      * @return EntryVersion|null
      * @throws ACLException
      * @throws DatabaseException
@@ -56,7 +62,7 @@ class EntryVersion extends Model
      *
      * Get entry versions for a given entry id
      *
-     * @param string|ObjectId $entryId
+     * @param  string|ObjectId  $entryId
      * @return array|Model|EntryVersion|null
      * @throws ACLException
      * @throws DatabaseException
@@ -72,10 +78,28 @@ class EntryVersion extends Model
 
     /**
      *
+     * Get last version by entry id
+     *
+     * @param  string|ObjectId  $entryId
+     * @return EntryVersion|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     */
+    public function getLastVersionByEntryId(string|ObjectId $entryId): EntryVersion|null
+    {
+        $this->hasPermissions(true);
+
+        $options = QueryOptions::initWithSort(['created_at' => -1, '_id' => -1]);
+        return $this->findOne(['entry_id' => (string)$entryId], $options)->exec();
+    }
+
+    /**
+     *
      * Create a new version for an entry, automatically called in the create and update of an entry.
      *
-     * @param User $user
-     * @param array $simplifyEntry
+     * @param  User   $user
+     * @param  array  $simplifyEntry
      * @return string
      * @throws EntryException
      *
@@ -102,15 +126,15 @@ class EntryVersion extends Model
      *
      * Delete all version by entry id
      *
-     * @param string $entry_id
+     * @param  string  $entryId
      * @return bool
      * @throws EntryException
      *
      */
-    public function deleteAllByEntryId(string $entry_id): bool
+    public function deleteAllByEntryId(string $entryId): bool
     {
         try {
-            $result = $this->deleteMany(['entry_id' => $entry_id]);
+            $result = $this->deleteMany(['entry_id' => $entryId]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'deleting') . PHP_EOL . $exception->getMessage());
         }
@@ -121,9 +145,8 @@ class EntryVersion extends Model
     /**
      *
      * Apply a version to an entry
-     *  TODO maybe manage this call to not be able to apply an already applied version. It's possible to apply a same version multiple times.
      *
-     * @param string $entry_version_id
+     * @param  string  $entry_version_id
      * @return bool
      * @throws DatabaseException
      * @throws EntryException
@@ -145,11 +168,10 @@ class EntryVersion extends Model
         }
 
         // Check if not the last version
-        $lastVersion = $this->findOne([
-            "entry_id" => $entryVersion->entry_id
-        ], QueryOptions::initWithSort(['_id' => -1]))->exec();
+        $lastVersion = $this->getLastVersionByEntryId($entryVersion->entry_id);
 
-        if ((string)$lastVersion->_id === (string)$entryVersion->_id) {
+        if ((string)$lastVersion->_id === (string)$entryVersion->_id
+            || (string)$lastVersion->copy_id === (string)$entryVersion->_id) {
             throw new EntryException(self::CANNOT_APPLY_LAST_VERSION);
         }
 
@@ -166,8 +188,14 @@ class EntryVersion extends Model
             'alternates' => $entryVersion->entry->get('alternates'),
         ];
 
-        $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'))->exec();
-        $entryModel = $entryType->getEntryModel($entryType);
+        $entryType = $entryVersion->entry->get('entry_type');
+
+        if (!$entryType) {
+            $entryType = (new EntryType())->findById($entryVersion->entry->get('entry_type_id'))->exec();
+            $entryModel = $entryType->getEntryModel($entryType);
+        } else {
+            $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
+        }
 
         try {
             $result = $entryModel->updateById($entryVersion->entry->get('_id'), $data, true, true);
@@ -175,6 +203,52 @@ class EntryVersion extends Model
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'applying') . PHP_EOL . $exception->getMessage());
         }
 
+        // Update new created version to specify that it's copy of the applied version
+        $lastVersion = $this->getLastVersionByEntryId($entryVersion->entry_id);
+        try {
+            $this->updateOne(['_id' => $lastVersion->_id], [
+                '$set' => ['copy_id' => $entry_version_id]
+            ]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating the copy of') . PHP_EOL . $exception->getMessage());
+        }
+
         return $result->length === 0;
+    }
+
+    /**
+     *
+     * Fake an apply of version directly on an entry object
+     *
+     * @param  Entry   $entry
+     * @param  string  $entry_version_id
+     * @return Entry
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws CollectionException
+     *
+     */
+    public function fakeVersion(Entry $entry, string $entry_version_id): Entry
+    {
+        $entryVersion = $this->findById($entry_version_id)->exec();
+
+        if (!isset($entryVersion->_id)) {
+            throw new EntryException(self::DOES_NOT_EXISTS);
+        }
+
+        $entry->authors = (new Authors())->castTo($entryVersion->entry->get('authors'));
+        $entry->dates = (new Dates())->castTo($entryVersion->entry->get('dates'));
+        $entry->parent = (new EntryParent())->castTo($entryVersion->entry->get('parent'));
+        $entry->site_id = $entryVersion->entry->get('site_id');
+        $entry->locale = $entryVersion->entry->get('locale');
+        $entry->title = $entryVersion->entry->get('title');
+        $entry->slug = $entryVersion->entry->get('slug');
+        $entry->url = $entryVersion->entry->get('url');
+        $entry->template = $entryVersion->entry->get('template');
+        $entry->categories = (new Collection())->castTo($entryVersion->entry->get('categories'));
+        $entry->content = (new Collection())->castTo($entryVersion->entry->get('content'));
+        $entry->alternates = $entryVersion->entry->get('alternates');
+
+        return $entry;
     }
 }

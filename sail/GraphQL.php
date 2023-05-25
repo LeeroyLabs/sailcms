@@ -18,6 +18,7 @@ use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
+use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
@@ -25,6 +26,8 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\Groups;
+use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -48,9 +51,9 @@ final class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -73,9 +76,9 @@ final class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -98,9 +101,9 @@ final class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param string $type
-     * @param string $className
-     * @param string $method
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -137,7 +140,7 @@ final class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -150,7 +153,7 @@ final class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -163,7 +166,7 @@ final class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -317,11 +320,11 @@ final class GraphQL
                     $mresult->data->errors = [
                         [
                             'message' => $error['debugMessage'] ?? $error['message'],
-                            'extensions' => ['category' => 'internal'],
+                            'extensions' => $error['extensions'] ?? ['category' => 'internal'],
                             'locations' => (isset($error['trace'])) ? [['line' => $error['trace'][0]['line'], 'column' => 1]] : $locations,
                             'file' => $error['trace'][0]['file'] ?? 'unknown file',
                             'stack' => $error['trace'] ?? [],
-                            'path' => ['']
+                            'path' => $error['path'] ?? ['']
                         ]
                     ];
                 }
@@ -355,7 +358,9 @@ final class GraphQL
         self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
         self::addMutationResolver('updateUser', Users::class, 'updateUser');
         self::addMutationResolver('deleteUser', Users::class, 'deleteUser');
+        self::addMutationResolver('deleteUsers', Users::class, 'deleteUsers');
         self::addMutationResolver('validateAccount', Users::class, 'validateAccount');
+        self::addMutationResolver('changeUserStatus', Users::class, 'changeUserStatus');
 
         // Authentication
         self::addQueryResolver('authenticate', Users::class, 'authenticate');
@@ -374,10 +379,18 @@ final class GraphQL
         // Assets
         self::addQueryResolver('asset', Assets::class, 'asset');
         self::addQueryResolver('assets', Assets::class, 'assets');
+        self::addQueryResolver('assetFolders', Assets::class, 'assetFolders');
+        self::addQueryResolver('assetConfig', Assets::class, 'assetConfig');
+        self::addQueryResolver('assetTransformForId', Assets::class, 'assetTransformForId');
         self::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
         self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
-        self::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
+        self::addMutationResolver('removeAssets', Assets::class, 'removeAssets');
         self::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+        self::addMutationResolver('customTransformAsset', Assets::class, 'customTransformAsset');
+        self::addMutationResolver('moveFiles', Assets::class, 'moveFiles');
+        self::addMutationResolver('addFolder', Assets::class, 'addFolder');
+        self::addMutationResolver('removeFolder', Assets::class, 'removeFolder');
+        self::addResolver('Asset', Assets::class, 'assetResolver');
 
         // Emails
         self::addQueryResolver('email', Emails::class, 'email');
@@ -398,9 +411,12 @@ final class GraphQL
 
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
+        self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
+        self::addMutationResolver('publishEntry', Entries::class, 'publishEntry');
+        self::addMutationResolver('unpublishEntry', Entries::class, 'unpublishEntry');
         self::addMutationResolver('deleteEntry', Entries::class, 'deleteEntry');
 
         self::addQueryResolver('entryVersion', Entries::class, 'entryVersion');
@@ -418,6 +434,9 @@ final class GraphQL
 
         // Types and Resolvers
         self::addResolver('Entry', Entries::class, 'entryResolver');
+        self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
+        self::addResolver('Authors', Entries::class, 'authorsResolver');
+        self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
@@ -433,6 +452,21 @@ final class GraphQL
         self::addMutationResolver('deleteCategory', Categories::class, 'deleteCategory');
         self::addMutationResolver('deleteCategoryBySlug', Categories::class, 'deleteCategoryBySlug');
 
+        // Navigation
+        self::addQueryResolver('navigation', Navigation::class, 'navigation');
+        self::addQueryResolver('navigationDetails', Navigation::class, 'navigationDetails');
+        self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
+        self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
+        self::addMutationResolver('deleteNavigation', Navigation::class, 'deleteNavigation');
+
+        // Groups
+        self::addQueryResolver('group', Groups::class, 'group');
+        self::addQueryResolver('groups', Groups::class, 'groups');
+        self::addMutationResolver('createGroup', Groups::class, 'createGroup');
+        self::addMutationResolver('updateGroup', Groups::class, 'updateGroup');
+        self::addMutationResolver('deleteGroup', Groups::class, 'deleteGroup');
+        self::addResolver('Group', Groups::class, 'groupResolver');
+
         // Misc calls
         // TODO: GET LOGS (from file or db)
 
@@ -445,9 +479,9 @@ final class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param array $args
+     * @param  array        $args
      * @param               $contextValue
-     * @param ResolveInfo $info
+     * @param  ResolveInfo  $info
      * @return ArrayAccess|mixed
      *
      */
@@ -464,7 +498,19 @@ final class GraphQL
         } elseif (is_object($objectValue)) {
             if (isset($objectValue->{$fieldName})) {
                 if (is_object($objectValue->{$fieldName}) && get_class($objectValue->{$fieldName}) === Collection::class) {
+                    // Unwrap collections before heading out
                     $property = $objectValue->{$fieldName}->unwrap();
+                } elseif (is_object($objectValue->{$fieldName})) {
+                    // Simplify objects that are castable
+                    $implements = class_implements($objectValue->{$fieldName});
+                    $implements = array_values($implements);
+
+                    // When simplified, return them right away because the type cannot be resolved to native json type
+                    if (count($implements) > 0 && $implements[0] === Castable::class) {
+                        return $objectValue->{$fieldName}->castFrom();
+                    }
+
+                    $property = $objectValue->{$fieldName};
                 } else {
                     $property = $objectValue->{$fieldName};
                 }
@@ -515,8 +561,8 @@ final class GraphQL
      *
      * Run custom types on possible resolver for them
      *
-     * @param array $typeConfig
-     * @param TypeDefinitionNode $typeDefinitionNode
+     * @param  array               $typeConfig
+     * @param  TypeDefinitionNode  $typeDefinitionNode
      * @return array
      *
      */
@@ -531,7 +577,8 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver)
+        {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

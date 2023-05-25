@@ -84,7 +84,7 @@ class EntrySeo extends Model implements Castable
         $socialMetas = $all ? $this->castFrom() : $this->social_metas;
 
         return [
-            'entry_seo_id' => $this->_id,
+            '_id' => $this->_id,
             'title' => $this->title,
             'description' => $this->description,
             'keywords' => $this->keywords,

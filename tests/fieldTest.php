@@ -1,49 +1,50 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Models\Asset;
+use SailCMS\Models\Entry\AssetField;
+use SailCMS\Models\Entry\DateField;
+use SailCMS\Models\Entry\DateTimeField;
+use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\EntryListField;
-use SailCMS\Models\Entry\MultipleSelectField;
+use SailCMS\Models\Entry\HTMLField;
 use SailCMS\Models\Entry\NumberField;
-use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\SelectField;
+use SailCMS\Models\Entry\TextareaField;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\Entry\TimeField;
+use SailCMS\Models\Entry\UrlField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
-use SailCMS\Models\User;
 use SailCMS\Sail;
-use SailCMS\Types\EntryStatus;
 use SailCMS\Types\Fields\Field as InputField;
-use SailCMS\Types\Fields\InputEmailField;
+use SailCMS\Types\Fields\InputDateField;
 use SailCMS\Types\Fields\InputNumberField;
-use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\Fields\InputSelectField;
+use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\Fields\InputTimeField;
+use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
-use SailCMS\Types\Username;
 
 beforeAll(function ()
 {
     Sail::setupForTests(__DIR__);
-
-    $authorModel = new User();
-    $username = new Username('Test', 'Entry');
-    $userId = $authorModel->create($username, 'testentryfield@leeroy.ca', 'Hell0W0rld!', Collection::init());
-    User::$currentUser = $authorModel->getById($userId);
 
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->create(new LocaleField(['fr' => 'Test des champs', 'en' => 'Field Test']), Collection::init());
 
     $entryType = (new EntryType)->create('field-test', 'Field Test', new LocaleField(['en' => 'field-test', 'fr' => 'test-de-champs']), $entryLayout->_id);
 
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Home Field Test', 'page');
-    $entryType->getEntryModel($entryType)->create(false, 'fr', EntryStatus::LIVE, 'Related Page Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Home Field Test', 'page');
+    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
+
+    $asset = new Asset();
+    $data = base64_decode(file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt'));
+    $asset->upload($data, 'field_test.jpg');
 });
 
-afterAll(function ()
-{
-    $authorModel = new User();
-    $authorModel->removeByEmail('testentryfield@leeroy.ca');
-
+afterAll(function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -61,14 +62,15 @@ afterAll(function ()
         'titles.fr' => 'Test des champs'
     ]);
     $layoutModel->delete((string)$entryLayout->_id, false);
+
+    $item = Asset::getByName('field-test-webp');
+    $item->remove();
 });
 
 test('Add all fields to the layout', function ()
 {
     $layoutModel = new EntryLayout();
-    $entryLayout = $layoutModel->one([
-        'titles.fr' => 'Test des champs'
-    ]);
+    $entryLayout = $layoutModel->bySlug('field-test');
 
     // Field with default settings
     $textField = new TextField(new LocaleField(['en' => 'Text', 'fr' => 'Texte']), [
@@ -97,9 +99,19 @@ test('Add all fields to the layout', function ()
         ]
     ], 2);
 
+    $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
+
+    $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
+
+    $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
+        [
+            'required' => true
+        ]
+    ]);
+
     $selectField = new SelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
         [
-            'required' => true,
+            'required' => false,
             'options' => new Collection([
                 'test' => 'Big test',
                 'test2' => 'The real big test'
@@ -107,15 +119,15 @@ test('Add all fields to the layout', function ()
         ]
     ]);
 
-    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Multiple Select', 'fr' => 'Selection multiple']), [
+    $urlField = new UrlField(new LocaleField(['en' => 'Url', 'fr' => 'Url']));
+
+    $assetField = new AssetField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
+
+    $dateField = new DateField(new LocaleField(['en' => 'Date', 'fr' => 'Date']), [
         [
             'required' => true,
-            'options' => new Collection([
-                'test' => 'Big test',
-                'test2' => 'The real big test',
-                'test3' => 'BIG TEST OF DOOM',
-                'test4' => 'It\' just a flesh wound'
-            ])
+            'min' => "2018-01-01",
+            'max' => "2025-12-31"
         ]
     ]);
 
@@ -124,8 +136,17 @@ test('Add all fields to the layout', function ()
     $entryListField = new EntryListField(new LocaleField(['en' => 'Entry List', 'fr' => 'Liste d\'entrées']));
 
     $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
+    $timeField = new TimeField(new LocaleField(['en' => 'Hour', 'fr' => 'Heure']), [
         [
-            'required' => true
+            'required' => true,
+            'min' => "10:00"
+        ]
+    ]);
+
+    $dateTimeField = new DateTimeField(new LocaleField(['en' => 'Date/Time', 'fr' => 'Date/Hour']), [
+        'date' => [
+            'required' => true,
+            'min' => '2020-03-01'
         ]
     ]);
 
@@ -137,9 +158,14 @@ test('Add all fields to the layout', function ()
         "float" => $numberFieldFloat,
         "related" => $entryField,
         "entryList" => $entryListField,
+        "wysiwyg" => $htmlField,
+        "email" => $emailField,
         "select" => $selectField,
-        "multipleSelect" => $multipleSelectField,
-        "email" => $emailField
+        "url" => $urlField,
+        "image" => $assetField,
+        "date" => $dateField,
+        "time" => $timeField,
+        "datetime" => $dateTimeField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -148,6 +174,7 @@ test('Add all fields to the layout', function ()
         $updated = (new EntryLayout())->updateById($entryLayout->_id, $entryLayout->titles, $schema);
         expect($updated)->toBe(true);
     } catch (Exception $exception) {
+        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -170,20 +197,30 @@ test('Failed to update the entry content', function ()
                 'related' => [
                     'id' => (string)$relatedEntry->_id
                 ],
+                'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'select' => 'test-failed',
-                'multipleSelect' => ['test3', 'test4', 'test-failed'],
-                'email' => 'email-test-failed'
+                'url' => 'babaganouj',
+                'image' => 'bad1d12345678901234bad1d', // Bad id...
+                'date' => '2027-02-02',
+                'time' => '09:59',
+                'datetime' => [
+                    'date' => '',
+                    'time' => ''
+                ]
             ]
         ], false);
-        //print_r($errors);
-        expect($errors->length)->toBeGreaterThan(0);
-        expect($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED);
-        expect($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'));
-        expect($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
-        expect($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE);
-        expect($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
-        expect($errors->get('multipleSelect')[0][0])->toBe(InputSelectField::OPTIONS_INVALID);
-        expect($errors->get('email')[0][0])->toBe(InputEmailField::EMAIL_INVALID);
+
+        expect($errors->length)->toBeGreaterThan(0)
+            ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
+            ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
+            ->and($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"))
+            ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
+            ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
+            ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
+            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
+            ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
+            ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
     } catch (Exception $exception) {
         //print_r($exception->getMessage());
         expect(true)->toBe(false);
@@ -196,9 +233,11 @@ test('Update content with success', function ()
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
     ]);
+    $entryId = $entry->_id;
     $relatedEntry = $entryModel->one([
         'title' => 'Related Page Test'
     ]);
+    $item = Asset::getByName('field-test-webp');
 
     try {
         $errors = $entryModel->updateById($entry, [
@@ -215,23 +254,46 @@ and must keep it through all the process',
                 'entryList' => [
                     'typeHandle' => 'field-test'
                 ],
+                'wysiwyg' => '<p><strong>Test</strong></p>',
+                'email' => 'email-test@email.com',
                 'select' => 'test',
-                'multipleSelect' => ['test3', 'test4'],
-                'email' => 'email-test@email.com'
+                'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
+                'image' => (string)$item->_id,
+                'date' => "2021-10-10",
+                'time' => "10:00",
+                'datetime' => [
+                    'date' => '2020-03-02',
+                    'time' => '10:30'
+                ]
             ]
         ], false);
         expect($errors->length)->toBe(0);
-        $entry = $entryModel->one([
-            'title' => 'Home Field Test'
-        ], false);
 
-        expect($entry->content->get('float'))->toBe('0.03');
-        expect($entry->content->get('text'))->toBe('Not empty');
-        expect($entry->content->get('description'))->toContain(PHP_EOL);
-        expect($entry->content->get('related.id'))->toBe((string)$relatedEntry->_id);
+        $entryModel = EntryType::getEntryModelByHandle('field-test');
+
+        $entryUpdated = $entryModel->one([
+            '_id' => $entryId
+        ]);
+        $content = $entryUpdated->getContent();
+
+        expect($content->get('float.content'))->toBe('0.03')
+            ->and($content->get('text.content'))->toBe('Not empty')
+            ->and($content->get('description.content'))->toContain(PHP_EOL)
+            ->and((string)$content->get('related.content._id'))->toBe((string)$relatedEntry->_id)
+            ->and($content->get('wysiwyg.content'))->toBe('<p><strong>Test</strong></p>')
+            ->and($content->get('email.content'))->toBe('email-test@email.com')
+            ->and($content->get('select.content'))->toBe('test')
+            ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12')
+            ->and($content->get('image.content.name'))->toBe('field-test-webp')
+            ->and($content->get('date.content'))->toBe('2021-10-10')
+            ->and($content->get('time.content'))->toBe('10:00')
+            ->and($content->get('datetime.content')->unwrap())->toBe([
+                'date' => '2020-03-02',
+                'time' => '10:30'
+            ]);
     } catch (Exception $exception) {
-        //print_r($exception->getMessage());
-        //print_r($errors);
+//        print_r($exception->getMessage());
+//        print_r($errors);
         expect(true)->toBe(false);
     }
 });

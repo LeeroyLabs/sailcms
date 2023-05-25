@@ -27,6 +27,7 @@ use SailCMS\Types\QueryOptions;
 class Category extends Model
 {
     protected string $collection = 'categories';
+    protected string $permissionGroup = 'category';
     protected array $casting = [
         'name' => LocaleField::class
     ];
@@ -77,6 +78,27 @@ class Category extends Model
     public static function getBySlug(string $slug, string $site_id): ?Category
     {
         return self::query()->findOne(['slug' => $slug, 'site_id' => $site_id])->exec("{$site_id}_{$slug}");
+    }
+
+    /**
+     *
+     * Get many categories with a given ids list
+     *
+     * @param  array  $ids
+     * @return ?array
+     * @throws DatabaseException
+     *
+     */
+    public static function getByIds(array $ids): ?array
+    {
+        $idsStr = implode("_", $ids);
+
+        $modelInstance = new static();
+        foreach ($ids as &$id) {
+            $id = $modelInstance->ensureObjectId($id);
+        }
+
+        return self::query()->find(['_id' => ['$in' => $ids]])->exec();
     }
 
     /**
@@ -143,7 +165,7 @@ class Category extends Model
 
         // Count the total categories based on parent_id being present or not
         $count = $this->count(['site_id' => $siteId, 'parent_id' => $parentId]);
-        $slug = Text::slugify($name->get('en'));
+        $slug = Text::from($name->get('en'))->slug()->value();
 
         // Check that it does not exist for the site already
         $exists = $this->count(['slug' => $slug, 'site_id' => $siteId]);

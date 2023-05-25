@@ -9,29 +9,30 @@ use stdClass;
 
 class InputNumberField extends Field
 {
-    /* Errors from 6141 to 6159 */
-    public const FIELD_TOO_BIG = '6141: The value is too big (%s)';
-    public const FIELD_TOO_SMALL = '6142: The value is too small (%s)';
+    /* Errors from 6200 to 6219 */
+    public const FIELD_TOO_BIG = '6201: The value is too big (%s)';
+    public const FIELD_TOO_SMALL = '6202: The value is too small (%s)';
 
     /**
      *
      *
      * Input text field from html input:number attributes
      *
-     * @param  LocaleField|null  $labels
-     * @param  bool              $required
-     * @param  float             $min
-     * @param  float             $max
-     * @param  float|int         $step
+     * @param LocaleField|null $labels
+     * @param bool $required
+     * @param float $min
+     * @param float $max
+     * @param float|int $step
      *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-        public readonly float $min = 0,
-        public readonly float $max = 0,
-        public readonly float|int $step = 1
-    ) {
+        public readonly bool         $required = false,
+        public readonly float        $min = 0,
+        public readonly float        $max = 0,
+        public readonly float|int    $step = 1
+    )
+    {
     }
 
     /**
@@ -55,10 +56,10 @@ class InputNumberField extends Field
      *
      * Available properties of the settings
      *
-     * @param array|null $options
      * @return Collection
+     *
      */
-    public static function availableProperties(?array $options = null): Collection
+    public static function availableProperties(): Collection
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
@@ -84,7 +85,7 @@ class InputNumberField extends Field
      *
      * Input text field validation
      *
-     * @param  mixed  $content
+     * @param mixed $content
      * @return Collection
      *
      */
@@ -134,7 +135,7 @@ class InputNumberField extends Field
      *
      * Cast to InputNumberField
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return Field
      *
      */

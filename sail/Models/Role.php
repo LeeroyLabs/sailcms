@@ -40,19 +40,19 @@ class Role extends Model
      * @param  string            $name
      * @param  string            $description
      * @param  Collection|array  $permissions
+     * @param  int               $level
      * @return bool
-     * @throws DatabaseException
      * @throws ACLException
-     * @throws RuntimeException
+     * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function create(string $name, string $description, Collection|array $permissions): bool
+    public function create(string $name, string $description, Collection|array $permissions, int $level = 100): bool
     {
         $this->hasPermissions();
 
         $totalACL = ACL::count();
-        $slug = Text::slugify($name);
+        $slug = Text::from($name)->slug()->value();
 
         // Validate, if not usable, throw an exception
         $this->usable($slug, '', true);
@@ -73,7 +73,8 @@ class Role extends Model
                 'name' => $name,
                 'slug' => $slug,
                 'description' => $description,
-                'permissions' => $permissions
+                'permissions' => $permissions,
+                'level' => $level
             ]);
 
             return true;
@@ -207,16 +208,26 @@ class Role extends Model
     {
         $this->hasPermissions(true);
 
-        $role = $this->findById($id);
+        $role = $this->findById($id)->exec();
 
         $permissionList = ACL::getList();
-        $userPermissions = User::$currentUser->roles;
+        $userRoles = User::$currentUser->roles;
+        $userPermissions = [];
 
-        if ($userPermissions->length === 1 && $userPermissions->at() === '*') {
-            $userPermissions = $permissionList;
+        $UserPerms = User::$currentUser->permissions();
+
+        if ($UserPerms->length === 1 && $UserPerms->has('*')) {
+            foreach ($permissionList as $p) {
+                $userPermissions[] = $p->value;
+            }
+        } else {
+            foreach ($userRoles as $r) {
+                $_role = $this->findOne(['slug' => $r])->exec();
+                $userPermissions[] = $_role->permissions;
+            }
         }
 
-        return new RoleConfig($role, $userPermissions, $permissionList);
+        return new RoleConfig($role, new Collection($userPermissions), $permissionList);
     }
 
     /**
@@ -230,7 +241,7 @@ class Role extends Model
      */
     public function getByName(string $role): ?Role
     {
-        return $this->findOne(['slug' => strtolower(Text::deburr($role))])->exec();
+        return $this->findOne(['slug' => Text::from($role)->deburr()->lower()->value()])->exec();
     }
 
     /**
@@ -246,6 +257,11 @@ class Role extends Model
     {
         if (is_object($list)) {
             $list = $list->unwrap();
+        }
+
+        // No permission = level 0
+        if (count($list) === 0) {
+            return 0;
         }
 
         $instance = new static();

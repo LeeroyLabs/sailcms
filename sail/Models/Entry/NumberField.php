@@ -11,7 +11,7 @@ use SailCMS\Types\StoringType;
 class NumberField extends Field
 {
     protected const PRECISION_MAX_LIMIT = 14;
-    protected const INVALID_PRECISION = '6140: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
+    protected const INVALID_PRECISION = '6200: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
 
     public int $precision = 0;
 

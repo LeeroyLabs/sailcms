@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use Exception;
 use League\Flysystem\FilesystemException;
+use SailCMS\Http\Request;
 use SailCMS\Models\CSRF;
 use SodiumException;
 
@@ -21,7 +22,7 @@ class Security
     public static function init(): void
     {
         $manager = Filesystem::manager();
-        $path = 'local://vault';
+        $path = 'vault://';
 
         if (static::$overrideKey) {
             return;
@@ -48,7 +49,7 @@ class Security
     public static function encrypt(string $data): string
     {
         $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('local://vault/.security_key') : static::$overrideKey;
+        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('vault://.security_key') : static::$overrideKey;
         $encrypted = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($data, '', $nonce, $key);
 
         $nonceHex = bin2hex($nonce);
@@ -77,7 +78,7 @@ class Security
 
         $nonce = hex2bin($nonceHex);
         $hash = hex2bin($hashHex);
-        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('local://vault/.security_key') : static::$overrideKey;
+        $key = (static::$overrideKey === '') ? Filesystem::manager()->read('vault://.security_key') : static::$overrideKey;
         return sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($hash, '', $nonce, $key);
     }
 
@@ -188,12 +189,24 @@ class Security
      * @throws Errors\DatabaseException
      *
      */
+    /**
+     *
+     * Check if received CSRF is valid and set the result in the ENV variable
+     *
+     * @return void
+     * @throws Errors\DatabaseException
+     *
+     */
     public static function verifyCSRF(): void
     {
         $use = setting('CSRF.use', true);
+        $fieldName = setting('CSRF.fieldName', '_csrf_');
 
-        if ($use && !empty($_POST['_csrf_'])) {
-            $_ENV['CSRF_VALID'] = (new CSRF())->validate($_POST['_csrf_']);
+        $request = new Request();
+        $csrf = $request->post($fieldName, '');
+
+        if ($use && !empty($csrf)) {
+            $_ENV['CSRF_VALID'] = (new CSRF())->validate($csrf);
             return;
         }
 
