@@ -101,6 +101,8 @@ test('Add all fields to the layout', function ()
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
+    $entryListField = new EntryListField(new LocaleField(['en' => 'Entry List', 'fr' => 'Liste d\'entrées']));
+
     $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
 
     $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
@@ -131,11 +133,6 @@ test('Add all fields to the layout', function ()
         ]
     ]);
 
-    $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
-
-    $entryListField = new EntryListField(new LocaleField(['en' => 'Entry List', 'fr' => 'Liste d\'entrées']));
-
-    $emailField = new EmailField(new LocaleField(['en' => 'Email', 'fr' => 'Courriel']), [
     $timeField = new TimeField(new LocaleField(['en' => 'Hour', 'fr' => 'Heure']), [
         [
             'required' => true,
@@ -222,7 +219,7 @@ test('Failed to update the entry content', function ()
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
             ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
     } catch (Exception $exception) {
-        //print_r($exception->getMessage());
+        ray($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -283,6 +280,7 @@ and must keep it through all the process',
             ->and($content->get('wysiwyg.content'))->toBe('<p><strong>Test</strong></p>')
             ->and($content->get('email.content'))->toBe('email-test@email.com')
             ->and($content->get('select.content'))->toBe('test')
+            ->and($content->get('entryList.content.typeHandle'))->toBe('field-test')
             ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12')
             ->and($content->get('image.content.name'))->toBe('field-test-webp')
             ->and($content->get('date.content'))->toBe('2021-10-10')
@@ -292,8 +290,7 @@ and must keep it through all the process',
                 'time' => '10:30'
             ]);
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        print_r($errors);
+        //ray($exception);
         expect(true)->toBe(false);
     }
 });

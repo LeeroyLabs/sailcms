@@ -14,8 +14,8 @@ use SailCMS\Types\StoringType;
 class EntryListField extends Field
 {
     /* Error */
-    const ENTRY_TYPE_DOES_NOT_EXISTS = '6260: Entry of %s type does not exists.';
-    const ENTRY_HANDLE = '6261: Entry type handle must be set';
+    public const ENTRY_TYPE_DOES_NOT_EXISTS = '6260: Entry of %s type does not exists.';
+    public const ENTRY_HANDLE = '6261: Entry type handle must be set';
 
     public function description(): string
     {

@@ -114,6 +114,12 @@ test('Create layout, entry type & entry', function () {
                             inputSettings: []
                         }
                         {
+                            labels: { en: "Entry List", fr: "Liste dentrées" }
+                            key: "entryList"
+                            handle: "SailCMS-Models-Entry-EntryListField"
+                            inputSettings: []
+                        }
+                        {
                             labels: { en: "Email", fr: "Courriel" }
                             key: "email"
                             handle: "SailCMS-Models-Entry-EmailField"
@@ -273,6 +279,12 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "email"
                             content: "testleeroy@leeroy.ca"
+                        }
+                        {
+                            key: "entryList"
+                            content: {
+                                typeHandle: "tests-graphql"
+                            }
                         }
                         {
                             key: "select"
