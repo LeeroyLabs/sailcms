@@ -14,7 +14,6 @@ class InputUrlField extends Field
 
     /* Errors from 6260 to 6279 */
     public const FIELD_PATTERN_NO_MATCH = '6260: The regex pattern does not matches /%s/';
-    public const MULTIPLE = false;
 
     public function __construct(
         public readonly ?LocaleField $labels = null,

@@ -13,7 +13,6 @@ class InputTextField extends Field
     public const FIELD_TOO_LONG = '6120: The content is too long (%s)';
     public const FIELD_TOO_SHORT = '6121: The content is too short (%s)';
     public const FIELD_PATTERN_NO_MATCH = '6122: The regex pattern does not matches /%s/';
-    public const MULTIPLE = false;
 
     /**
      *
