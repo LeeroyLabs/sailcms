@@ -13,8 +13,6 @@ use SailCMS\Types\StoringType;
 
 class EntryField extends Field
 {
-    public const MULTIPLE = false;
-
     /* Error */
     public const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
     public const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';

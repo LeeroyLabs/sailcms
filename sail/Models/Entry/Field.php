@@ -108,7 +108,7 @@ abstract class Field
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
             $currentContent = $content;
-            if ($content instanceof Collection && $fieldTypeClass::MULTIPLE) {
+            if ($content instanceof Collection && !$fieldTypeClass::MULTIPLE) {
                 $currentContent = $content->get($index);
             }
             $error = $fieldTypeClass->validate($currentContent);

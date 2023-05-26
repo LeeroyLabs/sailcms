@@ -10,7 +10,6 @@ use SailCMS\Types\StoringType;
 class DateTimeField extends Field
 {
     public const DATE_TIME_ARE_REQUIRED = '6145: Date and time are required since one of them is';
-    public const MULTIPLE = true;
 
     /**
      *
