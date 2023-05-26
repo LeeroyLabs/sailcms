@@ -12,6 +12,7 @@ class InputNumberField extends Field
     /* Errors from 6200 to 6219 */
     public const FIELD_TOO_BIG = '6201: The value is too big (%s)';
     public const FIELD_TOO_SMALL = '6202: The value is too small (%s)';
+    public const MULTIPLE = false;
 
     /**
      *

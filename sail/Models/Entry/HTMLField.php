@@ -10,6 +10,7 @@ class HTMLField extends TextField
 {
     /* Errors from 6220 to 6239 */
     public const INVALID_TAGS = '6220: This string contains invalid tags';
+    public const MULTIPLE = false;
 
     /**
      *

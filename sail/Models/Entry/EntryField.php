@@ -13,10 +13,12 @@ use SailCMS\Types\StoringType;
 
 class EntryField extends Field
 {
+    public const MULTIPLE = false;
+
     /* Error */
-    const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
-    const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';
-    const ENTRY_ID_AND_HANDLE = '6162: Entry id and entry type handle must be set both or none';
+    public const ENTRY_TYPE_DOES_NOT_EXISTS = '6160: Entry of %s type does not exists.';
+    public const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';
+    public const ENTRY_ID_AND_HANDLE = '6162: Entry id and entry type handle must be set both or none';
 
     public function description(): string
     {

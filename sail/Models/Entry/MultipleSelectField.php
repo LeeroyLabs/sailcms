@@ -9,7 +9,7 @@ use SailCMS\Types\StoringType;
 
 class MultipleSelectField extends Field
 {
-    const SEARCHABLE = false;
+    public const SEARCHABLE = false;
 
     /**
      *

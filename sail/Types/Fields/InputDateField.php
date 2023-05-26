@@ -13,6 +13,7 @@ class InputDateField extends Field
     /* Errors from 6141 to 6159 */
     public const FIELD_TOO_BIG = '6141: The date is greater than %s';
     public const FIELD_TOO_SMALL = '6142: The date is smaller than %s';
+    public const MULTIPLE = true;
 
     /**
      *

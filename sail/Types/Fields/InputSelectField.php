@@ -11,6 +11,7 @@ class InputSelectField extends Field
 {
     /* Errors from 6180 to 6199 */
     public const OPTIONS_INVALID = '6180: Option not valid';
+    public const MULTIPLE = false;
 
     /**
      *

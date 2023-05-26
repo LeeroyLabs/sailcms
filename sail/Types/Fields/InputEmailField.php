@@ -11,6 +11,7 @@ class InputEmailField extends Field
 {
     /* Errors 6240 to 6259 */
     public const EMAIL_INVALID = '6240: This email is invalid';
+    public const MULTIPLE = false;
 
     /**
      *
