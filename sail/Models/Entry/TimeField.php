@@ -8,7 +8,7 @@ use SailCMS\Types\StoringType;
 
 class TimeField extends Field
 {
-    const TIME_FORMAT_DEFAULT = 'H:i';
+    public const TIME_FORMAT_DEFAULT = 'H:i';
 
     public function description(): string
     {

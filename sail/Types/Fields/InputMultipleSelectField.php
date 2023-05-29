@@ -7,30 +7,32 @@ use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
 
-class InputSelectField extends Field
+class InputMultipleSelectField extends Field
 {
     /* Errors from 6180 to 6199 */
-    public const OPTIONS_INVALID = '6180: Option not valid';
+    public const OPTIONS_INVALID = '6181: Option not valid';
+    public const MULTIPLE = true;
 
     /**
      *
      *
-     * Input select field from html select attributes
+     * Input multiple select field from html select attributes
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
-     * @param Collection $options
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
+     * @param  Collection        $options
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-        public readonly Collection $options = new Collection([])
-    ) {
+        public readonly bool         $required = false,
+        public readonly Collection   $options = new Collection([])
+    )
+    {
     }
 
     /**
      *
-     * Define default settings for a select field
+     * Define default settings for a multiple select field
      *
      * @return Collection
      */
@@ -46,12 +48,12 @@ class InputSelectField extends Field
      *
      * Available properties of the settings
      *
-     * @param array|Collection|null $options
+     * @param  array|Collection|null  $options
      * @return Collection
      */
     public static function availableProperties(array|Collection|null $options = null): Collection
     {
-        if ( is_array($options) ) {
+        if (is_array($options)) {
             $options = new Collection($options);
         }
 
@@ -69,12 +71,12 @@ class InputSelectField extends Field
      */
     public static function storingType(): string
     {
-        return StoringType::STRING->value;
+        return StoringType::ARRAY->value;
     }
 
     /**
      *
-     * Select field validation
+     * Multiple select field validation
      *
      * @param  mixed  $content
      * @return Collection
@@ -84,12 +86,14 @@ class InputSelectField extends Field
     {
         $errors = Collection::init();
 
-        if ($this->required && $content === "") {
+        if ($this->required && $content === []) {
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if (!array_key_exists($content, $this->options->unwrap())) {
-            $errors->push(self::OPTIONS_INVALID);
+        foreach ($content->unwrap() as $option) {
+            if (!array_key_exists($option, $this->options->unwrap())) {
+                $errors->push(self::OPTIONS_INVALID);
+            }
         }
 
         return $errors;
@@ -97,7 +101,7 @@ class InputSelectField extends Field
 
     /**
      *
-     * Cast to simpler form from InputSelectField
+     * Cast to simpler form from InputMultipleSelectField
      *
      * @return stdClass
      *
@@ -115,7 +119,7 @@ class InputSelectField extends Field
 
     /**
      *
-     * Cast to InputSelectField
+     * Cast to InputMultipleSelectField
      *
      * @param  mixed  $value
      * @return Field
