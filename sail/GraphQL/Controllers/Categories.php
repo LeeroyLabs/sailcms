@@ -150,7 +150,7 @@ class Categories
      */
     public function updateCategoryOrders(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->updateOrder($args->get('parent_id'), $args->get('site_id'));
+        return (new Category())->updateOrder($args->get('parent_id'), $args->get('order'), $args->get('site_id'));
     }
 
     /**

@@ -291,25 +291,24 @@ class Category extends Model
      *
      * Update order for all sub categories
      *
-     * @param  string  $parent
-     * @param  string  $siteId
+     * @param  string            $parent
+     * @param  array|Collection  $children
+     * @param  string            $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = '', string $siteId = 'main'): bool
+    public function updateOrder(string $parent = '', array|Collection $children = [], string $siteId = 'default'): bool
     {
         $this->hasPermissions();
-
-        $docs = $this->find(['parent_id' => $parent, 'site_id' => $siteId], QueryOptions::initWithSort(['order' => 1]))->exec();
         $writes = [];
 
-        foreach ($docs as $num => $doc) {
+        foreach ($children as $num => $doc) {
             $writes[] = [
                 'updateOne' => [
-                    ['_id' => $doc->_id],
+                    ['_id' => $this->ensureObjectId($doc->_id), 'parent_id' => $parent],
                     ['$set' => ['order' => ($num + 1)]]
                 ]
             ];
