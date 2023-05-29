@@ -131,7 +131,8 @@ class Categories
      */
     public function updateCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->update($args->get('id'), $args->get('name'), $args->get('parent_id'));
+        $name = new LocaleField($args->get('name'));
+        return (new Category())->update($args->get('id'), $name, $args->get('parent_id'));
     }
 
     /**
