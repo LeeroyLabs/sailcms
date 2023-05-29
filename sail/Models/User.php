@@ -719,6 +719,19 @@ class User extends Model
 
     /**
      *
+     * Count how many users for give role
+     *
+     * @param  string  $role
+     * @return int
+     *
+     */
+    public static function countForRole(string $role): int
+    {
+        return self::query()->count(['roles' => $role]);
+    }
+
+    /**
+     *
      * Check if user is part of given group (id or slug)
      *
      * @param  string  $group

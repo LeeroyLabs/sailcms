@@ -931,7 +931,12 @@ trait QueryObject
         if ($isArray) {
             // Process a field within an array (every object gets that property) with support for subpopulation
             foreach ($fieldValue as $k => $v) {
-                $obj = $instance->findById($v[$sub])->exec();
+                if (!is_object($v)) {
+                    $obj = $instance->findById($v[$sub])->exec();
+                } else {
+                    $obj = $instance->findById($v->{$sub})->exec();
+                }
+
                 $v->{$target} = $obj;
 
                 if (count($subpop) > 0) {

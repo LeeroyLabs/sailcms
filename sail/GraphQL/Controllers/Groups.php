@@ -51,16 +51,15 @@ class Groups
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return bool
+     * @return string
      * @throws DatabaseException
      * @throws ACLException
      * @throws PermissionException
      *
      */
-    public function createGroup(mixed $obj, Collection $args, Context $context): bool
+    public function createGroup(mixed $obj, Collection $args, Context $context): string
     {
-        $id = UserGroup::create($args->get('name'));
-        return ($id !== '');
+        return UserGroup::create($args->get('name'));
     }
 
     /**
