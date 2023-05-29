@@ -44,12 +44,12 @@ test('Create asset', function () {
                 uploadAsset(
                     src: "' . $data . '"
                     filename: "graphql-test.jpg"
+                    site_id: "' . Sail::siteId() . '"
                 ) {
                     _id
                 }
             }
         ', [], $_ENV['test-token']);
-
         expect($newAsset->status)->toBe('ok');
     }
 });
@@ -144,10 +144,29 @@ test('Create layout, entry type & entry', function () {
                                             value: ""
                                             options: [
                                                 { label: "Big test", value: "test" }
-                                                {
-                                                    label: "The real big test"
-                                                    value: "test2"
-                                                }
+                                                { label: "The real big test", value: "test2" }
+                                            ]
+                                            type: array
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Select multiple", fr: "Selection multiple" }
+                            key: "select-multiple"
+                            handle: "SailCMS-Models-Entry-MultipleSelectField"
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                        {
+                                            name: "options"
+                                            value: ""
+                                            options: [
+                                                { label: "Big test", value: "test" }
+                                                { label: "The real big test", value: "test2" }
+                                                { label: "The real big boom of doom test", value: "test3" }
                                             ]
                                             type: array
                                         }
@@ -241,14 +260,14 @@ test('Create layout, entry type & entry', function () {
 
         $assets = $this->client->run('
             {
-                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                assets(page: 1, limit: 1, search: "graphql-test-webp", site_id: "' . Sail::siteId() . '") {
                     list {
                         _id
                     }
                 }
             }
         ', [], $_ENV['test-token']);
-        $assetId = $assets->data->assets->list[0]->_id;
+        $assetId = (string)$assets->data->assets->list[0]->_id;
 
         $newEntry = $this->client->run('
             mutation {
@@ -289,6 +308,10 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "select"
                             content: "test"
+                        }
+                        {
+                            key: "select-multiple"
+                            content: ["test", "test2"]
                         }
                         {
                             key: "image"
@@ -598,7 +621,7 @@ test('Delete test asset', function () {
     if (isset($_ENV['test-token'])) {
         $assets = $this->client->run('
             {
-                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                assets(page: 1, limit: 1, search: "graphql-test-webp", site_id: "' . Sail::siteId() . '") {
                     list {
                         _id
                     }

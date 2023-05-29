@@ -13,7 +13,7 @@ class AssetField extends Field
 {
     public bool $isImage;
 
-    const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
+    public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
 
     public function __construct(LocaleField $labels, array|Collection|null $settings = null, bool $isImage = true)
     {
@@ -79,7 +79,7 @@ class AssetField extends Field
      *
      * Validate the asset existence
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */
@@ -105,7 +105,7 @@ class AssetField extends Field
      *
      * Parse the content to return the asset url and name
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return mixed
      *
      */

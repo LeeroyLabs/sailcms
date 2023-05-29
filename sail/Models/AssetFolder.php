@@ -14,6 +14,7 @@ use SailCMS\Text;
  * @property string $slug
  * @property string $name
  * @property bool   $deletable
+ * @property string $site_id
  *
  */
 class AssetFolder extends Model
@@ -25,18 +26,19 @@ class AssetFolder extends Model
      *
      * Get all folders
      *
+     * @param  string  $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public static function folders(): Collection
+    public static function folders(string $siteId = 'default'): Collection
     {
         $instance = new self;
         $instance->hasPermissions(true);
 
-        return new Collection(self::query()->find([])->exec());
+        return new Collection(self::query()->find(['site_id' => $siteId])->exec());
     }
 
     /**
@@ -49,10 +51,11 @@ class AssetFolder extends Model
      * 3 = folder already exists
      *
      * @param  string  $folder
+     * @param  string  $siteId
      * @return int
      *
      */
-    public static function create(string $folder): int
+    public static function create(string $folder, string $siteId = 'default'): int
     {
         $instance = new self;
 
@@ -71,7 +74,8 @@ class AssetFolder extends Model
             self::query()->insert([
                 'name' => $name,
                 'slug' => $slug,
-                'deletable' => true
+                'deletable' => true,
+                'site_id' => $siteId
             ]);
 
             return 1;
@@ -85,17 +89,18 @@ class AssetFolder extends Model
      * Delete a folder
      *
      * @param  string  $folder
+     * @param  string  $siteId
      * @return void
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public static function delete(string $folder): void
+    public static function delete(string $folder, string $siteId = 'default'): void
     {
         $instance = new self;
         $instance->hasPermissions();
 
-        self::query()->deleteOne(['slug' => $folder]);
+        self::query()->deleteOne(['slug' => $folder, 'site_id' => $siteId]);
     }
 }

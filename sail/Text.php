@@ -46,7 +46,7 @@ class Text implements Stringable
      * @param  string|bool|int|float  $string  $string
      * @return self
      */
-    public static function from(string|bool|int|float $string): self
+    public static function from(string|bool|int|float $string = ''): self
     {
         if (is_bool($string)) {
             $string = ($string) ? 'true' : 'false';

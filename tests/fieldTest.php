@@ -9,6 +9,7 @@ use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
 use SailCMS\Models\Entry\EntryListField;
 use SailCMS\Models\Entry\HTMLField;
+use SailCMS\Models\Entry\MultipleSelectField;
 use SailCMS\Models\Entry\NumberField;
 use SailCMS\Models\Entry\SelectField;
 use SailCMS\Models\Entry\TextareaField;
@@ -20,6 +21,7 @@ use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputDateField;
+use SailCMS\Types\Fields\InputMultipleSelectField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
@@ -27,8 +29,7 @@ use SailCMS\Types\Fields\InputTimeField;
 use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
 
-beforeAll(function ()
-{
+beforeAll(function () {
     Sail::setupForTests(__DIR__);
 
     $layoutModel = new EntryLayout();
@@ -67,8 +68,7 @@ afterAll(function () {
     $item->remove();
 });
 
-test('Add all fields to the layout', function ()
-{
+test('Add all fields to the layout', function () {
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->bySlug('field-test');
 
@@ -121,6 +121,17 @@ test('Add all fields to the layout', function ()
         ]
     ]);
 
+    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
+        [
+            'required' => false,
+            'multiple' => true,
+            'options' => new Collection([
+                'test' => 'Big test',
+                'test2' => 'The real big test'
+            ])
+        ]
+    ]);
+
     $urlField = new UrlField(new LocaleField(['en' => 'Url', 'fr' => 'Url']));
 
     $assetField = new AssetField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
@@ -158,6 +169,7 @@ test('Add all fields to the layout', function ()
         "wysiwyg" => $htmlField,
         "email" => $emailField,
         "select" => $selectField,
+        "multipleSelect" => $multipleSelectField,
         "url" => $urlField,
         "image" => $assetField,
         "date" => $dateField,
@@ -176,8 +188,7 @@ test('Add all fields to the layout', function ()
     }
 });
 
-test('Failed to update the entry content', function ()
-{
+test('Failed to update the entry content', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -196,6 +207,7 @@ test('Failed to update the entry content', function ()
                 ],
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'select' => 'test-failed',
+                'multipleSelect' => ['test', 'test-failed'],
                 'url' => 'babaganouj',
                 'image' => 'bad1d12345678901234bad1d', // Bad id...
                 'date' => '2027-02-02',
@@ -215,17 +227,17 @@ test('Failed to update the entry content', function ()
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID)
+            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
             ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
     } catch (Exception $exception) {
-        ray($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
 
-test('Update content with success', function ()
-{
+test('Update content with success', function () {
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -256,6 +268,7 @@ and must keep it through all the process',
                 'select' => 'test',
                 'url' => 'https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12',
                 'image' => (string)$item->_id,
+                'multipleSelect' => ['test', 'test2'],
                 'date' => "2021-10-10",
                 'time' => "10:00",
                 'datetime' => [
@@ -290,7 +303,7 @@ and must keep it through all the process',
                 'time' => '10:30'
             ]);
     } catch (Exception $exception) {
-        //ray($exception);
+//        Debug::ray($exception, $errors);
         expect(true)->toBe(false);
     }
 });

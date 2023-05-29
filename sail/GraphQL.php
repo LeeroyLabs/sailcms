@@ -373,8 +373,12 @@ final class GraphQL
         // Roles & ACL
         self::addQueryResolver('role', Roles::class, 'role');
         self::addQueryResolver('roles', Roles::class, 'roles');
-        self::addQueryResolver('acls', Roles::class, 'acls');
+        self::addQueryResolver('permissions', Roles::class, 'permissions');
+        self::addMutationResolver('createRole', Roles::class, 'createRole');
+        self::addMutationResolver('updateRole', Roles::class, 'updateRole');
         self::addMutationResolver('deleteRole', Roles::class, 'delete');
+        self::addResolver('Role', Roles::class, 'resolver');
+        self::addResolver('Permission', Roles::class, 'permissionResolver');
 
         // Assets
         self::addQueryResolver('asset', Assets::class, 'asset');
