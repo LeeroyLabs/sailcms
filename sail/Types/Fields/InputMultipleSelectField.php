@@ -90,6 +90,7 @@ class InputMultipleSelectField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
+        // TODO make it like a collection and don't validate if this->options is empty...
         foreach ($content->unwrap() as $option) {
             if (!array_key_exists($option, $this->options->unwrap())) {
                 $errors->push(self::OPTIONS_INVALID);
