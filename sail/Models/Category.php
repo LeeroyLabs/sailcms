@@ -309,7 +309,12 @@ class Category extends Model
             $writes[] = [
                 'updateOne' => [
                     ['_id' => $this->ensureObjectId($doc->_id), 'parent_id' => $parent],
-                    ['$set' => ['order' => ($num + 1)]]
+                    [
+                        '$set' => [
+                            'order' => ($num + 1),
+                            'parent_id' => $parent
+                        ]
+                    ]
                 ]
             ];
         }
