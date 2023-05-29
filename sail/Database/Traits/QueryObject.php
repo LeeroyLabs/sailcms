@@ -705,25 +705,53 @@ trait QueryObject
     public function dumpQuery(): string
     {
         $sQuery = json_encode($this->currentQuery);
-        $dump = "db.getCollection('{$this->collection}').{$this->currentOp}($sQuery";
-        
-        if (count($this->currentProjection) > 0) {
-            $sProjection = json_encode($this->currentProjection);
-            $dump .= ", $sProjection";
-        }
-        $dump .= ")";
-        if ($this->currentCollation) {
-            $dump .= ".collation({$this->currentCollation})";
-        }
-        if (count($this->currentSort) > 0) {
-            $sSort = json_encode($this->currentSort);
-            $dump .= ".sort($sSort)";
-        }
-        if ($this->currentLimit) {
-            $dump .= ".limit({$this->currentLimit})";
-        }
-        if ($this->currentSkip > 0) {
-            $dump .= ".skip({$this->currentLimit})";
+
+        if (count($this->currentPopulation) > 0) {
+            // aggregate
+            $dump = "db.getCollection('{$this->collection}').aggregate([";
+            foreach ($this->currentPopulation as $index => $populate) {
+
+                $dump .= $this->dumpPopulate($populate);
+
+                if ($index === 0) {
+                    $dump .= ", {\$match: $sQuery}";
+                }
+                if ($index !== array_key_last($this->currentPopulation)) {
+                    $dump .= ",";
+                }
+            }
+
+            if ($this->currentSkip > 0) {
+                $dump .= ",{ \$skip: {$this->currentSkip} }";
+            }
+            if ($this->currentLimit) {
+                $dump .= ",{ \$limit: {$this->currentLimit} }";
+            }
+
+            $dump .= "]);";
+        } else {
+            $dump = "db.getCollection('{$this->collection}').{$this->currentOp}($sQuery";
+
+            if (count($this->currentProjection) > 0) {
+                $sProjection = json_encode($this->currentProjection);
+                $dump .= ", $sProjection";
+            }
+
+            $dump .= ")";
+
+            if ($this->currentCollation) {
+                $dump .= ".collation({$this->currentCollation})";
+            }
+            if (count($this->currentSort) > 0) {
+                $sSort = json_encode($this->currentSort);
+                $dump .= ".sort($sSort)";
+            }
+            if ($this->currentLimit) {
+                $dump .= ".limit({$this->currentLimit})";
+            }
+            if ($this->currentSkip > 0) {
+                $dump .= ".skip({$this->currentSkip})";
+            }
         }
 
         return $dump;
@@ -1038,5 +1066,40 @@ trait QueryObject
         }
 
         return $doc;
+    }
+
+    private function dumpPopulate(array $populate, string $parent = null): string
+    {
+        $class = $parent ? $populate[2] : $populate['class'];
+        $instance = new $class();
+        $collection = $instance->getCollection();
+        $field = $parent ? $populate[0] : $populate['field'];
+        $target = $parent ? $parent.'.'.$populate[1] : $populate['targetField'];
+        $subPop = $parent ? ($populate[3] ?? []) : $populate['subpopulates'];
+
+        $let = $parent ? "let: {'$field': {\$toObjectId: '\$$parent.$field'} }" : "let: {'$field': {\$toObjectId: '\$$field'} }";
+
+        $dump = "{
+            \$lookup: {
+                from:'$collection',
+                $let,
+                pipeline: [
+                    {
+                        \$match: {
+                            \$expr: {
+                                \$eq: ['\$_id', '\$\$$field']
+                            }
+                        }
+                    }
+                ],
+                as: '$target'
+            }
+        },{ \$unwind: '\$$target' }";
+
+        foreach ($subPop as $pop) {
+            $dump .= ",".$this->dumpPopulate($pop, $target);
+        }
+
+        return $dump;
     }
 }
