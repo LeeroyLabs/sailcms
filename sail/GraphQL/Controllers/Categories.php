@@ -112,7 +112,7 @@ class Categories
      */
     public function createCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        $name = new LocaleField($args->get('name'));
+        $name = new LocaleField($args->get('name')->unwrap());
         return (new Category())->create($name, $args->get('parent_id'), $args->get('site_id'));
     }
 
@@ -131,7 +131,7 @@ class Categories
      */
     public function updateCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        $name = new LocaleField($args->get('name'));
+        $name = new LocaleField($args->get('name')->unwrap());
         return (new Category())->update($args->get('id'), $name, $args->get('parent_id'));
     }
 
