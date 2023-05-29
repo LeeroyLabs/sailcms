@@ -10,7 +10,6 @@ class UrlField extends Field
 {
     public const SEARCHABLE = true;
 
-
     public function description(): string
     {
         return 'Field to implement an url input';

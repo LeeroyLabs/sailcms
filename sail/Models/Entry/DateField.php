@@ -8,7 +8,7 @@ use SailCMS\Types\StoringType;
 
 class DateField extends Field
 {
-    const DATE_FORMAT_DEFAULT = 'Y-m-d';
+    public const DATE_FORMAT_DEFAULT = 'Y-m-d';
 
     /**
      *

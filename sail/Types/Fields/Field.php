@@ -12,6 +12,7 @@ abstract class Field implements Castable
 {
     /* Errors from 6100 to 6119 */
     public const FIELD_REQUIRED = "6100: This field is required.";
+    public const MULTIPLE = false;
 
     /**
      *
