@@ -1,7 +1,6 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Entry\AssetField;
 use SailCMS\Models\Entry\DateField;
@@ -296,7 +295,7 @@ and must keep it through all the process',
                 'time' => '10:30'
             ]);
     } catch (Exception $exception) {
-        Debug::ray($exception, $errors);
+//        Debug::ray($exception, $errors);
         expect(true)->toBe(false);
     }
 });

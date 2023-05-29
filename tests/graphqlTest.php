@@ -44,12 +44,12 @@ test('Create asset', function () {
                 uploadAsset(
                     src: "' . $data . '"
                     filename: "graphql-test.jpg"
+                    site_id: "' . Sail::siteId() . '"
                 ) {
                     _id
                 }
             }
         ', [], $_ENV['test-token']);
-
         expect($newAsset->status)->toBe('ok');
     }
 });
@@ -254,14 +254,14 @@ test('Create layout, entry type & entry', function () {
 
         $assets = $this->client->run('
             {
-                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                assets(page: 1, limit: 1, search: "graphql-test-webp", site_id: "' . Sail::siteId() . '") {
                     list {
                         _id
                     }
                 }
             }
         ', [], $_ENV['test-token']);
-        $assetId = $assets->data->assets->list[0]->_id;
+        $assetId = (string)$assets->data->assets->list[0]->_id;
 
         $newEntry = $this->client->run('
             mutation {
@@ -609,7 +609,7 @@ test('Delete test asset', function () {
     if (isset($_ENV['test-token'])) {
         $assets = $this->client->run('
             {
-                assets(page: 1, limit: 1, search: "graphql-test-webp") {
+                assets(page: 1, limit: 1, search: "graphql-test-webp", site_id: "' . Sail::siteId() . '") {
                     list {
                         _id
                     }

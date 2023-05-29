@@ -79,7 +79,7 @@ class AssetField extends Field
      *
      * Validate the asset existence
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */
@@ -105,7 +105,7 @@ class AssetField extends Field
      *
      * Parse the content to return the asset url and name
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return mixed
      *
      */
