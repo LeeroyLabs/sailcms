@@ -308,7 +308,7 @@ class Category extends Model
         foreach ($children as $num => $doc) {
             $writes[] = [
                 'updateOne' => [
-                    ['_id' => $this->ensureObjectId($doc->_id), 'site_id' => $siteId],
+                    ['_id' => $this->ensureObjectId($doc), 'site_id' => $siteId],
                     [
                         '$set' => [
                             'order' => ($num + 1),
