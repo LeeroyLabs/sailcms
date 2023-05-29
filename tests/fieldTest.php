@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Entry\AssetField;
 use SailCMS\Models\Entry\DateField;
@@ -19,8 +20,8 @@ use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
-use SailCMS\Types\Fields\InputMultipleSelectField;
 use SailCMS\Types\Fields\InputDateField;
+use SailCMS\Types\Fields\InputMultipleSelectField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
@@ -229,7 +230,6 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
             ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
     } catch (Exception $exception) {
-        //print_r($exception->getMessage());
         expect(true)->toBe(false);
     }
 });
@@ -296,8 +296,7 @@ and must keep it through all the process',
                 'time' => '10:30'
             ]);
     } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        print_r($errors);
+        Debug::ray($exception, $errors);
         expect(true)->toBe(false);
     }
 });

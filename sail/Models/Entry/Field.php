@@ -13,7 +13,6 @@ use stdClass;
 abstract class Field
 {
     public const SEARCHABLE = false;
-    public const MULTIPLE = false;
 
     /* Properties */
     public LocaleField $labels;

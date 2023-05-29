@@ -10,14 +10,13 @@ use SailCMS\Types\StoringType;
 class MultipleSelectField extends Field
 {
     public const SEARCHABLE = false;
-    public const MULTIPLE = true;
 
     /**
      *
      * Override the constructor to pass a precision to the multiple select
      *
-     * @param LocaleField $labels
-     * @param array|Collection|null $settings
+     * @param  LocaleField            $labels
+     * @param  array|Collection|null  $settings
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
@@ -52,7 +51,7 @@ class MultipleSelectField extends Field
      *
      * Multiple select validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */
