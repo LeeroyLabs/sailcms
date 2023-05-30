@@ -1070,33 +1070,49 @@ trait QueryObject
 
     private function dumpPopulate(array $populate, string $parent = null): string
     {
+        $dump = '';
+
         $class = $parent ? $populate[2] : $populate['class'];
         $instance = new $class();
         $collection = $instance->getCollection();
         $field = $parent ? $populate[0] : $populate['field'];
         $target = $parent ? $parent.'.'.$populate[1] : $populate['targetField'];
-        $subPop = $parent ? ($populate[3] ?? []) : $populate['subpopulates'];
+        $subpop = $parent ? ($populate[3] ?? []) : $populate['subpopulates'];
 
-        $let = $parent ? "let: {'$field': {\$toObjectId: '\$$parent.$field'} }" : "let: {'$field': {\$toObjectId: '\$$field'} }";
+        $let = $parent ? "'let': {'$field': {'\$toObjectId': '\$$parent.$field'} }" : "'let': {'$field': {'\$toObjectId': '\$$field'} }";
 
-        $dump = "{
-            \$lookup: {
-                from:'$collection',
+        // Column with several elements
+        if (str_contains($field, '.')) {
+            $fields = explode('.', $field);
+            $varfield = implode('_', $fields);
+            $dump .= "
+                { '\$addFields': { '$fields[0]': { '\$ifNull': ['\$$fields[0]', []] } } },
+                {'\$unwind': {'path': '\$$fields[0]', 'preserveNullAndEmptyArrays': true}},
+            ";
+            $let = "'let': {'$varfield': {'\$toObjectId': '\$$field'} }";
+            $field = $varfield;
+        }
+
+        $dump .= "{
+            '\$lookup': {
+                'from':'$collection',
                 $let,
-                pipeline: [
+                'pipeline': [
                     {
-                        \$match: {
-                            \$expr: {
-                                \$eq: ['\$_id', '\$\$$field']
+                        '\$match': {
+                            '\$expr': {
+                                '\$eq': ['\$_id', '\$\$$field']
                             }
                         }
                     }
                 ],
-                as: '$target'
+                'as': '$target'
             }
-        },{ \$unwind: '\$$target' }";
+        },
+        { '\$addFields': { '$target': { '\$ifNull': ['\$$target', []] } } },
+        { '\$unwind': {'path': '\$$target', 'preserveNullAndEmptyArrays': true} }";
 
-        foreach ($subPop as $pop) {
+        foreach ($subpop as $pop) {
             $dump .= ",".$this->dumpPopulate($pop, $target);
         }
 
