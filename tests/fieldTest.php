@@ -20,7 +20,6 @@ use SailCMS\Models\EntryType;
 use SailCMS\Sail;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputDateField;
-use SailCMS\Types\Fields\InputMultipleSelectField;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\Fields\InputTextField;
@@ -223,7 +222,7 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
-            ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID)
+            ->and($errors->get('multipleSelect')[1][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))

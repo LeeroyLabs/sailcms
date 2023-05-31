@@ -13,12 +13,15 @@ use stdClass;
 abstract class Field
 {
     public const SEARCHABLE = false;
+    public const REPEATABLE = false;
 
     /* Properties */
     public LocaleField $labels;
     public string $handle;
+    public bool $repeater;
     public Collection $baseConfigs;
     public Collection $configs;
+
 
     /**
      *
@@ -27,12 +30,14 @@ abstract class Field
      *
      * @param  LocaleField            $labels
      * @param  Collection|array|null  $settings
+     * @param  bool                   $repeater
      *
      */
-    public function __construct(LocaleField $labels, Collection|array|null $settings = null)
+    public function __construct(LocaleField $labels, Collection|array|null $settings = null, bool $repeater = false)
     {
         $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
+        $this->repeater = static::REPEATABLE ? $repeater : false;
 
         $this->defineBaseConfigs();
         $this->instantiateConfigs($labels, $settings);
@@ -106,14 +111,12 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            $currentContent = $content;
-            if ($content instanceof Collection && !$fieldTypeClass::MULTIPLE) {
-                $currentContent = $content->get($index);
-            }
-            $error = $fieldTypeClass->validate($currentContent);
-
-            if ($error->length > 0) {
-                $errors->pushKeyValue($index, $error);
+            if ($this->repeater) {
+                $content->each(function ($k, $currentContent) use ($fieldTypeClass, &$errors) {
+                    $this->validateInput($currentContent, $k, $fieldTypeClass, $errors);
+                });
+            } else {
+                $this->validateInput($content, $index, $fieldTypeClass, $errors);
             }
         });
 
@@ -283,6 +286,19 @@ abstract class Field
      *
      */
     abstract public function defaultSettings(): Collection;
+
+    protected function validateInput($currentContent, $index, $fieldTypeClass, &$errors)
+    {
+        if ($currentContent instanceof Collection) {
+            $currentContent = $currentContent->get($index);
+        }
+
+        $error = $fieldTypeClass->validate($currentContent);
+
+        if ($error->length > 0) {
+            $errors->pushKeyValue($index, $error);
+        }
+    }
 
     /**
      *
