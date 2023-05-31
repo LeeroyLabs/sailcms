@@ -291,8 +291,7 @@ class Category extends Model
      *
      * Update order for all sub categories
      *
-     * @param  string            $parent
-     * @param  array|Collection  $children
+     * @param  array|Collection  $tree
      * @param  string            $siteId
      * @return bool
      * @throws ACLException
@@ -300,19 +299,19 @@ class Category extends Model
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = '', array|Collection $children = [], string $siteId = 'default'): bool
+    public function updateOrder(array|Collection $tree = [], string $siteId = 'default'): bool
     {
         $this->hasPermissions();
         $writes = [];
 
-        foreach ($children as $num => $doc) {
+        foreach ($tree as $element) {
             $writes[] = [
                 'updateOne' => [
-                    ['_id' => $this->ensureObjectId($doc), 'site_id' => $siteId],
+                    ['_id' => $this->ensureObjectId($element->id), 'site_id' => $siteId],
                     [
                         '$set' => [
-                            'order' => ($num + 1),
-                            'parent_id' => $parent
+                            'order' => $element->order,
+                            'parent_id' => $element->parent ?? ''
                         ]
                     ]
                 ]

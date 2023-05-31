@@ -113,7 +113,7 @@ type Mutation {
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
     updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: ID!): Boolean!
-    updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
+    updateCategoryOrders(tree: [CategorySortItem!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
@@ -131,6 +131,12 @@ type Mutation {
 }
 
 scalar Json
+
+input CategorySortItem {
+    id: String!
+    parent: String
+    order: Int!
+}
 
 input UserSort {
     sort: String!
