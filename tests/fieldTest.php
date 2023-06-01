@@ -95,7 +95,7 @@ test('Add all fields to the layout', function () {
             'required' => true,
             'min' => 0.03
         ]
-    ], 2);
+    ], false, 2);
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
 
@@ -153,6 +153,13 @@ test('Add all fields to the layout', function () {
             'min' => '2020-03-01'
         ]
     ]);
+
+    $repeaterField = new TextField(new LocaleField(['en' => 'Date/Time', 'fr' => 'Date/Hour']), [
+        [
+            'required' => false,
+            'pattern' => ''
+        ]
+    ], true);
 
     $fields = new Collection([
         "text" => $textField,

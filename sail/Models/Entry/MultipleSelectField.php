@@ -33,7 +33,7 @@ class MultipleSelectField extends Field
 
     public function storingType(): string
     {
-        return StoringType::ARRAY->value;
+        return StoringType::STRING->value;
     }
 
     public function defaultSettings(): Collection

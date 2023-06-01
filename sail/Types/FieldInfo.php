@@ -11,6 +11,7 @@ class FieldInfo
         public readonly string $description,
         public readonly string $storingType,
         public readonly bool   $searchable,
+        public readonly bool   $repeatable,
         public readonly array  $inputs
     )
     {

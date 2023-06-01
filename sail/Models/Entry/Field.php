@@ -138,7 +138,7 @@ abstract class Field
      */
     public function toLayoutField(): LayoutField
     {
-        return new LayoutField($this->labels, $this->handle, $this->configs);
+        return new LayoutField($this->labels, $this->handle, $this->configs, $this->repeater);
     }
 
     /**
@@ -167,7 +167,7 @@ abstract class Field
 
         $className = static::getClassFromHandle($data->handle);
         $labels = new LocaleField($data->labels ?? []);
-        return new $className($labels, $settings);
+        return new $className($labels, $settings, $data->repeater ?? false);
     }
 
     /**
@@ -229,6 +229,7 @@ abstract class Field
             $fakeInstance->description(),
             $fakeInstance->storingType(),
             static::SEARCHABLE,
+            static::REPEATABLE,
             $availableSettings->unwrap()
         );
     }
@@ -287,6 +288,17 @@ abstract class Field
      */
     abstract public function defaultSettings(): Collection;
 
+    /**
+     *
+     * Call validate method for an input
+     *
+     * @param $currentContent
+     * @param $index
+     * @param $fieldTypeClass
+     * @param $errors
+     * @return void
+     *
+     */
     protected function validateInput($currentContent, $index, $fieldTypeClass, &$errors)
     {
         if ($currentContent instanceof Collection) {

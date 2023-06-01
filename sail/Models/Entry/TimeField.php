@@ -8,6 +8,8 @@ use SailCMS\Types\StoringType;
 
 class TimeField extends Field
 {
+    public const REPEATABLE = true;
+
     public const TIME_FORMAT_DEFAULT = 'H:i';
 
     public function description(): string

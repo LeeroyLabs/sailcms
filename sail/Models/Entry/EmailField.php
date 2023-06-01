@@ -8,6 +8,8 @@ use SailCMS\Types\StoringType;
 
 class EmailField extends Field
 {
+    public const REPEATABLE = true;
+
     /**
      *
      * Description for field info
@@ -63,7 +65,7 @@ class EmailField extends Field
      *
      * There is nothing extra to validate for the email field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

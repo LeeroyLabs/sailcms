@@ -8,6 +8,7 @@ use SailCMS\Types\Fields\InputTextField;
 class TextareaField extends TextField
 {
     public const SEARCHABLE = true;
+    public const REPEATABLE = true;
 
     /**
      *

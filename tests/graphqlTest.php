@@ -509,6 +509,7 @@ test('Get a entry', function () {
                                 fr
                             }
                             handle
+                            repeater
                             inputSettings {
                                 inputKey
                                 settings {

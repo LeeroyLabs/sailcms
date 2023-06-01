@@ -9,6 +9,7 @@ use SailCMS\Types\StoringType;
 class TextField extends Field
 {
     public const SEARCHABLE = true;
+    public const REPEATABLE = true;
 
     /**
      *
@@ -65,7 +66,7 @@ class TextField extends Field
      *
      * There is nothing extra to validate for the text field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

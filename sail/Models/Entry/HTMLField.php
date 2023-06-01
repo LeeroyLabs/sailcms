@@ -4,10 +4,11 @@ namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
 use SailCMS\Types\Fields\InputTextField;
-use SailCMS\Types\StoringType;
 
 class HTMLField extends TextField
 {
+    public const REPEATABLE = true;
+
     /* Errors from 6220 to 6239 */
     public const INVALID_TAGS = '6220: This string contains invalid tags';
 
@@ -41,7 +42,7 @@ class HTMLField extends TextField
      *
      * There is nothing extra to validate for the text field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

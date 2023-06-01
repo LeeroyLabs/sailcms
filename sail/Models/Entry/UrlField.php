@@ -9,6 +9,7 @@ use SailCMS\Types\StoringType;
 class UrlField extends Field
 {
     public const SEARCHABLE = true;
+    public const REPEATABLE = true;
 
     public function description(): string
     {

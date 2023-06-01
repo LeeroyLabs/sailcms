@@ -9,6 +9,7 @@ use SailCMS\Types\StoringType;
 class DateField extends Field
 {
     public const DATE_FORMAT_DEFAULT = 'Y-m-d';
+    public const REPEATABLE = true;
 
     /**
      *

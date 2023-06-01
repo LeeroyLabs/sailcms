@@ -359,6 +359,7 @@ type SocialMetaContent {
 
 type LayoutField {
     key: String!
+    repeater: Boolean
     fieldConfigs: [FieldConfig!]!
 }
 
@@ -401,12 +402,14 @@ input FieldConfigsInput {
     labels: LocaleFieldInput
     key: String!
     handle: String!
+    repeater: Boolean
     inputSettings: [InputSettingsInput]!
 }
 
 input SchemaUpdateInput {
     key: String!
     labels: LocaleFieldInput
+    repeater: Boolean
     inputSettings: [InputSettingsInput]!
 }
 
@@ -505,6 +508,7 @@ type FieldInfo {
     description: String!
     storingType: String!
     searchable: Boolean!
+    repeatable: Boolean!
     inputs: [FieldInputInfo]!
 }
 
