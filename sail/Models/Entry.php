@@ -193,6 +193,7 @@ class Entry extends Model implements Validator, Castable
                 $castedAlternates[] = $alternate->castFrom();
             } // Else it's not an Entry Alternate object, so we ignore it
         });
+
         return $castedAlternates;
     }
 
@@ -206,8 +207,7 @@ class Entry extends Model implements Validator, Castable
      */
     public function castTo(mixed $value): EntryAlternate
     {
-        $alternateInstance = new EntryAlternate();
-        return $alternateInstance->castTo($value);
+        return (new EntryAlternate())->castTo($value);
     }
 
     /**
@@ -1528,6 +1528,30 @@ class Entry extends Model implements Validator, Castable
 
     /**
      *
+     * Get count of all content that are from given types
+     *
+     * @param  Collection  $types
+     * @return int
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public static function countAllThatAre(Collection $types): int
+    {
+        $total = 0;
+
+        foreach ($types as $type) {
+            $model = new self('', $type);
+            $total += $model->count(['entry_type_id' => ['$in' => $type->id]]);
+        }
+
+        return $total;
+    }
+
+    /**
+     *
      * Validate content from the entry type layout schema
      *
      * @param  Collection  $content
@@ -2015,12 +2039,14 @@ class Entry extends Model implements Validator, Castable
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
             $entryType = $publication->version->entry->get('entry_type');
+
             if (!$entryType) {
                 // Add a deprecation message
                 $entryTypeId = $publication->version->entry->get('entry_type_id');
             } else {
                 $entryTypeId = $entryType->_id;
             }
+
             $entryModel = (new EntryType())->getById($entryTypeId, false)->getEntryModel();
             $entry = $entryModel->one(['_id' => $publication->entry_id]);
             $content = (new EntryVersion())->fakeVersion($entry, $publication->entry_version_id);

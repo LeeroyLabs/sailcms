@@ -16,14 +16,13 @@ class InputEmailField extends Field
      *
      * Input text field from html input:text attributes
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool         $required = false,
-    )
-    {
+        public readonly bool $required = false,
+    ) {
     }
 
     /**
@@ -44,7 +43,7 @@ class InputEmailField extends Field
      *
      * Available properties of the settings
      *
-     * @param array|null $options
+     * @param  array|null  $options
      * @return Collection
      */
     public static function availableProperties(?array $options = null): Collection
@@ -69,7 +68,7 @@ class InputEmailField extends Field
      *
      * Input text field validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -109,7 +108,7 @@ class InputEmailField extends Field
      *
      * Cast to InputTextField
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return InputEmailField
      *
      */

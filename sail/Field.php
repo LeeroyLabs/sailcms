@@ -36,10 +36,11 @@ class Field
         $fieldList = Collection::init();
         $fields = new Collection(glob(__DIR__ . '/Models/Entry/*.php'));
 
-        $fields->each(function ($key, $file) use ($fieldList) {
+        $fields->each(function ($key, $file) use ($fieldList)
+        {
             $name = substr(basename($file), 0, -4);
 
-            if ($name != "Field" && !str_starts_with($name, "_")) {
+            if ($name !== "Field" && !str_starts_with($name, "_")) {
                 /**
                  * @var ModelField $class
                  */

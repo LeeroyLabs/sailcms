@@ -3,7 +3,9 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputDateField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class DateField extends Field
@@ -15,12 +17,27 @@ class DateField extends Field
      *
      * Description for field info
      *
+     * @return LocaleField
+     *
+     */
+    public function description(): LocaleField
+    {
+        return new LocaleField([
+            'en' => 'Field that allows date selection.',
+            'fr' => 'Champ qui permet la sélection d\'une date.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
      * @return string
      *
      */
-    public function description(): string
+    public function category(): string
     {
-        return 'Field to implement a date html input.';
+        return FieldCategory::DATETIME->value;
     }
 
     /**

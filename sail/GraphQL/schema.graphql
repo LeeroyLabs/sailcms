@@ -310,6 +310,8 @@ type EntryLayout {
     authors: Authors!
     dates: Dates!
     is_trashed: Boolean!
+    used_by: Int
+    record_count: Int
 }
 
 type EntrySeo {
@@ -377,7 +379,7 @@ type InputSetting {
 type Setting {
     name: String!
     value: String
-    options: [Options!]
+    options: [Options]!
     type: String!
 }
 
@@ -493,7 +495,7 @@ type EntryResult {
 
 type EntryErrors {
     key: String!
-    errors: [[String]]!
+    errors: [String]!
 }
 
 type EntryListing {
@@ -505,7 +507,8 @@ type FieldInfo {
     name: String!
     fullname: String!
     handle: String!
-    description: String!
+    description: LocaleField!
+    category: String!
     storingType: String!
     searchable: Boolean!
     repeatable: Boolean!

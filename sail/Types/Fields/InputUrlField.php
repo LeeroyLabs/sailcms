@@ -17,10 +17,9 @@ class InputUrlField extends Field
 
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool         $required = false,
-        public readonly string       $pattern = self::DEFAULT_REGEX
-    )
-    {
+        public readonly bool $required = false,
+        public readonly string $pattern = self::DEFAULT_REGEX
+    ) {
     }
 
     public static function defaultSettings(): Collection

@@ -5,6 +5,7 @@ namespace SailCMS\Models\Entry;
 use Exception;
 use SailCMS\Collection;
 use SailCMS\Models\Asset;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
@@ -27,12 +28,27 @@ class AssetField extends Field
      *
      * Description for field info
      *
+     * @return LocaleField
+     *
+     */
+    public function description(): LocaleField
+    {
+        return new LocaleField([
+            'en' => 'Field that allows selection one or more assets.',
+            'fr' => 'Champ qui permet la sélection d\'un ou plusieurs actifs.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
      * @return string
      *
      */
-    public function description(): string
+    public function category(): string
     {
-        return 'Field to implement an asset input.';
+        return FieldCategory::SPECIAL->value;
     }
 
     /**

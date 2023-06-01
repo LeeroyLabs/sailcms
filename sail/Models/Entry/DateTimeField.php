@@ -3,8 +3,10 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputDateField;
 use SailCMS\Types\Fields\InputTimeField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class DateTimeField extends Field
@@ -15,11 +17,26 @@ class DateTimeField extends Field
      *
      * Description for date time field
      *
-     * @return string
+     * @return LocaleField
      */
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement a date and a time html inputs';
+        return new LocaleField([
+            'en' => 'Field that allows selection of date and time.',
+            'fr' => 'Champ qui permet la sélection d\'une date et de l\'heure'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::DATETIME->value;
     }
 
     /**
@@ -62,7 +79,6 @@ class DateTimeField extends Field
             'date' => InputDateField::class,
             'time' => InputTimeField::class
         ]);
-
     }
 
     /**

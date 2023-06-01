@@ -8,7 +8,9 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\EntryType;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class EntryField extends Field
@@ -18,9 +20,24 @@ class EntryField extends Field
     public const ENTRY_DOES_NOT_EXISTS = '6161: Entry of the given id does not exists.';
     public const ENTRY_ID_AND_HANDLE = '6162: Entry id and entry type handle must be set both or none';
 
-    public function description(): string
+    public function description(): LocaleField
     {
-        return "Field to add a link to an entry";
+        return new LocaleField([
+            'en' => 'Allows the selection an entry from a list.',
+            'fr' => 'Permet la sélection d\'une entrée à partir d\'une liste.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::SPECIAL->value;
     }
 
     public function storingType(): string
@@ -50,7 +67,7 @@ class EntryField extends Field
      *
      * Entry validation
      *
-     * @param Collection $content
+     * @param  Collection  $content
      * @return Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -68,17 +85,19 @@ class EntryField extends Field
         if ((!$entryId && $entryTypeHandle) || (!$entryTypeHandle && $entryId)) {
             // This a general field error so it's directly at the root of the errors array
             $errors->push(self::ENTRY_ID_AND_HANDLE);
-        } else if ($entryId && $entryTypeHandle) {
-            $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
+        } else {
+            if ($entryId && $entryTypeHandle) {
+                $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
-            if (!$entryModel->entry_type_id) {
-                $typeHandleError = new Collection(['typeHandle' => sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle)]);
-                $errors->push($typeHandleError);
-            }
+                if (!$entryModel->entry_type_id) {
+                    $typeHandleError = new Collection(['typeHandle' => sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle)]);
+                    $errors->push($typeHandleError);
+                }
 
-            if (!$entryModel->one(['_id' => $entryId])) {
-                $idError = new Collection(['id' => self::ENTRY_DOES_NOT_EXISTS]);
-                $errors->push($idError);
+                if (!$entryModel->one(['_id' => $entryId])) {
+                    $idError = new Collection(['id' => self::ENTRY_DOES_NOT_EXISTS]);
+                    $errors->push($idError);
+                }
             }
         }
 

@@ -3,7 +3,9 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputUrlField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class UrlField extends Field
@@ -11,9 +13,24 @@ class UrlField extends Field
     public const SEARCHABLE = true;
     public const REPEATABLE = true;
 
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement an url input';
+        return new LocaleField([
+            'en' => 'Allows a URL and validates it.',
+            'fr' => 'Permet une URL et la valide.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::TEXT->value;
     }
 
     public function storingType(): string

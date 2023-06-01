@@ -3,7 +3,9 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputEmailField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class EmailField extends Field
@@ -14,12 +16,27 @@ class EmailField extends Field
      *
      * Description for field info
      *
+     * @return LocaleField
+     *
+     */
+    public function description(): LocaleField
+    {
+        return new LocaleField([
+            'en' => 'Allows an email address and validates it.',
+            'fr' => 'Permet une adresse courriel et qui la valide.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
      * @return string
      *
      */
-    public function description(): string
+    public function category(): string
     {
-        return 'Field to implement an email input.';
+        return FieldCategory::TEXT->value;
     }
 
     /**

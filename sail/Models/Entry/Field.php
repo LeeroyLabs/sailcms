@@ -22,6 +22,7 @@ abstract class Field
     public Collection $baseConfigs;
     public Collection $configs;
 
+    public string $category = 'text';
 
     /**
      *
@@ -227,6 +228,7 @@ abstract class Field
             static::class,
             $fakeInstance->handle,
             $fakeInstance->description(),
+            $fakeInstance->category(),
             $fakeInstance->storingType(),
             static::SEARCHABLE,
             static::REPEATABLE,
@@ -265,10 +267,19 @@ abstract class Field
      *
      * Return the description of the field for the field info
      *
+     * @return LocaleField
+     *
+     */
+    abstract public function description(): LocaleField;
+
+    /**
+     *
+     * Get category of field (text, select, special)
+     *
      * @return string
      *
      */
-    abstract public function description(): string;
+    abstract public function category(): string;
 
     /**
      *
