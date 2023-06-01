@@ -157,7 +157,7 @@ test('Add all fields to the layout', function () {
     $repeaterField = new TextField(new LocaleField(['en' => 'Date/Time', 'fr' => 'Date/Hour']), [
         [
             'required' => false,
-            'pattern' => ''
+            'pattern' => '\d{3}-\d{3}-\d{4}'
         ]
     ], true);
 
@@ -176,7 +176,8 @@ test('Add all fields to the layout', function () {
         "image" => $assetField,
         "date" => $dateField,
         "time" => $timeField,
-        "datetime" => $dateTimeField
+        "datetime" => $dateTimeField,
+        "repeater" => $repeaterField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -217,7 +218,8 @@ test('Failed to update the entry content', function () {
                 'datetime' => [
                     'date' => '',
                     'time' => ''
-                ]
+                ],
+                'repeater' => ['test', '514-514-5145']
             ]
         ], false);
 
