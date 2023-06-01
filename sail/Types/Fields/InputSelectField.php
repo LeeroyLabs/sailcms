@@ -3,6 +3,7 @@
 namespace SailCMS\Types\Fields;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
@@ -17,9 +18,9 @@ class InputSelectField extends Field
      *
      * Input select field from html select attributes
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
-     * @param Collection $options
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
+     * @param  Collection        $options
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
@@ -46,12 +47,12 @@ class InputSelectField extends Field
      *
      * Available properties of the settings
      *
-     * @param array|Collection|null $options
+     * @param  array|Collection|null  $options
      * @return Collection
      */
     public static function availableProperties(array|Collection|null $options = null): Collection
     {
-        if ( is_array($options) ) {
+        if (is_array($options)) {
             $options = new Collection($options);
         }
 
@@ -60,7 +61,7 @@ class InputSelectField extends Field
             new InputSettings('options', InputSettings::INPUT_TYPE_OPTIONS, $options)
         ]);
     }
-
+    
     /**
      *
      * Get the type of how it's store in the database

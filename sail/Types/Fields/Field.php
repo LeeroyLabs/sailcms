@@ -23,9 +23,8 @@ abstract class Field implements Castable
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool         $required = false
-    )
-    {
+        public readonly bool $required = false
+    ) {
     }
 
     public function __toString(): string
@@ -50,7 +49,7 @@ abstract class Field implements Castable
      *
      */
     abstract public static function availableProperties(): Collection;
-
+    
     /**
      *
      * Get the type of how it's store in the database
@@ -102,7 +101,8 @@ abstract class Field implements Castable
     {
         $validSettings = Collection::init();
 
-        static::availableProperties()->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings) {
+        static::availableProperties()->each(function ($key, $inputType) use ($defaultSettings, $settings, &$validSettings)
+        {
             /**
              * @var InputSettings $inputType
              */
@@ -131,7 +131,8 @@ abstract class Field implements Castable
     public function getSettingType(string $name, mixed $value): string
     {
         $type = StoringType::STRING->value;
-        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value) {
+        static::availableProperties()->filter(function ($setting) use (&$type, $name, $value)
+        {
             if ($setting->name === $name) {
                 $type = match ($setting->type) {
                     "number" => is_float($value) ? StoringType::FLOAT->value : StoringType::INTEGER->value,

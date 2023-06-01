@@ -3,7 +3,9 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class TextField extends Field
@@ -14,12 +16,27 @@ class TextField extends Field
      *
      * Description for field info
      *
+     * @return LocaleField
+     *
+     */
+    public function description(): LocaleField
+    {
+        return new LocaleField([
+            'en' => 'Generic text input.',
+            'fr' => 'Champ texte générique.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
      * @return string
      *
      */
-    public function description(): string
+    public function category(): string
     {
-        return 'Field to implement a text html input.';
+        return FieldCategory::TEXT->value;
     }
 
     /**
@@ -65,7 +82,7 @@ class TextField extends Field
      *
      * There is nothing extra to validate for the text field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

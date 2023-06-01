@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -423,6 +424,33 @@ class EntryType extends Model implements Validator
         }
 
         return $qtyDeleted === 1;
+    }
+
+    /**
+     *
+     * Get the number of entry types that rely on given entry layout
+     *
+     * @param  string|ObjectId  $layoutId
+     * @return int
+     *
+     */
+    public static function getCountByLayout(string|ObjectId $layoutId): int
+    {
+        return self::query()->count(['entry_layout_id' => (string)$layoutId]);
+    }
+
+    /**
+     *
+     * Get all types that are using the given layout id
+     *
+     * @param  string|ObjectId  $layoutId
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public static function getTypesUsingLayout(string|ObjectId $layoutId): Collection
+    {
+        return new Collection(self::query()->find(['entry_layout_id' => self::query()->ensureObjectId($layoutId)])->exec());
     }
 
     /**

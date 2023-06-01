@@ -441,6 +441,7 @@ final class GraphQL
         self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
         self::addResolver('Authors', Entries::class, 'authorsResolver');
         self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
+        self::addResolver('EntryLayout', Entries::class, 'entryLayoutResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');

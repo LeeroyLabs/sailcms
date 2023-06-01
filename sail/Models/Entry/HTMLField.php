@@ -3,7 +3,9 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class HTMLField extends TextField
@@ -15,12 +17,15 @@ class HTMLField extends TextField
      *
      * Description for field info
      *
-     * @return string
+     * @return LocaleField
      *
      */
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement a HMTL input.';
+        return new LocaleField([
+            'en' => 'Allows rich HTML using a Word-like utility.',
+            'fr' => 'Permet l\'édition de texte riche HTML avec un outil style Word.'
+        ]);
     }
 
     /**
@@ -41,7 +46,7 @@ class HTMLField extends TextField
      *
      * There is nothing extra to validate for the text field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

@@ -3,6 +3,7 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
@@ -23,9 +24,24 @@ class SelectField extends Field
         parent::__construct($labels, $settings);
     }
 
-    public function description(): string
+    public function description(): LocaleField
     {
-        return "Field to add a select";
+        return new LocaleField([
+            'en' => 'Displays a dropdown selector.',
+            'fr' => 'Affiche un menu déroulant'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::SELECT->value;
     }
 
     public function storingType(): string

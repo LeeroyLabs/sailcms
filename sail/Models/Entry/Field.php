@@ -20,6 +20,8 @@ abstract class Field
     public Collection $baseConfigs;
     public Collection $configs;
 
+    public string $category = 'text';
+
     /**
      *
      * Construct with a LocaleField for labels and a Collection|Array for settings
@@ -56,7 +58,8 @@ abstract class Field
             $settings = new Collection($settings);
         }
 
-        $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings) {
+        $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings)
+        {
             $currentSetting = $settings->get($key);
             $defaultSettings = $this::class::defaultSettings()->get($key);
             $currentSetting = $fieldTypeClass::validateSettings($currentSetting, $defaultSettings);
@@ -105,7 +108,8 @@ abstract class Field
             $content = new Collection($content);
         }
 
-        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
+        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors)
+        {
             $currentContent = $content;
             if ($content instanceof Collection && !$fieldTypeClass::MULTIPLE) {
                 $currentContent = $content->get($index);
@@ -151,7 +155,8 @@ abstract class Field
         $settings = [];
         $configsData = new Collection((array)$data->configs);
 
-        $configsData->each(function ($key, $field) use (&$settings) {
+        $configsData->each(function ($key, $field) use (&$settings)
+        {
             // FIX : for when and EntryLayout is from the cache.
             if (!isset($field->settings)) {
                 $fieldSettings = (array)$field;
@@ -193,12 +198,14 @@ abstract class Field
         $fakeInstance = new static($fakeLabels, []);
 
         $availableSettings = Collection::init();
-        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings) {
+        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings)
+        {
             /**
              * @var InputField $inputFieldClass
              */
             $settings = Collection::init();
-            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings) {
+            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings)
+            {
                 /**
                  * @var InputSettings $inputSettings
                  */
@@ -224,6 +231,7 @@ abstract class Field
             static::class,
             $fakeInstance->handle,
             $fakeInstance->description(),
+            $fakeInstance->category(),
             $fakeInstance->storingType(),
             static::SEARCHABLE,
             $availableSettings->unwrap()
@@ -261,10 +269,19 @@ abstract class Field
      *
      * Return the description of the field for the field info
      *
+     * @return LocaleField
+     *
+     */
+    abstract public function description(): LocaleField;
+
+    /**
+     *
+     * Get category of field (text, select, special)
+     *
      * @return string
      *
      */
-    abstract public function description(): string;
+    abstract public function category(): string;
 
     /**
      *

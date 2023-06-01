@@ -3,7 +3,9 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\LocaleField;
 
 class TextareaField extends TextField
 {
@@ -13,12 +15,15 @@ class TextareaField extends TextField
      *
      * Description for field info
      *
-     * @return string
+     * @return LocaleField
      *
      */
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement a textarea input.';
+        return new LocaleField([
+            'en' => 'Allows multiple lines of text.',
+            'fr' => 'Permet plusieurs lignes de texte.'
+        ]);
     }
 
     /**

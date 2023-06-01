@@ -28,12 +28,11 @@ class InputDateField extends Field
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly ?string      $format = null,
-        public readonly bool         $required = false,
-        public readonly ?string      $min = null,
-        public readonly ?string      $max = null,
-    )
-    {
+        public readonly ?string $format = null,
+        public readonly bool $required = false,
+        public readonly ?string $min = null,
+        public readonly ?string $max = null,
+    ) {
     }
 
     /**

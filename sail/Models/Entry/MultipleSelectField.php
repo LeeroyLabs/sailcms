@@ -3,6 +3,7 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputMultipleSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
@@ -23,9 +24,24 @@ class MultipleSelectField extends Field
         parent::__construct($labels, $settings);
     }
 
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement a multiple input.';
+        return new LocaleField([
+            'en' => 'Allows multiple selection within a list.',
+            'fr' => 'Permet le choix multiple dans une liste.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::SELECT->value;
     }
 
     public function storingType(): string
