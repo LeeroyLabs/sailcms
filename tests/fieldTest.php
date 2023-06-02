@@ -2,7 +2,7 @@
 
 use SailCMS\Collection;
 use SailCMS\Models\Asset;
-use SailCMS\Models\Entry\AssetField;
+use SailCMS\Models\Entry\AssetImageField;
 use SailCMS\Models\Entry\DateField;
 use SailCMS\Models\Entry\DateTimeField;
 use SailCMS\Models\Entry\EmailField;
@@ -28,7 +28,8 @@ use SailCMS\Types\Fields\InputTimeField;
 use SailCMS\Types\Fields\InputUrlField;
 use SailCMS\Types\LocaleField;
 
-beforeAll(function () {
+beforeAll(function ()
+{
     Sail::setupForTests(__DIR__);
 
     $layoutModel = new EntryLayout();
@@ -44,7 +45,8 @@ beforeAll(function () {
     $asset->upload($data, 'field_test.jpg');
 });
 
-afterAll(function () {
+afterAll(function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -67,7 +69,8 @@ afterAll(function () {
     $item->remove();
 });
 
-test('Add all fields to the layout', function () {
+test('Add all fields to the layout', function ()
+{
     $layoutModel = new EntryLayout();
     $entryLayout = $layoutModel->bySlug('field-test');
 
@@ -131,7 +134,7 @@ test('Add all fields to the layout', function () {
 
     $urlField = new UrlField(new LocaleField(['en' => 'Url', 'fr' => 'Url']));
 
-    $assetField = new AssetField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
+    $assetField = new AssetImageField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
 
     $dateField = new DateField(new LocaleField(['en' => 'Date', 'fr' => 'Date']), [
         [
@@ -184,7 +187,8 @@ test('Add all fields to the layout', function () {
     }
 });
 
-test('Failed to update the entry content', function () {
+test('Failed to update the entry content', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -216,24 +220,25 @@ test('Failed to update the entry content', function () {
         ], false);
 
         expect($errors->length)->toBeGreaterThan(0)
-            ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
-            ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
-            ->and($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"))
-            ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
-            ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
-            ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
-            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
-            ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID)
-            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
-            ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
-            ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
-            ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
+                               ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
+                               ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
+                               ->and($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"))
+                               ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
+                               ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
+                               ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
+                               ->and($errors->get('image')[0][0])->toBe(AssetImageField::ASSET_DOES_NOT_EXISTS)
+                               ->and($errors->get('multipleSelect')[0][0])->toBe(InputMultipleSelectField::OPTIONS_INVALID)
+                               ->and($errors->get('image')[0][0])->toBe(AssetImageField::ASSET_DOES_NOT_EXISTS)
+                               ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
+                               ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
+                               ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
 });
 
-test('Update content with success', function () {
+test('Update content with success', function ()
+{
     $entryModel = EntryType::getEntryModelByHandle('field-test');
     $entry = $entryModel->one([
         'title' => 'Home Field Test'
@@ -280,17 +285,17 @@ and must keep it through all the process',
         $content = $entryUpdated->getContent();
 
         expect($content->get('float.content'))->toBe('0.03')
-            ->and($content->get('text.content'))->toBe('Not empty')
-            ->and($content->get('description.content'))->toContain(PHP_EOL)
-            ->and((string)$content->get('related.content._id'))->toBe((string)$relatedEntry->_id)
-            ->and($content->get('wysiwyg.content'))->toBe('<p><strong>Test</strong></p>')
-            ->and($content->get('email.content'))->toBe('email-test@email.com')
-            ->and($content->get('select.content'))->toBe('test')
-            ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12')
-            ->and($content->get('image.content.name'))->toBe('field-test-webp')
-            ->and($content->get('date.content'))->toBe('2021-10-10')
-            ->and($content->get('time.content'))->toBe('10:00')
-            ->and($content->get('datetime.content')->unwrap())->toBe([
+                                              ->and($content->get('text.content'))->toBe('Not empty')
+                                              ->and($content->get('description.content'))->toContain(PHP_EOL)
+                                              ->and((string)$content->get('related.content._id'))->toBe((string)$relatedEntry->_id)
+                                              ->and($content->get('wysiwyg.content'))->toBe('<p><strong>Test</strong></p>')
+                                              ->and($content->get('email.content'))->toBe('email-test@email.com')
+                                              ->and($content->get('select.content'))->toBe('test')
+                                              ->and($content->get('url.content'))->toBe('https://github.com/LeeroyLabs/sailcms/blob/813a36f2655cc86dfa8f9ca0e22efe8543a5dc67/sail/Types/Fields/Field.php#L12')
+                                              ->and($content->get('image.content.name'))->toBe('field-test-webp')
+                                              ->and($content->get('date.content'))->toBe('2021-10-10')
+                                              ->and($content->get('time.content'))->toBe('10:00')
+                                              ->and($content->get('datetime.content')->unwrap())->toBe([
                 'date' => '2020-03-02',
                 'time' => '10:30'
             ]);

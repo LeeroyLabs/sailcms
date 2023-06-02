@@ -23,7 +23,7 @@ class EntryField extends Field
     public function description(): LocaleField
     {
         return new LocaleField([
-            'en' => 'Allows the selection an entry from a list.',
+            'en' => 'Allows the selection of an entry from a list.',
             'fr' => 'Permet la sélection d\'une entrée à partir d\'une liste.'
         ]);
     }

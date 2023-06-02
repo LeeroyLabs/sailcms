@@ -6,21 +6,18 @@ use Exception;
 use SailCMS\Collection;
 use SailCMS\Models\Asset;
 use SailCMS\Types\FieldCategory;
+use SailCMS\Types\Fields\InputAssetImageField;
+use SailCMS\Types\Fields\InputHTMLField;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
-class AssetField extends Field
+class AssetImageField extends Field
 {
-    public bool $isImage;
-
     public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
 
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null, bool $isImage = true)
+    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
     {
-        $settings['isImage'] = $isImage;
-        $this->isImage = $isImage;
-
         parent::__construct($labels, $settings);
     }
 
@@ -34,8 +31,8 @@ class AssetField extends Field
     public function description(): LocaleField
     {
         return new LocaleField([
-            'en' => 'Field that allows selection one or more assets.',
-            'fr' => 'Champ qui permet la sélection d\'un ou plusieurs actifs.'
+            'en' => 'Field that allows selection one or more images.',
+            'fr' => 'Champ qui permet la sélection d\'une ou plusieurs images.'
         ]);
     }
 
@@ -72,9 +69,18 @@ class AssetField extends Field
      */
     public function defaultSettings(): Collection
     {
-        $defaultSettings = new Collection(['required' => false, 'isImage' => true]);
         return new Collection([
-            $defaultSettings
+            new Collection([
+                'required' => false,
+                'multiple' => false,
+                'cropName' => 'custom',
+                'ratio' => 0,
+                'minWidth' => 200,
+                'minHeight' => 200,
+                'maxWidth' => 2000,
+                'maxHeight' => 2000,
+                'lockedType' => ''
+            ])
         ]);
     }
 
@@ -87,7 +93,7 @@ class AssetField extends Field
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            InputTextField::class
+            InputAssetImageField::class
         ]);
     }
 

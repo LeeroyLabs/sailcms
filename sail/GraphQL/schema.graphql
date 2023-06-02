@@ -379,6 +379,7 @@ type Setting {
     name: String!
     value: String
     options: [Options]!
+    explain: Boolean!
     type: String!
 }
 

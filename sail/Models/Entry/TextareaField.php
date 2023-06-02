@@ -4,10 +4,12 @@ namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
 use SailCMS\Types\FieldCategory;
+use SailCMS\Types\Fields\InputHTMLField;
+use SailCMS\Types\Fields\InputTextAreaField;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 
-class TextareaField extends TextField
+class TextareaField extends HTMLField
 {
     public const SEARCHABLE = true;
 
@@ -36,7 +38,7 @@ class TextareaField extends TextField
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputTextField::defaultSettings(true),
+            InputHTMLField::defaultSettings(true),
         ]);
     }
 }
