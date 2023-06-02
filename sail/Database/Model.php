@@ -120,6 +120,18 @@ abstract class Model implements JsonSerializable
     }
 
     /**
+     * 
+     * Get collection name
+     * 
+     * @return string
+     * 
+     */
+    public function getCollection(): string
+    {
+        return $this->collection;
+    }
+
+    /**
      *
      * Create an instance without doing the classic instance first
      *
