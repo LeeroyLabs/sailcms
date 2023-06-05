@@ -9,9 +9,12 @@ use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
+use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Mail;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
+use Twig\Error\LoaderError;
 
 /**
  *
@@ -162,6 +165,7 @@ class Email extends Model
         LocaleField|Collection|array|null $cta_title = null,
         string|null $template = null
     ): bool {
+        $this->hasPermissions();
         return self::updateBy(['_id' => $this->_id], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
 
@@ -194,6 +198,8 @@ class Email extends Model
         string|null $template = null
     ): bool {
         $instance = new static();
+        $instance->hasPermissions();
+
         $id = $instance->ensureObjectId($id);
         return self::updateBy(['_id' => $id], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
@@ -226,6 +232,8 @@ class Email extends Model
         LocaleField|Collection|array|null $cta_title = null,
         string|null $template = null
     ): bool {
+        $instance = new static();
+        $instance->hasPermissions();
         return self::updateBy(['slug' => $slug], $name, $subject, $title, $content, $cta, $cta_title, $template);
     }
 
@@ -241,6 +249,7 @@ class Email extends Model
      */
     public function remove(): bool
     {
+        $this->hasPermissions();
         return self::removeBy(['_id' => $this->_id]);
     }
 
@@ -258,6 +267,7 @@ class Email extends Model
     public static function removeById(ObjectId|string $id): bool
     {
         $instance = new static();
+        $instance->hasPermissions();
         $id = $instance->ensureObjectId($id);
 
         return self::removeBy(['_id' => $id]);
@@ -276,7 +286,42 @@ class Email extends Model
      */
     public static function removeBySlug(string $slug): bool
     {
+        $instance = new static();
+        $instance->hasPermissions();
         return self::removeBy(['slug' => $slug]);
+    }
+
+    /**
+     *
+     * Send a test email
+     *
+     * @param  string  $email
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EmailException
+     * @throws PermissionException
+     * @throws FileException
+     * @throws LoaderError
+     *
+     */
+    public static function sendTest(string $email): bool
+    {
+        $instance = new static();
+        $instance->hasPermissions(true);
+
+        $mail = new Mail();
+        return $mail->to($email)->useEmail(
+            'test',
+            'en',
+            [
+                'email_title' => 'Congratulations',
+                'email_content' => '
+                    Congrats! Your configuration is valid and emails can be sent from SailCMS. All features that use
+                    email will be able to proceed with emailing.
+                '
+            ]
+        )->send();
     }
 
     /**

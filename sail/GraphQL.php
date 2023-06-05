@@ -403,6 +403,7 @@ final class GraphQL
         self::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
         self::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
         self::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
+        self::addMutationResolver('testEmail', Emails::class, 'testEmail');
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
