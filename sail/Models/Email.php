@@ -14,6 +14,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Mail;
 use SailCMS\Text;
 use SailCMS\Types\LocaleField;
+use Twig\Error\LoaderError;
 
 /**
  *
@@ -301,6 +302,7 @@ class Email extends Model
      * @throws EmailException
      * @throws PermissionException
      * @throws FileException
+     * @throws LoaderError
      *
      */
     public static function sendTest(string $email): bool
@@ -314,7 +316,10 @@ class Email extends Model
             'en',
             [
                 'email_title' => 'Congratulations',
-                'email_content' => 'Congrats! Your configuration is valid and emails can be sent from SailCMS.'
+                'email_content' => '
+                    Congrats! Your configuration is valid and emails can be sent from SailCMS. All features that use
+                    email will be able to proceed with emailing.
+                '
             ]
         )->send();
     }

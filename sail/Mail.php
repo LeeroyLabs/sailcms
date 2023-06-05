@@ -18,6 +18,7 @@ use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 use Twig\Environment;
+use Twig\Error\LoaderError;
 use Twig\Loader\FilesystemLoader;
 
 class Mail
@@ -257,12 +258,15 @@ class Mail
      *
      * @return bool
      * @throws EmailException
+     * @throws LoaderError
      *
      */
     public function send(): bool
     {
         $mailer = new Mailer(Transport::fromDsn(env('mail_dsn', '')));
         $loader = new FilesystemLoader(Sail::getTemplateDirectory());
+        $loader->addPath(dirname(__DIR__) . '/install');
+
         $twigEnv = new Environment($loader);
 
         // Load all Twig extensions, functions and filters
@@ -316,10 +320,14 @@ class Mail
         if ($slug === 'test') {
             $settings = setting('emails', []);
 
+            if (is_array($context)) {
+                $context = new Collection($context);
+            }
+
             return $this
                 ->from($settings->get('from'))
                 ->subject('SailCMS Test')
-                ->template(dirname(__DIR__) . '/install/test', $context);
+                ->template('test', $context);
         }
 
         $template = Email::getBySlug($slug);
