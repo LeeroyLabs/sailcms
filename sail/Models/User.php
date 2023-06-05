@@ -417,13 +417,14 @@ class User extends Model
      * @param  string            $locale
      * @param  string            $avatar
      * @param  UserMeta|null     $meta
+     * @param  bool              $preActivated
      * @return string
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function create(Username $name, string $email, string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
+    public function create(Username $name, string $email, string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null, bool $preActivated = false): string
     {
         $this->hasPermissions();
 
@@ -464,6 +465,13 @@ class User extends Model
         }
 
         $validate = setting('users.requireValidation', true);
+        $actualValidation = false;
+
+        if ($preActivated) {
+            $actualValidation = true;
+        } elseif (!$validate) {
+            $actualValidation = true;
+        }
 
         $code = Security::generateVerificationCode();
         $passCode = substr(Security::generateVerificationCode(), 5, 16);
@@ -479,7 +487,7 @@ class User extends Model
             'temporary_token' => '',
             'locale' => $locale,
             'validation_code' => $code,
-            'validated' => !$validate,
+            'validated' => $actualValidation,
             'reset_code' => $passCode,
             'created_at' => time(),
             'group' => ''
@@ -489,6 +497,7 @@ class User extends Model
             // Send a nice email to greet
             $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
             $who = (self::$currentUser) ? self::$currentUser->name->full : $defaultWho;
+
             try {
                 // Overwrite the cta url for the admin one
                 $mail = new Mail();
