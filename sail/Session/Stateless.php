@@ -2,6 +2,7 @@
 
 namespace SailCMS\Session;
 
+use Carbon\Carbon;
 use Exception;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
@@ -36,11 +37,15 @@ final class Stateless implements AppSession
 
         $mins = (setting('session.ttl', 21_600) / 60);
 
+        $ttl = setting('session.ttl', 21_600);
+        $tz = setting('timezone', 'America/New_York');
+        $exp = Carbon::now($tz)->addSeconds($ttl)->toDateTimeImmutable();
+
         $this->builder
             ->issuedBy(setting('session.jwt.issuer', 'SailCMS'))
             ->identifiedBy(bin2hex(random_bytes(12)))
             ->canOnlyBeUsedAfter($now)
-            ->expiresAt($now->modify('+ ' . $mins . ' minutes'))
+            ->expiresAt($exp)
             ->permittedFor(setting('session.jwt.domain', 'localhost'));
     }
 
@@ -89,14 +94,13 @@ final class Stateless implements AppSession
     {
         // Key is not important
         $algo = new Sha256();
-        $thekey = Filesystem::manager()->read('local://vault/.security_key');
+        $thekey = Filesystem::manager()->read('vault://.security_key');
         $genkey = InMemory::plainText($thekey);
-
-        $token = $this->builder->getToken($algo, $genkey)->toString();
 
         // Set cookie for token
         $expire = time() + setting('session.ttl', 21_600);
         $domain = setting('session.jwt.domain', 'localhost');
+        $token = $this->builder->getToken($algo, $genkey)->toString();
 
         setcookie('sc_jwt', $token, [
             'expires' => $expire,
@@ -209,13 +213,17 @@ final class Stateless implements AppSession
             return false;
         }
 
+        if (substr_count($cookie, '.') !== 2) {
+            return false;
+        }
+
         $_ENV['JWT'] = $cookie;
 
         $parser = new Parser(new JoseEncoder());
         $token = $parser->parse($cookie);
         $validator = new Validator();
 
-        $thekey = Filesystem::manager()->read('local://vault/.security_key');
+        $thekey = Filesystem::manager()->read('vault://.security_key');
         $genkey = InMemory::plainText($thekey);
 
         if (!$validator->validate($token, new IssuedBy(setting('session.jwt.issuer', 'SailCMS')))) {

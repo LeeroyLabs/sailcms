@@ -24,32 +24,35 @@ class Search extends Model
      *
      * Store or update a document
      *
-     * @param  array  $document
+     * @param array $document
      * @throws DatabaseException
      *
      */
     public function store(array $document): void
     {
-        $doc = $this->findOne(['document_id' => $document['_id']])->exec();
+        $doc = $this->findOne(['document_id' => (string)$document['id']])->exec();
 
         if ($doc) {
-            $this->updateOne(['document_id' => $document['_id']], ['$set' => $document]);
+            $this->updateOne(['document_id' => (string)$document['id']], ['$set' => $document]);
             return;
         }
+        
+        $document['document_id'] = $document['id'];
+        unset($document['id']);
 
-        $this->insert($doc);
+        $this->insert($document);
     }
 
     /**
      *
      * Delete a document by the id
      *
-     * @param  string  $id
+     * @param string $id
      * @return void
      * @throws DatabaseException
      *
      */
-    public function remove(string $id): void
+    public function delete(string $id): void
     {
         $this->deleteOne(['document_id' => $id]);
     }
@@ -58,7 +61,7 @@ class Search extends Model
      *
      * Search for records
      *
-     * @param  string  $search
+     * @param string $search
      * @return SearchResults
      * @throws DatabaseException
      *

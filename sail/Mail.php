@@ -6,19 +6,25 @@ use Exception;
 use League\Flysystem\FilesystemException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
+use SailCMS\Http\Request;
 use SailCMS\Models\Email;
+use SailCMS\Templating\Engine;
+use SailCMS\Templating\Extensions\Bundled;
+use SailCMS\Templating\Extensions\Navigation;
 use Symfony\Bridge\Twig\Mime\BodyRenderer;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mailer\Transport;
-use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\Mime\Address;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Address;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 class Mail
 {
     private TemplatedEmail $email;
+
+    private static array $registeredPreviewers = [];
 
     public const PRIORITY_LOWEST = 5;
     public const PRIORTIY_LOW = 4;
@@ -29,6 +35,41 @@ class Mail
     public function __construct()
     {
         $this->email = new TemplatedEmail();
+    }
+
+    /**
+     *
+     * Register a preview handler
+     *
+     * @param  string  $template
+     * @param  string  $class
+     * @param  string  $method
+     * @return void
+     * @throws EmailException
+     *
+     */
+    public static function registerPreviewHandler(string $template, string $class, string $method): void
+    {
+        if (!isset(self::$registeredPreviewers[$template])) {
+            $instance = new $class();
+            self::$registeredPreviewers[$template] = ['template' => $template, 'class' => $instance, 'method' => $method];
+            return;
+        }
+
+        throw new EmailException('Cannot register more than 1 preview handler for ' . $template, 0403);
+    }
+
+    /**
+     *
+     * Get list of preview handlers for given template
+     *
+     * @param  string  $template
+     * @return array|null
+     *
+     */
+    public static function getRegisteredPreviewHandler(string $template): array|null
+    {
+        return self::$registeredPreviewers[$template] ?? null;
     }
 
     /**
@@ -147,7 +188,7 @@ class Mail
     public function embed(string $path, string $name): static
     {
         $fs = Filesystem::manager();
-        $this->email->embed($fs->readStream($path), Text::kebabCase(Text::deburr($name)));
+        $this->email->embed($fs->readStream($path), Text::from($name)->deburr()->kebab()->value());
         return $this;
     }
 
@@ -224,6 +265,24 @@ class Mail
         $loader = new FilesystemLoader(Sail::getTemplateDirectory());
         $twigEnv = new Environment($loader);
 
+        // Load all Twig extensions, functions and filters
+        $extensions = Engine::getExtensions();
+
+        $twigEnv->addExtension(new Bundled());
+        $twigEnv->addExtension(new Navigation());
+
+        foreach ($extensions['extensions'] as $ext) {
+            $twigEnv->addExtension($ext);
+        }
+
+        foreach ($extensions['filters'] as $filter) {
+            $twigEnv->addFilter($filter);
+        }
+
+        foreach ($extensions['functions'] as $func) {
+            $twigEnv->addFunction($func);
+        }
+
         try {
             $twigBodyRenderer = new BodyRenderer($twigEnv);
             $twigBodyRenderer->render($this->email);
@@ -273,6 +332,7 @@ class Mail
             }
 
             $providedContent = new Collection([
+                'email_subject' => $template->subject->{$locale},
                 'email_title' => $template->title->{$locale},
                 'email_content' => $template->content->{$locale},
                 'cta_link' => $template->cta->{$locale},
@@ -315,17 +375,63 @@ class Mail
                     $context->get('reset_pass_code', ''),
                     $superContext->get('cta_link')
                 ));
+            } else {
+                $link = $superContext->get('cta_link');
+                $superContext->setFor('cta_link', str_replace('{reset_code}', '', $link));
             }
 
             // Replace locale variable in template name to the actual locale
             $template->template = str_replace('{locale}', $locale, $template->template);
 
+            // Go through the context's title, subject, content and cta title to parse any replacement variable
+            // Replacement variables are {xx} format (different to twigs {{xx}} format)
+
+            $title = $superContext->get('email_title');
+
+            $content = $superContext->get('email_content');
+            $cta = $superContext->get('cta_link');
+            $cta_title = $superContext->get('cta_title');
+
+            $replacements = $superContext->get('replacements', []);
+
+            $subject = $template->subject->{$locale};
+            foreach ($replacements as $key => $value) {
+                $title = str_replace('{' . $key . '}', $value, $title);
+                $content = str_replace('{' . $key . '}', $value, $content);
+                $cta = str_replace('{' . $key . '}', $value, $cta);
+                $cta_title = str_replace('{' . $key . '}', $value, $cta_title);
+                $subject = str_replace('{' . $key . '}', $value, $subject);
+            }
+
+            // Determine what host to use (if no override, use .env url) otherwise use override if allowed
+            $request = new Request();
+            $override = $request->header('x-domain-override');
+            $host = env('SITE_URL');
+
+            if ($override !== '') {
+                $allowed = setting('emails.overrides', new Collection(['allow' => false, 'acceptedDomains' => []]))->unwrap();
+
+                if ($allowed['allow'] && in_array($override, $allowed['acceptedDomains'], true)) {
+                    if (str_contains($override, 'localhost')) {
+                        $host = 'http://' . $override;
+                    } else {
+                        $host = 'https://' . $override;
+                    }
+                }
+            }
+
+            $superContext->setFor('email_title', $title);
+            $superContext->setFor('email_content', $content);
+            $superContext->setFor('cta_link', str_replace('{host}', $host, $cta));
+            $superContext->setFor('cta_title', $cta_title);
+            $superContext->pushKeyValue('host', $host);
+
             return $this
-                ->from($settings->get('from'))
-                ->subject($template->subject->{$locale})
+                ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))
+                ->subject($subject)
                 ->template($template->template, $superContext);
         }
 
-        throw new EmailException("Cannot find the email from database, please make sure it's not a typo", 0404);
+        throw new EmailException("Cannot find the email '{$slug}' from database, please make sure it's not a typo", 0404);
     }
 }

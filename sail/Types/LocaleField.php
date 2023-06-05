@@ -10,9 +10,13 @@ class LocaleField implements Castable
 {
     private Collection $combinations;
 
-    public function __construct(array|\stdClass|null $combinations = null)
+    public function __construct(array|\stdClass|LocaleField|null $combinations = null)
     {
         $this->combinations = Collection::init();
+
+        if (is_object($combinations) && get_class($combinations) === __CLASS__) {
+            $combinations = $combinations->castFrom();
+        }
 
         if (!empty($combinations)) {
             foreach ($combinations as $key => $value) {
@@ -38,6 +42,16 @@ class LocaleField implements Castable
     public function __get(string $locale)
     {
         return $this->get($locale);
+    }
+
+    public function __set(string $locale, string $value): void
+    {
+        $this->combinations->find(function ($key, $val) use ($locale, $value)
+        {
+            if ($val['locale'] === $locale) {
+                $val['value'] = $value;
+            }
+        });
     }
 
     /**

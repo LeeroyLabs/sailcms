@@ -3,23 +3,27 @@ type Query {
 
     # Users
     user(id: ID!): User
-    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean): UserListing
+    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean, group_id: String): UserListing
 
     # Authentication
     resendValidationEmail(email: String!): Boolean!
     authenticate(email: String!, password: String!): LoginResult!
     verifyAuthenticationToken(token: String!): User
-    verifyTFA(user_id: ID!, code: String!): Boolean!
+    verifyTFA(user_id: ID!, code: String!): User
     forgotPassword(email: String!): Boolean!
     userWithToken: User
 
     # Roles & ACL
     roles: [Role!]!
     role(id: ID!): RoleConfig
+    permissions: [Permission!]!
 
     # Assets
     asset(id: ID!): Asset
-    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
+    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder, site_id: String!): AssetListing
+    assetFolders(site_id: String!): [Folder!]!
+    assetConfig: AssetConfig!
+    assetTransformForId(id: ID!, transform_name: String!): String!
 
     # Emails
     email(id: ID!): Email
@@ -29,10 +33,13 @@ type Query {
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, filters: [FilterInput!], sort: String, direction: Int): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
+    entryByUrl(url: String!, site_id: String): Entry
     entry(id: ID!, entry_type_handle: String): Entry
     entryLayout(id: ID!): EntryLayout
-    entryLayouts: [EntryLayout]
+    entryLayouts: [EntryLayout!]
+    entryVersion(id: ID!): EntryVersion
+    entryVersions(entry_id: ID!): [EntryVersion!]
     fields: [FieldInfo]
 
     # Registers
@@ -44,17 +51,27 @@ type Query {
     categoryFullTree(parent_id: ID!, site_id: String!): [Category!]!
     categoryEntries(slug: String, id: ID, site_id: String): [Entry!]
 
+    # Navigation
+    navigation(name: String!): [NavigationItem!]!
+    navigationDetails(name: String!): Navigation
+
+    # Groups
+    group(id: ID!): Group
+    groups: [Group!]!
+
     #{CUSTOM_QUERIES}#
 }
 
 type Mutation {
     # Users
-    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String): Boolean!
-    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): Boolean!
+    createUser(name: UserNameInput!, email: String!, password: String!, group: String, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): ID!
+    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, group: String, avatar: String, meta: UserMetaInput!, locale: String): ID!
     updateUser(id: ID!, name: UserNameInput! email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput, locale: String): Boolean!
     deleteUser(id: ID!): Boolean!
+    deleteUsers(ids: [ID!]!): Boolean!
     validateAccount(code: String!): Boolean!
     changePassword(code: String!, password: String!): PasswordChangeResult!
+    changeUserStatus(ids: [ID!]!, status: Boolean!): Boolean!
 
     # Roles
     createRole(name: String!, description: String!, level: Int!, permissions: [String!]!): Boolean!
@@ -62,10 +79,14 @@ type Mutation {
     deleteRole(id: ID!): Boolean!
 
     # Assets
-    uploadAsset(src: String!, filename: String!): String!
+    uploadAsset(src: String!, filename: String!, folder: String, site_id: String!): Asset
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
-    deleteAsset(id: ID!): Boolean!
+    removeAssets(assets: [ID!]!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
+    customTransformAsset(id: ID!, name: String!, src: String!): String!
+    moveFiles(ids: [ID!]!, folder: String!): Boolean!
+    addFolder(folder: String!, site_id: String!): Int!
+    removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
 
     # Emails
     createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
@@ -78,25 +99,45 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, status: EntryStatus!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, status: EntryStatus, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): [EntryErrors]
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
+    updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
+    applyVersion(entry_version_id: ID!): Boolean
+    publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
+    unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
-    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
+    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!, slug: String): EntryLayout
     updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
     updateEntryLayoutSchemaKey(id: ID!, key: String!, newKey: String!): Boolean
     deleteEntryLayout(id: ID!, soft: Boolean): Boolean
 
     # Categories
-    createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
-    updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: String!): Boolean!
-    updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
+    createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
+    updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: ID!): Boolean!
+    updateCategoryOrders(tree: [CategorySortItem!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
+
+    # Navigation
+    createNavigation(name: String!, structure: NavigationItemInput!, locale: String!): String!
+    updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
+    deleteNavigation(name: String!): Boolean!
+
+    # Groups
+    createGroup(name: String!): String!
+    updateGroup(id: ID!, name: String!): Boolean!
+    deleteGroup(id: ID!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
 
 scalar Json
+
+input CategorySortItem {
+    id: String!
+    parent: String
+    order: Int!
+}
 
 input UserSort {
     sort: String!
@@ -136,6 +177,8 @@ type User {
     created_at: Int!
     validated: Boolean!
     locale: String!
+    group: String
+    highest_level: Int!
 }
 
 type UserListing {
@@ -183,20 +226,23 @@ type Role {
     slug: String!
     level: Int!
     permissions: [String!]!
+    member_count: Int!
 }
 
 type RoleConfig {
     role: Role!
-    allowedPermissions: [ACL!]!
+    allowedPermissions: [String!]!
     permissions: [ACL!]!
 }
 
 type ACL {
-    category: String!
+    group: String!
+    type: String!
     value: String!
 }
 
 type Asset {
+    _id: ID!
     filename: String!
     site_id: String!
     name: String!
@@ -211,29 +257,42 @@ type Asset {
     transforms: [Transform!]!
 }
 
+type Folder {
+    slug: String!
+    name: String!
+    deletable: Boolean!
+}
+
 type AssetListing {
     pagination: Pagination!
     list: [Asset!]!
 }
 
+type AssetConfig {
+    maxSize: Int!
+    blacklist: [String!]!
+}
+
 type Entry {
     _id: ID!
-    entry_type_id: ID!
-    parent: Parent
+    entry_type: EntryType!
+    parent: Entry
     site_id: String!
     locale: String!
-    alternates: [Alternates]!
-    is_homepage: Boolean
-    status: EntryStatus
+    alternates: [Alternate]!
+    is_homepage: Boolean!
+    publication: EntryPublication
+    trashed: Boolean!
     title: String!
     template: String!
     slug: String
     url: String!
     authors: Authors!
     dates: Dates!
-    categories: [ID!]!
+    categories: [Category!]!
     content: [ModelFieldContent!]!
     schema: [LayoutField]!
+    seo: EntrySeo
 }
 
 type EntryType {
@@ -246,28 +305,81 @@ type EntryType {
 
 type EntryLayout {
     _id: ID!
+    slug: String # Add a deprecation message to put it required
     titles: LocaleField!
     schema: [LayoutField]!
     authors: Authors!
     dates: Dates!
     is_trashed: Boolean!
+    used_by: Int
+    record_count: Int
+}
+
+type EntrySeo {
+    _id: ID!
+    title: String!
+    alternates: [Alternate!]!
+    url: String
+    locale: String
+    description: String
+    keywords: String
+    robots: Boolean
+    sitemap: Boolean
+    default_image: String
+    social_metas: [SocialMeta]!
+}
+
+type EntryVersion {
+    _id: ID!
+    created_at: Int!
+    user_id: ID!
+    user_full_name: String!
+    user_email: String!
+    entry_id: ID!
+    entry: Entry!
+}
+
+type EntryPublication {
+    _id: ID!
+    entry_id: ID!
+    version: EntryVersion!
+    dates: PublicationDates!
+    site_id: String!
+    entry_url: String!
+    user_full_name: String!
+    user_email: String!
+}
+
+type SocialMeta {
+    handle: String!
+    content: [SocialMetaContent]
+}
+
+type SocialMetaContent {
+    name: String!
+    content: String!
 }
 
 type LayoutField {
     key: String!
-    fieldConfigs: [FieldConfigs]!
+    fieldConfigs: [FieldConfig!]!
 }
 
-type FieldConfigs {
+type FieldConfig {
     labels: LocaleField!
     handle: String!
-    inputSettings: [[InputSettings]]!
+    inputSettings: [InputSetting!]!
 }
 
-type InputSettings {
+type InputSetting {
+    inputKey: String!
+    settings: [Setting]!
+}
+
+type Setting {
     name: String!
     value: String
-    choices: [String]
+    options: [Options]!
     type: String!
 }
 
@@ -278,23 +390,49 @@ type ModelFieldContent {
     type: Json!
 }
 
+input SocialMetaInput {
+    handle: String!
+    content: [SocialMetaContentInput]
+}
+
+input SocialMetaContentInput {
+    name: String!
+    content: String!
+}
+
 input FieldConfigsInput {
     labels: LocaleFieldInput
     key: String!
     handle: String!
-    inputSettings: [[InputSettingsInput]]!
+    inputSettings: [InputSettingsInput]!
 }
 
 input SchemaUpdateInput {
     key: String!
     labels: LocaleFieldInput
-    inputSettings: [[InputSettingsInput]]
+    inputSettings: [InputSettingsInput]!
 }
 
 input InputSettingsInput {
+    inputKey: String
+    settings: [SettingsInput]
+}
+
+input SettingsInput {
     name: String!
-    value: String!
+    value: String
+    options: [OptionsInput!]
     type: InputType!
+}
+
+input OptionsInput {
+    value: String!
+    label: String!
+}
+
+type Options {
+    value: String!
+    label: String!
 }
 
 input ModelFieldContentInput {
@@ -315,63 +453,32 @@ enum InputType {
     array
 }
 
-input FilterInput {
-    field: String!
-    operation: FilterOperation!
-    logic: FilterLogic
-    value: String
-    type: InputType
+type Alternate {
+    locale: String!
+    url: String!
+    entry_id: ID!
 }
 
-enum FilterOperation {
-    gte
-    gt
-    lte
-    lt
-    like
-    notlike
-    eq
-    ne
-    in
-    nin
-    isnull
-    notnull
-}
-
-enum FilterLogic {
-    and
-    or
-    nor
-}
-
-enum EntryStatus {
-    live
-    inactive
-    trash
-}
-
-type Alternates {
+input AlternateInput {
     locale: String!
     entry_id: ID!
 }
 
 type Authors {
-    created_by: ID
-    updated_by: ID
-    published_by: ID
-    deleted_by: ID
+    created_by: User
+    updated_by: User
+    deleted_by: User
 }
 
 type Dates {
-    created: Float
-    updated: Float
-    published: Float
-    deleted: Float
+    created: Int
+    updated: Int
+    deleted: Int
 }
 
-type Parent {
-    handle: String!
-    parent_id: ID!
+type PublicationDates {
+    published: Int!
+    expired: Int
 }
 
 input ParenInput {
@@ -386,7 +493,7 @@ type EntryResult {
 
 type EntryErrors {
     key: String!
-    errors: [[String]]!
+    errors: [String]!
 }
 
 type EntryListing {
@@ -398,8 +505,10 @@ type FieldInfo {
     name: String!
     fullname: String!
     handle: String!
-    description: String!
+    description: LocaleField!
+    category: String!
     storingType: String!
+    searchable: Boolean!
     inputs: [FieldInputInfo]!
 }
 
@@ -407,7 +516,8 @@ type FieldInputInfo {
     name: String!
     fullname: String!
     type: String!
-    availableSettings: [InputSettings!]!
+    inputKey: String
+    availableSettings: [Setting!]!
 }
 
 type LocaleField {
@@ -461,8 +571,8 @@ input EmailInput {
 }
 
 type PasswordChangeResult {
-    passwordCheck: Boolean!
-    codeCheck: Boolean!
+    password_check: Boolean!
+    code_check: Boolean!
 }
 
 type RegisteredExtensions {
@@ -482,7 +592,7 @@ type Container {
     info: ContainerInfo!
     class: String!
     middlewares: [Middleware!]!
-    graphql: [GraphQLInfo!]!
+    graphql: GraphQLInfo!
     routes: Routes!
 }
 
@@ -491,6 +601,8 @@ type ContainerInfo {
     description: String!
     version: Float!
     semver: String!
+    author: String!
+    link: String!
 }
 
 type ModuleInfo {
@@ -498,6 +610,8 @@ type ModuleInfo {
     description: String!
     version: Float!
     semver: String!
+    author: String!
+    link: String!
 }
 
 type Middleware {
@@ -506,6 +620,24 @@ type Middleware {
 }
 
 type GraphQLInfo {
+    queries: [QueryInfo!]!
+    mutations: [MutationInfo!]!
+    resolvers: [ResolverInfo!]!
+}
+
+type QueryInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type MutationInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type ResolverInfo {
     operation: String!
     handler: String!
     method: String!
@@ -526,6 +658,47 @@ type Category {
     order: Int!
     parent_id: String!
     children: [Category!]!
+}
+
+type NavigationItem {
+    label: String!
+    url: String!
+    is_entry: Boolean!
+    entry_id: String!
+    external: Boolean!
+    children: [NavigationItem!]!
+}
+
+input NavigationItemInput {
+    label: String!
+    url: String!
+    is_entry: Boolean!
+    entry_id: String!
+    external: Boolean!
+    children: [NavigationItemInput!]!
+}
+
+type Navigation {
+    _id: ID!
+    title: String!
+    name: String!
+    structure: [NavigationItem!]!
+    locale: String!
+}
+
+type Group {
+    _id: ID!
+    name: String!
+    slug: String!
+    user_count: Int!
+}
+
+type Permission {
+    name: String!
+    unnormalized_name: String!
+    group: String!
+    category: String!
+    description: LocaleField!
 }
 
 #{CUSTOM_TYPES}#

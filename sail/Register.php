@@ -38,6 +38,10 @@ final class Register
      */
     public function registerContainer(ContainerInformation $info, string $className): void
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         self::$containers->push((object)[
             'name' => $info->name,
             'info' => $info,
@@ -71,6 +75,10 @@ final class Register
      */
     public function registerModule(ModuleInformation $info, AppModule $instance, string $moduleName): void
     {
+        if (!isset(self::$modules)) {
+            self::$modules = Collection::init();
+        }
+
         self::$modules->push((object)[
             'info' => $info,
             'instance' => $instance,
@@ -92,6 +100,10 @@ final class Register
      */
     public static function registerRoute(string $method, string $url, string $class): void
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $c) => $c->class === $class);
 
         if ($container) {
@@ -143,6 +155,10 @@ final class Register
      */
     public static function registerGraphQLQuery(string $name, string $handler, string $method, string $container): void
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
@@ -167,6 +183,10 @@ final class Register
      */
     public static function registerGraphQLMutation(string $name, string $handler, string $method, string $container): void
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
@@ -191,6 +211,10 @@ final class Register
      */
     public static function registerGraphQLResolver(string $name, string $handler, string $method, string $container): void
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $c) => $c->class === $container);
 
         if ($container) {
@@ -213,6 +237,10 @@ final class Register
      */
     public static function module(string $name): AppModule
     {
+        if (!isset(self::$modules)) {
+            self::$modules = Collection::init();
+        }
+
         $module = self::$modules->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($module)) {
@@ -233,6 +261,10 @@ final class Register
      */
     public static function container(string $name): AppContainer
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         $container = self::$containers->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($container)) {
@@ -277,6 +309,10 @@ final class Register
      */
     public static function containerExists(string $name, float $minVersion = -1): bool
     {
+        if (!isset(self::$containers)) {
+            self::$containers = Collection::init();
+        }
+
         $exists = false;
 
         self::$containers->each(function ($k, $container) use (&$exists, $name, $minVersion)
@@ -300,6 +336,10 @@ final class Register
      */
     public static function moduleExists(string $name, float $minVersion = -1): bool
     {
+        if (!isset(self::$modules)) {
+            self::$modules = Collection::init();
+        }
+
         $exists = false;
 
         self::$modules->each(function ($k, $module) use (&$exists, $name, $minVersion)

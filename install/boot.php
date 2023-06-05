@@ -1,0 +1,3 @@
+<?php
+
+// SailCMS Boot File

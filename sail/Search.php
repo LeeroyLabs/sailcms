@@ -2,6 +2,7 @@
 
 namespace SailCMS;
 
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Search\Adapter;
 use SailCMS\Search\Database;
 use SailCMS\Types\SearchResults;
@@ -35,7 +36,7 @@ final class Search
      */
     public static function init(): void
     {
-        new static();
+        new self();
     }
 
     /**
@@ -46,6 +47,7 @@ final class Search
      * @param  array   $meta
      * @param  string  $dataIndex
      * @return SearchResults
+     * @throws DatabaseException
      *
      */
     public function search(string $search, array $meta = [], string $dataIndex = ''): SearchResults
@@ -60,6 +62,7 @@ final class Search
      * @param  array|object  $document
      * @param  string        $dataIndex
      * @return void
+     * @throws DatabaseException
      *
      */
     public function store(array|object $document, string $dataIndex = ''): void
@@ -67,6 +70,16 @@ final class Search
         self::$adapter->store($document, $dataIndex);
     }
 
+    /**
+     *
+     * Remove document from search
+     *
+     * @param  string  $id
+     * @param  string  $dataIndex
+     * @return void
+     * @throws DatabaseException
+     *
+     */
     public function remove(string $id, string $dataIndex = ''): void
     {
         self::$adapter->remove($id, $dataIndex);
@@ -116,7 +129,15 @@ final class Search
     public static function registerSystemAdapters(): void
     {
         $composerFile = Sail::getWorkingDirectory() . '/composer.json';
-        $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+        $composerFileAlt = dirname(Sail::getWorkingDirectory(), 2) . '/composer.json';
+
+        if (file_exists($composerFile)) {
+            $composer = json_decode(file_get_contents($composerFile), false, 512, JSON_THROW_ON_ERROR);
+        } elseif (file_exists($composerFileAlt)) {
+            $composer = json_decode(file_get_contents($composerFileAlt), false, 512, JSON_THROW_ON_ERROR);
+        } else {
+            return;
+        }
 
         $engines = $composer->sailcms->search ?? [];
 

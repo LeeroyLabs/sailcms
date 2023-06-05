@@ -27,6 +27,7 @@ use SailCMS\Types\QueryOptions;
 class Category extends Model
 {
     protected string $collection = 'categories';
+    protected string $permissionGroup = 'category';
     protected array $casting = [
         'name' => LocaleField::class
     ];
@@ -37,9 +38,8 @@ class Category extends Model
      *
      * @return array|null
      *
-     *
      */
-    public function toGraphQL(): ?array
+    public function simplify(): ?array
     {
         return [
             "_id" => $this->_id,
@@ -78,6 +78,27 @@ class Category extends Model
     public static function getBySlug(string $slug, string $site_id): ?Category
     {
         return self::query()->findOne(['slug' => $slug, 'site_id' => $site_id])->exec("{$site_id}_{$slug}");
+    }
+
+    /**
+     *
+     * Get many categories with a given ids list
+     *
+     * @param  array  $ids
+     * @return ?array
+     * @throws DatabaseException
+     *
+     */
+    public static function getByIds(array $ids): ?array
+    {
+        $idsStr = implode("_", $ids);
+
+        $modelInstance = new static();
+        foreach ($ids as &$id) {
+            $id = $modelInstance->ensureObjectId($id);
+        }
+
+        return self::query()->find(['_id' => ['$in' => $ids]])->exec();
     }
 
     /**
@@ -144,7 +165,7 @@ class Category extends Model
 
         // Count the total categories based on parent_id being present or not
         $count = $this->count(['site_id' => $siteId, 'parent_id' => $parentId]);
-        $slug = Text::slugify($name->get('en'));
+        $slug = Text::from($name->get('en'))->slug()->value();
 
         // Check that it does not exist for the site already
         $exists = $this->count(['slug' => $slug, 'site_id' => $siteId]);
@@ -231,7 +252,7 @@ class Category extends Model
         if ($record) {
             $this->deleteById($id);
             $this->updateMany(['parent_id' => (string)$id], ['$set' => ['parent_id' => '']]);
-            $this->updateOrder('');
+            //$this->updateOrder('');
             return true;
         }
 
@@ -270,26 +291,29 @@ class Category extends Model
      *
      * Update order for all sub categories
      *
-     * @param  string  $parent
-     * @param  string  $siteId
+     * @param  array|Collection  $tree
+     * @param  string            $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = '', string $siteId = 'main'): bool
+    public function updateOrder(array|Collection $tree = [], string $siteId = 'default'): bool
     {
         $this->hasPermissions();
-
-        $docs = $this->find(['parent_id' => $parent, 'site_id' => $siteId], QueryOptions::initWithSort(['order' => 1]))->exec();
         $writes = [];
 
-        foreach ($docs as $num => $doc) {
+        foreach ($tree as $element) {
             $writes[] = [
                 'updateOne' => [
-                    ['_id' => $doc->_id],
-                    ['$set' => ['order' => ($num + 1)]]
+                    ['_id' => $this->ensureObjectId($element->id), 'site_id' => $siteId],
+                    [
+                        '$set' => [
+                            'order' => $element->order,
+                            'parent_id' => $element->parent ?? ''
+                        ]
+                    ]
                 ]
             ];
         }

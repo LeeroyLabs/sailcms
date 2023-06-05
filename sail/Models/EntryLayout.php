@@ -2,7 +2,9 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
 use MongoDB\BSON\ObjectId;
+use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
@@ -11,7 +13,9 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Locale;
 use SailCMS\Models\Entry\Field as ModelField;
+use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\Fields\Field;
@@ -21,16 +25,19 @@ use stdClass;
 
 /**
  *
- * @property LocaleField $titles
- * @property Collection $schema
- * @property Authors $authors
- * @property Dates $dates
- * @property bool $is_trashed
+ *
+ * @property string           $slug
+ * @property LocaleField      $titles
+ * @property array|Collection $schema
+ * @property Authors          $authors
+ * @property Dates            $dates
+ * @property bool             $is_trashed
  *
  */
 class EntryLayout extends Model implements Castable
 {
     protected string $collection = 'entry_layouts';
+    protected string $permissionGroup = 'entrylayout';
     protected array $casting = [
         'titles' => LocaleField::class,
         'schema' => self::class,
@@ -47,8 +54,68 @@ class EntryLayout extends Model implements Castable
     public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
     public const INVALID_SCHEMA = '6007: Invalid schema structure.';
 
-    private const ACL_HANDLE = "entrylayout";
-    protected string $permissionGroup = self::ACL_HANDLE;
+    /* Cache */
+    private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
+    private const ENTRY_LAYOUT_BY_SLUG = 'entry_layout_';
+    private const ENTRY_LAYOUT_ID_ = 'entry_layout_id_';
+
+    /**
+     *
+     * Simplify schema
+     *
+     * @return array
+     *
+     */
+    public function castFrom(): array
+    {
+        return $this->schema->unwrap();
+    }
+
+    /**
+     *
+     * Process Schema
+     *
+     * @param  mixed  $value
+     * @return Collection
+     *
+     */
+    public function castTo(mixed $value): Collection
+    {
+        return $this->processSchemaOnFetch($value);
+    }
+
+    /**
+     *
+     * Generate slug to be unique
+     *
+     * @param  string       $slug
+     * @param  string|null  $entryLayoutId
+     * @return string
+     *
+     */
+    private static function generateSlug(string $slug, string $entryLayoutId = null): string
+    {
+        $filters = ['slug' => $slug];
+        if ($entryLayoutId) {
+            $filters['_id'] = ['$ne' => new ObjectId($entryLayoutId)];
+        }
+
+        $count = (new EntryLayout())->count($filters);
+
+        if ($count > 0) {
+            preg_match("/(?<base>[\w-]+-)(?<increment>\d+)$/", $slug, $matches);
+
+            if (count($matches) > 0) {
+                $increment = (int)$matches['increment'];
+                $newSlug = $matches['base'] . ($increment + 1);
+            } else {
+                $newSlug = $slug . "-2";
+            }
+
+            return self::generateSlug($newSlug, $entryLayoutId);
+        }
+        return $slug;
+    }
 
     /**
      *
@@ -57,12 +124,13 @@ class EntryLayout extends Model implements Castable
      * @return array
      *
      */
-    public function toGraphQL(): array
+    public function simplify(): array
     {
         return [
-            '_id' => $this->_id,
+            '_id' => (string)$this->_id,
+            'slug' => $this->slug,
             'titles' => $this->titles->castFrom(),
-            'schema' => $this->processSchemaToGraphQL(),
+            'schema' => $this->simplifySchema(),
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
@@ -73,7 +141,7 @@ class EntryLayout extends Model implements Castable
      *
      * Generate a schema for a layout for list of given fields
      *
-     * @param Collection $fields
+     * @param  Collection  $fields
      * @return Collection
      * @throws FieldException
      *
@@ -96,7 +164,7 @@ class EntryLayout extends Model implements Castable
      *
      * Get all entry layouts
      *
-     * @param bool $ignoreTrashed default true
+     * @param  bool  $ignoreTrashed  default true
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -112,35 +180,70 @@ class EntryLayout extends Model implements Castable
             $filters = ['is_trashed' => false];
         }
 
-        return $this->find($filters)->exec();
+        // Cache Time To Live value from setting or default
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+
+        return $this->find($filters)->exec(self::ENTRY_LAYOUT_CACHE_ALL, $cacheTtl);
+    }
+
+    /**
+     *
+     * Get entry layout by slug.
+     *
+     * @param  string  $slug
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function bySlug(string $slug): ?EntryLayout
+    {
+        $this->hasPermissions(true);
+
+        // Cache Time To Live value from setting or default
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+        $cacheKey = self::ENTRY_LAYOUT_BY_SLUG . $slug;
+
+        return $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
     }
 
     /**
      *
      * Find one user with filters
      *
-     * @param array $filters
+     * @param  array  $filters
+     * @param  bool   $cache
      * @return EntryLayout|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
-    public function one(array $filters): ?EntryLayout
+    public function one(array $filters, bool $cache = true): ?EntryLayout
     {
         $this->hasPermissions(true);
 
         if (isset($filters['_id'])) {
-            return $this->findById($filters['_id'])->exec();
+            if (!$cache) {
+                return $this->findById($filters['_id'])->exec();
+            }
+
+            // Cache Time To Live value from setting or default
+            $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+            $cacheKey = self::ENTRY_LAYOUT_ID_ . $filters['_id'];
+            return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
         }
         return $this->findOne($filters)->exec();
     }
 
     /**
      *
-     * Create an entry layout with
+     * Create an entry layout
      *
-     * @param LocaleField $titles
-     * @param Collection $schema
+     * @param  LocaleField  $titles
+     * @param  Collection   $schema
+     * @param  string|null  $slug  slug is set to $title->{Locale::default()}
      * @return EntryLayout
      * @throws ACLException
      * @throws DatabaseException
@@ -148,7 +251,7 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function create(LocaleField $titles, Collection $schema): EntryLayout
+    public function create(LocaleField $titles, Collection $schema, ?string $slug = null): EntryLayout
     {
         $this->hasPermissions();
 
@@ -156,7 +259,7 @@ class EntryLayout extends Model implements Castable
         self::validateSchema($schema);
         $schema = $this->processSchemaOnStore($schema);
 
-        return $this->createWithoutPermission($titles, $schema);
+        return $this->createWithoutPermission($titles, $schema, $slug);
     }
 
     /**
@@ -167,20 +270,20 @@ class EntryLayout extends Model implements Castable
      * > The field index is the index according to the baseConfigs of a Models\Entry\Field class,
      *      ¬ normally the Field class has only one element, but more complex ones can have many fields
      *
-     * @param string $fieldKey
-     * @param array $toUpdate
-     * @param int|string $fieldIndexName
-     * @param LocaleField|null $labels
+     * @param  string            $fieldKey
+     * @param  array             $toUpdate
+     * @param  int|string        $fieldIndexName
+     * @param  LocaleField|null  $labels
      * @return void
      *
      */
     public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null): void
     {
-        $this->schema->each(function ($currentFieldKey, &$field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
+        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
             /**
              * @var ModelField $field
              */
-            if ($currentFieldKey === $fieldKey) {
+            if ($currentFieldKey === $fieldKey && $field->configs->get((string)$fieldIndexName)) {
                 $currentInput = $field->configs->get((string)$fieldIndexName)->castFrom();
                 $inputClass = $field->configs->get((string)$fieldIndexName)::class;
 
@@ -194,6 +297,8 @@ class EntryLayout extends Model implements Castable
                 $field->configs->pushKeyValue($fieldIndexName, $input);
 
                 $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
+            } else {
+                $this->schema->pushKeyValue($currentFieldKey, $field->toLayoutField());
             }
         });
     }
@@ -202,14 +307,15 @@ class EntryLayout extends Model implements Castable
      *
      * Update an entry layout for a given id or entryLayout instance
      *
-     * @param Entry|string $entryOrId
-     * @param LocaleField|null $titles
-     * @param Collection|null $schema
+     * @param  Entry|string      $entryOrId
+     * @param  LocaleField|null  $titles
+     * @param  Collection|null   $schema
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
     public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
     {
@@ -243,13 +349,14 @@ class EntryLayout extends Model implements Castable
      *
      * Update a key in the schema
      *
-     * @param string $key
-     * @param string $newKey
+     * @param  string  $key
+     * @param  string  $newKey
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function updateSchemaKey(string $key, string $newKey): bool
@@ -298,8 +405,8 @@ class EntryLayout extends Model implements Castable
      *
      * Delete an entry layout with soft or hard mode
      *
-     * @param string|ObjectId $entryLayoutId
-     * @param bool $soft
+     * @param  string|ObjectId  $entryLayoutId
+     * @param  bool             $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -312,7 +419,7 @@ class EntryLayout extends Model implements Castable
         $this->hasPermissions();
 
         // Check if there is and entry type is using the layout
-        if ($this->hasEntryTypes($entryLayoutId)) {
+        if (self::hasEntryTypes($entryLayoutId)) {
             throw new EntryException(self::SCHEMA_IS_USED);
         }
 
@@ -335,7 +442,7 @@ class EntryLayout extends Model implements Castable
      *
      * Process schema from GraphQL inputs
      *
-     * @param array|Collection $configs
+     * @param  array|Collection  $configs
      * @return Collection
      * @throws EntryException
      *
@@ -360,13 +467,15 @@ class EntryLayout extends Model implements Castable
             }
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fields) use (&$parsedConfigs) {
+            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
                 $settings = Collection::init();
-                $fields->each(function ($key, $setting) use (&$settings) {
-                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
+                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
+                    $options = EntryLayout::parseOptions($setting->options ?? null);
+                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value, $options));
                 });
+                $inputKey = $fieldsData->inputKey ?? $index;
 
-                $parsedConfigs->pushKeyValue($index, $settings);
+                $parsedConfigs->pushKeyValue($inputKey, $settings);
             });
 
             /**
@@ -383,8 +492,8 @@ class EntryLayout extends Model implements Castable
      *
      * Update a schema from graphQL inputs
      *
-     * @param Collection $schemaUpdate
-     * @param EntryLayout $entryLayout
+     * @param  Collection   $schemaUpdate
+     * @param  EntryLayout  $entryLayout
      * @return void
      *
      */
@@ -397,7 +506,10 @@ class EntryLayout extends Model implements Castable
                  */
                 $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
                     $settings = [];
-                    $toUpdate->each(function ($k, $setting) use (&$settings) {
+
+                    $inputKey = $toUpdate->inputKey ?? $index;
+
+                    $toUpdate->settings->each(function ($k, $setting) use (&$settings) {
                         $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
                     });
 
@@ -405,16 +517,14 @@ class EntryLayout extends Model implements Castable
                     if (isset($updateInput->labels)) {
                         $labels = new LocaleField($updateInput->labels->unwrap());
                     }
-                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $index, $labels);
+                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $inputKey, $labels);
                 });
-            } else {
-                if (isset($updateInput->labels)) {
-                    /**
-                     * @var object $updateInput
-                     */
-                    $labels = new LocaleField($updateInput->labels->unwrap());
-                    $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
-                }
+            } elseif (isset($updateInput->labels)) {
+                /**
+                 * @var object $updateInput
+                 */
+                $labels = new LocaleField($updateInput->labels->unwrap());
+                $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
             }
         });
     }
@@ -426,9 +536,13 @@ class EntryLayout extends Model implements Castable
      * @return Collection
      *
      */
-    public function processSchemaToGraphQL(): Collection
+    public function simplifySchema(): Collection
     {
         $apiSchema = Collection::init();
+
+        if (is_array($this->schema)) {
+            $this->schema = new Collection($this->schema);
+        }
 
         $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
             $layoutFieldConfigs = Collection::init();
@@ -447,16 +561,24 @@ class EntryLayout extends Model implements Castable
                     }
 
                     $type = $input->getSettingType($name, $value);
+                    $options = [];
 
+                    if ($type === "array") {
+                        $options = $value;
+                        $value = "";
+                    }
                     $fieldSettings->push([
                         'name' => $name,
                         'value' => (string)$value,
-                        'choices' => [],
+                        'options' => $options,
                         'type' => $type
                     ]);
                 });
 
-                $layoutFieldSettings->push($fieldSettings);
+                $layoutFieldSettings->push([
+                    'inputKey' => $fieldIndex,
+                    'settings' => $fieldSettings
+                ]);
             });
             $layoutFieldConfigs->push([
                 'handle' => $layoutField->handle,
@@ -477,34 +599,54 @@ class EntryLayout extends Model implements Castable
      *
      * Parse an input setting value according the given type
      *
-     * @param string $type
-     * @param string $value
-     * @return string
+     * @param  string           $type
+     * @param  string           $value
+     * @param  Collection|null  $options
+     * @return string|Collection
      *
      */
-    private static function parseSettingValue(string $type, string $value): string
+    private static function parseSettingValue(string $type, string $value, Collection $options = null): string|Collection
     {
         if ($type === "boolean") {
             $result = !($value === "false");
+        } elseif ($type === "array") {
+            $result = $options;
+        } elseif ($type === "integer") {
+            $result = (integer)$value;
+        } elseif ($type === "float") {
+            $result = (float)$value;
         } else {
-            if ($type === "integer") {
-                $result = (integer)$value;
-            } else {
-                if ($type === "float") {
-                    $result = (float)$value;
-                } else {
-                    $result = $value;
-                }
-            }
+            $result = $value;
         }
+
         return $result;
+    }
+
+    /**
+     *
+     * Parse options
+     *
+     * @param  Collection|null  $options
+     * @return Collection|null
+     *
+     */
+    public static function parseOptions(Collection|null $options): ?Collection
+    {
+        if ($options) {
+            $parseOptions = Collection::init();
+            $options->each(function ($key, $option) use ($parseOptions) {
+                $parseOptions->pushKeyValue($option->value, $option->label);
+            });
+            return $parseOptions;
+        }
+        return null;
     }
 
     /**
      *
      * Validate the schema before save
      *
-     * @param Collection $schema
+     * @param  Collection  $schema
      * @return void
      * @throws EntryException
      *
@@ -522,7 +664,7 @@ class EntryLayout extends Model implements Castable
      *
      * Process schema on fetch
      *
-     * @param stdClass|array|null $value
+     * @param  stdClass|array|null  $value
      * @return Collection
      *
      */
@@ -534,9 +676,16 @@ class EntryLayout extends Model implements Castable
 
         $schema = Collection::init();
         $schemaFromDb = new Collection((array)$value);
+        $schemaFromDb->each(function ($key, $field) use (&$schema) {
+            foreach ($field->configs as &$input) {
+                if (isset($input->settings)) {
+                    if (array_key_exists('options', (array)$input->settings)) {
+                        $input->settings['options'] = new Collection((array)$input->settings['options']);
+                    }
+                }
+            }
 
-        $schemaFromDb->each(function ($key, $value) use (&$schema) {
-            $valueParsed = ModelField::fromLayoutField($value);
+            $valueParsed = ModelField::fromLayoutField($field);
             $schema->pushKeyValue($key, $valueParsed);
         });
 
@@ -547,7 +696,7 @@ class EntryLayout extends Model implements Castable
      *
      * Process schema on store AKA convert all type to db object
      *
-     * @param Collection $schema
+     * @param  Collection  $schema
      * @return Collection
      *
      */
@@ -559,6 +708,7 @@ class EntryLayout extends Model implements Castable
              * @var LayoutField $layoutField
              */
             $layoutField = $layoutField->castFrom();
+
             $schemaForDb->pushKeyValue($fieldId, $layoutField);
         });
         return $schemaForDb;
@@ -568,7 +718,7 @@ class EntryLayout extends Model implements Castable
      *
      * Check if an entry layout have a related entry type
      *
-     * @param string|ObjectId $entryLayoutId
+     * @param  string|ObjectId  $entryLayoutId
      * @return bool
      *
      */
@@ -583,20 +733,26 @@ class EntryLayout extends Model implements Castable
      *
      * Create an entry layout
      *
-     * @param LocaleField $titles
-     * @param Collection $schema
+     * @param  LocaleField  $titles
+     * @param  Collection   $schema
+     * @param  string|null  $slug
      * @return EntryLayout
      * @throws DatabaseException
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(LocaleField $titles, Collection $schema): EntryLayout
+    private function createWithoutPermission(LocaleField $titles, Collection $schema, string $slug = null): EntryLayout
     {
         $dates = Dates::init();
-        $authors = Authors::init(User::$currentUser, false);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::init($author);
+
+        $slug = $slug ?? Text::from($titles->{Locale::default()})->slug()->value();
+        $slug = self::generateSlug($slug);
 
         try {
             $entryLayoutId = $this->insert([
+                'slug' => $slug,
                 'titles' => $titles,
                 'schema' => $schema,
                 'authors' => $authors,
@@ -614,17 +770,20 @@ class EntryLayout extends Model implements Castable
      *
      * Update an entry layout
      *
-     * @param EntryLayout $entryLayout
-     * @param Collection $data
+     * @param  EntryLayout  $entryLayout
+     * @param  Collection   $data
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function updateWithoutPermission(EntryLayout $entryLayout, Collection $data): bool
     {
+        $author = User::$currentUser ?? User::anonymousUser();
+
         $update = [
             'dates' => Dates::updated($entryLayout->dates),
-            'authors' => Authors::updated($entryLayout->authors, User::$currentUser->_id)
+            'authors' => Authors::updated($entryLayout->authors, $author->_id)
         ];
 
         $titles = $data->get('titles');
@@ -635,6 +794,11 @@ class EntryLayout extends Model implements Castable
         $schema = $data->get('schema');
         if ($schema) {
             $update['schema'] = $schema;
+        }
+
+        $slug = $data->get('slug');
+        if ($slug) {
+            $update['slug'] = $slug;
         }
 
         try {
@@ -652,14 +816,16 @@ class EntryLayout extends Model implements Castable
      *
      * Delete an entry layout to the trash
      *
-     * @param EntryLayout $entryLayout
+     * @param  EntryLayout  $entryLayout
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function softDelete(EntryLayout $entryLayout): bool
     {
-        $authors = Authors::deleted($entryLayout->authors, User::$currentUser->_id);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::deleted($entryLayout->authors, $author->_id);
         $dates = Dates::deleted($entryLayout->dates);
 
         try {
@@ -681,7 +847,7 @@ class EntryLayout extends Model implements Castable
      *
      * Delete an entry layout forever
      *
-     * @param string|ObjectId $entryLayoutId
+     * @param  string|ObjectId  $entryLayoutId
      * @return bool
      * @throws EntryException
      *
@@ -695,30 +861,5 @@ class EntryLayout extends Model implements Castable
         }
 
         return $qtyDeleted === 1;
-    }
-
-    /**
-     *
-     * Simplify schema
-     *
-     * @return array
-     *
-     */
-    public function castFrom(): array
-    {
-        return $this->schema->unwrap();
-    }
-
-    /**
-     *
-     * Process Schema
-     *
-     * @param mixed $value
-     * @return array|Collection
-     *
-     */
-    public function castTo(mixed $value): array|Collection
-    {
-        return is_array($value) ? $value : $this->processSchemaOnFetch($value);
     }
 }

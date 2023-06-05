@@ -9,21 +9,27 @@ use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Errors\DatabaseException;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Event;
+use SailCMS\Locale;
+use SailCMS\Log;
 use SailCMS\Mail;
 use SailCMS\Middleware;
+use SailCMS\Sail;
 use SailCMS\Security;
 use SailCMS\Session;
+use SailCMS\Text;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
 use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
+use SailCMS\Types\PasswordChangeResult;
 use SailCMS\Types\QueryOptions;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
@@ -48,6 +54,7 @@ use stdClass;
  * @property string            $reset_code
  * @property bool              $validated
  * @property int               $created_at
+ * @property string            $group
  *
  */
 class User extends Model
@@ -64,6 +71,8 @@ class User extends Model
     public const EVENT_CREATE = 'event_create_user';
     public const EVENT_UPDATE = 'event_update_user';
     public const EVENT_LOGIN = 'event_login_user';
+
+    private const ANONYMOUS_EMAIL = 'anonymous@mail.io';
 
     public static ?User $currentUser = null;
 
@@ -133,12 +142,11 @@ class User extends Model
             $role = $roleModel->getByName($roleSlug);
 
             if ($role) {
-                $permissions->push(...$role->permissions);
+                $permissions = $permissions->merge($role->permissions);
             }
         }
 
         self::$permsCache = $permissions;
-
         return $permissions;
     }
 
@@ -147,15 +155,33 @@ class User extends Model
      * Get a user by id
      *
      * @param  string  $id
+     * @param  bool    $api
      * @return User|null
-     * @throws DatabaseException
      * @throws ACLException
+     * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getById(string $id): ?User
+    public function getById(string $id, bool $api = true): ?User
     {
-        $this->hasPermissions(true, true, $id);
+        if ($api) {
+            $this->hasPermissions(true, true, $id);
+        }
+
+        return $this->findById($id)->exec();
+    }
+
+    /**
+     *
+     * Get a user by id but skip permission checking
+     *
+     * @param  string  $id
+     * @return User|null
+     * @throws DatabaseException
+     *
+     */
+    public function getByIdWithoutPermission(string $id): ?User
+    {
         return $this->findById($id)->exec();
     }
 
@@ -175,23 +201,73 @@ class User extends Model
 
     /**
      *
+     * Get List of users with given query and settings
+     *
+     * @param  array   $query
+     * @param  string  $sort
+     * @param  int     $order
+     * @param  int     $page
+     * @param  int     $limit
+     * @param  string  $collation
+     * @return Listing
+     * @throws DatabaseException
+     *
+     */
+    public function getListBy(array $query, string $sort = 'full.name', int $order = 1, int $page = 1, int $limit = 25, string $collation = 'en'): Listing
+    {
+        $skip = $page * $limit - $limit;
+        $list = new Collection(
+            $this->find($query)
+                 ->skip($skip)
+                 ->limit($limit)
+                 ->collation($collation)
+                 ->sort([$sort => $order])
+                 ->exec()
+        );
+
+        $total = $this->count($query);
+        $pages = (int)ceil($total / $limit);
+        $pagination = new Pagination($page, $pages, $total);
+        return new Listing($pagination, $list);
+    }
+
+    /**
+     *
      * Create a regular user (usually user from the site) with no roles.
      *
-     * @param  Username       $name
-     * @param  string         $email
-     * @param  string         $password
-     * @param  string         $locale
-     * @param  string         $avatar
-     * @param  UserMeta|null  $meta
+     * @param  Username          $name
+     * @param  string            $email
+     * @param  string            $password
+     * @param  string            $locale
+     * @param  string            $avatar
+     * @param  UserMeta|null     $meta
+     * @param  Collection|array  $roles
+     * @param  bool              $createWithSetPassword
+     * @param  string            $emailTemplate
      * @return string
      * @throws DatabaseException
      *
      */
-    public function createRegularUser(Username $name, string $email, string $password, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
-    {
+    public function createRegularUser(
+        Username $name,
+        string $email,
+        string $password,
+        string $locale = 'en',
+        string $avatar = '',
+        ?UserMeta $meta = null,
+        Collection|array $roles = ['general-user'],
+        string $group = '',
+        bool $createWithSetPassword = false,
+        string $emailTemplate = ''
+    ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
+        }
+
+        // Make sure we have an array
+        if (is_object($roles)) {
+            $roles = $roles->unwrap();
         }
 
         if ($meta === null) {
@@ -204,25 +280,33 @@ class User extends Model
         }
 
         // Validate email properly
+        $email = strtolower($email);
         $this->validateEmail($email, '', true);
 
         // Validate password
-        $valid = Security::validatePassword($password);
+        if (!$createWithSetPassword) {
+            $valid = Security::validatePassword($password);
 
-        if (!$valid) {
-            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            if (!$valid) {
+                throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            }
+        } else {
+            $password = Uuid::uuid4()->toString();
         }
 
-        $role = setting('users.baseRole', 'general-user');
-        $validate = setting('users.requireValidation', true);
+        if (empty($roles)) {
+            $roles = [setting('users.baseRole', 'general-user')];
+        }
 
+        $validate = setting('users.requireValidation', true);
         $code = Security::generateVerificationCode();
+        $passCode = substr(Security::generateVerificationCode(), 5, 16);
 
         $id = $this->insert([
             'name' => $name,
             'email' => $email,
             'status' => true,
-            'roles' => [$role],
+            'roles' => new Collection($roles),
             'avatar' => $avatar,
             'password' => Security::hashPassword($password),
             'meta' => $meta->simplify(),
@@ -230,24 +314,67 @@ class User extends Model
             'locale' => $locale,
             'validation_code' => $code,
             'validated' => !$validate,
-            'reset_code' => '',
-            'created_at' => time()
+            'reset_code' => ($createWithSetPassword) ? $passCode : '',
+            'created_at' => time(),
+            'group' => $group
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
             // Send a nice email to greet
             try {
                 $mail = new Mail();
-                $mail->to($email)->useEmail('new_account', $locale, ['verification_code' => $code])->send();
-                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+                $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
+                $who = (self::$currentUser) ? self::$currentUser->name->full : $defaultWho;
+
+                if ($createWithSetPassword) {
+                    $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
+
+                    $mail->to($email)
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'verification_code' => $code,
+                             'reset_pass_code' => $passCode,
+                             'user_email' => $email,
+                             'name' => $name->first,
+                             'who' => $who
+                         ])
+                         ->send();
+                } else {
+                    $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
+                    $mail->to($email)
+                         ->useEmail($emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'user_email' => $email,
+                             'reset_pass_code' => $passCode,
+                             'verification_code' => $code,
+                             'who' => $who
+                         ])
+                         ->send();
+                }
+
+                Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
                 return $id;
-            } catch (Exception) {
-                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+            } catch (Exception $e) {
+                Log::warning(
+                    'Mailing Error ' . $e->getMessage(),
+                    [
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine()
+                    ]
+                );
+
+                Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
         }
 
-        Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
+        Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
         return $id;
     }
 
@@ -260,6 +387,7 @@ class User extends Model
      * @return bool
      *
      * @throws DatabaseException
+     *
      */
     public function resendValidationEmail(string $email): bool
     {
@@ -293,6 +421,7 @@ class User extends Model
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
     public function create(Username $name, string $email, string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null): string
     {
@@ -326,6 +455,7 @@ class User extends Model
         }
 
         // Validate email properly
+        $email = strtolower($email);
         $this->validateEmail($email, '', true);
 
         $pass = Uuid::uuid4();
@@ -351,11 +481,14 @@ class User extends Model
             'validation_code' => $code,
             'validated' => !$validate,
             'reset_code' => $passCode,
-            'created_at' => time()
+            'created_at' => time(),
+            'group' => ''
         ]);
 
         if (!empty($id) && setting('emails.sendNewAccount', false)) {
             // Send a nice email to greet
+            $defaultWho = setting('emails.globalContext')->unwrap()['locales'][$locale]['defaultWho'];
+            $who = (self::$currentUser) ? self::$currentUser->name->full : $defaultWho;
             try {
                 // Overwrite the cta url for the admin one
                 $mail = new Mail();
@@ -363,13 +496,31 @@ class User extends Model
                     'new_admin_account',
                     $locale,
                     [
+                        'replacements' => [
+                            'name' => $name->first,
+                            'who' => $who
+                        ],
                         'verification_code' => $code,
                         'reset_pass_code' => $passCode,
-                        'name' => $name->first
+                        'user_email' => $email,
+                        'name' => $name->first,
+                        'who' => $who
                     ]
                 )->send();
+
+                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
-            } catch (Exception) {
+            } catch (Exception $e) {
+                // Logging error
+                Log::warning(
+                    'Mailing Error ' . $e->getMessage(),
+                    [
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine()
+                    ]
+                );
+
+                Event::dispatch(self::EVENT_CREATE, ['id' => $id, 'email' => $email, 'name' => $name]);
                 return $id;
             }
         }
@@ -421,6 +572,7 @@ class User extends Model
 
         // Validate email properly
         if ($email !== null && trim($email) !== '') {
+            $email = strtolower($email);
             $this->validateEmail($email, $id, true);
             $update['email'] = $email;
         }
@@ -445,9 +597,7 @@ class User extends Model
             }
         }
 
-        if ($avatar) {
-            $update['avatar'] = $avatar;
-        }
+        $update['avatar'] = $avatar ?? '';
 
         if ($meta) {
             $update['meta'] = $meta->simplify();
@@ -470,6 +620,7 @@ class User extends Model
      * @param  MetaSearch|null      $metaSearch
      * @param  bool|null            $status
      * @param  bool|null            $validated
+     * @param  string               $groupId
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -484,7 +635,8 @@ class User extends Model
         UserTypeSearch|null $typeSearch = null,
         MetaSearch|null $metaSearch = null,
         bool|null $status = null,
-        bool|null $validated = null
+        bool|null $validated = null,
+        string $groupId = ''
     ): Listing {
         $this->hasPermissions(true);
 
@@ -533,6 +685,14 @@ class User extends Model
             $query['validated'] = $validated;
         }
 
+        // Never show the anonymous user
+        $query['email'] = ['$ne' => 'anonymous@mail.io'];
+
+        // Filter by group
+        if ($groupId !== '') {
+            $query['group'] = $groupId;
+        }
+
         // Pagination
         $total = $this->count($query);
         $pages = ceil($total / $limit);
@@ -546,17 +706,178 @@ class User extends Model
 
     /**
      *
+     * Get user count of given group
+     *
+     * @param  string  $groupId
+     * @return int
+     *
+     */
+    public static function countForGroup(string $groupId): int
+    {
+        return self::query()->count(['group' => $groupId]);
+    }
+
+    /**
+     *
+     * Count how many users for give role
+     *
+     * @param  string  $role
+     * @return int
+     *
+     */
+    public static function countForRole(string $role): int
+    {
+        return self::query()->count(['roles' => $role]);
+    }
+
+    /**
+     *
+     * Check if user is part of given group (id or slug)
+     *
+     * @param  string  $group
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function partOf(string $group): bool
+    {
+        if ($group === '') {
+            return false;
+        }
+
+        if ($this->isValidId($group)) {
+            return ($this->group === $group);
+        }
+
+        $groupObj = UserGroup::getBy('slug', $group);
+
+        if ($groupObj) {
+            return ($this->group === $groupObj->id);
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * Check if user is part of one of the given groups
+     *
+     * @param  array|Collection  $groups
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function partOfAny(array|Collection $groups): bool
+    {
+        $idList = [];
+
+        foreach ($groups as $group) {
+            if ($this->isValidId($group)) {
+                $idList[] = $group;
+            } elseif ($group !== '') {
+                $g = UserGroup::getBy('slug', $group);
+
+                if ($g) {
+                    $idList[] = $g->id;
+                }
+            }
+        }
+
+        return in_array($this->group, $idList, true);
+    }
+
+    /**
+     *
+     * Activerecord style add to group
+     *
+     * @param  string  $groupId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function setGroup(string $groupId): void
+    {
+        $this->hasPermissions();
+        $this->group = $groupId;
+        $this->save();
+    }
+
+    /**
+     *
+     * Activerecord style remove group
+     *
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function removeGroup(): void
+    {
+        $this->hasPermissions();
+        $this->group = '';
+        $this->save();
+    }
+
+    /**
+     *
+     * Add a user to a group
+     *
+     * @param  string  $userId
+     * @param  string  $groupId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function addToGroup(string $userId, string $groupId): void
+    {
+        $instance = new self;
+        $instance->hasPermissions();
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($userId)], ['$set' => ['group' => $groupId]]);
+    }
+
+    /**
+     *
+     * Remove a user from its group
+     *
+     * @param  string  $userId
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function removeFromGroup(string $userId): void
+    {
+        $instance = new self;
+        $instance->hasPermissions();
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($userId)], ['$set' => ['group' => '']]);
+    }
+
+    /**
+     *
      * Delete the user from this instance
      *
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
      * @throws PermissionException
+     * @throws Exception
      *
      */
     public function remove(): bool
     {
         $this->hasPermissions();
+
+        if (self::anonymousUser()->_id === $this->_id) {
+            throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
 
         $this->deleteById($this->_id);
         Event::dispatch(self::EVENT_DELETE, (string)$this->_id);
@@ -578,9 +899,91 @@ class User extends Model
     {
         $this->hasPermissions();
 
+        // Do not delete anonymous user
+        if ((string)$id === (string)self::anonymousUser()->_id) {
+            throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
+
+        // Are we allowed to delete the user?
+        $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+        $user = self::get($id);
+
+        if (!$user) {
+            return false;
+        }
+
+        $userRole = Role::getHighestLevel($user->roles);
+
+        if ($userRole > $currentLevel) {
+            return false;
+        }
+
         $id = $this->ensureObjectId($id);
         $this->deleteById($id);
         Event::dispatch(self::EVENT_DELETE, (string)$id);
+        return true;
+    }
+
+    /**
+     *
+     * Delete a list of users
+     *
+     * @param  array|Collection  $ids
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function removeByIdList(array|Collection $ids): bool
+    {
+        $this->hasPermissions();
+
+        if (is_object($ids)) {
+            $ids = $ids->unwrap();
+        }
+
+        $anonymous = (string)self::anonymousUser()->_id;
+
+        // Remove anonymous from array of ids
+        if (in_array($anonymous, $ids, true)) {
+            array_filter($ids, function ($id) use ($anonymous)
+            {
+                return ($id !== $anonymous);
+            });
+        }
+
+        // Are we allowed to delete the user?
+        $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+
+        // Remove all users that are not allowed (higher level)
+        foreach ($ids as $num => $id) {
+            $user = self::get($id);
+
+            if (!$user) {
+                unset($ids[$num]);
+                continue;
+            }
+
+            $userRole = Role::getHighestLevel($user->roles);
+
+            if ($userRole > $currentLevel) {
+                unset($ids[$num]);
+            }
+        }
+
+        $ids = array_values($ids);
+
+        // Nothing to delete
+        if (count($ids) === 0) {
+            return false;
+        }
+
+        $list = $ids;
+        $ids = $this->ensureObjectIds($ids)->unwrap();
+        $this->deleteMany(['_id' => ['$in' => $ids]]);
+
+        Event::dispatch(self::EVENT_DELETE, $list);
         return true;
     }
 
@@ -598,6 +1001,10 @@ class User extends Model
     public function removeByEmail(string $email): bool
     {
         $this->hasPermissions();
+
+        if ($email === self::ANONYMOUS_EMAIL) {
+            throw new DatabaseException('9004: Anonymous user cannot be deleted.');
+        }
 
         $this->deleteOne(['email' => $email]);
         Event::dispatch(self::EVENT_DELETE, $email);
@@ -624,7 +1031,11 @@ class User extends Model
     {
         $user = $this->findOne(['email' => $email])->exec();
 
-        if ($user && !$user->validated) {
+        if (!$user) {
+            return new LoginResult('', 'error');
+        }
+
+        if (!$user->validated) {
             return new LoginResult('', 'not-validated');
         }
 
@@ -632,23 +1043,25 @@ class User extends Model
         $mwResult = Middleware::execute(MiddlewareType::LOGIN, $data);
 
         if (!$mwResult->data['allowed']) {
-            if ($user && Security::verifyPassword($password, $user->password)) {
+            if (Security::verifyPassword($password, $user->password)) {
+                $key = Security::secureTemporaryKey();
+                $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
+
                 if ($user->meta->flags->use2fa) {
                     return new LoginResult((string)$user->_id, '2fa');
                 }
 
-                $key = Security::secureTemporaryKey();
-                $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
                 return new LoginResult((string)$user->_id, $key);
             }
         } else {
             // Middleware says everything is ok, login
+            $key = Security::secureTemporaryKey();
+            $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
+
             if ($user->meta->flags->use2fa) {
                 return new LoginResult((string)$user->_id, '2fa');
             }
 
-            $key = Security::secureTemporaryKey();
-            $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
             return new LoginResult((string)$user->_id, $key);
         }
 
@@ -839,6 +1252,21 @@ class User extends Model
 
     /**
      *
+     * Remove all users from given group
+     *
+     * @param  string  $group
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public static function removeGroupFromAll(string $group): void
+    {
+        $instance = new static();
+        $instance->updateMany(['group' => $group], ['$set' => ['group' => '']]);
+    }
+
+    /**
+     *
      * Validate an account with the given code
      *
      * @param  string  $code
@@ -920,7 +1348,11 @@ class User extends Model
                     'reset_password',
                     $record->locale,
                     [
+                        'replacements' => [
+                            'user_email' => $email,
+                        ],
                         'reset_code' => $code,
+                        'user_email' => $email,
                         'name' => $record->name->first
                     ]
                 )->send();
@@ -941,19 +1373,32 @@ class User extends Model
      *
      * @param  string  $code
      * @param  string  $password
-     * @return bool
+     * @return PasswordChangeResult
      * @throws DatabaseException
      *
      */
-    public static function changePassword(string $code, string $password): bool
+    public static function changePassword(string $code, string $password): PasswordChangeResult
     {
         $instance = new static();
+
+        $passCheck = true;
+        $codeCheck = true;
 
         // Validate password
         $valid = Security::validatePassword($password);
 
         if (!$valid) {
-            throw new DatabaseException('9002: Password does not pass minimum security level', 0403);
+            $passCheck = false;
+        }
+
+        $user = $instance->findOne(['reset_code' => $code])->exec();
+
+        if (!$user) {
+            $codeCheck = false;
+        }
+
+        if (!$passCheck || !$codeCheck) {
+            return new PasswordChangeResult($passCheck, $codeCheck);
         }
 
         $instance->updateOne(['reset_code' => $code],
@@ -965,7 +1410,69 @@ class User extends Model
             ]
         );
 
+        return new PasswordChangeResult(true, true);
+    }
+
+    /**
+     *
+     * Change user password for given user id
+     *
+     * @param  string  $id
+     * @param  string  $password
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public static function changePasswordWithID(string $id, string $password): bool
+    {
+        // Validate password
+        $valid = Security::validatePassword($password);
+
+        if (!$valid) {
+            return false;
+        }
+
+        self::query()->updateOne(['_id' => self::query()->ensureObjectId($id)],
+            [
+                '$set' => [
+                    'password' => Security::hashPassword($password)
+                ]
+            ]
+        );
+
         return true;
+    }
+
+    /**
+     *
+     * Get anonymous user
+     *
+     * @return User
+     * @throws DatabaseException
+     *
+     */
+    public static function anonymousUser(): User
+    {
+        $model = new User();
+        $anonymous = $model->getByEmail(self::ANONYMOUS_EMAIL);
+
+        if (!$anonymous) {
+            $model->insert([
+                'name' => new Username('Anonymous'),
+                'avatar' => '',
+                'email' => self::ANONYMOUS_EMAIL,
+                'roles' => new Collection(['super-administrator']),
+                'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
+                'status' => true,
+                'password' => Security::hashPassword(Text::init()->random(16)),
+                'locale' => Locale::default(),
+                'validated' => true,
+                'created_at' => strtotime('01-01-2003')
+            ]);
+            $anonymous = $model->getByEmail(self::ANONYMOUS_EMAIL);
+        }
+
+        return $anonymous;
     }
 
     /**
@@ -994,6 +1501,46 @@ class User extends Model
         }
 
         return new Collection($this->find(['_id' => ['$in' => $list]])->exec());
+    }
+
+    /**
+     *
+     * Change status of given list of users
+     *
+     * @param  array|Collection  $ids
+     * @param  bool              $status
+     * @return bool
+     *
+     */
+    public function changeUserStatus(array|Collection $ids, bool $status): bool
+    {
+        try {
+            $this->hasPermissions();
+
+            // Get Level of current user (cannot enable/disable higher level)
+            $currentLevel = Role::getHighestLevel(self::$currentUser->roles);
+
+            if (is_object($ids)) {
+                $ids = $ids->unwrap();
+            }
+
+            foreach ($ids as $num => $id) {
+                $user = $this->findById($id)->project(['roles' => 1])->exec();
+                $highest = Role::getHighestLevel($user->roles);
+
+                if ($currentLevel < $highest) {
+                    unset($ids[$num]);
+                }
+            }
+
+            $ids = array_values($ids);
+            $idlist = $this->ensureObjectIds($ids);
+
+            $this->updateMany(['_id' => ['$in' => $idlist->unwrap()]], ['$set' => ['status' => $status]]);
+            return true;
+        } catch (ACLException|DatabaseException|PermissionException $e) {
+            return false;
+        }
     }
 
     /**
@@ -1045,10 +1592,18 @@ class User extends Model
      */
     protected function hasPermissions(bool $read = false, bool $advanced = false, string|null $id = null): void
     {
+        if (Sail::isCLI()) {
+            return;
+        }
+
+        if (!self::$currentUser) {
+            throw new PermissionException('0403: Permission Denied', 0403);
+        }
+
         if ($advanced) {
-            if ((isset(self::$currentUser) && (string)self::$currentUser->_id === $id)) {
+            if ((string)self::$currentUser->_id !== $id) {
                 if ($read) {
-                    if (!ACL::hasPermission(self::$currentUser, ACL::read('user'))) {
+                    if (!ACL::hasPermission(self::$currentUser, ACL::read('user'), ACL::write('user'))) {
                         throw new PermissionException('0403: Permission Denied', 0403);
                     }
                 } elseif (!ACL::hasPermission(self::$currentUser, ACL::write('user'))) {
@@ -1056,7 +1611,7 @@ class User extends Model
                 }
             }
         } elseif ($read) {
-            if (!ACL::hasPermission(self::$currentUser, ACL::read('user'))) {
+            if (!ACL::hasPermission(self::$currentUser, ACL::read('user'), ACL::write('user'))) {
                 throw new PermissionException('0403: Permission Denied', 0403);
             }
         } elseif (!ACL::hasPermission(self::$currentUser, ACL::write('user'))) {

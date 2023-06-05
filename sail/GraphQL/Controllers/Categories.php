@@ -10,6 +10,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Category;
+use SailCMS\Types\LocaleField;
 
 class Categories
 {
@@ -41,7 +42,7 @@ class Categories
      */
     public function categoryBySlug(mixed $obj, Collection $args, Context $context): ?array
     {
-        return Category::getBySlug($args->get('slug'), $args->get('site_id'))->toGraphQL();
+        return Category::getBySlug($args->get('slug'), $args->get('site_id'))->simplify();
     }
 
     /**
@@ -111,7 +112,8 @@ class Categories
      */
     public function createCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->create($args->get('name'), $args->get('parent_id'), $args->get('site_id'));
+        $name = new LocaleField($args->get('name')->unwrap());
+        return (new Category())->create($name, $args->get('parent_id'), $args->get('site_id'));
     }
 
     /**
@@ -129,7 +131,8 @@ class Categories
      */
     public function updateCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->update($args->get('id'), $args->get('name'), $args->get('parent_id'));
+        $name = new LocaleField($args->get('name')->unwrap());
+        return (new Category())->update($args->get('id'), $name, $args->get('parent_id'));
     }
 
     /**
@@ -147,7 +150,7 @@ class Categories
      */
     public function updateCategoryOrders(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->updateOrder($args->get('parent_id'), $args->get('site_id'));
+        return (new Category())->updateOrder($args->get('tree'), $args->get('site_id'));
     }
 
     /**

@@ -11,26 +11,40 @@ class Executor extends Model
      *
      * Run update code
      *
-     * @param $update
+     * @param  array  $update
      * @return void
      * @throws DatabaseException
-     *
      */
-    public function runUpdate($update): void
+    public function runUpdate(array $update): void
     {
         $this->updateMany([], $update);
     }
 
     /**
      *
-     * Run insert code
+     * Run update code
      *
-     * @param $record
+     * @param  string  $field
+     * @param  array   $update
      * @return void
      * @throws DatabaseException
      *
      */
-    public function runInsert($record): void
+    public function runUpdateIfNotSet(string $field, array $update): void
+    {
+        $this->updateMany([$field => ['$exists' => false]], $update);
+    }
+
+    /**
+     *
+     * Run insert code
+     *
+     * @param  object|array  $record
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public function runInsert(object|array $record): void
     {
         $this->insert($record);
     }
@@ -76,11 +90,5 @@ class Executor extends Model
     public function runDropIndex(array $indexes): void
     {
         $this->dropIndexes($indexes);
-    }
-
-    // unused
-    public function fields(bool $fetchAllFields = false): array
-    {
-        return [];
     }
 }

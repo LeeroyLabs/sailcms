@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -15,11 +16,11 @@ use SailCMS\Types\LocaleField;
 
 /**
  *
- * @property string $collection_name
- * @property string $title
- * @property string $handle
+ * @property string      $collection_name
+ * @property string      $title
+ * @property string      $handle
  * @property LocaleField $url_prefix
- * @property ?string $entry_layout_id
+ * @property ?string     $entry_layout_id
  *
  */
 class EntryType extends Model implements Validator
@@ -42,9 +43,7 @@ class EntryType extends Model implements Validator
     public const DATABASE_ERROR = '4007: Exception when "%s" an entry type.';
     public const CANNOT_UPDATE_DEFAULT_TYPE = '4008: Cannot update default type page, use general settings for that';
 
-    private const ACL_HANDLE = "entrytype";
-
-    protected string $permissionGroup = self::ACL_HANDLE;
+    protected string $permissionGroup = "entrytype";
 
     private const RESERVED_WORDS_FOR_HANDLE = [
         'entry',
@@ -72,7 +71,7 @@ class EntryType extends Model implements Validator
     ];
 
     /* default entry type */
-    private const DEFAULT_HANDLE = "page";
+    public const DEFAULT_HANDLE = "page";
     private const DEFAULT_TITLE = "Page";
     private const DEFAULT_URL_PREFIX = ['en' => '', 'fr' => ''];
 
@@ -80,8 +79,8 @@ class EntryType extends Model implements Validator
      *
      * Validate properties before insertion
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  string  $key
+     * @param  mixed   $value
      * @return void
      * @throws EntryException
      *
@@ -104,7 +103,7 @@ class EntryType extends Model implements Validator
      * @return array
      *
      */
-    public function toGraphQL(): array
+    public function simplify(): array
     {
         return [
             '_id' => $this->_id,
@@ -119,7 +118,7 @@ class EntryType extends Model implements Validator
      *
      * Get a list of all available types
      *
-     * @param bool $api
+     * @param  bool  $api
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -140,7 +139,7 @@ class EntryType extends Model implements Validator
      *
      * Find all entry type according to the given filters
      *
-     * @param array|Collection $filters
+     * @param  array|Collection  $filters
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -163,8 +162,8 @@ class EntryType extends Model implements Validator
      *
      * Use the settings to create the default type
      *
-     * @param bool $api
-     * @param bool $avoidUpdate
+     * @param  bool  $api
+     * @param  bool  $avoidUpdate
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -179,10 +178,15 @@ class EntryType extends Model implements Validator
         }
 
         // Get default values for default type
+        $urlPrefixConfig = setting('entry.defaultType.urlPrefix', self::DEFAULT_URL_PREFIX);
+        if ($urlPrefixConfig instanceof Collection) {
+            $urlPrefixConfig = $urlPrefixConfig->unwrap();
+        }
+
         $defaultHandle = self::DEFAULT_HANDLE;
-        $defaultTitle = $_ENV['SETTINGS']->get('entry.defaultType.title', self::DEFAULT_TITLE);
-        $defaultUrlPrefix = new LocaleField($_ENV['SETTINGS']->get('entry.defaultType.urlPrefix', self::DEFAULT_URL_PREFIX));
-        $defaultEntryLayoutId = $_ENV['SETTINGS']->get('entry.defaultType.entryLayoutId', false);
+        $defaultTitle = setting('entry.defaultType.title', self::DEFAULT_TITLE);
+        $defaultUrlPrefix = new LocaleField($urlPrefixConfig);
+        $defaultEntryLayoutId = setting('entry.defaultType.entryLayoutId', false);
 
         $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
 
@@ -206,8 +210,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entry type by his collection name
      *
-     * @param string $collectionName
-     * @param bool $api
+     * @param  string  $collectionName
+     * @param  bool    $api
      * @return EntryType
      * @throws ACLException
      * @throws DatabaseException
@@ -234,8 +238,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entry model instance by entry type handle
      *
-     * @param string $handle
-     * @param bool $api
+     * @param  string  $handle
+     * @param  bool    $api
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -262,7 +266,7 @@ class EntryType extends Model implements Validator
      *
      * Shortcut to get entry model and make queries
      *
-     * @param EntryType|null $entryType
+     * @param  EntryType|null  $entryType
      * @return Entry
      * @throws ACLException
      * @throws DatabaseException
@@ -284,16 +288,19 @@ class EntryType extends Model implements Validator
      *
      * Get an entryType by id
      *
-     * @param string $id
+     * @param  string  $id
+     * @param  bool    $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getById(string $id): ?EntryType
+    public function getById(string $id, bool $api = true): ?EntryType
     {
-        $this->hasPermissions(true);
+        if ($api) {
+            $this->hasPermissions(true);
+        }
 
         return $this->findById($id)->exec();
     }
@@ -302,8 +309,8 @@ class EntryType extends Model implements Validator
      *
      * Get an entryType by handle
      *
-     * @param string $handle
-     * @param bool $api
+     * @param  string  $handle
+     * @param  bool    $api
      * @return EntryType|null
      * @throws ACLException
      * @throws DatabaseException
@@ -328,11 +335,11 @@ class EntryType extends Model implements Validator
      *
      * Wrapper to handle permission for entry creation
      *
-     * @param string $handle
-     * @param string $title
-     * @param LocaleField $urlPrefix
-     * @param string|ObjectId|null $entryLayoutId
-     * @param bool $getObject
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  LocaleField           $urlPrefix
+     * @param  string|ObjectId|null  $entryLayoutId
+     * @param  bool                  $getObject
      * @return array|EntryType|string|null
      * @throws ACLException
      * @throws DatabaseException
@@ -353,8 +360,8 @@ class EntryType extends Model implements Validator
      *
      * Wrapper to handle permission for entry modification by handle
      *
-     * @param string $handle
-     * @param Collection $data
+     * @param  string      $handle
+     * @param  Collection  $data
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -387,7 +394,7 @@ class EntryType extends Model implements Validator
      *
      * Real deletion on the entry types
      *
-     * @param string|ObjectId $entryTypeId
+     * @param  string|ObjectId  $entryTypeId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -421,9 +428,36 @@ class EntryType extends Model implements Validator
 
     /**
      *
+     * Get the number of entry types that rely on given entry layout
+     *
+     * @param  string|ObjectId  $layoutId
+     * @return int
+     *
+     */
+    public static function getCountByLayout(string|ObjectId $layoutId): int
+    {
+        return self::query()->count(['entry_layout_id' => (string)$layoutId]);
+    }
+
+    /**
+     *
+     * Get all types that are using the given layout id
+     *
+     * @param  string|ObjectId  $layoutId
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public static function getTypesUsingLayout(string|ObjectId $layoutId): Collection
+    {
+        return new Collection(self::query()->find(['entry_layout_id' => self::query()->ensureObjectId($layoutId)])->exec());
+    }
+
+    /**
+     *
      * Check if handle is available
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -448,29 +482,27 @@ class EntryType extends Model implements Validator
      *
      * Get collection name with handle
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return string
      *
      */
     private function getCollectionName(string $handle): string
     {
-        return Text::snakeCase(Text::deburr(Text::pluralize($handle)));
+        return Text::from($handle)->pluralize()->deburr()->snake()->value();
     }
 
     /**
      *
      * Create an entry type
      *
-     * @param string $handle
-     * @param string $title
-     * @param LocaleField $urlPrefix
-     * @param string|ObjectId|null $entryLayoutId
-     * @param bool $getObject throw new PermissionException('Permission Denied', 0403);
+     * @param  string                $handle
+     * @param  string                $title
+     * @param  LocaleField           $urlPrefix
+     * @param  string|ObjectId|null  $entryLayoutId
+     * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
      * @return array|EntryType|string|null
-     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException
      *
      */
     private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
@@ -501,10 +533,10 @@ class EntryType extends Model implements Validator
      *
      * Update the entry type
      *
-     * @param EntryType $entryType
-     * @param string|null $title
-     * @param LocaleField|null $urlPrefix
-     * @param string|bool|null $entryLayoutId
+     * @param  EntryType         $entryType
+     * @param  string|null       $title
+     * @param  LocaleField|null  $urlPrefix
+     * @param  string|bool|null  $entryLayoutId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException

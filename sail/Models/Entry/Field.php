@@ -10,27 +10,29 @@ use SailCMS\Types\LayoutField;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
-// TODO custom field registering
 abstract class Field
 {
+    public const SEARCHABLE = false;
+
     /* Properties */
     public LocaleField $labels;
     public string $handle;
     public Collection $baseConfigs;
     public Collection $configs;
 
+    public string $category = 'text';
+
     /**
      *
      * Construct with a LocaleField for labels and a Collection|Array for settings
      *  > If settings is null the default settings will be used
      *
-     * @param LocaleField $labels
-     * @param Collection|array|null $settings
+     * @param  LocaleField            $labels
+     * @param  Collection|array|null  $settings
      *
      */
     public function __construct(LocaleField $labels, Collection|array|null $settings = null)
     {
-        // TODO Check to avoid duplicate handle
         $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
 
@@ -42,8 +44,8 @@ abstract class Field
      *
      * Update schema attribute before save with settings
      *
-     * @param LocaleField $labels
-     * @param Collection|array|null $settings
+     * @param  LocaleField            $labels
+     * @param  Collection|array|null  $settings
      * @return void
      *
      */
@@ -56,15 +58,24 @@ abstract class Field
             $settings = new Collection($settings);
         }
 
-        $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings) {
+        $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings)
+        {
             $currentSetting = $settings->get($key);
-            $currentSetting = $fieldTypeClass::validateSettings($currentSetting);
+            $defaultSettings = $this::class::defaultSettings()->get($key);
+            $currentSetting = $fieldTypeClass::validateSettings($currentSetting, $defaultSettings);
 
             $fieldInput = new $fieldTypeClass($labels, ...$currentSetting);
             $this->configs->pushKeyValue($key, $fieldInput);
         });
     }
 
+    /**
+     *
+     *  Check if required is true in configs
+     *
+     * @return bool
+     *
+     */
     public function isRequired(): bool
     {
         $result = false;
@@ -85,7 +96,7 @@ abstract class Field
      *
      * This is the default content validation for the field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -97,15 +108,16 @@ abstract class Field
             $content = new Collection($content);
         }
 
-        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
+        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors)
+        {
             $currentContent = $content;
-            if ($content instanceof Collection) {
+            if ($content instanceof Collection && !$fieldTypeClass::MULTIPLE) {
                 $currentContent = $content->get($index);
             }
             $error = $fieldTypeClass->validate($currentContent);
 
             if ($error->length > 0) {
-                $errors->push($error);
+                $errors->pushKeyValue($index, $error);
             }
         });
 
@@ -134,7 +146,7 @@ abstract class Field
      *
      * Retrieve a field from a layout field that comes from the entry layout schema stored in the database
      *
-     * @param array|stdClass $data
+     * @param  array|stdClass  $data
      * @return Field
      *
      */
@@ -143,14 +155,20 @@ abstract class Field
         $settings = [];
         $configsData = new Collection((array)$data->configs);
 
-        $configsData->each(function ($key, $field) use (&$settings) {
-            $settings[$key] = (array)$field->settings;
+        $configsData->each(function ($key, $field) use (&$settings)
+        {
+            // FIX : for when and EntryLayout is from the cache.
+            if (!isset($field->settings)) {
+                $fieldSettings = (array)$field;
+                unset($fieldSettings['labels']);
+                $settings[$key] = $fieldSettings;
+            } else {
+                $settings[$key] = (array)$field->settings;
+            }
         });
 
         $className = static::getClassFromHandle($data->handle);
-
         $labels = new LocaleField($data->labels ?? []);
-
         return new $className($labels, $settings);
     }
 
@@ -158,7 +176,7 @@ abstract class Field
      *
      * Get the class name from the FieldLayout handle
      *
-     * @param string $handle
+     * @param  string  $handle
      * @return string
      *
      */
@@ -180,12 +198,14 @@ abstract class Field
         $fakeInstance = new static($fakeLabels, []);
 
         $availableSettings = Collection::init();
-        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings) {
+        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings)
+        {
             /**
              * @var InputField $inputFieldClass
              */
             $settings = Collection::init();
-            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings) {
+            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings)
+            {
                 /**
                  * @var InputSettings $inputSettings
                  */
@@ -199,6 +219,7 @@ abstract class Field
                 'name' => $className,
                 'fullname' => (string)$inputFieldClass,
                 'type' => $inputFieldClass::storingType(),
+                'inputKey' => $i,
                 'availableSettings' => $settings->unwrap()
             ]);
         });
@@ -210,19 +231,57 @@ abstract class Field
             static::class,
             $fakeInstance->handle,
             $fakeInstance->description(),
+            $fakeInstance->category(),
             $fakeInstance->storingType(),
+            static::SEARCHABLE,
             $availableSettings->unwrap()
         );
     }
 
     /**
      *
+     * Convert the content for the save and update of the Entry
+     *  can be overridden in child class to adapt according to the field content
+     *
+     * @param  mixed  $content
+     * @return mixed
+     */
+    public function convert(mixed $content): mixed
+    {
+        return $content;
+    }
+
+    /**
+     *
+     * Parse the content for the Entry->getContent()
+     *  can be overridden in child class to adapt according to the field content
+     *
+     * @param  mixed  $content
+     * @return mixed
+     *
+     */
+    public function parse(mixed $content): mixed
+    {
+        return $content;
+    }
+
+    /**
+     *
      * Return the description of the field for the field info
+     *
+     * @return LocaleField
+     *
+     */
+    abstract public function description(): LocaleField;
+
+    /**
+     *
+     * Get category of field (text, select, special)
      *
      * @return string
      *
      */
-    abstract public function description(): string;
+    abstract public function category(): string;
 
     /**
      *
@@ -253,9 +312,9 @@ abstract class Field
 
     /**
      *
-     * THe extra validation for the field
+     * The extra validation for the field
      *
-     * @param Collection $content
+     * @param  Collection  $content
      * @return Collection|null
      *
      */

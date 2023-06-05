@@ -3,6 +3,7 @@
 namespace SailCMS;
 
 use Monolog\Handler\AbstractProcessingHandler;
+use Monolog\Level;
 use Monolog\Logger;
 
 final class Log
@@ -11,13 +12,12 @@ final class Log
 
     public static function init()
     {
-        $handlers = setting('logging.adapters');
-
+        $handlers = setting('logging.adapters', []);
         self::$logger = new Logger(setting('logging.loggerName', 'sailcms'));
 
         foreach ($handlers as $handler) {
             self::$logger->pushHandler(
-                new $handler(setting('logging.minLevel', \Monolog\Level::Debug), setting('logging.bubble', true))
+                new $handler(setting('logging.minLevel', Level::Debug), setting('logging.bubble', true))
             );
         }
     }

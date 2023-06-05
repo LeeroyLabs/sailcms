@@ -9,7 +9,8 @@ class EntryParent implements Castable
     public function __construct(
         public string $handle = '',
         public string $parent_id = ''
-    ) {
+    )
+    {
     }
 
     /**
@@ -24,17 +25,6 @@ class EntryParent implements Castable
         return [
             'handle' => '',
             'parent_id' => ''
-        ];
-    }
-
-    /**
-     * @return array
-     */
-    public function toDBObject(): array
-    {
-        return [
-            'handle' => $this->handle ?? '',
-            'parent_id' => $this->parent_id ?? ''
         ];
     }
 
@@ -57,7 +47,7 @@ class EntryParent implements Castable
      *
      * Cast to EntryParent
      *
-     * @param  mixed  $value
+     * @param mixed $value
      * @return EntryParent
      *
      */

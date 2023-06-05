@@ -20,16 +20,17 @@ class InputTextField extends Field
      *
      * @param  LocaleField|null  $labels
      * @param  bool              $required
-     * @param  int               $maxLength
      * @param  int               $minLength
+     * @param  int               $maxLength
      * @param  string            $pattern
      * @param  bool              $multiline
+     *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
         public readonly bool $required = false,
-        public readonly int $maxLength = 0,
         public readonly int $minLength = 0,
+        public readonly int $maxLength = 0,
         public readonly string $pattern = '',
         public readonly bool $multiline = false,
     ) {
@@ -47,8 +48,8 @@ class InputTextField extends Field
     {
         return new Collection([
             'required' => false,
-            'maxLength' => 0,
             'minLength' => 0,
+            'maxLength' => 0,
             'pattern' => '',
             'multiline' => $multiline,
         ]);
@@ -65,9 +66,9 @@ class InputTextField extends Field
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('maxLength', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('minLength', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('pattern', InputSettings::INPUT_TYPE_REGEX),
+            new InputSettings('maxLength', InputSettings::INPUT_TYPE_NUMBER),
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING),
             new InputSettings('multiline', InputSettings::INPUT_TYPE_CHECKBOX),
         ]);
     }
@@ -99,44 +100,25 @@ class InputTextField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
-            $errors->push(sprintf(self::FIELD_TOO_LONG, $this->maxLength));
-        }
+        if ($content) {
+            if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
+                $errors->push(sprintf(self::FIELD_TOO_LONG, $this->maxLength));
+            }
 
-        if ($this->minLength > 0 && strlen($content) < $this->minLength) {
-            $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->minLength));
-        }
+            if ($this->minLength > 0 && strlen($content) < $this->minLength) {
+                $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->minLength));
+            }
 
-        // The pattern is not used when it is a multiline input
-        if ($this->pattern && !$this->multiline) {
-            preg_match("/$this->pattern/", $content, $matches);
-            if (empty($matches[0])) {
-                $errors->push(sprintf(self::FIELD_PATTERN_NO_MATCH, $this->pattern));
+            // The pattern is not used when it is a multiline input
+            if ($this->pattern && !$this->multiline) {
+                preg_match("/$this->pattern/", $content, $matches);
+                if (empty($matches[0])) {
+                    $errors->push(sprintf(self::FIELD_PATTERN_NO_MATCH, $this->pattern));
+                }
             }
         }
 
         return $errors;
-    }
-
-    /**
-     *
-     * When it's stored in the database
-     *
-     * @return stdClass
-     *
-     */
-    public function toDBObject(): stdClass
-    {
-        return (object)[
-            'labels' => $this->labels->castFrom(),
-            'settings' => [
-                'required' => $this->required,
-                'maxLength' => $this->maxLength,
-                'minLength' => $this->minLength,
-                'pattern' => $this->pattern,
-                'multiline' => $this->multiline,
-            ]
-        ];
     }
 
     /**
@@ -152,8 +134,8 @@ class InputTextField extends Field
             'labels' => $this->labels->castFrom(),
             'settings' => [
                 'required' => $this->required,
-                'maxLength' => $this->maxLength,
                 'minLength' => $this->minLength,
+                'maxLength' => $this->maxLength,
                 'pattern' => $this->pattern,
                 'multiline' => $this->multiline,
             ]
@@ -173,8 +155,8 @@ class InputTextField extends Field
         return new self(
             $value->labels,
             $value->settings->required ?? false,
-            $value->settings->maxLength ?? 0,
             $value->settings->minLength ?? 0,
+            $value->settings->maxLength ?? 0,
             $value->settings->pattern ?? '',
             $value->settings->multiline ?? false
         );

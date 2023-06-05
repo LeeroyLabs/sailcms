@@ -9,9 +9,9 @@ use stdClass;
 
 class InputNumberField extends Field
 {
-    /* Errors from 6141 to 6159 */
-    public const FIELD_TOO_BIG = '6141: The value is too big (%s)';
-    public const FIELD_TOO_SMALL = '6142: The value is too small (%s)';
+    /* Errors from 6200 to 6219 */
+    public const FIELD_TOO_BIG = '6201: The value is too big (%s)';
+    public const FIELD_TOO_SMALL = '6202: The value is too small (%s)';
 
     /**
      *

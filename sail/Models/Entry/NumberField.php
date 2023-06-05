@@ -4,24 +4,24 @@ namespace SailCMS\Models\Entry;
 
 use Exception;
 use SailCMS\Collection;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputNumberField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class NumberField extends Field
 {
-    protected const PRECISION_MAX_LIMIT = 14;
-    protected const INVALID_PRECISION = '6140: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
-
+    public const PRECISION_MAX_LIMIT = 14;
+    public const INVALID_PRECISION = '6200: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
     public int $precision = 0;
 
     /**
      *
      * Override the constructor to pass a precision to the number
      *
-     * @param LocaleField $labels
-     * @param array|Collection|null $settings
-     * @param int $precision
+     * @param  LocaleField            $labels
+     * @param  array|Collection|null  $settings
+     * @param  int                    $precision
      * @throws Exception
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings, int $precision = 0)
@@ -43,12 +43,27 @@ class NumberField extends Field
      *3
      * Description for field info
      *
+     * @return LocaleField
+     *
+     */
+    public function description(): LocaleField
+    {
+        return new LocaleField([
+            'en' => 'Allows a numeric value and validates it.',
+            'fr' => 'Permet une valeur numérique et la valide.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
      * @return string
      *
      */
-    public function description(): string
+    public function category(): string
     {
-        return 'Field to implement a number html input.';
+        return FieldCategory::TEXT->value;
     }
 
     /**
@@ -98,7 +113,7 @@ class NumberField extends Field
      *
      * There is nothing extra to validate for the text field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */

@@ -2,6 +2,7 @@
 
 use SailCMS\Contracts\AppController;
 use SailCMS\Routing\Router;
+use SailCMS\Sail;
 
 class TestController extends AppController
 {
@@ -12,6 +13,8 @@ beforeEach(function ()
 {
     Router::init();
     \SailCMS\Locale::setCurrent('en', true);
+
+    Sail::setupForTests(__DIR__);
 });
 
 test('Create a route', function ()
@@ -21,7 +24,7 @@ test('Create a route', function ()
 
     $routes = Router::getAll('get');
     expect($routes->length)->toBeGreaterThanOrEqual(1);
-});
+})->group('routes');
 
 test('Get URL of route and replace dynamic parts', function ()
 {
@@ -34,7 +37,7 @@ test('Get URL of route and replace dynamic parts', function ()
     $url = $route->getURL('xxxxxx', 'super-string', 'whatever-here-just-testing');
 
     expect($url)->toBe('/test/xxxxxx/super-string/whatever-here-just-testing');
-});
+})->group('routes');
 
 test('Get alternate route', function ()
 {
@@ -47,7 +50,7 @@ test('Get alternate route', function ()
 
     $routes = $router->alternate($route);
     expect($routes->length)->toBe(1);
-});
+})->group('routes');
 
 test('Get all named routes', function ()
 {
@@ -58,7 +61,7 @@ test('Get all named routes', function ()
     $routes = $router->routesByName('test');
 
     expect($routes->length)->toBe(2);
-});
+})->group('routes');
 
 test('Get by name, method and language', function ()
 {
@@ -69,7 +72,7 @@ test('Get by name, method and language', function ()
     $url = Router::getBy('test', 'get', 'fr', ['super-id', 'a-string', 'anything']);
 
     expect($url)->toBe('/test1/super-id/a-string/anything');
-});
+})->group('routes');
 
 test('Get All by name, method', function ()
 {
@@ -79,4 +82,4 @@ test('Get All by name, method', function ()
 
     $urls = Router::getAllBy('test', 'get', ['super-id', 'a-string', 'anything']);
     expect($urls->length)->toBe(2);
-});
+})->group('routes');

@@ -25,12 +25,12 @@ final class Standard implements AppSession
      */
     public function __construct()
     {
-        if (isset(static::$instance)) {
+        if (isset(self::$instance)) {
             return;
         }
 
-        static::$instance = new Session();
-        static::$instance->start([
+        self::$instance = new Session();
+        self::$instance->start([
             'cookie_httponly' => setting('session.httpOnly', true),
             'cookie_lifetime' => setting('session.ttl', 21_600),
             'cookie_samesite' => setting('session.samesite', true),
@@ -47,8 +47,8 @@ final class Standard implements AppSession
      */
     public function set(string $key, mixed $value): void
     {
-        if (static::$instance->isStarted()) {
-            static::$instance->set($key, $value);
+        if (self::$instance->isStarted()) {
+            self::$instance->set($key, $value);
         }
     }
 
@@ -62,8 +62,8 @@ final class Standard implements AppSession
      */
     public function get(string $key): mixed
     {
-        if (static::$instance->isStarted() && static::$instance->has($key)) {
-            return static::$instance->get($key, null);
+        if (self::$instance->isStarted() && self::$instance->has($key)) {
+            return self::$instance->get($key, null);
         }
 
         return null;
@@ -80,8 +80,8 @@ final class Standard implements AppSession
      */
     public function remove(string $key): void
     {
-        if (static::$instance->isStarted() && static::$instance->has($key)) {
-            static::$instance->remove($key);
+        if (self::$instance->isStarted() && self::$instance->has($key)) {
+            self::$instance->remove($key);
         }
     }
 
@@ -94,8 +94,8 @@ final class Standard implements AppSession
      */
     public function all(): Collection
     {
-        if (static::$instance->isStarted()) {
-            return new Collection(static::$instance->all());
+        if (self::$instance->isStarted()) {
+            return new Collection(self::$instance->all());
         }
 
         return Collection::init();
@@ -110,8 +110,8 @@ final class Standard implements AppSession
      */
     public function clear(): void
     {
-        if (static::$instance->isStarted()) {
-            static::$instance->clear();
+        if (self::$instance->isStarted()) {
+            self::$instance->clear();
         }
     }
 
@@ -124,8 +124,8 @@ final class Standard implements AppSession
      */
     public function getId(): string
     {
-        if (static::$instance->isStarted()) {
-            return static::$instance->getId();
+        if (self::$instance->isStarted()) {
+            return self::$instance->getId();
         }
 
         return '';

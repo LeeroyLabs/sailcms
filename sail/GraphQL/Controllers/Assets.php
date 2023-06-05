@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use ImagickException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Assets\Transformer;
@@ -13,6 +14,9 @@ use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Asset;
+use SailCMS\Models\AssetFolder;
+use SailCMS\Models\User;
+use SailCMS\Types\AssetConfig;
 use SailCMS\Types\Listing;
 
 class Assets
@@ -50,19 +54,71 @@ class Assets
     {
         $asset = new Asset();
 
-        $page = $args->get('page');
-        $limit = $args->get('limit');
+        $page = $args->get('page', 1);
+        $limit = $args->get('limit', 100);
         $search = $args->get('search', '');
         $folder = $args->get('folder', 'root');
         $sort = $args->get('sort', 'name');
         $direction = strtolower($args->get('direction', 'ASC'));
+        $siteId = $args->get('site_id', 'default');
 
         $direction = match ($direction) {
             'desc' => Model::SORT_DESC,
             default => Model::SORT_ASC
         };
 
-        return $asset->getList($page, $limit, $folder, $search, $sort, $direction);
+        return $asset->getList($page, $limit, $folder, $search, $sort, $direction, $siteId);
+    }
+
+    /**
+     *
+     * Get all asset folders
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function assetFolders(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return AssetFolder::folders($args->get('site_id', 'default'));
+    }
+
+    /**
+     *
+     * Get Asset Config
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return AssetConfig
+     *
+     */
+    public function assetConfig(mixed $obj, Collection $args, Context $context): AssetConfig
+    {
+        $conf = setting('assets');
+        $mb = ($conf->get('maxUploadSize') * 1024) * 1024;
+        $blacklist = $conf->get('extensionBlackList', Collection::init())->unwrap();
+        return new AssetConfig($mb, $blacklist);
+    }
+
+    /**
+     *
+     * Get transform url if exists, full size url otherwise
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return string
+     *
+     */
+    public function assetTransformForId(mixed $obj, Collection $args, Context $context): string
+    {
+        return Asset::getTransformURL($args->get('id'), $args->get('transform_name'));
     }
 
     /**
@@ -72,20 +128,23 @@ class Assets
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return string
+     * @return Asset
      * @throws ImagickException
      * @throws FilesystemException
      * @throws DatabaseException
      * @throws FileException
      *
      */
-    public function createAsset(mixed $obj, Collection $args, Context $context): string
+    public function createAsset(mixed $obj, Collection $args, Context $context): Asset
     {
         $asset = new Asset();
         $src = $args->get('src', '');
+        $folder = $args->get('folder', 'root');
         $filename = $args->get('filename', 'name.jpg');
+        $siteId = $args->get('site_id', 'default');
 
-        return $asset->upload(base64_decode($src), $filename);
+        $uploader = (User::$currentUser) ? (string)User::$currentUser->_id : '';
+        return $asset->upload(base64_decode($src), $filename, $folder, $uploader, $siteId);
     }
 
     /**
@@ -114,25 +173,17 @@ class Assets
 
     /**
      *
-     * Delete an asset
+     * Remove assets
      *
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
      * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
      *
      */
-    public function deleteAsset(mixed $obj, Collection $args, Context $context): bool
+    public function removeAssets(mixed $obj, Collection $args, Context $context): bool
     {
-        $asset = Asset::getById($args->get('id'));
-
-        if ($asset) {
-            return $asset->remove();
-        }
-
-        return false;
+        return (new Asset())->removeAll($args->get('assets', Collection::init()));
     }
 
     /**
@@ -161,5 +212,115 @@ class Assets
             $size->get('height', null),
             $size->get('crop', Transformer::CROP_CC)
         );
+    }
+
+    /**
+     *
+     * Create a custom transform using a cropping tool
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return string
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws ImagickException
+     *
+     */
+    public function customTransformAsset(mixed $obj, Collection $args, Context $context): string
+    {
+        return Asset::transformCustom(
+            $args->get('id'),
+            $args->get('name'),
+            base64_decode($args->get('src'))
+        );
+    }
+
+    /**
+     *
+     * Move files from one folder to another
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function moveFiles(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new Asset())->moveFiles($args->get('ids'), $args->get('folder'));
+    }
+
+    /**
+     *
+     * Create a new folder
+     *
+     * Result
+     * 1 = success
+     * 2 = permission denied
+     * 3 = folder already exists
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return int
+     *
+     */
+    public function addFolder(mixed $obj, Collection $args, Context $context): int
+    {
+        return AssetFolder::create($args->get('folder'), $args->get('site_id', 'default'));
+    }
+
+    /**
+     *
+     * Delete a folder and move all files to given alternative
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function removeFolder(mixed $obj, Collection $args, Context $context): bool
+    {
+        AssetFolder::delete($args->get('folder'), $args->get('site_id', 'default'));
+        (new Asset())->moveAllFiles(
+            $args->get('folder'),
+            $args->get('move_to', 'root'), // failsafe to root
+            $args->get('site_id', 'default')
+        );
+
+        return true;
+    }
+
+    /**
+     *
+     * Resolve custom fields
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return mixed
+     * @throws DatabaseException
+     *
+     */
+    public function assetResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === 'uploader') {
+            if ($obj->{$info->fieldName}) {
+                return User::get($obj->uploader_id);
+            }
+
+            return null;
+        }
+
+        return $obj->{$info->fieldName};
     }
 }

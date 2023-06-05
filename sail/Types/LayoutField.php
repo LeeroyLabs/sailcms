@@ -26,7 +26,7 @@ class LayoutField implements Castable
         $configs = new Collection();
 
         $this->configs->each(function ($key, $value) use (&$configs) {
-            $configs->push($value->castFrom());
+            $configs->pushKeyValue($key, $value->castFrom());
         });
 
         return (object)[

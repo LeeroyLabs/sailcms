@@ -34,17 +34,21 @@ class Transformer
      * Setup transformer with a file
      *
      * @param  string  $path
+     * @param  bool    $isBlob
      * @throws FilesystemException
      *
      */
-    public function __construct(string $path)
+    public function __construct(string $path, bool $isBlob = false)
     {
-        $fs = Filesystem::manager();
-        $ctx = $fs->readStream($path);
-
         $manager = new ImageManager(['driver' => 'imagick']);
 
-        $this->image = $manager->make($ctx)->orientate();
+        if (!$isBlob) {
+            $fs = Filesystem::manager();
+            $ctx = $fs->readStream($path);
+            $this->image = $manager->make($ctx)->orientate();
+        } else {
+            $manager->make($path)->orientate();
+        }
     }
 
     /**
@@ -193,12 +197,12 @@ class Transformer
      *
      * @param  string  $name
      * @param  string  $type
-     * @return void
+     * @param  bool    $blob
+     * @return string
      * @throws FilesystemException
      * @throws ImagickException
-     *
      */
-    public function save(string $name, string $type = Transformer::OUTPUT_WEBP): void
+    public function save(string $name, string $type = Transformer::OUTPUT_WEBP, bool $blob = false): string
     {
         $image = $this->image->getCore();
         $fs = Filesystem::manager();
@@ -225,7 +229,12 @@ class Transformer
                 break;
         }
 
+        if ($blob) {
+            return $imagick->getImageBlob();
+        }
+
         $fs->write($name, $imagick->getImageBlob(), ['visibility' => 'public']);
+        return '';
     }
 
     /**

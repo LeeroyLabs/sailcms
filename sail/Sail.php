@@ -33,9 +33,12 @@ use Whoops\Handler\PlainTextHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
-final class Sail
+class Sail
 {
-    public const SAIL_VERSION = '3.0.0-next.1';
+    public const SAIL_VERSION = '3.0.0-next.25';
+    public const SAIL_MAJOR_VERSION = 3;
+    public const SAIL_MINOR_VERSION = 0;
+    public const SAIL_REVISION_VERSION = 0;
     public const STATE_WEB = 10001;
     public const STATE_CLI = 10002;
 
@@ -63,17 +66,20 @@ final class Sail
 
     public static bool $isServerless = false;
 
+    private static Collection $environmentData;
+//    private static bool $encryptedEnv = false; // No usage for that @Marc ?
+
     /**
      *
      * Initialize the CMS
      *
-     * @param string $execPath
+     * @param  string  $execPath
      * @return void
      * @throws DatabaseException
      * @throws Errors\RouteReturnException
      * @throws FileException
      * @throws FilesystemException
-     * @throws JsonException
+     * @throws \JsonException
      * @throws LoaderError
      * @throws RuntimeError
      * @throws SiteException
@@ -97,7 +103,7 @@ final class Sail
 
         // Register the error handler
         self::$errorHandler = new Run();
-        $ct = getallheaders()['Content-Type'];
+        $ct = getallheaders()['Content-Type'] ?? 'text/html';
         $isWeb = false;
 
         if (!empty($ct) && stripos($ct, 'application/json') !== false) {
@@ -119,6 +125,11 @@ final class Sail
 
         self::bootBasics($securitySettings);
 
+        // Run Basic Authentication
+        if (setting('useBasicAuthentication')) {
+            self::handleBasicAuthentication();
+        }
+
         // CORS setup
         self::setupCORS();
 
@@ -135,11 +146,15 @@ final class Sail
             self::outputAvailableSites();
         }
 
-        if ($_SERVER['REQUEST_URI'] === '/' . setting('graphql.trigger', '/graphql') && setting('graphql.active', true)) {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new GraphqlException('Cannot access GraphQL using anything else than the POST request method.', 0400);
-            }
+        // Execute the boot file (system is available this point)
+        if (file_exists(self::$workingDirectory . '/config/boot.php')) {
+            require_once self::$workingDirectory . '/config/boot.php';
+        }
 
+        $gqlTrigger = '/' . setting('graphql.trigger', 'graphql');
+        $gqlActive = setting('graphql.active', true);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === $gqlTrigger && $gqlActive) {
             // Run GraphQL
             self::$isGraphQL = true;
             $data = GraphQL::init();
@@ -160,10 +175,16 @@ final class Sail
             Router::addClockworkSupport();
         }
 
+        if (setting('emails.usePreviewer', false)) {
+            Router::setupEmailPreviewer();
+        }
+
         Router::dispatch();
     }
 
     /**
+     *
+     * Boot basic systems
      *
      * @params array $securitySettings
      * @params bool $skipContainers
@@ -173,6 +194,7 @@ final class Sail
      * @throws SiteException
      * @throws ACLException
      * @throws PermissionException
+     * @throws FilesystemException
      *
      */
     private static function bootBasics(array $securitySettings, bool $skipContainers = false): void
@@ -211,14 +233,13 @@ final class Sail
         self::$configDirectory = self::$workingDirectory . '/config';
 
         if (!self::$installMode) {
-            $config = include self::$configDirectory . '/general.php';
+            $config = self::loadCombinedConfigurations();
         } else {
-            $config = include dirname(__DIR__) . '/install/config/general.php';
+            $config = include dirname(__DIR__) . '/install/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
         }
 
         $settings = new Collection($config);
-
-        $_ENV['SETTINGS'] = $settings->get(env('environment', 'dev'));
+        self::$environmentData->setFor('SETTINGS', $settings);
 
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
@@ -274,24 +295,31 @@ final class Sail
 
     /**
      *
-     * Setup the .env
+     * Set up the .env
      *
      * @return void
+     * @throws FileException
      *
      */
     private static function setupEnv(): void
     {
-        // Create .env file if does not exist
+        // Create .env file if it does not exist
         if (!file_exists(self::$workingDirectory . '/.env')) {
             file_put_contents(
                 self::$workingDirectory . '/.env',
                 file_get_contents(dirname(__DIR__) . '/install/env')
             );
-        }
+        } else {
+            // Load .env file
+            try {
+                $envData = file_get_contents(self::$workingDirectory . '/.env');
+                $env = Dotenv::parse($envData);
 
-        // Load .env file
-        $dotenv = Dotenv::createImmutable(self::$workingDirectory, '.env');
-        $dotenv->load();
+                self::$environmentData = new Collection($env);
+            } catch (Exception $e) {
+                throw new FileException('Cannot read/find the .env file');
+            }
+        }
 
         // Setup Clockwork for debugging info
         if (env('debug', 'off') === 'on') {
@@ -313,7 +341,7 @@ final class Sail
                 'register_helper' => true
             ]);
 
-            register_shutdown_function('self::shutdownHandler');
+            register_shutdown_function(self::shutdownHandler(...));
             Debug::eventStart('Running SailCMS', 'blue');
         }
     }
@@ -338,6 +366,8 @@ final class Sail
 
                 if (class_exists($className)) {
                     $instance = new $className();
+                    $instance->init();
+
                     $info = $instance->info();
 
                     // Register the container
@@ -427,11 +457,19 @@ final class Sail
         }
     }
 
-    private static function ensurePerformance(): void
+    /**
+     *
+     * Run the indexing system for all available models for the cms
+     *
+     * @return void
+     *
+     */
+    public static function ensurePerformance(): void
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value) {
+        $models->each(function ($key, $value)
+        {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -445,7 +483,7 @@ final class Sail
      *
      * Launch Sail for Cron execution
      *
-     * @param string $execPath
+     * @param  string  $execPath
      * @return void
      * @throws SiteException
      * @throws JsonException
@@ -453,6 +491,7 @@ final class Sail
      * @throws FileException
      * @throws ACLException
      * @throws PermissionException
+     * @throws  FilesystemException
      *
      */
     public static function initForCron(string $execPath): void
@@ -478,13 +517,15 @@ final class Sail
      *
      * Launch Sail for CLI execution
      *
-     * @param string $execPath
+     * @param  string  $execPath
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
      * @throws FileException
+     * @throws FilesystemException
      * @throws JsonException
+     * @throws PermissionException
      * @throws SiteException
-     * @throws ACLException
      *
      */
     public static function initForCli(string $execPath): void
@@ -527,7 +568,7 @@ final class Sail
      *
      * Set the working directory
      *
-     * @param string $path
+     * @param  string  $path
      * @return void
      *
      */
@@ -546,6 +587,19 @@ final class Sail
     public static function getTemplateDirectory(): string
     {
         return self::$templateDirectory . '/';
+    }
+
+    /**
+     *
+     * Force set the template directory
+     *
+     * @param  string  $path
+     * @return void
+     *
+     */
+    public static function setTemplateDirectory(string $path): void
+    {
+        self::$templateDirectory = $path;
     }
 
     /**
@@ -589,12 +643,13 @@ final class Sail
      * Set app state (either web or cli) for some very specific use cases
      * NOTE: DO NOT USE FOR ANYTHING, THIS IS RESERVED FOR UNIT TEST
      *
-     * @param int $state
-     * @param string $env
-     * @param string $forceIOPath
+     * @param  int     $state
+     * @param  string  $env
+     * @param  string  $forceIOPath
      * @return void
      * @throws DatabaseException
      * @throws FilesystemException
+     * @throws FileException
      *
      */
     public static function setAppState(int $state, string $env = '', string $forceIOPath = ''): void
@@ -608,15 +663,17 @@ final class Sail
 
             self::setupEnv();
 
-            $config = include dirname(__DIR__) . '/install/config/general.php';
+            $config = include self::$workingDirectory . '/config/general.dev.php';
+            $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
-                $_ENV['SETTINGS'] = new Collection($config[$env]);
+                self::$environmentData->setFor('SETTINGS', $settings);
             } else {
-                $_ENV['SETTINGS'] = new Collection($config['dev']);
+                self::$environmentData->setFor('SETTINGS', $settings);
             }
 
             ACL::init();
+            Log::init();
 
             self::loadAndDetectSites();
             Filesystem::mountCore($forceIOPath);
@@ -648,7 +705,7 @@ final class Sail
      */
     public static function siteId(): string
     {
-        return self::$siteID ?? 'main';
+        return self::$siteID ?? 'default';
     }
 
     /**
@@ -685,6 +742,115 @@ final class Sail
 
     /**
      *
+     * Run bare minimum for tests to work
+     *
+     * @param  string  $rootDir
+     * @param  string  $templatePath
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws FileException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws Exception
+     *
+     */
+    public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
+    {
+        self::setWorkingDirectory($rootDir . '/mock');
+        self::setAppState(self::STATE_CLI, 'dev', $rootDir . '/mock');
+
+        // Load security into place so it's available everywhere
+        Security::init();
+
+        // Load cms ACLs
+        ACL::loadCmsACL();
+
+        // Register Search Adapters
+        Search::registerSystemAdapters();
+        Search::init();
+
+        // Load cms Fields
+        Field::init();
+
+        // Initialize the logger
+        Log::init();
+
+        // Initialize the router
+        Router::init();
+
+        // Log an admin user for permissions
+        $userEmail = env('TEST_USER_EMAIL');
+        $userPwd = env('TEST_USER_PWD');
+
+        if (!$userEmail || !$userPwd) {
+            throw new Exception('Improperly configured unit tests: TEST_USER_EMAIL and TEST_USER_PWD in your mock .env file should be set');
+        }
+        (new User())->login($userEmail, $userPwd);
+
+        self::$environmentData->setFor('SITE_URL', 'http://localhost:8888');
+
+        if ($templatePath !== '') {
+            self::setTemplateDirectory($templatePath);
+        } else {
+            self::setTemplateDirectory(dirname($rootDir) . '/templates');
+        }
+
+        self::loadContainerFromComposer(dirname($rootDir));
+        self::loadModulesFromComposer(dirname($rootDir));
+    }
+
+    /**
+     *
+     * Get an environment variable in safe way (cannot be dumped)
+     *
+     * @param  string  $key
+     * @return mixed
+     *
+     */
+    public static function getEnvironmentVariable(string $key): mixed
+    {
+        return self::$environmentData->get($key, null);
+    }
+
+    /**
+     *
+     * Compare requested version compatibility with current version of sail
+     *
+     * @param  string  $version
+     * @return int
+     *
+     */
+    public static function verifyCompatibility(string $version): int
+    {
+        // First 2 chars is the operator
+        $operator = substr($version, 0, 2);
+        $valid = ['<=', '!<', '>=', '!>'];
+
+        if (!in_array($operator, $valid)) {
+            return -1;
+        }
+
+        // Breakdown version
+        $version = substr($version, 2);
+        $sailVersion = Sail::SAIL_MAJOR_VERSION . '.' . Sail::SAIL_MINOR_VERSION . '.' . Sail::SAIL_REVISION_VERSION;
+
+        if ($operator === '!<') {
+            $operator = '>';
+        } elseif ($operator === '!>') {
+            $operator = '<';
+        }
+
+        if (version_compare($sailVersion, $version, $operator)) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
+     *
      * Setup CORS headers
      *
      * @return void
@@ -695,21 +861,28 @@ final class Sail
         $cors = setting('cors', ['use' => false, 'origins' => '*', 'allowCredentials' => false]);
 
         if (setting('cors.use', false)) {
-            $origins = implode(',', setting('cors.origins', Collection::init())->unwrap());
+            $origin = setting('cors.origin', '*');
             $maxAge = setting('cors.maxAge', 86_400);
 
-            header("Access-Control-Allow-Origin: {$origins}");
+            header("Access-Control-Allow-Origin: {$origin}");
             header("Access-Control-Max-Age: {$maxAge}");
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
                 $methods = implode(",", setting('cors.methods', new Collection(['get']))->unwrap());
                 $headers = implode(",", setting('cors.headers', Collection::init())->unwrap());
 
+                // Force these to exist
+                if ($headers !== '') {
+                    $headers .= ',';
+                }
+
+                $headers .= 'Accept,Upgrade-Insecure-Requests,Content-Type,x-requested-with,x-access-token,x-domain-override';
+
                 header("Access-Control-Allow-Methods: {$methods}");
                 header("Access-Control-Allow-Headers: {$headers}");
                 header('Content-Length: 0');
                 header('Content-Type: text/plain');
-                die(); // Options just needs headers, the rest is not required. Stop now!
+                die(''); // Options just needs headers, the rest is not required. Stop now!
             }
         }
     }
@@ -801,6 +974,7 @@ final class Sail
      */
     private static function loadAndDetectSites(): void
     {
+        $defaultLocale = "en";
         if (file_exists(self::$workingDirectory . '/config/sites.php')) {
             $sites = include self::$workingDirectory . '/config/sites.php';
 
@@ -813,8 +987,10 @@ final class Sail
 
                 if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
                     self::$siteID = $name;
+                    $defaultLocale = $config['defaultLocale'];
                     Locale::setAvailableLocales($config['locales']);
-                    Locale::setCurrent($config['defaultLocale']);
+                    Locale::setCurrent($defaultLocale);
+                    Locale::setDefault($defaultLocale);
                     break;
                 }
             }
@@ -827,13 +1003,15 @@ final class Sail
                     self::$siteID = $value;
                     Locale::setAvailableLocales($sites[$value]['locales']);
                     Locale::setCurrent($sites[$value]['defaultLocale']);
+                    Locale::setDefault($defaultLocale);
                     break;
                 }
             }
         } else {
-            self::$siteID = 'main';
-            Locale::setAvailableLocales(['en']);
-            Locale::setCurrent('en');
+            self::$siteID = 'default';
+            Locale::setAvailableLocales([$defaultLocale]);
+            Locale::setCurrent($defaultLocale);
+            Locale::setDefault($defaultLocale);
         }
     }
 
@@ -857,5 +1035,83 @@ final class Sail
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($names, JSON_THROW_ON_ERROR);
         exit();
+    }
+
+    /**
+     *
+     * Handle the Basic Authentication feature
+     *
+     * @return void
+     *
+     */
+    private static function handleBasicAuthentication(): void
+    {
+        $u = $_SERVER['PHP_AUTH_USER'] ?? '';
+        $p = $_SERVER['PHP_AUTH_PW'] ?? '';
+
+        // Validate if not empty
+        $userpasses = file_get_contents(self::$workingDirectory . '/storage/fs/vault/basic_auth');
+        $pairs = explode(PHP_EOL, $userpasses);
+
+        foreach ($pairs as $pair) {
+            [$user, $pass] = explode(':', $pair);
+            $validPass = Security::verifyPassword($p, $pass);
+
+            if ($u !== $user || !$validPass) {
+                $u = '';
+                $p = '';
+            }
+        }
+
+        if ($u === '' && $p === '') {
+            header('WWW-Authenticate: Basic realm="Secure Area"');
+            header('HTTP/1.0 401 Unauthorized');
+        }
+    }
+
+    /**
+     *
+     * Combine the default configs with the overwriting configs
+     *
+     * @return array
+     *
+     */
+    private static function loadCombinedConfigurations(): array
+    {
+        // Default configuration
+        $defaultConfig = include dirname(__DIR__) . '/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
+
+        // App Configuration
+        $config = include self::$configDirectory . '/general.' . env('ENVIRONMENT', 'dev') . '.php';
+
+        return self::processConfigs($defaultConfig, $config);
+    }
+
+    /**
+     *
+     * Process the configs to see what should be replaced
+     *
+     * @param  array  $default
+     * @param  array  $config
+     * @return array
+     *
+     */
+    private static function processConfigs(array $default, array $config): array
+    {
+        $processed = [];
+
+        foreach ($default as $key => $group) {
+            if (isset($config[$key])) {
+                if (is_scalar($config[$key])) {
+                    $processed[$key] = $config[$key];
+                } else {
+                    $processed[$key] = array_replace($group, $config[$key]);
+                }
+            } else {
+                $processed[$key] = $group;
+            }
+        }
+
+        return $processed;
     }
 }

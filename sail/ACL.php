@@ -23,11 +23,11 @@ final class ACL
      */
     public static function init(): void
     {
-        if (!isset(static::$loadedACL)) {
-            static::$loadedACL = Collection::init();
+        if (!isset(self::$loadedACL)) {
+            self::$loadedACL = Collection::init();
 
             // Load all system ACL
-            static::$loadedACL->pushSpread(...System::getAll()->unwrap());
+            self::$loadedACL->pushSpread(...System::getAll()->unwrap());
         }
     }
 
@@ -45,7 +45,7 @@ final class ACL
         // Search through the read permissions for given name
         $permissionValue = null;
 
-        static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
+        self::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
             if (($value->category === 'R' || $value->category === 'RW') && $value->providedName === $name) {
                 $permissionValue = $value;
@@ -73,7 +73,7 @@ final class ACL
         // Search through the read permissions for given name
         $permissionValue = null;
 
-        static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
+        self::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
             if (($value->category === 'W' || $value->category === 'RW') && $value->providedName === $name) {
                 $permissionValue = $value;
@@ -101,7 +101,7 @@ final class ACL
         // Search through the read permissions for given name
         $permissionValue = null;
 
-        static::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
+        self::$loadedACL->each(function ($key, $value) use (&$permissionValue, $name)
         {
             if ($value->category === 'RW' && $value->providedName === $name) {
                 $permissionValue = $value;
@@ -135,7 +135,7 @@ final class ACL
                 throw new ACLException("Cannot use reserved namespace '{$acl->providedName}'. Please choose something else.");
             }
 
-            static::$loadedACL->push($acl);
+            self::$loadedACL->push($acl);
         }
     }
 
@@ -157,7 +157,7 @@ final class ACL
             return false;
         }
 
-        $role = Text::kebabCase(Text::deburr($role));
+        $role = Text::from($role)->deburr()->kebab()->value();
 
         if (is_string($user)) {
             $userModel = new User();
@@ -265,12 +265,37 @@ final class ACL
     {
         $list = Collection::init();
 
-        static::$loadedACL->each(function ($key, $value) use (&$list)
+        self::$loadedACL->each(function ($key, $value) use (&$list)
         {
             $list->push((object)[
                 'group' => $value->providedName,
                 'type' => $value->category,
                 'value' => $value->value
+            ]);
+        });
+
+        return $list;
+    }
+
+    /**
+     *
+     * Get a complete list that can provide all loaded ACLs
+     *
+     * @return Collection
+     *
+     */
+    public static function getCompleteList(): Collection
+    {
+        $list = Collection::init();
+
+        self::$loadedACL->each(function ($key, $value) use (&$list)
+        {
+            $list->push((object)[
+                'name' => $value->value,
+                'givenName' => $value->givenName,
+                'group' => $value->providedName,
+                'category' => $value->category,
+                'description' => $value->description
             ]);
         });
 
@@ -286,7 +311,7 @@ final class ACL
      */
     public static function count(): int
     {
-        return static::$loadedACL->length;
+        return self::$loadedACL->length;
     }
 
     /**
@@ -306,10 +331,10 @@ final class ACL
 
         $entryTypes->each(function ($key, $value) use ($entryACL)
         {
-            $entryACL->push(new ACLObject($value->handle, ACLType::READ));
-            $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE));
+            $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE, '', ''));
+            $entryACL->push(new ACLObject($value->handle, ACLType::READ, '', ''));
         });
 
-        static::$loadedACL->pushSpread(...$entryACL->unwrap());
+        self::$loadedACL->pushSpread(...$entryACL->unwrap());
     }
 }

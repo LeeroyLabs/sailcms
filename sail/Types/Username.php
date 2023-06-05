@@ -23,7 +23,7 @@ class Username implements Castable
      */
     public static function initWith(object $name): Username
     {
-        return new self($name->first, $name->last, $name->first . ' ' . $name->last);
+        return new self($name->first, $name->last);
     }
 
     /**

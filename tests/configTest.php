@@ -7,9 +7,7 @@ include_once __DIR__ . '/mock/db.php';
 
 beforeAll(function ()
 {
-    $_ENV['SITE_URL'] = 'http://localhost:8888';
-    Sail::setWorkingDirectory(__DIR__ . '/mock');
-    Sail::setAppState(Sail::STATE_CLI);
+    Sail::setupForTests(__DIR__);
 });
 
 test('Set a config', function ()
