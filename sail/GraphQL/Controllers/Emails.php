@@ -135,4 +135,9 @@ class Emails
     {
         return Email::removeBySlug($args->get('slug'));
     }
+
+    public function testEmail(mixed $obj, Collection $args, Context $context): bool
+    {
+        return Email::sendTest($args->get('email'));
+    }
 }

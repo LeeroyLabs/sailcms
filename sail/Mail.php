@@ -254,6 +254,15 @@ class Mail
      */
     public function useEmail(string $slug, string $locale, Collection|array $context = []): static
     {
+        if ($slug === 'test') {
+            $settings = setting('emails', []);
+
+            return $this
+                ->from($settings->get('from'))
+                ->subject('SailCMS Test')
+                ->template(dirname(__DIR__) . '/install/test', $context);
+        }
+
         $template = Email::getBySlug($slug);
 
         if ($template) {
@@ -307,7 +316,7 @@ class Mail
                     $superContext->get('cta_link')
                 ));
             }
-            
+
             // Replace locale variable in template name to the actual locale
             $template->template = str_replace('{locale}', $locale, $template->template);
 

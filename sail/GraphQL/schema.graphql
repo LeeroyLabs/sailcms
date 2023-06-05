@@ -72,6 +72,7 @@ type Mutation {
     updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
     deleteEmail(id: ID!): Boolean!
     deleteEmailBySlug(slug: String!): Boolean!
+    testEmail(email: String!): Boolean!
 
     # Entries
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
