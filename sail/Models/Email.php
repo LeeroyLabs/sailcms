@@ -84,7 +84,7 @@ class Email extends Model
     public function getList(): Collection
     {
         $this->hasPermissions(true);
-        return new Collection($this->find([])->exec());
+        return new Collection($this->find([])->sort(['name' => 1])->exec());
     }
 
     /**
