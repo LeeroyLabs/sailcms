@@ -18,6 +18,7 @@ use SailCMS\Types\NavigationStructure;
  * @property string              $name
  * @property NavigationStructure $structure
  * @property string              $locale
+ * @property string              $site_id
  *
  */
 class Navigation extends Model
@@ -35,15 +36,16 @@ class Navigation extends Model
      * @param  string                                $name
      * @param  array|Collection|NavigationStructure  $structure
      * @param  string                                $locale
+     * @param  string                                $siteId
      * @return string
-     * @throws DatabaseException
-     * @throws NavigationException
      * @throws ACLException
-     * @throws PermissionException
+     * @throws DatabaseException
      * @throws EntryException
+     * @throws NavigationException
+     * @throws PermissionException
      *
      */
-    public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): string
+    public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = 'default'): string
     {
         $this->hasPermissions();
 
@@ -64,7 +66,8 @@ class Navigation extends Model
             'title' => $title,
             'name' => $name,
             'structure' => $structure,
-            'locale' => $locale
+            'locale' => $locale,
+            'site_id' => $siteId
         ]);
 
         return $name;
