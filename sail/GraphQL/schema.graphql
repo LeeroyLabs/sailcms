@@ -28,6 +28,7 @@ type Query {
     # Emails
     email(id: ID!): Email
     emails: [Email!]!
+    emailTemplates(site_id: String!): [String!]!
 
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
@@ -89,10 +90,10 @@ type Mutation {
     removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
 
     # Emails
-    createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
+    createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!, site_id: String!): Boolean!
     updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
     deleteEmail(id: ID!): Boolean!
-    deleteEmailBySlug(slug: String!): Boolean!
+    deleteEmailBySlug(slug: String!, site_id: String!): Boolean!
     testEmail(email: String!): Boolean!
 
     # Entries
@@ -120,8 +121,8 @@ type Mutation {
 
     # Navigation
     createNavigation(name: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
-    updateNavigation(name: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
-    deleteNavigation(name: String!): Boolean!
+    updateNavigation(id: ID!, name: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
+    deleteNavigation(id: ID!): Boolean!
 
     # Groups
     createGroup(name: String!): String!
@@ -664,6 +665,7 @@ type NavigationItem {
     label: String!
     url: String!
     is_entry: Boolean!
+    is_category: Boolean!
     entry_id: String!
     external: Boolean!
     children: [NavigationItem!]!
@@ -673,6 +675,7 @@ input NavigationItemInput {
     label: String!
     url: String!
     is_entry: Boolean!
+    is_category: Boolean!
     entry_id: String!
     external: Boolean!
     children: [NavigationItemInput!]!

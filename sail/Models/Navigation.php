@@ -77,6 +77,7 @@ class Navigation extends Model
      *
      * Update existing navigation with given information and structure
      *
+     * @param  string                                $id
      * @param  string                                $name
      * @param  array|Collection|NavigationStructure  $structure
      * @param  string                                $locale
@@ -88,13 +89,15 @@ class Navigation extends Model
      * @throws PermissionException
      *
      */
-    public function update(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
+    public function update(string $id, string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
     {
+        $this->hasPermissions();
+
         if (!is_object($structure) || get_class($structure) !== NavigationStructure::class) {
             $structure = new NavigationStructure($structure);
         }
 
-        $this->updateOne(['name' => $name], [
+        $this->updateOne(['_id' => $this->ensureObjectId($id)], [
             '$set' => [
                 'title' => $name,
                 'structure' => $structure,
@@ -105,17 +108,26 @@ class Navigation extends Model
         return true;
     }
 
+    public function delete(string $id): bool
+    {
+        self::query()->deleteById($id);
+        return true;
+    }
+
     /**
      *
      * Delete a navigation by name
      *
      * @param  string  $name
      * @return bool
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public function deleteByName(string $name): bool
     {
+        $this->hasPermissions();
         self::query()->deleteOne(['name' => $name]);
         return true;
     }
@@ -126,17 +138,20 @@ class Navigation extends Model
      *
      * @param  string  $id
      * @return Navigation|null
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function getById(string $id): ?Navigation
     {
+        self::query()->hasPermissions();
         return self::get($id);
     }
 
     /**
      *
-     * Get a navigation by it's name
+     * Get a navigation by its name
      *
      * @param  string  $name
      * @return Navigation|null
