@@ -96,11 +96,6 @@ class NavigationStructure implements Castable
      *
      * @param  mixed  $value
      * @return $this
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws NavigationException
-     * @throws PermissionException
      *
      */
     public function castTo(mixed $value): self
