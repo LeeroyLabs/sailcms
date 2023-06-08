@@ -586,6 +586,10 @@ class Sail
      */
     public static function getTemplateDirectory(): string
     {
+        if (str_ends_with(self::$templateDirectory, '/')) {
+            return self::$templateDirectory;
+        }
+
         return self::$templateDirectory . '/';
     }
 
