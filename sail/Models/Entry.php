@@ -498,11 +498,13 @@ class Entry extends Model implements Validator, Castable
              * @var ModelField $field
              */
             $field = $schema->get($key);
-
             $isSearchable = $field::SEARCHABLE && $field;
 
             if ($isSearchable) {
-                if ($content instanceof stdClass) {
+                if (is_object($content)) {
+                    if ($content instanceof Collection) {
+                        $content = $content->unwrap();
+                    }
                     $parsedContent = implode('|', (array)$content);
                 }
                 $parsedContents[$key] = $parsedContent;

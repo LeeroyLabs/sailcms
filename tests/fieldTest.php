@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Entry\AssetField;
 use SailCMS\Models\Entry\DateField;
@@ -219,7 +220,7 @@ test('Failed to update the entry content', function () {
                     'date' => '',
                     'time' => ''
                 ],
-                'repeater' => ['test', '514-514-5145']
+                'repeater' => ['514-514-5145', 'test']
             ]
         ], false);
 
@@ -235,7 +236,8 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
-            ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED);
+            ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED)
+            ->and($errors->get('repeater')[1][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -275,7 +277,8 @@ and must keep it through all the process',
                 'datetime' => [
                     'date' => '2020-03-02',
                     'time' => '10:30'
-                ]
+                ],
+                'repeater' => ['514-514-5145', '514-514-1234', '514-123-1234']
             ]
         ], false);
         expect($errors->length)->toBe(0);
@@ -301,9 +304,9 @@ and must keep it through all the process',
             ->and($content->get('datetime.content')->unwrap())->toBe([
                 'date' => '2020-03-02',
                 'time' => '10:30'
-            ]);
+            ])->and($content->get('repeater.content')->length)->toBe(3);
     } catch (Exception $exception) {
-//        Debug::ray($exception, $errors);
+        Debug::ray($exception);
         expect(true)->toBe(false);
     }
 });
