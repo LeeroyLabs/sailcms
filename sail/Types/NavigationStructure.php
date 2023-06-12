@@ -24,7 +24,7 @@ class NavigationStructure implements Castable
      *
      * Build the structure
      *
-     * @param array|Collection $structure
+     * @param  array|Collection  $structure
      * @throws NavigationException
      * @throws ACLException
      * @throws DatabaseException
@@ -94,13 +94,8 @@ class NavigationStructure implements Castable
      *
      * Create instance of NavigationStructure
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return $this
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws NavigationException
-     * @throws PermissionException
      *
      */
     public function castTo(mixed $value): self

@@ -71,7 +71,8 @@ class Navigation
         return (new NavigationModel())->create(
             $args->get('name'),
             $args->get('structure'),
-            $args->get('locale', 'en')
+            $args->get('locale', 'en'),
+            $args->get('site_id', 'default')
         );
     }
 
@@ -112,6 +113,6 @@ class Navigation
      */
     public function deleteNavigation(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new NavigationModel())->deleteByName($args->get('name'));
+        return (new NavigationModel())->delete($args->get('id'));
     }
 }
