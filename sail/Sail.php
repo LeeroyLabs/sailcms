@@ -179,6 +179,8 @@ class Sail
             Router::setupEmailPreviewer();
         }
 
+        Router::setupThirdPartyContent();
+
         Router::dispatch();
     }
 
