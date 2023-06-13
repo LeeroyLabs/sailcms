@@ -222,6 +222,19 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Repeater", fr: "Repeteur" }
+                            key: "repeater"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            repeater: true
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                     ) {
                     _id
@@ -320,6 +333,10 @@ test('Create layout, entry type & entry', function () {
                                 time: "10:20"
                             }
                         }
+                        {
+                            key: "repeater"
+                            content: ["test", "test2", "test3"]
+                        }
                     ]
                 ) {
                     errors {
@@ -335,6 +352,9 @@ test('Create layout, entry type & entry', function () {
             expect($newEntryType->status)->toBe('ok');
             expect($newEntry->status)->toBe('ok');
         } catch (Exception $exception) {
+            SailCMS\Debug::ray($newEntryLayout);
+            SailCMS\Debug::ray($newEntryType);
+            SailCMS\Debug::ray($newEntry);
             expect(true)->toBe(false);
         }
     }
@@ -503,6 +523,7 @@ test('Get a entry', function () {
                     }
                     schema {
                         key
+                        repeater
                         fieldConfigs {
                             labels {
                                 en

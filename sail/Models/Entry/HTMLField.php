@@ -3,13 +3,13 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
-use SailCMS\Types\StoringType;
 
 class HTMLField extends TextField
 {
+    public const REPEATABLE = true;
+
     /* Errors from 6220 to 6239 */
     public const INVALID_TAGS = '6220: This string contains invalid tags';
 

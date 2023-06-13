@@ -10,6 +10,7 @@ use SailCMS\Types\LocaleField;
 class TextareaField extends TextField
 {
     public const SEARCHABLE = true;
+    public const REPEATABLE = true;
 
     /**
      *
