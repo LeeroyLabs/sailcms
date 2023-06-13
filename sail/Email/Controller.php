@@ -4,6 +4,7 @@ namespace SailCMS\Email;
 
 use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppController;
+use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
@@ -12,6 +13,7 @@ use SailCMS\Mail;
 use SailCMS\Models\Email;
 use SailCMS\Sail;
 use SailCMS\Types\MailPreviewData;
+use SailCMS\UI;
 
 class Controller extends AppController
 {
@@ -32,6 +34,11 @@ class Controller extends AppController
     {
         // Fetch template if it exists
         $email = Email::getBySlug($name);
+
+        if (!$email) {
+            // Get by id if name fails
+            $email = Email::get($name);
+        }
 
         Locale::setCurrent($locale);
 
@@ -63,10 +70,10 @@ class Controller extends AppController
                     $this->response->template = $data->template;
                 } else {
                     // Try to determine the path and file for it
-                    $path = Sail::getWorkingDirectory() . '/templates/' . Sail::siteId() . '/email/' . $name;
+                    $path = Sail::getWorkingDirectory() . '/templates/' . $email->site_id . '/email/' . $email->template;
 
                     if (file_exists($path . '.twig')) {
-                        $this->response->template = Sail::siteId() . '/email/' . $name;
+                        $this->response->template = $email->site_id . '/email/' . $email->template;
                     } else {
                         throw new FileException(
                             "Cannot find template, please provide it's path using a preview handler. For debugging, trying to find it in {$path}",
@@ -79,10 +86,10 @@ class Controller extends AppController
             }
         } else {
             $context = self::processContext($context);
-            $path = Sail::getWorkingDirectory() . '/templates/' . Sail::siteId() . '/email/' . $name;
+            $path = Sail::getWorkingDirectory() . '/templates/' . $email->site_id . '/email/' . $email->template;
 
             if (file_exists($path . '.twig')) {
-                $this->response->template = Sail::siteId() . '/email/' . $name;
+                $this->response->template = $email->site_id . '/email/' . $email->template;
             } else {
                 throw new FileException(
                     "Cannot find template, please provide it's path using a preview handler. For debugging, trying to find it in {$path}",
@@ -92,6 +99,36 @@ class Controller extends AppController
         }
 
         $this->response->setArray($context);
+    }
+
+    /**
+     *
+     * Load third-party UI content
+     *
+     * @param  string  $appHash
+     * @return void
+     *
+     */
+    public function loadThirdPartyApplication(string $appHash): void
+    {
+        $elements = UI::getNavigationElements();
+        $target = null;
+        $listing = [];
+
+        foreach ($elements as $key => $list) {
+            foreach ($list as $item) {
+                $listing[] = $item;
+            }
+        }
+
+        foreach ($listing as $item) {
+            if (hash('sha256', $item->class . $item->method) === $appHash) {
+                $target = $item;
+            }
+        }
+
+        $instance = new $target->class();
+        $this->response->template = $instance->{$target->method}();
     }
 
     private static function processContext(array $context): array
