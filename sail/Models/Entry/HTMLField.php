@@ -5,8 +5,8 @@ namespace SailCMS\Models\Entry;
 use SailCMS\Collection;
 use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputHTMLField;
-use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\StoringType;
 
 class HTMLField extends Field
 {
