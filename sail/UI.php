@@ -33,6 +33,10 @@ class UI
      */
     public static function getNavigationElements(): Collection
     {
+        if (!isset(self::$navigationElements)) {
+            self::$navigationElements = new Collection(['post_entries' => [], 'pre_users' => [], 'pre_settings' => []]);
+        }
+
         return self::$navigationElements;
     }
 }

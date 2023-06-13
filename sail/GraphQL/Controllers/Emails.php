@@ -45,7 +45,7 @@ class Emails
      */
     public function emails(mixed $obj, Collection $args, Context $context): Collection
     {
-        return (new Email())->getList();
+        return (new Email())->getList($args->get('site_id', 'default'));
     }
 
     /**

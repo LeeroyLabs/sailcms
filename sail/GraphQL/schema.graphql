@@ -27,7 +27,7 @@ type Query {
 
     # Emails
     email(id: ID!): Email
-    emails: [Email!]!
+    emails(site_id: String!): [Email!]!
     emailTemplates(site_id: String!): [String!]!
 
     # Entries

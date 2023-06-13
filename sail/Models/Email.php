@@ -79,16 +79,17 @@ class Email extends Model
      *
      * Get a list of all emails
      *
+     * @param  string  $siteId
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getList(): Collection
+    public function getList(string $siteId): Collection
     {
         $this->hasPermissions(true);
-        return new Collection($this->find(['is_preview' => false])->exec());
+        return new Collection($this->find(['is_preview' => false, 'site_id' => $siteId])->exec());
     }
 
     /**
