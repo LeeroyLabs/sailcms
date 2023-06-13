@@ -140,7 +140,7 @@ return [
         ]
     ],
     'users' => [
-        'requireValidation' => true,
+        'requireValidation' => false,
         'baseRole' => 'general-user'
     ]
 ];

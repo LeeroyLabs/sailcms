@@ -75,7 +75,11 @@ final class Queue
 
                     if (method_exists($instance, $value->action)) {
                         try {
-                            $result = $instance->{$value->action}(...$value->settings->unwrap());
+                            if (is_object($value->settings) && get_class($value->settings) === Collection::class) {
+                                $value->settings = $value->settings->unwrap();
+                            }
+
+                            $result = $instance->{$value->action}(...$value->settings);
 
                             if (empty($result)) {
                                 $result = 'Executed successfully with no return';

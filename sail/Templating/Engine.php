@@ -2,9 +2,7 @@
 
 namespace SailCMS\Templating;
 
-use League\Flysystem\FilesystemException;
 use SailCMS\Debug;
-use SailCMS\Errors\FileException;
 use SailCMS\Sail;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -84,10 +82,8 @@ class Engine
      * @throws LoaderError|RuntimeError|SyntaxError
      *
      */
-    public function render(
-        string $file,
-        object $data
-    ): string {
+    public function render(string $file, object $data): string
+    {
         $st = microtime(true);
 
         // Add some last minutes variables to the template
@@ -102,7 +98,6 @@ class Engine
         ob_start();
         $this->twig->display($file . '.twig', (array)$data);
         $html = ob_get_clean();
-
         Debug::view($file, (array)$data, $st);
         return $html;
     }

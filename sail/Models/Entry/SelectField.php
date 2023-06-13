@@ -12,18 +12,6 @@ class SelectField extends Field
 {
     public const SEARCHABLE = false;
 
-    /**
-     *
-     * Override the constructor to pass a precision to the number
-     *
-     * @param  LocaleField            $labels
-     * @param  array|Collection|null  $settings
-     */
-    public function __construct(LocaleField $labels, array|Collection|null $settings)
-    {
-        parent::__construct($labels, $settings);
-    }
-
     public function description(): LocaleField
     {
         return new LocaleField([

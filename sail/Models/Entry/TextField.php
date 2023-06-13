@@ -11,6 +11,7 @@ use SailCMS\Types\StoringType;
 class TextField extends Field
 {
     public const SEARCHABLE = true;
+    public const REPEATABLE = true;
 
     /**
      *

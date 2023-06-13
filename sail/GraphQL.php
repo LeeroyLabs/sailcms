@@ -27,6 +27,7 @@ use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
 use SailCMS\GraphQL\Controllers\Groups;
+use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
@@ -399,10 +400,13 @@ final class GraphQL
         // Emails
         self::addQueryResolver('email', Emails::class, 'email');
         self::addQueryResolver('emails', Emails::class, 'emails');
+        self::addQueryResolver('emailTemplates', Emails::class, 'emailTemplates');
         self::addMutationResolver('createEmail', Emails::class, 'createEmail');
         self::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
         self::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
         self::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
+        self::addMutationResolver('testEmail', Emails::class, 'testEmail');
+        self::addMutationResolver('createPreviewEmail', Emails::class, 'createPreviewEmail');
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
@@ -471,6 +475,9 @@ final class GraphQL
         self::addMutationResolver('updateGroup', Groups::class, 'updateGroup');
         self::addMutationResolver('deleteGroup', Groups::class, 'deleteGroup');
         self::addResolver('Group', Groups::class, 'groupResolver');
+
+        # UI Related
+        self::addQueryResolver('navigationElements', Misc::class, 'navigationElements');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)

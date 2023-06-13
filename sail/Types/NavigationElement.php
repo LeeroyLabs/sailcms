@@ -24,6 +24,7 @@ class NavigationElement
         public readonly string $label,
         public string          $url,
         public readonly bool   $is_entry = false,
+        public readonly bool   $is_category = false,
         public readonly string $entry_id = '',
         public readonly bool   $external = false,
         private array          $children = []
@@ -44,6 +45,7 @@ class NavigationElement
                 $child['label'],
                 $child['url'],
                 $child['is_entry'],
+                $child['is_category'],
                 $child['entry_id'],
                 $child['external'],
                 $child['children']
@@ -55,7 +57,7 @@ class NavigationElement
      *
      * Add a NavigationElement at the end of the children array
      *
-     * @param NavigationElement $child
+     * @param  NavigationElement  $child
      * @return void
      *
      */
@@ -68,8 +70,8 @@ class NavigationElement
      *
      * Insert an NavigationElement at given position
      *
-     * @param NavigationElement $child
-     * @param int $index
+     * @param  NavigationElement  $child
+     * @param  int                $index
      * @return void
      *
      */
@@ -109,6 +111,7 @@ class NavigationElement
             'label' => $this->label,
             'url' => $this->url,
             'is_entry' => $this->is_entry,
+            'is_category' => $this->is_category,
             'entry_id' => $this->entry_id,
             'external' => $this->external,
             'children' => $children
