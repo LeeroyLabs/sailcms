@@ -55,7 +55,7 @@ abstract class Model implements JsonSerializable
     protected string $collection = '';
 
     // Fields and Guards
-    protected array $fields = ['*'];
+    protected array $loaded = ['*'];
     protected array $guards = [];
 
     // Automatic Casting of properties 
@@ -120,11 +120,11 @@ abstract class Model implements JsonSerializable
     }
 
     /**
-     * 
+     *
      * Get collection name
-     * 
+     *
      * @return string
-     * 
+     *
      */
     public function getCollection(): string
     {

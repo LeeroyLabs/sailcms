@@ -7,10 +7,13 @@ use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
+use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
+use SailCMS\Mail;
 use SailCMS\Models\Email;
 use SailCMS\Sail;
+use Twig\Error\LoaderError;
 
 class Emails
 {
@@ -61,15 +64,7 @@ class Emails
     public function emailTemplates(mixed $obj, Collection $args, Context $context): Collection
     {
         $siteId = $args->get('site_id', 'default');
-        $folders = glob(Sail::getTemplateDirectory() . $siteId . '/email/*.twig');
-
-        $list = [];
-
-        foreach ($folders as $folder) {
-            $list[] = basename($folder, '.twig');
-        }
-
-        return new Collection($list);
+        return Mail::loadAndParseTemplates($siteId);
     }
 
     /**
@@ -91,10 +86,7 @@ class Emails
         return (new Email())->create(
             $args->get('name'),
             $args->get('subject'),
-            $args->get('title'),
-            $args->get('content'),
-            $args->get('cta'),
-            $args->get('cta_title'),
+            $args->get('fields'),
             $args->get('template'),
             $args->get('site_id', 'default')
         );
@@ -110,7 +102,6 @@ class Emails
      * @return string
      * @throws ACLException
      * @throws DatabaseException
-     * @throws EmailException
      * @throws PermissionException
      *
      */
@@ -119,10 +110,7 @@ class Emails
         return (new Email())->createPreview(
             $args->get('name'),
             $args->get('subject'),
-            $args->get('title'),
-            $args->get('content'),
-            $args->get('cta'),
-            $args->get('cta_title'),
+            $args->get('fields'),
             $args->get('template'),
             $args->get('site_id', 'default')
         );
@@ -147,10 +135,7 @@ class Emails
             $args->get('id'),
             $args->get('name', null),
             $args->get('subject', null),
-            $args->get('title', null),
-            $args->get('content', null),
-            $args->get('cta', null),
-            $args->get('cta_title', null),
+            $args->get('fields', null),
             $args->get('template', null),
         );
     }
@@ -209,6 +194,22 @@ class Emails
         return Email::removeBySlug($args->get('slug'), $args->get('site_id', 'default'));
     }
 
+    /**
+     *
+     * Test Email Configurations
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EmailException
+     * @throws PermissionException
+     * @throws FileException
+     * @throws LoaderError
+     *
+     */
     public function testEmail(mixed $obj, Collection $args, Context $context): bool
     {
         return Email::sendTest($args->get('email'));

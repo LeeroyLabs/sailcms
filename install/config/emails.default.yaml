@@ -1,0 +1,21 @@
+new_account:
+  - type: text
+    key: title
+    label:
+      fr: Titre
+      en: Title
+  - type: content
+    key: content
+    label:
+      fr: Contenu
+      en: Content
+  - type: cta
+    key: cta
+    label:
+      fr: Lien Bouton
+      en: Button URL
+  - type: cta_title
+    key: cta_title
+    label:
+      fr: Titre Bouton
+      en: Button Title
