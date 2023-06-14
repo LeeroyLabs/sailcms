@@ -99,7 +99,7 @@ type Mutation {
     deleteEmails(ids: [ID!]!): Boolean!
     deleteEmailBySlug(slug: String!, site_id: String!): Boolean!
     testEmail(email: String!): Boolean!
-    createPreviewEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!, site_id: String!): String!
+    createPreviewEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!): String!
 
     # Entries
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
