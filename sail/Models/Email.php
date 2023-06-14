@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -18,30 +19,23 @@ use Twig\Error\LoaderError;
 
 /**
  *
- * @property string      $name
- * @property string      $slug
- * @property LocaleField $subject
- * @property LocaleField $title
- * @property LocaleField $content
- * @property LocaleField $cta
- * @property LocaleField $cta_title
- * @property string      $template
- * @property int         $created_at
- * @property int         $last_modified
- * @property string      $site_id
- * @property bool        $is_preview
- * @property string      $created_by
+ * @property string           $name
+ * @property string           $slug
+ * @property LocaleField      $subject
+ * @property Collection|array $fields
+ * @property string           $template
+ * @property int              $created_at
+ * @property int              $last_modified
+ * @property string           $site_id
+ * @property bool             $is_preview
+ * @property string           $created_by
  *
  */
 class Email extends Model
 {
     protected string $collection = 'emails';
     protected array $casting = [
-        'subject' => LocaleField::class,
-        'title' => LocaleField::class,
-        'content' => LocaleField::class,
-        'cta' => LocaleField::class,
-        'cta_title' => LocaleField::class
+        'subject' => LocaleField::class
     ];
 
     protected string $permissionGroup = 'emails';
@@ -72,7 +66,9 @@ class Email extends Model
      */
     public function getById(ObjectId|string $id): ?Email
     {
-        return $this->findById($id)->exec();
+        $email = $this->findById($id)->exec();
+        Debug::ray($email);
+        return $email;
     }
 
     /**
@@ -98,10 +94,7 @@ class Email extends Model
      *
      * @param  string                        $name
      * @param  LocaleField|Collection|array  $subject
-     * @param  LocaleField|Collection|array  $title
-     * @param  LocaleField|Collection|array  $content
-     * @param  LocaleField|Collection|array  $cta
-     * @param  LocaleField|Collection|array  $cta_title
+     * @param  Collection|array              $fields
      * @param  string                        $template
      * @param  string                        $siteId
      * @return bool
@@ -114,10 +107,7 @@ class Email extends Model
     public function create(
         string $name,
         LocaleField|Collection|array $subject,
-        LocaleField|Collection|array $title,
-        LocaleField|Collection|array $content,
-        LocaleField|Collection|array $cta,
-        LocaleField|Collection|array $cta_title,
+        Collection|array $fields,
         string $template,
         string $siteId = 'default'
     ): bool {
@@ -130,14 +120,15 @@ class Email extends Model
             throw new EmailException('Email with this name already exists, please change the name', 0403);
         }
 
+        if (is_object($fields)) {
+            $fields = $fields->unwrap();
+        }
+
         $this->insert([
             'name' => $name,
             'slug' => $slug,
             'subject' => $subject,
-            'title' => $title,
-            'content' => $content,
-            'cta' => $cta,
-            'cta_title' => $cta_title,
+            'fields' => $fields,
             'template' => $template,
             'created_at' => time(),
             'last_modified' => time(),
@@ -155,26 +146,19 @@ class Email extends Model
      *
      * @param  string                        $name
      * @param  LocaleField|Collection|array  $subject
-     * @param  LocaleField|Collection|array  $title
-     * @param  LocaleField|Collection|array  $content
-     * @param  LocaleField|Collection|array  $cta
-     * @param  LocaleField|Collection|array  $cta_title
+     * @param  Collection|array              $fields
      * @param  string                        $template
      * @param  string                        $siteId
      * @return string
      * @throws ACLException
      * @throws DatabaseException
-     * @throws EmailException
      * @throws PermissionException
      *
      */
     public function createPreview(
         string $name,
         LocaleField|Collection|array $subject,
-        LocaleField|Collection|array $title,
-        LocaleField|Collection|array $content,
-        LocaleField|Collection|array $cta,
-        LocaleField|Collection|array $cta_title,
+        Collection|array $fields,
         string $template,
         string $siteId = 'default'
     ): string {
@@ -185,14 +169,15 @@ class Email extends Model
         // Remove all previews from user
         $this->deleteMany(['created_by' => User::$currentUser->id]);
 
+        if (is_object($fields)) {
+            $fields = $fields->unwrap();
+        }
+
         $this->insert([
             'name' => $name,
             'slug' => $slug,
             'subject' => $subject,
-            'title' => $title,
-            'content' => $content,
-            'cta' => $cta,
-            'cta_title' => $cta_title,
+            'fields' => $fields,
             'template' => $template,
             'created_at' => time(),
             'last_modified' => time(),
@@ -210,10 +195,7 @@ class Email extends Model
      *
      * @param  string|null                        $name
      * @param  LocaleField|Collection|array|null  $subject
-     * @param  LocaleField|Collection|array|null  $title
-     * @param  LocaleField|Collection|array|null  $content
-     * @param  LocaleField|Collection|array|null  $cta
-     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  Collection|array|null              $fields
      * @param  string|null                        $template
      * @return bool
      * @throws ACLException
@@ -224,14 +206,11 @@ class Email extends Model
     public function update(
         string|null $name = null,
         LocaleField|Collection|array|null $subject = null,
-        LocaleField|Collection|array|null $title = null,
-        LocaleField|Collection|array|null $content = null,
-        LocaleField|Collection|array|null $cta = null,
-        LocaleField|Collection|array|null $cta_title = null,
+        Collection|array|null $fields = null,
         string|null $template = null,
     ): bool {
         $this->hasPermissions();
-        return self::updateBy(['_id' => $this->_id], $name, $subject, $title, $content, $cta, $cta_title, $template);
+        return self::updateBy(['_id' => $this->_id], $name, $subject, $fields, $template);
     }
 
     /**
@@ -241,10 +220,7 @@ class Email extends Model
      * @param  ObjectId|string                    $id
      * @param  string|null                        $name
      * @param  LocaleField|Collection|array|null  $subject
-     * @param  LocaleField|Collection|array|null  $title
-     * @param  LocaleField|Collection|array|null  $content
-     * @param  LocaleField|Collection|array|null  $cta
-     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  Collection|array|null              $fields
      * @param  string|null                        $template
      * @return bool
      * @throws ACLException
@@ -256,17 +232,14 @@ class Email extends Model
         ObjectId|string $id,
         string|null $name = null,
         LocaleField|Collection|array|null $subject = null,
-        LocaleField|Collection|array|null $title = null,
-        LocaleField|Collection|array|null $content = null,
-        LocaleField|Collection|array|null $cta = null,
-        LocaleField|Collection|array|null $cta_title = null,
+        Collection|array|null $fields = null,
         string|null $template = null
     ): bool {
         $instance = new static();
         $instance->hasPermissions();
 
         $id = $instance->ensureObjectId($id);
-        return self::updateBy(['_id' => $id], $name, $subject, $title, $content, $cta, $cta_title, $template);
+        return self::updateBy(['_id' => $id], $name, $subject, $fields, $template);
     }
 
     /**
@@ -276,10 +249,7 @@ class Email extends Model
      * @param  string                             $slug
      * @param  string|null                        $name
      * @param  LocaleField|Collection|array|null  $subject
-     * @param  LocaleField|Collection|array|null  $title
-     * @param  LocaleField|Collection|array|null  $content
-     * @param  LocaleField|Collection|array|null  $cta
-     * @param  LocaleField|Collection|array|null  $cta_title
+     * @param  Collection|array|null              $fields
      * @param  string|null                        $template
      * @param  string                             $siteId
      * @return bool
@@ -292,16 +262,13 @@ class Email extends Model
         string $slug,
         string|null $name = null,
         LocaleField|Collection|array|null $subject = null,
-        LocaleField|Collection|array|null $title = null,
-        LocaleField|Collection|array|null $content = null,
-        LocaleField|Collection|array|null $cta = null,
-        LocaleField|Collection|array|null $cta_title = null,
+        Collection|array|null $fields = null,
         string|null $template = null,
         string $siteId = 'default'
     ): bool {
         $instance = new static();
         $instance->hasPermissions();
-        return self::updateBy(['slug' => $slug, 'site_id' => $siteId], $name, $subject, $title, $content, $cta, $cta_title, $template);
+        return self::updateBy(['slug' => $slug, 'site_id' => $siteId], $name, $subject, $fields, $template);
     }
 
     /**
@@ -419,10 +386,7 @@ class Email extends Model
      * @param  array                              $query
      * @param  string|null                        $name
      * @param  LocaleField|Collection|array|null  $subject
-     * @param  LocaleField|Collection|array|null  $title
-     * @param  LocaleField|Collection|array|null  $content
-     * @param  LocaleField|Collection|array|null  $cta
-     * @param  LocaleField|Collection|array|null  $ctaTitle
+     * @param  Collection|array|null              $fields
      * @param  string|null                        $template
      * @return bool
      * @throws ACLException
@@ -434,10 +398,7 @@ class Email extends Model
         array $query,
         string|null $name = null,
         LocaleField|Collection|array|null $subject = null,
-        LocaleField|Collection|array|null $title = null,
-        LocaleField|Collection|array|null $content = null,
-        LocaleField|Collection|array|null $cta = null,
-        LocaleField|Collection|array|null $ctaTitle = null,
+        Collection|array|null $fields = null,
         string|null $template = null
     ): bool {
         $instance = new static();
@@ -453,20 +414,12 @@ class Email extends Model
             $set['subject'] = $subject;
         }
 
-        if ($title !== null) {
-            $set['title'] = $title;
-        }
+        if ($fields !== null) {
+            if (is_object($fields)) {
+                $fields = $fields->unwrap();
+            }
 
-        if ($content !== null) {
-            $set['content'] = $content;
-        }
-
-        if ($cta !== null) {
-            $set['cta'] = $cta;
-        }
-
-        if ($ctaTitle !== null) {
-            $set['cta_title'] = $ctaTitle;
+            $set['fields'] = $fields;
         }
 
         if ($template !== null && $template !== '') {

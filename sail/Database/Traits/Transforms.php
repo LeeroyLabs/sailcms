@@ -37,7 +37,7 @@ trait Transforms
         }
 
         foreach ($this->properties as $key => $value) {
-            if (!in_array($key, $guards, true) && (in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
+            if (!in_array($key, $guards, true) && (in_array($key, $this->loaded, true) || in_array('*', $this->loaded, true))) {
                 if ($key === '_id') {
                     $doc[$key] = (string)$value;
                 } elseif (!is_scalar($value)) {
@@ -122,7 +122,16 @@ trait Transforms
                                 }
 
                                 $castInstance = new $cast[0]($list);
-                                $instance->{$k} = $castInstance;
+
+                                if (get_class($instance->{$k}) === Collection::class) {
+                                    if (is_array($castInstance)) {
+                                        $instance->{$k} = new Collection($castInstance);
+                                    } else {
+                                        $instance->{$k} = $castInstance;
+                                    }
+                                } else {
+                                    $instance->{$k} = $castInstance;
+                                }
                             }
                         } elseif ($cast === Collection::class) {
                             $castInstance = new $cast();

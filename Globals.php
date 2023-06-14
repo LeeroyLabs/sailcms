@@ -33,7 +33,7 @@ if (!function_exists('env')) {
 function setting(string $var, mixed $default = null): mixed
 {
     $settings = env('settings', []);
-    
+
     if (!empty($settings)) {
         return $settings->get($var, $default);
     }
