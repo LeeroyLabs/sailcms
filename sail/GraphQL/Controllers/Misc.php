@@ -3,7 +3,10 @@
 namespace SailCMS\GraphQL\Controllers;
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\GraphQL\Context;
+use SailCMS\Models\Role;
+use SailCMS\Models\User;
 use SailCMS\UI;
 
 class Misc
@@ -21,5 +24,19 @@ class Misc
     public function navigationElements(mixed $obj, Collection $args, Context $context): Collection
     {
         return UI::getNavigationElements();
+    }
+
+    public function handshakeKey(mixed $obj, Collection $args, Context $context): string
+    {
+        if (User::$currentUser) {
+            // Signed in... good sign
+            $role = Role::getHighestLevel(User::$currentUser->roles);
+
+            if ($role >= env('EXTENSION_MINIMUM_LEVEL_REQUIRED', 100)) {
+                return env('EXTENSION_HANDSHAKE_KEY', '');
+            }
+        }
+
+        return '';
     }
 }

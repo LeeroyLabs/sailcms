@@ -58,6 +58,7 @@ type Query {
 
     # UI Related
     navigationElements(site_id: String!): NavigationElements!
+    handshakeKey: String!
 
     # Groups
     group(id: ID!): Group
@@ -721,14 +722,13 @@ type NavigationElements {
 }
 
 type NavigationElement {
+    name: String!
     icon: String!
     url: String!
     label: LocaleField!
     slug: String!
     parent: String!
     permission: String!
-    class: String!
-    method: String!
 }
 
 #{CUSTOM_TYPES}#

@@ -27,6 +27,7 @@ class UI
 
     /**
      *
+     * Get navigation elements to display on the UI
      *
      * @return Collection
      *
