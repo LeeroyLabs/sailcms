@@ -167,7 +167,7 @@ class Email extends Model
         $slug = Text::from($name)->deburr()->snake()->value();
 
         // Remove all previews from user
-        $this->deleteMany(['created_by' => User::$currentUser->id]);
+        $this->deleteMany(['created_by' => User::$currentUser->id, 'is_preview' => true]);
 
         if (is_object($fields)) {
             $fields = $fields->unwrap();
