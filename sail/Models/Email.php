@@ -3,10 +3,8 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
-use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -66,9 +64,7 @@ class Email extends Model
      */
     public function getById(ObjectId|string $id): ?Email
     {
-        $email = $this->findById($id)->exec();
-        Debug::ray($email);
-        return $email;
+        return $this->findById($id)->exec();
     }
 
     /**
@@ -169,7 +165,7 @@ class Email extends Model
         // Remove all previews from user
         $this->deleteMany(['created_by' => User::$currentUser->id, 'is_preview' => true]);
 
-        if (is_object($fields)) {
+        if ($fields instanceof Collection::class) {
             $fields = $fields->unwrap();
         }
 
