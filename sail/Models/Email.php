@@ -165,7 +165,7 @@ class Email extends Model
         // Remove all previews from user
         $this->deleteMany(['created_by' => User::$currentUser->id, 'is_preview' => true]);
 
-        if ($fields instanceof Collection::class) {
+        if ($fields instanceof Collection) {
             $fields = $fields->unwrap();
         }
 
