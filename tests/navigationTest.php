@@ -17,6 +17,7 @@ test('Create a navigation called "sidebar" with 100% array', function () {
             'label' => 'Home',
             'url' => '/',
             'is_entry' => false,
+            'is_category' => false,
             'entry_id' => '',
             'external' => false,
             'children' => []
@@ -25,6 +26,7 @@ test('Create a navigation called "sidebar" with 100% array', function () {
             'label' => 'Products',
             'url' => '/products',
             'is_entry' => false,
+            'is_category' => false,
             'entry_id' => '',
             'external' => false,
             'children' => [
@@ -32,6 +34,7 @@ test('Create a navigation called "sidebar" with 100% array', function () {
                     'label' => 'Super Product',
                     'url' => '/products/super-product',
                     'is_entry' => false,
+                    'is_category' => false,
                     'entry_id' => '',
                     'external' => false,
                     'children' => []
@@ -42,6 +45,7 @@ test('Create a navigation called "sidebar" with 100% array', function () {
             'label' => 'About',
             'url' => '/about',
             'is_entry' => false,
+            'is_category' => false,
             'entry_id' => '',
             'external' => false,
             'children' => []
@@ -57,18 +61,20 @@ test('Create a navigation called "sidebar" with 100% array', function () {
 test('Create a navigation called "sidebar2" with some elements already NavigationElement', function () {
     $navigation = new Navigation();
     $structure = [
-        new NavigationElement('Home', '/', false, '', false, []),
+        new NavigationElement('Home', '/', false, false, '', false, []),
         [
             'label' => 'Products',
             'url' => '/products',
             'is_entry' => false,
             'entry_id' => '',
             'external' => false,
+            'is_category' => false,
             'children' => [
                 [
                     'label' => 'Super Product',
                     'url' => '/products/super-product',
                     'is_entry' => false,
+                    'is_category' => false,
                     'entry_id' => '',
                     'external' => false,
                     'children' => []
@@ -79,6 +85,7 @@ test('Create a navigation called "sidebar2" with some elements already Navigatio
             'label' => 'About',
             'url' => '/about',
             'is_entry' => false,
+            'is_category' => false,
             'entry_id' => '',
             'external' => false,
             'children' => []
@@ -99,7 +106,7 @@ test('Update navigation called "sidebar"', function () {
     $nav = Navigation::getByName('sidebar');
 
     $navigation = new Navigation();
-    $navigation->update('sidebar', $nav->structure->get(), 'fr');
+    $navigation->update($nav->id, 'sidebar', $nav->structure->get(), 'fr');
     $nav = Navigation::getByName('sidebar');
 
     expect($nav)->not->toBeNull()->and($nav->locale)->toBe('fr');

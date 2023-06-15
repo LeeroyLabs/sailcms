@@ -9,7 +9,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\NavigationException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
-use \SailCMS\Models\Navigation as NavigationModel;
+use SailCMS\Models\Navigation as NavigationModel;
 
 class Navigation
 {
@@ -94,6 +94,7 @@ class Navigation
     public function updateNavigation(mixed $obj, Collection $args, Context $context): bool
     {
         return (new NavigationModel())->update(
+            $args->get('id'),
             $args->get('name'),
             $args->get('structure'),
             $args->get('locale', 'en')
@@ -108,7 +109,6 @@ class Navigation
      * @param  Collection  $args
      * @param  Context     $context
      * @return bool
-     * @throws DatabaseException
      *
      */
     public function deleteNavigation(mixed $obj, Collection $args, Context $context): bool

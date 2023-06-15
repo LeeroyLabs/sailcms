@@ -28,7 +28,7 @@ type Query {
     # Emails
     email(id: ID!): Email
     emails(site_id: String!): [Email!]!
-    emailTemplates(site_id: String!): [String!]!
+    emailTemplates(site_id: String!): [EmailTemplate!]!
 
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
@@ -93,13 +93,13 @@ type Mutation {
     removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
 
     # Emails
-    createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!, site_id: String!, preview: Boolean): Boolean!
-    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    createEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!, preview: Boolean): Boolean!
+    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, fields: [EmailFieldInput!]!, template: String): Boolean!
     deleteEmail(id: ID!): Boolean!
     deleteEmails(ids: [ID!]!): Boolean!
     deleteEmailBySlug(slug: String!, site_id: String!): Boolean!
     testEmail(email: String!): Boolean!
-    createPreviewEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!, site_id: String!): String!
+    createPreviewEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!): String!
 
     # Entries
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
@@ -562,23 +562,27 @@ type Email {
     name: String!
     slug: String!
     subject: LocaleField!
-    title: LocaleField!
-    content: LocaleField!
-    cta: LocaleField!
-    cta_title: LocaleField!
+    fields: [EmailField!]!
     template: String!
     created_at: Int!
     last_modified: Int!
 }
 
+type EmailField {
+    key: String!
+    value: LocaleField!
+}
+
 input EmailInput {
     name: String!
     subject: LocaleFieldInput!
-    title: LocaleFieldInput!
-    content: LocaleFieldInput!
-    cta: LocaleFieldInput!
-    cta_title: LocaleFieldInput!
+    fields: EmailFieldInput!
     template: String!
+}
+
+input EmailFieldInput {
+    key: String!
+    value: LocaleFieldInput!
 }
 
 type PasswordChangeResult {
@@ -729,6 +733,17 @@ type NavigationElement {
     permission: String!
     class: String!
     method: String!
+}
+
+type EmailTemplate {
+    name: String!
+    configs: [EmailFieldConfig!]!
+}
+
+type EmailFieldConfig {
+    type: String!
+    key: String!
+    label: LocaleField!
 }
 
 #{CUSTOM_TYPES}#
