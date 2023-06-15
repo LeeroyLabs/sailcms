@@ -57,7 +57,8 @@ type Query {
     navigationDetails(name: String!): Navigation
 
     # UI Related
-    navigationElements(site_id: String!): NavigationElements!
+    navigationElements: NavigationElements!
+    settingsElements: SettingsElements!
     handshakeKey: String!
 
     # Groups
@@ -732,6 +733,21 @@ type NavigationElement {
     label: LocaleField!
     slug: String!
     parent: String!
+    permission: String!
+}
+
+type SettingsElements {
+    entries: [SettingsElement!]!
+    emails: [SettingsElement!]!
+    others: [SettingsElement!]!
+}
+
+type SettingsElement {
+    name: String!
+    icon: String!
+    url: String!
+    label: LocaleField!
+    slug: String!
     permission: String!
 }
 

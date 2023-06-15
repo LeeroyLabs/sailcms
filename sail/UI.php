@@ -3,10 +3,12 @@
 namespace SailCMS;
 
 use SailCMS\Types\UI\NavigationElement;
+use SailCMS\Types\UI\SettingsElement;
 
 class UI
 {
     private static Collection $navigationElements;
+    private static Collection $settingsElements;
 
     /**
      *
@@ -27,6 +29,23 @@ class UI
 
     /**
      *
+     * Add Settings Page Element to the UI
+     *
+     * @param  SettingsElement  $element
+     * @return void
+     *
+     */
+    public static function addSettingsElement(SettingsElement $element): void
+    {
+        if (!isset(self::$settingsElements)) {
+            self::$settingsElements = new Collection(['entries' => [], 'emails' => [], 'others' => []]);
+        }
+
+        self::$settingsElements[$element->section]->push($element);
+    }
+
+    /**
+     *
      * Get navigation elements to display on the UI
      *
      * @return Collection
@@ -39,5 +58,21 @@ class UI
         }
 
         return self::$navigationElements;
+    }
+
+    /**
+     *
+     * Get settings elements to display on the UI
+     *
+     * @return Collection
+     *
+     */
+    public static function getSettingsElements(): Collection
+    {
+        if (!isset(self::$settingsElements)) {
+            self::$settingsElements = new Collection(['entries' => [], 'emails' => [], 'others' => []]);
+        }
+
+        return self::$settingsElements;
     }
 }
