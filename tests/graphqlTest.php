@@ -171,7 +171,7 @@ test('Create layout, entry type & entry', function () {
                         {
                             labels: { en: "Image", fr: "Image" }
                             key: "image"
-                            handle: "SailCMS-Models-Entry-AssetField"
+                            handle: "SailCMS-Models-Entry-AssetImageField"
                             inputSettings: [
                                 {
                                     settings: [

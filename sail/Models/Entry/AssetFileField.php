@@ -7,20 +7,15 @@ use SailCMS\Collection;
 use SailCMS\Models\Asset;
 use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputAssetFileField;
-use SailCMS\Types\Fields\InputAssetImageField;
-use SailCMS\Types\Fields\InputHTMLField;
-use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class AssetFileField extends Field
 {
-    public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
+    public const REPEATABLE = true;
 
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
+
+    public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
 
     /**
      *
@@ -71,11 +66,7 @@ class AssetFileField extends Field
     public function defaultSettings(): Collection
     {
         return new Collection([
-            new Collection([
-                'required' => false,
-                'multiple' => false,
-                'allowedFormats' => '.pdf,.doc,.docx,.xls,.xlsx'
-            ])
+            InputAssetFileField::defaultSettings()
         ]);
     }
 

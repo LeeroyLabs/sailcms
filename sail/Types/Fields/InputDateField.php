@@ -28,11 +28,12 @@ class InputDateField extends Field
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly ?string $format = null,
-        public readonly bool $required = false,
-        public readonly ?string $min = null,
-        public readonly ?string $max = null,
-    ) {
+        public readonly ?string      $format = null,
+        public readonly bool         $required = false,
+        public readonly ?string      $min = null,
+        public readonly ?string      $max = null,
+    )
+    {
     }
 
     /**
@@ -62,7 +63,7 @@ class InputDateField extends Field
     public static function availableProperties(): Collection
     {
         return new Collection([
-            new InputSettings('format', InputSettings::INPUT_TYPE_STRING),
+            new InputSettings('format', InputSettings::INPUT_TYPE_STRING, Collection::init(), true),
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('min', InputSettings::INPUT_TYPE_STRING),
             new InputSettings('max', InputSettings::INPUT_TYPE_STRING),
