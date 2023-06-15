@@ -75,6 +75,7 @@ class Install extends Command
             'config/general.production.php' => 'config/general.production.php',
             'config/security.php' => 'security.php',
             'config/boot.php' => 'boot.php',
+            'config/emails.default.yaml' => 'config/emails.default.yaml',
             'modules/.gitkeep' => '',
             'templates/default/.gitkeep' => '',
             '.env' => 'env',

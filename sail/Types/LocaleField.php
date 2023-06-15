@@ -2,17 +2,21 @@
 
 namespace SailCMS\Types;
 
+use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
-use SailCMS\Contracts\DatabaseType;
 
 class LocaleField implements Castable
 {
     private Collection $combinations;
 
-    public function __construct(array|\stdClass|LocaleField|null $combinations = null)
+    public function __construct(array|\stdClass|BSONDocument|LocaleField|null $combinations = null)
     {
         $this->combinations = Collection::init();
+
+        if (is_object($combinations) && get_class($combinations) === BSONDocument::class) {
+            $combinations = (array)$combinations;
+        }
 
         if (is_object($combinations) && get_class($combinations) === __CLASS__) {
             $combinations = $combinations->castFrom();

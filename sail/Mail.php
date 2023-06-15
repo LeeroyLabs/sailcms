@@ -17,6 +17,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Yaml\Yaml;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Loader\FilesystemLoader;
@@ -304,6 +305,31 @@ class Mail
 
     /**
      *
+     * Get the Emails configuration and parse it
+     *
+     * @param  string  $siteId
+     * @return Collection
+     *
+     */
+    public static function loadAndParseTemplates(string $siteId): Collection
+    {
+        $file = Sail::getWorkingDirectory() . '/config/emails.' . $siteId . '.yaml';
+        $yaml = Yaml::parse(file_get_contents($file));
+
+        $list = [];
+
+        foreach ($yaml as $file => $config) {
+            $list[] = (object)[
+                'name' => $file,
+                'configs' => $config
+            ];
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
      * Setup email to use a template from the templating system
      *
      * @param  string            $slug
@@ -339,13 +365,15 @@ class Mail
                 $context = new Collection($context);
             }
 
-            $providedContent = new Collection([
-                'email_subject' => $template->subject->{$locale},
-                'email_title' => $template->title->{$locale},
-                'email_content' => $template->content->{$locale},
-                'cta_link' => $template->cta->{$locale},
-                'cta_title' => $template->cta_title->{$locale}
-            ]);
+            $fields = [
+                'subject' => $template->subject->{$locale}
+            ];
+
+            foreach ($template->fields as $field) {
+                $fields[$field->key] = $field->value->{$locale};
+            }
+
+            $providedContent = new Collection($fields);
 
             // Context squashes providedContent to enable extensibility
             $superContext = $providedContent->merge($context);
@@ -358,34 +386,16 @@ class Mail
 
             $superContext->pushSpreadKeyValue(...$locales->unwrap(), ...$gc);
 
-            // cta_link is present and verification_code. Replace {code} in link for code
-            if ($context->get('verification_code', null) !== null) {
-                $superContext->setFor('cta_link', str_replace(
-                    '{code}',
-                    $context->get('verification_code', ''),
-                    $superContext->get('cta_link')
-                ));
-            }
+            // Replace {code} and {reset_code} in every field (just in case)
+            foreach ($superContext as $key => $value) {
+                $vcode = $context->get('verification_code', '');
+                $rcode = $context->get('reset_code', '');
+                $code = ($vcode !== '' && $rcode === '') ? $vcode : $rcode;
+                $rpcode = $context->get('reset_pass_code', '');
 
-            // cta_link is present and reset_code. Replace {code} in link for code
-            if ($context->get('reset_code', null) !== null) {
-                $superContext->setfor('cta_link', str_replace(
-                    '{code}',
-                    $context->get('reset_code', ''),
-                    $superContext->get('cta_link')
-                ));
-            }
-
-            // cta_link is present and reset_pass_code. Replace {reset_code} in link for code
-            if ($context->get('reset_pass_code', null) !== null) {
-                $superContext->setfor('cta_link', str_replace(
-                    '{reset_code}',
-                    $context->get('reset_pass_code', ''),
-                    $superContext->get('cta_link')
-                ));
-            } else {
-                $link = $superContext->get('cta_link');
-                $superContext->setFor('cta_link', str_replace('{reset_code}', '', $link));
+                if (is_string($value)) {
+                    $superContext[$key] = str_replace(['{code}', '{reset_code}'], [$code, $rpcode], $value);
+                }
             }
 
             // Replace locale variable in template name to the actual locale
@@ -394,21 +404,13 @@ class Mail
             // Go through the context's title, subject, content and cta title to parse any replacement variable
             // Replacement variables are {xx} format (different to twigs {{xx}} format)
 
-            $title = $superContext->get('email_title');
-
-            $content = $superContext->get('email_content');
-            $cta = $superContext->get('cta_link');
-            $cta_title = $superContext->get('cta_title');
-
             $replacements = $superContext->get('replacements', []);
-
             $subject = $template->subject->{$locale};
+
             foreach ($replacements as $key => $value) {
-                $title = str_replace('{' . $key . '}', $value, $title);
-                $content = str_replace('{' . $key . '}', $value, $content);
-                $cta = str_replace('{' . $key . '}', $value, $cta);
-                $cta_title = str_replace('{' . $key . '}', $value, $cta_title);
-                $subject = str_replace('{' . $key . '}', $value, $subject);
+                foreach ($superContext as $k => $v) {
+                    $superContext[$k] = str_replace('{' . $key . '}', $value, $v);
+                }
             }
 
             // Determine what host to use (if no override, use .env url) otherwise use override if allowed
@@ -428,10 +430,13 @@ class Mail
                 }
             }
 
-            $superContext->setFor('email_title', $title);
-            $superContext->setFor('email_content', $content);
-            $superContext->setFor('cta_link', str_replace('{host}', $host, $cta));
-            $superContext->setFor('cta_title', $cta_title);
+            // Replace {host}
+            foreach ($superContext as $key => $value) {
+                if (is_string($value)) {
+                    $superContext[$key] = str_replace('{host}', $host, $value);
+                }
+            }
+
             $superContext->pushKeyValue('host', $host);
 
             return $this
