@@ -108,9 +108,9 @@ trait Transforms
                                 foreach ($v->bsonSerialize() as $_value) {
                                     $casted = new $cast[1]();
 
-                                    if (is_object($_value) && get_class($_value) === BSONDocument::class) {
+                                    if ($_value instanceof BSONDocument) {
                                         foreach ($_value as $_k => $_v) {
-                                            if (is_object($_v) && get_class($_v) === BSONArray::class) {
+                                            if ($_v instanceof BSONArray) {
                                                 $_value->{$_k} = $_v->bsonSerialize();
                                             } else {
                                                 $_value->{$_k} = $_v;
@@ -123,7 +123,7 @@ trait Transforms
 
                                 $castInstance = new $cast[0]($list);
 
-                                if (get_class($instance->{$k}) === Collection::class) {
+                                if ($instance->{$k} instanceof Collection) {
                                     if (is_array($castInstance)) {
                                         $instance->{$k} = new Collection($castInstance);
                                     } else {
