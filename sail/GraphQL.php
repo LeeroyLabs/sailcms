@@ -397,7 +397,15 @@ final class GraphQL
         self::addMutationResolver('removeFolder', Assets::class, 'removeFolder');
         self::addResolver('Asset', Assets::class, 'assetResolver');
 
-        // Emails
+        // Emails 1
+        self::addQueryResolver('emailV1', Emails::class, 'emailV1');
+        self::addQueryResolver('emailsV1', Emails::class, 'emailsV1');
+        self::addMutationResolver('createEmailV1', Emails::class, 'createEmailV1');
+        self::addMutationResolver('updateEmailV1', Emails::class, 'updateEmailV1');
+        self::addMutationResolver('deleteEmailV1', Emails::class, 'deleteEmailV1');
+        self::addMutationResolver('deleteEmailBySlugV1', Emails::class, 'deleteEmailBySlugV1');
+
+        // Emails 2
         self::addQueryResolver('email', Emails::class, 'email');
         self::addQueryResolver('emails', Emails::class, 'emails');
         self::addQueryResolver('emailTemplates', Emails::class, 'emailTemplates');

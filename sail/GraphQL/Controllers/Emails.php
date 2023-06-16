@@ -12,6 +12,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Mail;
 use SailCMS\Models\Email;
+use SailCMS\Models\EmailDeprecated;
 use SailCMS\Sail;
 use Twig\Error\LoaderError;
 
@@ -35,6 +36,22 @@ class Emails
 
     /**
      *
+     * Get an email by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return EmailDeprecated|null
+     * @throws DatabaseException
+     *
+     */
+    public function emailV1(mixed $obj, Collection $args, Context $context): ?EmailDeprecated
+    {
+        return (new EmailDeprecated())->getById($args->get('id'));
+    }
+
+    /**
+     *
      * Get all the emails
      *
      * @param  mixed       $obj
@@ -49,6 +66,24 @@ class Emails
     public function emails(mixed $obj, Collection $args, Context $context): Collection
     {
         return (new Email())->getList($args->get('site_id', 'default'));
+    }
+
+    /**
+     *
+     * Get all the emails
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function emailsV1(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return (new EmailDeprecated())->getList();
     }
 
     /**
@@ -89,6 +124,33 @@ class Emails
             $args->get('fields'),
             $args->get('template'),
             $args->get('site_id', 'default')
+        );
+    }
+
+    /**
+     *
+     * Create an email
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EmailException
+     * @throws PermissionException
+     *
+     */
+    public function createEmailV1(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new EmailDeprecated())->create(
+            $args->get('name'),
+            $args->get('subject'),
+            $args->get('title'),
+            $args->get('content'),
+            $args->get('cta'),
+            $args->get('cta_title'),
+            $args->get('template'),
         );
     }
 
@@ -136,7 +198,34 @@ class Emails
             $args->get('name', null),
             $args->get('subject', null),
             $args->get('fields', null),
-            $args->get('template', null),
+            $args->get('template', null)
+        );
+    }
+
+    /**
+     *
+     * Update an email by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function updateEmailV2(mixed $obj, Collection $args, Context $context): bool
+    {
+        return EmailDeprecated::updateById(
+            $args->get('id'),
+            $args->get('name', null),
+            $args->get('subject', null),
+            $args->get('title', null),
+            $args->get('content', null),
+            $args->get('cta', null),
+            $args->get('cta_title', null),
+            $args->get('template', null)
         );
     }
 
@@ -156,6 +245,24 @@ class Emails
     public function deleteEmail(mixed $obj, Collection $args, Context $context): bool
     {
         return Email::removeById($args->get('id'));
+    }
+
+    /**
+     *
+     * Delete an email by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function deleteEmailV2(mixed $obj, Collection $args, Context $context): bool
+    {
+        return EmailDeprecated::removeById($args->get('id'));
     }
 
     /**
@@ -192,6 +299,24 @@ class Emails
     public function deleteEmailBySlug(mixed $obj, Collection $args, Context $context): bool
     {
         return Email::removeBySlug($args->get('slug'), $args->get('site_id', 'default'));
+    }
+
+    /**
+     *
+     * Delete an email bt slug
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function deleteEmailBySlugV1(mixed $obj, Collection $args, Context $context): bool
+    {
+        return EmailDeprecated::removeBySlug($args->get('slug'));
     }
 
     /**
