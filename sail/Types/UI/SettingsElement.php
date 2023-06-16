@@ -18,6 +18,7 @@ class SettingsElement
     public readonly string $permission;
     public readonly string $section;
     public readonly string $slug;
+    public readonly string $parent;
 
     public function __construct(
         string $name,
@@ -33,6 +34,7 @@ class SettingsElement
         $this->slug = Text::from($label->get('en'))->slug()->value();
         $this->permission = $permission;
         $this->section = $section;
+        $this->parent = 'Settings';
 
         if (str_starts_with($url, '/')) {
             $this->url = substr($url, 1);

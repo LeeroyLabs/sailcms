@@ -38,11 +38,25 @@ class Controller extends AppController
                     $engine = new Engine();
                     Engine::addTemplatePath(dirname($uiPath, 2));
                     $context = (object)['handshakeKey' => env('EXTENSION_HANDSHAKE_KEY', '')];
-                    
+
                     echo $engine->render(ucfirst($name) . '/ui/index', $context);
                 } else {
                     // Load HTML file
                     echo file_get_contents(Sail::getWorkingDirectory() . '/containers/' . ucfirst($name) . '/ui/index.html');
+                }
+                break;
+
+            case 'settings':
+                if (file_exists($uiPath . '/settings.twig')) {
+                    // Parse Twig file
+                    $engine = new Engine();
+                    Engine::addTemplatePath(dirname($uiPath, 2));
+                    $context = (object)['handshakeKey' => env('EXTENSION_HANDSHAKE_KEY', '')];
+
+                    echo $engine->render(ucfirst($name) . '/ui/settings', $context);
+                } else {
+                    // Load HTML file
+                    echo file_get_contents(Sail::getWorkingDirectory() . '/containers/' . ucfirst($name) . '/ui/settings.html');
                 }
                 break;
 
