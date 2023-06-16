@@ -1,7 +1,6 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Entry\AssetFileField;
 use SailCMS\Models\Entry\AssetImageField;
@@ -307,7 +306,6 @@ and must keep it through all the process',
                 'time' => '10:30'
             ])->and($content->get('repeater.content')->length)->toBe(3);
     } catch (Exception $exception) {
-        Debug::ray($exception);
         expect(true)->toBe(false);
     }
 });
