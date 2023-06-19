@@ -252,7 +252,6 @@ class Category extends Model
         if ($record) {
             $this->deleteById($id);
             $this->updateMany(['parent_id' => (string)$id], ['$set' => ['parent_id' => '']]);
-            //$this->updateOrder('');
             return true;
         }
 
@@ -280,7 +279,6 @@ class Category extends Model
         if ($record) {
             $instance->deleteById($record->_id);
             $instance->updateMany(['parent_id' => (string)$record->_id], ['$set' => ['parent_id' => '']]);
-            $instance->updateOrder('');
             return true;
         }
 

@@ -3,10 +3,12 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\FieldCategory;
+use SailCMS\Types\Fields\InputHTMLField;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\StoringType;
 
-class HTMLField extends TextField
+class HTMLField extends Field
 {
     public const REPEATABLE = true;
 
@@ -38,7 +40,7 @@ class HTMLField extends TextField
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputTextField::defaultSettings(true),
+            InputHTMLField::defaultSettings(true),
         ]);
     }
 
@@ -52,15 +54,32 @@ class HTMLField extends TextField
      */
     protected function validate(mixed $content): ?Collection
     {
-        $errors = Collection::init();
+        return null;
+    }
 
-        $validTags = ['p', 'a', 'div', 'i', 'strong'];
-        preg_match_all('~<(?P<tag>[^\/][^>]*?)>~', $content, $htmlTags);
+    /**
+     * @return string
+     */
+    public function category(): string
+    {
+        return FieldCategory::TEXT->value;
+    }
 
-        if (count(array_diff($htmlTags['tag'], $validTags)) > 0) {
-            $errors->push(self::INVALID_TAGS);
-        }
+    /**
+     * @return string
+     */
+    public function storingType(): string
+    {
+        return StoringType::STRING->value;
+    }
 
-        return $errors;
+    /**
+     * @return void
+     */
+    protected function defineBaseConfigs(): void
+    {
+        $this->baseConfigs = new Collection([
+            InputHTMLField::class
+        ]);
     }
 }

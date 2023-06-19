@@ -1,9 +1,9 @@
 <?php
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Models\Asset;
-use SailCMS\Models\Entry\AssetField;
+use SailCMS\Models\Entry\AssetFileField;
+use SailCMS\Models\Entry\AssetImageField;
 use SailCMS\Models\Entry\DateField;
 use SailCMS\Models\Entry\DateTimeField;
 use SailCMS\Models\Entry\EmailField;
@@ -131,7 +131,7 @@ test('Add all fields to the layout', function () {
 
     $urlField = new UrlField(new LocaleField(['en' => 'Url', 'fr' => 'Url']));
 
-    $assetField = new AssetField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
+    $assetField = new AssetImageField(new LocaleField(['en' => 'Image', 'fr' => 'Image']));
 
     $dateField = new DateField(new LocaleField(['en' => 'Date', 'fr' => 'Date']), [
         [
@@ -231,9 +231,9 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
-            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('image')[0][0])->toBe(AssetFileField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('multipleSelect')[1][0])->toBe(InputSelectField::OPTIONS_INVALID)
-            ->and($errors->get('image')[0][0])->toBe(AssetField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('image')[0][0])->toBe(AssetImageField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
             ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED)
@@ -306,7 +306,6 @@ and must keep it through all the process',
                 'time' => '10:30'
             ])->and($content->get('repeater.content')->length)->toBe(3);
     } catch (Exception $exception) {
-        Debug::ray($exception);
         expect(true)->toBe(false);
     }
 });

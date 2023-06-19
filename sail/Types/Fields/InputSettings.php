@@ -22,11 +22,11 @@ class InputSettings implements Castable
      *
      */
     public function __construct(
-        public readonly string      $name = '',
-        public readonly string      $type = '',
-        public readonly ?Collection $options = new Collection([])
-    )
-    {
+        public readonly string $name = '',
+        public readonly string $type = '',
+        public readonly ?Collection $options = new Collection([]),
+        public readonly bool $explain = false
+    ) {
     }
 
     /**
@@ -41,6 +41,7 @@ class InputSettings implements Castable
         return [
             'name' => $this->name,
             'type' => $this->type,
+            'explain' => $this->explain,
             'options' => $this->options
         ];
     }
@@ -55,6 +56,6 @@ class InputSettings implements Castable
      */
     public function castTo(mixed $value): self
     {
-        return new self($value->name, $value->type, $value->options);
+        return new self($value->name, $value->type, $value->options, $value->explain);
     }
 }
