@@ -1062,7 +1062,8 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $doc->{$target}->{$pop[1]} = self::parsePopulate($doc->{$target}, $thepop);
+                        $subDoc = self::parsePopulate($doc->{$target}, $thepop);
+                        $doc->{$target}->{$pop[1]} = $subDoc->{$thepop['targetField']};
                     }
                 }
             } else {
