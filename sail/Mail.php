@@ -330,6 +330,29 @@ class Mail
 
     /**
      *
+     * Version selector for this feature
+     *
+     * @param  int               $version
+     * @param  string            $slug
+     * @param  string            $locale
+     * @param  Collection|array  $context
+     * @return $this
+     * @throws EmailException
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     *
+     */
+    public function useEmail(int $version, string $slug, string $locale, Collection|array $context = []): static
+    {
+        if ($version === 1) {
+            return $this->useEmailVersion1($slug, $locale, $context);
+        }
+
+        return $this->useEmailVersion2($slug, $locale, $context);
+    }
+
+    /**
+     *
      * Setup email to use a template from the templating system
      *
      * @param  string            $slug
@@ -341,7 +364,7 @@ class Mail
      * @throws EmailException
      *
      */
-    public function useEmail(string $slug, string $locale, Collection|array $context = []): static
+    public function useEmailVersion2(string $slug, string $locale, Collection|array $context = []): static
     {
         if ($slug === 'test') {
             $settings = setting('emails', []);
@@ -437,6 +460,148 @@ class Mail
                 }
             }
 
+            $superContext->pushKeyValue('host', $host);
+
+            return $this
+                ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))
+                ->subject($subject)
+                ->template($template->template, $superContext);
+        }
+
+        throw new EmailException("Cannot find the email '{$slug}' from database, please make sure it's not a typo", 0404);
+    }
+
+    /**
+     *
+     * Setup email to use a template from the templating system
+     *
+     * @param  string            $slug
+     * @param  string            $locale
+     * @param  Collection|array  $context
+     * @return $this
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     * @throws EmailException
+     * @deprecated
+     *
+     */
+    public function useEmailVersion1(string $slug, string $locale, Collection|array $context = []): static
+    {
+        if ($slug === 'test') {
+            $settings = setting('emails', []);
+
+            if (is_array($context)) {
+                $context = new Collection($context);
+            }
+
+            return $this
+                ->from($settings->get('from'))
+                ->subject('SailCMS Test')
+                ->template('test', $context);
+        }
+
+        $template = EmailDeprecated::getBySlug($slug);
+
+        if ($template) {
+            $settings = setting('emails', []);
+
+            if (is_array($context)) {
+                $context = new Collection($context);
+            }
+
+            $providedContent = new Collection([
+                'email_subject' => $template->subject->{$locale},
+                'email_title' => $template->title->{$locale},
+                'email_content' => $template->content->{$locale},
+                'cta_link' => $template->cta->{$locale},
+                'cta_title' => $template->cta_title->{$locale}
+            ]);
+
+            // Context squashes providedContent to enable extensibility
+            $superContext = $providedContent->merge($context);
+
+            // Fetch the global scoped context
+            $globalContext = setting('emails.globalContext', ['locales' => ['fr' => [], 'en' => []]]);
+            $locales = $globalContext->get('locales.' . $locale);
+            $gc = $globalContext->unwrap();
+            unset($gc['locales']); // don't add twice
+
+            $superContext->pushSpreadKeyValue(...$locales->unwrap(), ...$gc);
+
+            // cta_link is present and verification_code. Replace {code} in link for code
+            if ($context->get('verification_code', null) !== null) {
+                $superContext->setFor('cta_link', str_replace(
+                    '{code}',
+                    $context->get('verification_code', ''),
+                    $superContext->get('cta_link')
+                ));
+            }
+
+            // cta_link is present and reset_code. Replace {code} in link for code
+            if ($context->get('reset_code', null) !== null) {
+                $superContext->setfor('cta_link', str_replace(
+                    '{code}',
+                    $context->get('reset_code', ''),
+                    $superContext->get('cta_link')
+                ));
+            }
+
+            // cta_link is present and reset_pass_code. Replace {reset_code} in link for code
+            if ($context->get('reset_pass_code', null) !== null) {
+                $superContext->setfor('cta_link', str_replace(
+                    '{reset_code}',
+                    $context->get('reset_pass_code', ''),
+                    $superContext->get('cta_link')
+                ));
+            } else {
+                $link = $superContext->get('cta_link');
+                $superContext->setFor('cta_link', str_replace('{reset_code}', '', $link));
+            }
+
+            // Replace locale variable in template name to the actual locale
+            $template->template = str_replace('{locale}', $locale, $template->template);
+
+            // Go through the context's title, subject, content and cta title to parse any replacement variable
+            // Replacement variables are {xx} format (different to twigs {{xx}} format)
+
+            $title = $superContext->get('email_title');
+
+            $content = $superContext->get('email_content');
+            $cta = $superContext->get('cta_link');
+            $cta_title = $superContext->get('cta_title');
+
+            $replacements = $superContext->get('replacements', []);
+
+            $subject = $template->subject->{$locale};
+            foreach ($replacements as $key => $value) {
+                $title = str_replace('{' . $key . '}', $value, $title);
+                $content = str_replace('{' . $key . '}', $value, $content);
+                $cta = str_replace('{' . $key . '}', $value, $cta);
+                $cta_title = str_replace('{' . $key . '}', $value, $cta_title);
+                $subject = str_replace('{' . $key . '}', $value, $subject);
+            }
+
+            // Determine what host to use (if no override, use .env url) otherwise use override if allowed
+            $request = new Request();
+            $override = $request->header('x-domain-override');
+            $host = env('SITE_URL');
+
+            if ($override !== '') {
+                $allowed = setting('emails.overrides', new Collection(['allow' => false, 'acceptedDomains' => []]))->unwrap();
+
+                if ($allowed['allow'] && in_array($override, $allowed['acceptedDomains'], true)) {
+                    if (str_contains($override, 'localhost')) {
+                        $host = 'http://' . $override;
+                    } else {
+                        $host = 'https://' . $override;
+                    }
+                }
+            }
+
+            $superContext->setFor('email_title', $title);
+            $superContext->setFor('email_content', $content);
+            $superContext->setFor('cta_link', str_replace('{host}', $host, $cta));
+            $superContext->setFor('cta_title', $cta_title);
             $superContext->pushKeyValue('host', $host);
 
             return $this

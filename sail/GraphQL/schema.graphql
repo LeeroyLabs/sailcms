@@ -25,6 +25,10 @@ type Query {
     assetConfig: AssetConfig!
     assetTransformForId(id: ID!, transform_name: String!): String!
 
+    # Emails v1
+    emailV1(id: ID!): Email
+    emailsV1: [Email!]!
+
     # Emails
     email(id: ID!): Email
     emails(site_id: String!): [Email!]!
@@ -93,6 +97,12 @@ type Mutation {
     moveFiles(ids: [ID!]!, folder: String!): Boolean!
     addFolder(folder: String!, site_id: String!): Int!
     removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
+
+    # Emails V1
+    createEmailV1(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
+    updateEmailV1(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    deleteEmailV1(id: ID!): Boolean!
+    deleteEmailBySlugV1(slug: String!): Boolean!
 
     # Emails
     createEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!, preview: Boolean): Boolean!
