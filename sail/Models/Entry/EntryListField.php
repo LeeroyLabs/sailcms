@@ -7,39 +7,83 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntryType;
+use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class EntryListField extends Field
 {
-    /* Error */
-    public const ENTRY_TYPE_DOES_NOT_EXISTS = '6260: Entry of %s type does not exists.';
-    public const ENTRY_HANDLE = '6261: Entry type handle must be set';
-
-    public function description(): string
+    /**
+     *
+     * Override the constructor to force the repeater attribute to true
+     *
+     * @param  LocaleField            $labels
+     * @param  array|Collection|null  $settings
+     */
+    public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
-        return "Field to add a list of links of entries";
+        parent::__construct($labels, $settings, true);
     }
 
+    /**
+     *
+     * @return LocaleField
+     *
+     */
+    public function description(): LocaleField
+    {
+        return new LocaleField([
+            'en' => 'Allows the selection of an list of entries from a list.',
+            'fr' => 'Permet la sélection d\'une liste d\'entrées à partir d\'une liste.'
+        ]);
+    }
+
+    /**
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::SPECIAL->value;
+    }
+
+    /**
+     *
+     * @return string
+     *
+     */
     public function storingType(): string
     {
-        return StoringType::ARRAY->name;
+        return StoringType::STRING->value;
     }
 
+    /**
+     *
+     * @return Collection
+     *
+     */
     public function defaultSettings(): Collection
     {
         // The only settings available is "required"
         $defaultSettings = new Collection(['required' => true]);
         return new Collection([
-            'typeHandle' => $defaultSettings
+            $defaultSettings
         ]);
     }
 
+    /**
+     *
+     * @return void
+     *
+     */
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            'typeHandle' => InputTextField::class
+            InputTextField::class
         ]);
     }
 
@@ -47,30 +91,68 @@ class EntryListField extends Field
      *
      * Entry validation
      *
-     * @param Collection $content
+     * @param mixed $content
      * @return Collection|null
      * @throws ACLException
      * @throws DatabaseException
-     * @throws EntryException
      * @throws PermissionException
      *
      */
-    protected function validate(Collection $content): ?Collection
+    protected function validate(mixed $content): ?Collection
     {
         $errors = Collection::init();
 
-        $entryTypeHandle = $content->get('typeHandle');
+        if ($content instanceof Collection || is_array($content)) {
+            $entryPublicationModel = new EntryPublication();
+            $entryPublications = $entryPublicationModel->getPublicationsByEntryIds($content, false, false);
 
-        if (!$entryTypeHandle) {
-            $errors->push(self::ENTRY_HANDLE);
-        } else {
-            $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
-
-            if (!$entryModel->entry_type_id) {
-                $errors->push(sprintf(self::ENTRY_TYPE_DOES_NOT_EXISTS, $entryTypeHandle));
+            $missingEntries = new Collection();
+            foreach($content as $i => $entryId) {
+                $missing = true;
+                foreach ($entryPublications as $publication) {
+                    if ($publication->entry_id === $entryId) {
+                        $missing = false;
+                        break;
+                    }
+                }
+                if ($missing) {
+                    $missingEntries->pushKeyValue($i, EntryField::ENTRY_DOES_NOT_EXISTS);
+                }
             }
+
+            $errors->push($missingEntries);
         }
 
         return $errors;
+    }
+
+    /**
+     *
+     * Parent override to get the list of entries
+     *
+     * @param $content
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function parse($content): mixed
+    {
+        if ($content instanceof Collection || is_array($content)) {
+            $entryPublicationModel = new EntryPublication();
+            $entryPublications = $entryPublicationModel->getPublicationsByEntryIds($content, true, false);
+
+            $publicationEntries = new Collection();
+            foreach($entryPublications as $publication) {
+                /**
+                 * @var EntryPublication $publication
+                 */
+                $publicationEntries->push($publication->version->entry->unwrap());
+            }
+            return $publicationEntries;
+        }
+
+        return $content;
     }
 }

@@ -71,6 +71,37 @@ class EntryPublication extends Model
 
     /**
      *
+     * Get publications with a list of entry ids
+     *
+     * @param  array|Collection  $entryIds
+     * @param  bool              $getVersion
+     * @param  bool              $api
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getPublicationsByEntryIds(array|Collection $entryIds, bool $getVersion = true, bool $api = true):?array {
+        if ($api) {
+            $this->hasPermissions(true);
+        }
+
+        if ($entryIds instanceof Collection) {
+            $entryIds = $entryIds->unwrap();
+        }
+
+        $qs = $this->find(['entry_id' => ['$id' => $entryIds]]);
+
+        if ($getVersion) {
+            $qs->populate('entry_version_id', 'version', EntryVersion::class);
+        }
+
+        return $qs->exec();
+    }
+
+    /**
+     *
      * Get a publication by url
      *
      * @param string $url
@@ -143,7 +174,8 @@ class EntryPublication extends Model
      *
      * Delete publications for a given entry id
      *
-     * @param string $entryId
+     * @param  string  $entryId
+     * @param  bool    $api
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
