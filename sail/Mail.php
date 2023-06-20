@@ -8,6 +8,7 @@ use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Http\Request;
 use SailCMS\Models\Email;
+use SailCMS\Models\EmailDeprecated;
 use SailCMS\Templating\Engine;
 use SailCMS\Templating\Extensions\Bundled;
 use SailCMS\Templating\Extensions\Navigation;
