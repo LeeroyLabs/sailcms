@@ -7,12 +7,8 @@ use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
 
-class InputTextField extends Field
+class InputTextareaField extends InputTextField
 {
-    /* Errors from 6120 to 6139 */
-    public const FIELD_TOO_LONG = '6120: The content is too long (%s)';
-    public const FIELD_TOO_SHORT = '6121: The content is too short (%s)';
-    public const FIELD_PATTERN_NO_MATCH = '6122: The regex pattern does not matches /%s/';
 
     /**
      *
@@ -23,6 +19,7 @@ class InputTextField extends Field
      * @param  int               $minLength
      * @param  int               $maxLength
      * @param  string            $pattern
+     * @param  int               $rows
      *
      */
     public function __construct(
@@ -30,7 +27,8 @@ class InputTextField extends Field
         public readonly bool         $required = false,
         public readonly int          $minLength = 0,
         public readonly int          $maxLength = 0,
-        public readonly string       $pattern = ''
+        public readonly string       $pattern = '',
+        public readonly int          $rows = 2
     )
     {
     }
@@ -49,7 +47,8 @@ class InputTextField extends Field
             'required' => false,
             'minLength' => 0,
             'maxLength' => 0,
-            'pattern' => ''
+            'pattern' => '',
+            'rows' => 2
         ]);
     }
 
@@ -66,7 +65,8 @@ class InputTextField extends Field
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('minLength', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('maxLength', InputSettings::INPUT_TYPE_NUMBER),
-            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING, Collection::init(), true)
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING, Collection::init(), true),
+            new InputSettings('rows', InputSettings::INPUT_TYPE_NUMBER)
         ]);
     }
 
@@ -79,42 +79,6 @@ class InputTextField extends Field
     public static function storingType(): string
     {
         return StoringType::STRING->value;
-    }
-
-    /**
-     *
-     * Input text field validation
-     *
-     * @param  mixed  $content
-     * @return Collection
-     *
-     */
-    public function validate(mixed $content): Collection
-    {
-        $errors = Collection::init();
-
-        if ($this->required && !$content) {
-            $errors->push(self::FIELD_REQUIRED);
-        }
-
-        if ($content) {
-            if ($this->maxLength > 0 && strlen($content) > $this->maxLength) {
-                $errors->push(sprintf(self::FIELD_TOO_LONG, $this->maxLength));
-            }
-
-            if ($this->minLength > 0 && strlen($content) < $this->minLength) {
-                $errors->push(sprintf(self::FIELD_TOO_SHORT, $this->minLength));
-            }
-
-            if ($this->pattern) {
-                preg_match("/$this->pattern/", $content, $matches);
-                if (empty($matches[0])) {
-                    $errors->push(sprintf(self::FIELD_PATTERN_NO_MATCH, $this->pattern));
-                }
-            }
-        }
-
-        return $errors;
     }
 
     /**
@@ -132,7 +96,8 @@ class InputTextField extends Field
                 'required' => $this->required,
                 'minLength' => $this->minLength,
                 'maxLength' => $this->maxLength,
-                'pattern' => $this->pattern
+                'pattern' => $this->pattern,
+                'rows' => $this->rows
             ]
         ];
     }
@@ -142,7 +107,7 @@ class InputTextField extends Field
      * Cast to InputTextField
      *
      * @param  mixed  $value
-     * @return InputTextField
+     * @return self
      *
      */
     public function castTo(mixed $value): self
@@ -152,7 +117,8 @@ class InputTextField extends Field
             $value->settings->required ?? false,
             $value->settings->minLength ?? 0,
             $value->settings->maxLength ?? 0,
-            $value->settings->pattern ?? ''
+            $value->settings->pattern ?? '',
+            $value->settings->rows ?? 2
         );
     }
 }

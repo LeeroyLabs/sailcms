@@ -5,7 +5,6 @@ namespace SailCMS\Types\Fields;
 use SailCMS\Collection;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
-use stdClass;
 
 class InputAssetImageField extends Field
 {
@@ -15,7 +14,6 @@ class InputAssetImageField extends Field
      *
      * @param  LocaleField|null  $labels
      * @param  bool              $required
-     * @param  bool              $multiple
      * @param  string|null       $cropName
      * @param  int|null          $ratio
      * @param  int|null          $minWidth
@@ -27,16 +25,16 @@ class InputAssetImageField extends Field
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-        public readonly bool $multiple = false,
-        public readonly ?string $cropName = null,
-        public readonly ?int $ratio = 0,
-        public readonly ?int $minWidth = 200,
-        public readonly ?int $minHeight = 200,
-        public readonly ?int $maxWidth = 2000,
-        public readonly ?int $maxHeight = 2000,
-        public readonly ?string $lockedType = ''
-    ) {
+        public readonly bool         $required = false,
+        public readonly ?string      $cropName = null,
+        public readonly ?int         $ratio = 0,
+        public readonly ?int         $minWidth = 200,
+        public readonly ?int         $minHeight = 200,
+        public readonly ?int         $maxWidth = 2000,
+        public readonly ?int         $maxHeight = 2000,
+        public readonly ?string      $lockedType = ''
+    )
+    {
     }
 
     /**
@@ -51,7 +49,6 @@ class InputAssetImageField extends Field
     {
         return new Collection([
             'required' => false,
-            'multiple' => false,
             'cropName' => 'custom',
             'ratio' => 0,
             'minWidth' => 200,
@@ -79,7 +76,6 @@ class InputAssetImageField extends Field
 
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('multiple', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('cropName', InputSettings::INPUT_TYPE_STRING, Collection::init(), true),
             new InputSettings('ratio', InputSettings::INPUT_TYPE_NUMBER),
             new InputSettings('minWidth', InputSettings::INPUT_TYPE_NUMBER),
@@ -133,7 +129,6 @@ class InputAssetImageField extends Field
         return new self(
             $value->labels,
             $value->settings->required ?? false,
-            $value->settings->multiple ?? false,
             $value->settings->cropName ?? 'custom',
             $value->settings->ratio ?? 0,
             $value->settings->minWidth ?? 200,

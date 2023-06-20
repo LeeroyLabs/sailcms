@@ -5,7 +5,6 @@ namespace SailCMS\Types\Fields;
 use SailCMS\Collection;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
-use stdClass;
 
 class InputAssetFileField extends Field
 {
@@ -15,22 +14,15 @@ class InputAssetFileField extends Field
      *
      * @param  LocaleField|null  $labels
      * @param  bool              $required
-     * @param  bool              $multiple
-     * @param  string|null       $cropName
-     * @param  int|null          $ratio
-     * @param  int|null          $minWidth
-     * @param  int|null          $minHeight
-     * @param  int|null          $maxWidth
-     * @param  int|null          $maxHeight
-     * @param  string|null       $lockedType
+     * @param  string            $allowedFormats
      *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-        public readonly bool $multiple = false,
-        public readonly string $allowedFormats = '.pdf,.doc,.docx,.xls,.xlsx'
-    ) {
+        public readonly bool         $required = false,
+        public readonly string       $allowedFormats = '.pdf,.doc,.docx,.xls,.xlsx'
+    )
+    {
     }
 
     /**
@@ -45,7 +37,6 @@ class InputAssetFileField extends Field
     {
         return new Collection([
             'required' => false,
-            'multiple' => false,
             'allowedFormats' => '.pdf,.doc,.docx,.xls,.xlsx'
         ]);
     }
@@ -61,7 +52,6 @@ class InputAssetFileField extends Field
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('multiple', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('allowedFormats', InputSettings::INPUT_TYPE_STRING)
         ]);
     }
@@ -101,7 +91,7 @@ class InputAssetFileField extends Field
      * Cast to InputTextField
      *
      * @param  mixed  $value
-     * @return InputAssetImageField
+     * @return InputAssetFileField
      *
      */
     public function castTo(mixed $value): self
@@ -109,7 +99,6 @@ class InputAssetFileField extends Field
         return new self(
             $value->labels,
             $value->settings->required ?? false,
-            $value->settings->multiple ?? false,
             $value->settings->allowedFormats ?? '.pdf,.doc,.docx,.xls,.xlsx',
         );
     }

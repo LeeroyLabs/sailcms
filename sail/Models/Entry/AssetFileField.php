@@ -7,20 +7,16 @@ use SailCMS\Collection;
 use SailCMS\Models\Asset;
 use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputAssetFileField;
-use SailCMS\Types\Fields\InputAssetImageField;
-use SailCMS\Types\Fields\InputHTMLField;
-use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
+use stdClass;
 
 class AssetFileField extends Field
 {
-    public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
+    public const REPEATABLE = true;
 
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
+
+    public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
 
     /**
      *
@@ -71,11 +67,7 @@ class AssetFileField extends Field
     public function defaultSettings(): Collection
     {
         return new Collection([
-            new Collection([
-                'required' => false,
-                'multiple' => false,
-                'allowedFormats' => '.pdf,.doc,.docx,.xls,.xlsx'
-            ])
+            InputAssetFileField::defaultSettings()
         ]);
     }
 
@@ -104,14 +96,19 @@ class AssetFileField extends Field
     {
         $errors = Collection::init();
 
-        try {
-            $asset = Asset::getById($content);
-        } catch (Exception $exception) {
-            // fail silently
-            $asset = null;
-        }
+        if ($this->repeater) {
+            $repeaterErrors = Collection::init();
+            $content->each(function ($key, $assetId) use ($repeaterErrors) {
+                if (!$this->validateAsset($assetId)) {
+                    $repeaterErrors->pushKeyValue($key, self::ASSET_DOES_NOT_EXISTS);
+                }
+            });
 
-        if (!$asset) {
+            if ($repeaterErrors->length > 0) {
+                $errors->push($repeaterErrors);
+            }
+
+        } else if (!$this->validateAsset($content)) {
             $errors->push(new Collection([self::ASSET_DOES_NOT_EXISTS]));
         }
 
@@ -120,29 +117,73 @@ class AssetFileField extends Field
 
     /**
      *
+     * Validate if the asset exists
+     *
+     * @param $assetId
+     * @return bool
+     *
+     */
+    private function validateAsset($assetId): bool
+    {
+        try {
+            $asset = Asset::getById($assetId);
+        } catch (Exception $exception) {
+            // fail silently
+            $asset = null;
+        }
+
+        return boolval($asset);
+    }
+
+    /**
+     *
      * Parse the content to return the asset url and name
      *
      * @param  mixed  $content
-     * @return mixed
+     * @return stdClass|array
      *
      */
-    public function parse(mixed $content): mixed
+    public function parse(mixed $content): stdClass|array
     {
-        if ($content) {
+        if ($this->repeater) {
+            $assets = [];
+            $content->each(function ($key, $assetId) use (&$assets) {
+                $assets[] = $this->parseAsset($assetId);
+            });
+            return $assets;
+        }
+        return $this->parseAsset($content);
+
+    }
+
+    /**
+     *
+     * Parse asset
+     *
+     * @param $assetId
+     * @return stdClass
+     *
+     */
+    private function parseAsset($assetId): stdClass
+    {
+        $assetData = [];
+
+        if ($assetId) {
             try {
-                $asset = Asset::getById($content);
+                $asset = Asset::getById($assetId);
             } catch (Exception $exception) {
                 // fail silently
                 $asset = null;
             }
 
             if ($asset) {
-                return (object)[
+                $assetData = [
                     'name' => $asset->name,
                     'url' => $asset->url
                 ];
             }
         }
-        return $content;
+
+        return (object)$assetData;
     }
 }

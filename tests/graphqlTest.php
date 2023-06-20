@@ -37,6 +37,7 @@ beforeEach(function () {
 });
 
 test('Create asset', function () {
+
     if (isset($_ENV['test-token'])) {
         $data = file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt');
         $newAsset = $this->client->run('
@@ -171,7 +172,8 @@ test('Create layout, entry type & entry', function () {
                         {
                             labels: { en: "Image", fr: "Image" }
                             key: "image"
-                            handle: "SailCMS-Models-Entry-AssetField"
+                            handle: "SailCMS-Models-Entry-AssetImageField"
+                            repeater: true
                             inputSettings: [
                                 {
                                     settings: [
@@ -316,7 +318,7 @@ test('Create layout, entry type & entry', function () {
                         }
                         {
                             key: "image"
-                            content: "' . $assetId . '"
+                            content: ["' . $assetId . '"]
                         }
                         {
                             key: "date"
@@ -339,6 +341,12 @@ test('Create layout, entry type & entry', function () {
                         }
                     ]
                 ) {
+                    entry {
+                        content {
+                            key
+                            content
+                        }
+                    }
                     errors {
                         key
                         errors
@@ -352,9 +360,6 @@ test('Create layout, entry type & entry', function () {
             expect($newEntryType->status)->toBe('ok');
             expect($newEntry->status)->toBe('ok');
         } catch (Exception $exception) {
-            SailCMS\Debug::ray($newEntryLayout);
-            SailCMS\Debug::ray($newEntryType);
-            SailCMS\Debug::ray($newEntry);
             expect(true)->toBe(false);
         }
     }

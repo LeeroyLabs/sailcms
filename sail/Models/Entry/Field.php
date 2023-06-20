@@ -3,6 +3,8 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Debug;
+use SailCMS\Errors\EntryException;
 use SailCMS\Types\FieldInfo;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputSettings;
@@ -14,6 +16,9 @@ abstract class Field
 {
     public const SEARCHABLE = false;
     public const REPEATABLE = false;
+
+    /* Errors from 6100 to 6119 */
+    public const WRONG_FIELD_CONTENT_TYPE = "6101: The field content must be an array since the repeater option has been activated.";
 
     /* Properties */
     public LocaleField $labels;
@@ -101,6 +106,7 @@ abstract class Field
      *
      * @param  mixed  $content
      * @return Collection
+     * @throws EntryException
      *
      */
     public function validateContent(mixed $content): Collection
@@ -113,7 +119,14 @@ abstract class Field
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
             if ($this->repeater) {
+                if (!$content instanceof Collection) {
+                    throw new EntryException(self::WRONG_FIELD_CONTENT_TYPE, 6101);
+                }
+
                 $content->each(function ($k, $currentContent) use ($fieldTypeClass, &$errors) {
+                    if ($currentContent instanceof Collection) {
+                        Debug::ray($currentContent);
+                    }
                     $this->validateInput($currentContent, $k, $fieldTypeClass, $errors);
                 });
             } else {
@@ -310,7 +323,7 @@ abstract class Field
      * @return void
      *
      */
-    protected function validateInput($currentContent, $index, $fieldTypeClass, &$errors)
+    protected function validateInput($currentContent, $index, $fieldTypeClass, &$errors): void
     {
         if ($currentContent instanceof Collection) {
             $currentContent = $currentContent->get($index);

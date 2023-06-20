@@ -2,25 +2,12 @@
 
 namespace SailCMS\Models\Entry;
 
-use Exception;
 use SailCMS\Collection;
-use SailCMS\Models\Asset;
-use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputAssetImageField;
-use SailCMS\Types\Fields\InputHTMLField;
-use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
-use SailCMS\Types\StoringType;
 
-class AssetImageField extends Field
+class AssetImageField extends AssetFileField
 {
-    public const ASSET_DOES_NOT_EXISTS = '6280: Asset of the given id does not exists.';
-
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
-
     /**
      *
      * Description for field info
@@ -38,30 +25,6 @@ class AssetImageField extends Field
 
     /**
      *
-     * Category of field
-     *
-     * @return string
-     *
-     */
-    public function category(): string
-    {
-        return FieldCategory::SPECIAL->value;
-    }
-
-    /**
-     *
-     * Returns the storing type
-     *
-     * @return string
-     *
-     */
-    public function storingType(): string
-    {
-        return StoringType::STRING->value;
-    }
-
-    /**
-     *
      * Sets the default settings from the input text field
      *
      * @return Collection
@@ -70,17 +33,7 @@ class AssetImageField extends Field
     public function defaultSettings(): Collection
     {
         return new Collection([
-            new Collection([
-                'required' => false,
-                'multiple' => false,
-                'cropName' => 'custom',
-                'ratio' => 0,
-                'minWidth' => 200,
-                'minHeight' => 200,
-                'maxWidth' => 2000,
-                'maxHeight' => 2000,
-                'lockedType' => ''
-            ])
+            InputAssetImageField::defaultSettings()
         ]);
     }
 
@@ -95,59 +48,5 @@ class AssetImageField extends Field
         $this->baseConfigs = new Collection([
             InputAssetImageField::class
         ]);
-    }
-
-    /**
-     *
-     * Validate the asset existence
-     *
-     * @param  mixed  $content
-     * @return Collection|null
-     *
-     */
-    protected function validate(mixed $content): ?Collection
-    {
-        $errors = Collection::init();
-
-        try {
-            $asset = Asset::getById($content);
-        } catch (Exception $exception) {
-            // fail silently
-            $asset = null;
-        }
-
-        if (!$asset) {
-            $errors->push(new Collection([self::ASSET_DOES_NOT_EXISTS]));
-        }
-
-        return $errors;
-    }
-
-    /**
-     *
-     * Parse the content to return the asset url and name
-     *
-     * @param  mixed  $content
-     * @return mixed
-     *
-     */
-    public function parse(mixed $content): mixed
-    {
-        if ($content) {
-            try {
-                $asset = Asset::getById($content);
-            } catch (Exception $exception) {
-                // fail silently
-                $asset = null;
-            }
-
-            if ($asset) {
-                return (object)[
-                    'name' => $asset->name,
-                    'url' => $asset->url
-                ];
-            }
-        }
-        return $content;
     }
 }
