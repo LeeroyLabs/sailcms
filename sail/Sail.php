@@ -35,7 +35,7 @@ use Whoops\Run;
 
 class Sail
 {
-    public const SAIL_VERSION = '3.0.0-next.25';
+    public const SAIL_VERSION = '3.0.0-next.125';
     public const SAIL_MAJOR_VERSION = 3;
     public const SAIL_MINOR_VERSION = 0;
     public const SAIL_REVISION_VERSION = 0;
@@ -178,6 +178,8 @@ class Sail
         if (setting('emails.usePreviewer', false)) {
             Router::setupEmailPreviewer();
         }
+
+        Router::setupThirdPartyContent();
 
         Router::dispatch();
     }
@@ -586,6 +588,10 @@ class Sail
      */
     public static function getTemplateDirectory(): string
     {
+        if (str_ends_with(self::$templateDirectory, '/')) {
+            return self::$templateDirectory;
+        }
+
         return self::$templateDirectory . '/';
     }
 

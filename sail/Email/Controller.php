@@ -3,7 +3,9 @@
 namespace SailCMS\Email;
 
 use League\Flysystem\FilesystemException;
+use SailCMS\Collection;
 use SailCMS\Contracts\AppController;
+use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
@@ -12,6 +14,7 @@ use SailCMS\Mail;
 use SailCMS\Models\Email;
 use SailCMS\Sail;
 use SailCMS\Types\MailPreviewData;
+use SailCMS\UI;
 
 class Controller extends AppController
 {
@@ -33,21 +36,25 @@ class Controller extends AppController
         // Fetch template if it exists
         $email = Email::getBySlug($name);
 
+        if (!$email) {
+            // Get by id if name fails
+            $email = Email::get($name);
+        }
+
         Locale::setCurrent($locale);
 
         if (!$email) {
             throw new EmailException('Cannot find email to preview. Please make sure it exists', 0404);
         }
 
-        // Prepare context
         $context = [
-            'cta_link' => $email->cta->{$locale},
-            'cta_title' => $email->cta_title->{$locale},
-            'email_content' => $email->content->{$locale},
-            'title' => $email->title->{$locale},
             'subject' => $email->subject->{$locale},
             'locale' => $locale
         ];
+
+        foreach ($email->fields as $field) {
+            $context[$field->key] = $field->value->{$locale};
+        }
 
         // Call extra context provider
         $handler = Mail::getRegisteredPreviewHandler($name);
@@ -63,10 +70,10 @@ class Controller extends AppController
                     $this->response->template = $data->template;
                 } else {
                     // Try to determine the path and file for it
-                    $path = Sail::getWorkingDirectory() . '/templates/' . Sail::siteId() . '/email/' . $name;
+                    $path = Sail::getWorkingDirectory() . '/templates/' . $email->site_id . '/email/' . $email->template;
 
                     if (file_exists($path . '.twig')) {
-                        $this->response->template = Sail::siteId() . '/email/' . $name;
+                        $this->response->template = $email->site_id . '/email/' . $email->template;
                     } else {
                         throw new FileException(
                             "Cannot find template, please provide it's path using a preview handler. For debugging, trying to find it in {$path}",
@@ -79,10 +86,10 @@ class Controller extends AppController
             }
         } else {
             $context = self::processContext($context);
-            $path = Sail::getWorkingDirectory() . '/templates/' . Sail::siteId() . '/email/' . $name;
+            $path = Sail::getWorkingDirectory() . '/templates/' . $email->site_id . '/email/' . $email->template;
 
             if (file_exists($path . '.twig')) {
-                $this->response->template = Sail::siteId() . '/email/' . $name;
+                $this->response->template = $email->site_id . '/email/' . $email->template;
             } else {
                 throw new FileException(
                     "Cannot find template, please provide it's path using a preview handler. For debugging, trying to find it in {$path}",
@@ -94,22 +101,50 @@ class Controller extends AppController
         $this->response->setArray($context);
     }
 
+    /**
+     *
+     * Load third-party UI content
+     *
+     * @param  string  $appHash
+     * @return void
+     *
+     */
+    public function loadThirdPartyApplication(string $appHash): void
+    {
+        $elements = UI::getNavigationElements();
+        $target = null;
+        $listing = [];
+
+        foreach ($elements as $key => $list) {
+            foreach ($list as $item) {
+                $listing[] = $item;
+            }
+        }
+
+        foreach ($listing as $item) {
+            if (hash('sha256', $item->class . $item->method) === $appHash) {
+                $target = $item;
+            }
+        }
+
+        $instance = new $target->class();
+        $this->response->template = $instance->{$target->method}();
+    }
+
     private static function processContext(array $context): array
     {
         $keys = array_keys($context);
 
-        if (in_array('verification_code', $keys, true)) {
-            $context['cta_link'] = str_replace('{code}', $context['verification_code'], $context['cta_link']);
-        }
+        // Replace {code} and {reset_code} in every field (just in case)
+        foreach ($context as $key => $value) {
+            $vcode = $context['verification_code'] ?? '';
+            $rcode = $context['reset_code'] ?? '';
+            $code = ($vcode !== '' && $rcode === '') ? $vcode : $rcode;
+            $rpcode = $context['reset_pass_code'] ?? '';
 
-        if (in_array('reset_code', $keys, true)) {
-            $context['cta_link'] = str_replace('{code}', $context['reset_code'], $context['cta_link']);
-        }
-
-        if (in_array('reset_pass_code', $keys, true)) {
-            $context['cta_link'] = str_replace('{reset_code}', $context['reset_pass_code'], $context['cta_link']);
-        } else {
-            $context['cta_link'] = str_replace('{reset_code}', '', $context['cta_link']);
+            if (is_string($value)) {
+                $context[$key] = str_replace(['{code}', '{reset_code}'], [$code, $rpcode], $value);
+            }
         }
 
         // Go through the context's title, subject, content and cta title to parse any replacement variable
@@ -118,13 +153,11 @@ class Controller extends AppController
         $replacements = $context['replacements'] ?? [];
 
         foreach ($replacements as $key => $value) {
-            $context['title'] = str_replace('{' . $key . '}', $value, $context['title']);
-            $context['email_content'] = str_replace('{' . $key . '}', $value, $context['email_content']);
-            $context['cta_link'] = str_replace('{' . $key . '}', $value, $context['cta_link']);
-            $context['cta_title'] = str_replace('{' . $key . '}', $value, $context['cta_title']);
-            $context['subject'] = str_replace('{' . $key . '}', $value, $context['subject']);
+            foreach ($context as $k => $v) {
+                $context[$k] = str_replace('{' . $key . '}', $value, $v);
+            }
         }
-
+        
         return $context;
     }
 }

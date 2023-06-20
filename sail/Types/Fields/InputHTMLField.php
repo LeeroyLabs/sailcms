@@ -7,21 +7,19 @@ use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 use stdClass;
 
-class InputEmailField extends Field
+class InputHTMLField extends Field
 {
-    /* Errors 6240 to 6259 */
-    public const EMAIL_INVALID = '6240: This email is invalid';
-
     /**
      *
      * Input text field from html input:text attributes
      *
      * @param  LocaleField|null  $labels
      * @param  bool              $required
+     *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
+        public readonly bool $required = false
     ) {
     }
 
@@ -29,10 +27,11 @@ class InputEmailField extends Field
      *
      * Define default settings for a Input Text Field
      *
+     * @param  bool  $multiline
      * @return Collection
      *
      */
-    public static function defaultSettings(): Collection
+    public static function defaultSettings(bool $multiline = false): Collection
     {
         return new Collection([
             'required' => false,
@@ -43,13 +42,13 @@ class InputEmailField extends Field
      *
      * Available properties of the settings
      *
-     * @param  array|null  $options
      * @return Collection
+     *
      */
-    public static function availableProperties(?array $options = null): Collection
+    public static function availableProperties(): Collection
     {
         return new Collection([
-            new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
+            new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX)
         ]);
     }
 
@@ -80,28 +79,7 @@ class InputEmailField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($content && !filter_var($content, FILTER_VALIDATE_EMAIL)) {
-            $errors->push(self::EMAIL_INVALID);
-        }
-
         return $errors;
-    }
-
-    /**
-     *
-     * Cast to simpler form from InputTextField
-     *
-     * @return stdClass
-     *
-     */
-    public function castFrom(): stdClass
-    {
-        return (object)[
-            'labels' => $this->labels->castFrom(),
-            'settings' => [
-                'required' => $this->required
-            ]
-        ];
     }
 
     /**
@@ -109,14 +87,14 @@ class InputEmailField extends Field
      * Cast to InputTextField
      *
      * @param  mixed  $value
-     * @return InputEmailField
+     * @return InputHTMLField
      *
      */
     public function castTo(mixed $value): self
     {
         return new self(
             $value->labels,
-            $value->settings->required ?? false,
+            $value->settings->required ?? false
         );
     }
 }

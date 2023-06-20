@@ -18,21 +18,20 @@ class InputNumberField extends Field
      *
      * Input text field from html input:number attributes
      *
-     * @param LocaleField|null $labels
-     * @param bool $required
-     * @param float $min
-     * @param float $max
-     * @param float|int $step
+     * @param  LocaleField|null  $labels
+     * @param  bool              $required
+     * @param  float             $min
+     * @param  float             $max
+     * @param  float|int         $step
      *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool         $required = false,
-        public readonly float        $min = 0,
-        public readonly float        $max = 0,
-        public readonly float|int    $step = 1
-    )
-    {
+        public readonly bool $required = false,
+        public readonly float $min = 0,
+        public readonly float $max = 0,
+        public readonly float|int $step = 1
+    ) {
     }
 
     /**
@@ -85,7 +84,7 @@ class InputNumberField extends Field
      *
      * Input text field validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection
      *
      */
@@ -135,7 +134,7 @@ class InputNumberField extends Field
      *
      * Cast to InputNumberField
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return Field
      *
      */

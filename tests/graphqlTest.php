@@ -37,6 +37,7 @@ beforeEach(function () {
 });
 
 test('Create asset', function () {
+
     if (isset($_ENV['test-token'])) {
         $data = file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt');
         $newAsset = $this->client->run('
@@ -177,7 +178,8 @@ test('Create layout, entry type & entry', function () {
                         {
                             labels: { en: "Image", fr: "Image" }
                             key: "image"
-                            handle: "SailCMS-Models-Entry-AssetField"
+                            handle: "SailCMS-Models-Entry-AssetImageField"
+                            repeater: true
                             inputSettings: [
                                 {
                                     settings: [
@@ -224,6 +226,19 @@ test('Create layout, entry type & entry', function () {
                                     settings: [
                                         { name: "required", value: "true", type: boolean }
                                         { name: "min", value: "10:00", type: string }
+                                    ]
+                                }
+                            ]
+                        }
+                        {
+                            labels: { en: "Repeater", fr: "Repeteur" }
+                            key: "repeater"
+                            handle: "SailCMS-Models-Entry-TextField"
+                            repeater: true
+                            inputSettings: [
+                                {
+                                    settings: [
+                                        { name: "required", value: "false", type: boolean }
                                     ]
                                 }
                             ]
@@ -315,7 +330,7 @@ test('Create layout, entry type & entry', function () {
                         }
                         {
                             key: "image"
-                            content: "' . $assetId . '"
+                            content: ["' . $assetId . '"]
                         }
                         {
                             key: "date"
@@ -332,8 +347,18 @@ test('Create layout, entry type & entry', function () {
                                 time: "10:20"
                             }
                         }
+                        {
+                            key: "repeater"
+                            content: ["test", "test2", "test3"]
+                        }
                     ]
                 ) {
+                    entry {
+                        content {
+                            key
+                            content
+                        }
+                    }
                     errors {
                         key
                         errors
@@ -515,6 +540,7 @@ test('Get a entry', function () {
                     }
                     schema {
                         key
+                        repeater
                         fieldConfigs {
                             labels {
                                 en

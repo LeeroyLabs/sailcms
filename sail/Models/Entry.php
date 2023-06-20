@@ -187,12 +187,12 @@ class Entry extends Model implements Validator, Castable
         }
 
         $castedAlternates = [];
-        $this->alternates->each(function ($key, $alternate) use (&$castedAlternates)
-        {
+        $this->alternates->each(function ($key, $alternate) use (&$castedAlternates) {
             if ($alternate instanceof EntryAlternate) {
                 $castedAlternates[] = $alternate->castFrom();
             } // Else it's not an Entry Alternate object, so we ignore it
         });
+
         return $castedAlternates;
     }
 
@@ -206,8 +206,7 @@ class Entry extends Model implements Validator, Castable
      */
     public function castTo(mixed $value): EntryAlternate
     {
-        $alternateInstance = new EntryAlternate();
-        return $alternateInstance->castTo($value);
+        return (new EntryAlternate())->castTo($value);
     }
 
     /**
@@ -326,8 +325,7 @@ class Entry extends Model implements Validator, Castable
 
         $schema = $this->getSchema(true);
 
-        $schema->each(function ($key, $modelField) use (&$parsedContent)
-        {
+        $schema->each(function ($key, $modelField) use (&$parsedContent) {
             /**
              * @var ModelField $modelField
              */
@@ -337,6 +335,7 @@ class Entry extends Model implements Validator, Castable
 
             $parsedContent->pushKeyValue($key, [
                 'type' => $modelField->storingType(),
+                'repeater' => $modelField->repeater,
                 'handle' => $modelField->handle,
                 'content' => $parsedFieldContent ?? '',
                 'key' => $key
@@ -362,8 +361,7 @@ class Entry extends Model implements Validator, Castable
         $processedContents = [];
         $schema = $this->getSchema(true);
 
-        $schema->each(function ($key, $modelField) use (&$processedContents, $content)
-        {
+        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
             $fieldContent = $content->get($key);
 
             if ($fieldContent) {
@@ -493,19 +491,20 @@ class Entry extends Model implements Validator, Castable
             'entry_type_handle' => $this->entryType->handle
         ];
         $schema = $this->getSchema(true);
-        $this->content->each(function ($key, $content) use (&$parsedContents, $schema)
-        {
+        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
             $parsedContent = $content;
 
             /**
              * @var ModelField $field
              */
             $field = $schema->get($key);
-
             $isSearchable = $field::SEARCHABLE && $field;
 
             if ($isSearchable) {
-                if ($content instanceof stdClass) {
+                if (is_object($content)) {
+                    if ($content instanceof Collection) {
+                        $content = $content->unwrap();
+                    }
                     $parsedContent = implode('|', (array)$content);
                 }
                 $parsedContents[$key] = $parsedContent;
@@ -558,8 +557,7 @@ class Entry extends Model implements Validator, Castable
         if ($search) {
             $searchResults = (new SailSearch())->search($search);
             $entryIds = [];
-            $searchResults->results->each(function ($key, $searchResult) use (&$entryIds)
-            {
+            $searchResults->results->each(function ($key, $searchResult) use (&$entryIds) {
                 $entryIds[] = $searchResult->document_id;
             });
 
@@ -597,8 +595,7 @@ class Entry extends Model implements Validator, Castable
 
         $entries = $entryModel->all(false);
 
-        $entries->each(function ($key, $entry)
-        {
+        $entries->each(function ($key, $entry) {
             /**
              * @var Entry $entry
              */
@@ -728,8 +725,7 @@ class Entry extends Model implements Validator, Castable
         $allEntries = Collection::init();
         $siteId = $siteId ?? Sail::siteId();
 
-        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries)
-        {
+        $availableTypes->each(function ($key, $entryType) use ($categoryId, $siteId, &$allEntries) {
             $entry = new Entry($entryType->collection_name);
             $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
             $entries = $entry->find([
@@ -779,8 +775,7 @@ class Entry extends Model implements Validator, Castable
         if (!$availableTypes) {
             $availableTypes = EntryType::getAll();
         }
-        $availableTypes->each(function ($key, $value) use ($filters, &$found)
-        {
+        $availableTypes->each(function ($key, $value) use ($filters, &$found) {
             // We already find one no need to continue the search
             if ($found > 0) {
                 return;
@@ -854,8 +849,7 @@ class Entry extends Model implements Validator, Castable
     {
         $parsedContent = Collection::init();
 
-        $content?->each(function ($i, $toParse) use (&$parsedContent)
-        {
+        $content?->each(function ($i, $toParse) use (&$parsedContent) {
             if (is_array($toParse->content) || $toParse->content instanceof stdClass) {
                 $parsed = new Collection((array)$toParse->content);
             } else {
@@ -883,8 +877,7 @@ class Entry extends Model implements Validator, Castable
         $entry = $this->findById($entryId)->exec();
 
         if (isset($entry->_id)) {
-            $entry->content->each(function ($key, $content) use (&$newContent)
-            {
+            $entry->content->each(function ($key, $content) use (&$newContent) {
                 $currentNewContent = $newContent->get($key);
 
                 if ($currentNewContent instanceof Collection) {
@@ -905,8 +898,7 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Ensure that all content are arrays
-        $newContent->each(function ($key, &$content) use (&$newContent)
-        {
+        $newContent->each(function ($key, &$content) use (&$newContent) {
             if ($content instanceof stdClass) {
                 $newContent->pushKeyValue($key, (array)$content);
             }
@@ -926,8 +918,7 @@ class Entry extends Model implements Validator, Castable
     public static function processErrorsForGraphQL(Collection $errors): Collection
     {
         $parsedErrors = Collection::init();
-        $errors->each(function ($key, $errors) use (&$parsedErrors)
-        {
+        $errors->each(function ($key, $errors) use (&$parsedErrors) {
             $parsedErrors->push([
                 'key' => $key,
                 'errors' => $errors
@@ -1179,11 +1170,9 @@ class Entry extends Model implements Validator, Castable
         $entries = $this->all();
 
         $updates = [];
-        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey)
-        {
+        $entries->each(function ($k, $entry) use (&$updates, $key, $newKey) {
             $newContent = Collection::init();
-            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey)
-            {
+            $entry->content->each(function ($currentKey, $content) use (&$newContent, $key, $newKey) {
                 if ($currentKey == $key) {
                     $currentKey = $newKey;
                 }
@@ -1451,8 +1440,7 @@ class Entry extends Model implements Validator, Castable
         ];
 
         $availableTypes = EntryType::getAll();
-        $availableTypes->each(function ($key, $entryType) use ($filters, &$count)
-        {
+        $availableTypes->each(function ($key, $entryType) use ($filters, &$count) {
             if ($count >= self::PARENT_ENTRY_LIMIT) {
                 // The limit is reached, not useful to continue the count
                 return;
@@ -1528,6 +1516,30 @@ class Entry extends Model implements Validator, Castable
 
     /**
      *
+     * Get count of all content that are from given types
+     *
+     * @param  Collection  $types
+     * @return int
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public static function countAllThatAre(Collection $types): int
+    {
+        $total = 0;
+
+        foreach ($types as $type) {
+            $model = new self('', $type);
+            $total += $model->count(['entry_type_id' => ['$in' => $type->id]]);
+        }
+
+        return $total;
+    }
+
+    /**
+     *
      * Validate content from the entry type layout schema
      *
      * @param  Collection  $content
@@ -1555,8 +1567,7 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Validate content from schema
-        $schema->each(function ($key, $modelField) use ($content, $errors)
-        {
+        $schema->each(function ($key, $modelField) use ($content, $errors) {
             /**
              * @var ModelField $modelField
              */
@@ -1578,8 +1589,7 @@ class Entry extends Model implements Validator, Castable
             }
         });
 
-        $content->each(function ($key, $content) use ($schema)
-        {
+        $content->each(function ($key, $content) use ($schema) {
             if (!$schema->get($key)) {
                 throw new EntryException(sprintf(self::CONTENT_KEY_ERROR[0], $key), self::CONTENT_KEY_ERROR[1]);
             }
@@ -1822,8 +1832,7 @@ class Entry extends Model implements Validator, Castable
 
             if (in_array('alternates', $data->keys()->unwrap())) {
                 $alternates = $data->get('alternates');
-                $alternates->each(function ($key, $alternate) use ($locales)
-                {
+                $alternates->each(function ($key, $alternate) use ($locales) {
                     if (isset($alternate->locale) && !$locales->contains($alternate->locale)) {
                         $errorMsg = sprintf(Entry::INVALID_LOCALE[0], $alternate->locale);
                         throw new EntryException($errorMsg, Entry::INVALID_LOCALE[1]);
@@ -1863,8 +1872,7 @@ class Entry extends Model implements Validator, Castable
             $update['content'] = $this->processContentBeforeSave($data->get('content'));
         }
 
-        $data->each(function ($key, $value) use (&$update)
-        {
+        $data->each(function ($key, $value) use (&$update) {
             if (in_array($key, ['parent', 'site_id', 'locale', 'title', 'template', 'categories', 'alternates'])) {
                 $update[$key] = $value;
             }
@@ -2015,12 +2023,14 @@ class Entry extends Model implements Validator, Castable
 
         if ($publication && PublicationDates::getStatus($publication->dates) === PublicationStatus::PUBLISHED->value) {
             $entryType = $publication->version->entry->get('entry_type');
+
             if (!$entryType) {
                 // Add a deprecation message
                 $entryTypeId = $publication->version->entry->get('entry_type_id');
             } else {
                 $entryTypeId = $entryType->_id;
             }
+
             $entryModel = (new EntryType())->getById($entryTypeId, false)->getEntryModel();
             $entry = $entryModel->one(['_id' => $publication->entry_id]);
             $content = (new EntryVersion())->fakeVersion($entry, $publication->entry_version_id);
@@ -2049,8 +2059,7 @@ class Entry extends Model implements Validator, Castable
         $availableTypes = EntryType::getAll();
         $content = null;
 
-        $availableTypes->each(function ($key, $value) use ($url, $previewVersion, &$content)
-        {
+        $availableTypes->each(function ($key, $value) use ($url, $previewVersion, &$content) {
             // Search for what collection has this url (if any)
             $entry = new Entry($value->collection_name);
             $found = $entry->count(['url' => $url, 'site_id' => Sail::siteId()]);
@@ -2098,8 +2107,7 @@ class Entry extends Model implements Validator, Castable
     {
         $errorsStrings = [];
 
-        $errors->each(function ($key, $errorsArray) use (&$errorsStrings)
-        {
+        $errors->each(function ($key, $errorsArray) use (&$errorsStrings) {
             foreach ($errorsArray as $fieldKey => $error) {
                 if (is_array($error)) {
                     foreach ($error as $fieldError) {

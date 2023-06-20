@@ -3,13 +3,16 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\Fields\InputMultipleSelectField;
+use SailCMS\Types\FieldCategory;
+use SailCMS\Types\Fields\Field as InputField;
+use SailCMS\Types\Fields\InputSelectField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
 class MultipleSelectField extends Field
 {
     public const SEARCHABLE = false;
+    public const REPEATABLE = true;
 
     /**
      *
@@ -17,33 +20,49 @@ class MultipleSelectField extends Field
      *
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
+     * @param  bool                   $repeater
      */
-    public function __construct(LocaleField $labels, array|Collection|null $settings)
+    public function __construct(LocaleField $labels, array|Collection|null $settings, bool $repeater = true)
     {
-        parent::__construct($labels, $settings);
+        parent::__construct($labels, $settings, $repeater);
     }
 
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement a multiple input.';
+        return new LocaleField([
+            'en' => 'Allows multiple selection within a list.',
+            'fr' => 'Permet le choix multiple dans une liste.'
+        ]);
+    }
+
+    /**
+     *
+     * Category of field
+     *
+     * @return string
+     *
+     */
+    public function category(): string
+    {
+        return FieldCategory::SELECT->value;
     }
 
     public function storingType(): string
     {
-        return StoringType::ARRAY->value;
+        return StoringType::STRING->value;
     }
 
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputMultipleSelectField::defaultSettings()
+            InputSelectField::defaultSettings()
         ]);
     }
 
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            InputMultipleSelectField::class
+            InputSelectField::class
         ]);
     }
 
@@ -57,6 +76,11 @@ class MultipleSelectField extends Field
      */
     protected function validate(mixed $content): ?Collection
     {
-        return null;
+        $errors = Collection::init();
+
+        if ($this->isRequired() && count($content) === 0) {
+            $errors->push(new Collection([InputField::FIELD_REQUIRED]));
+        }
+        return $errors;
     }
 }

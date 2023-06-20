@@ -277,9 +277,9 @@ class EntryLayout extends Model implements Castable
      * @return void
      *
      */
-    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null): void
+    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null, ?bool $repeater = null): void
     {
-        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
+        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels, $repeater) {
             /**
              * @var ModelField $field
              */
@@ -296,7 +296,9 @@ class EntryLayout extends Model implements Castable
                 $input = new $inputClass($newLabels, ...$currentInput->settings);
                 $field->configs->pushKeyValue($fieldIndexName, $input);
 
-                $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
+                $repeaterValue = $repeater !== null ? $repeater : $field->repeater;
+
+                $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs, $repeaterValue));
             } else {
                 $this->schema->pushKeyValue($currentFieldKey, $field->toLayoutField());
             }
@@ -481,7 +483,7 @@ class EntryLayout extends Model implements Castable
             /**
              * @var ModelField $field
              */
-            $field = new $fieldClass($labels, $parsedConfigs);
+            $field = new $fieldClass($labels, $parsedConfigs, $fieldSettings->repeater ?? false);
             $schema->pushKeyValue($fieldSettings->key, $field);
         }
 

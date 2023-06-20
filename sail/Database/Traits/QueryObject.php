@@ -696,6 +696,68 @@ trait QueryObject
     }
 
     /**
+     * 
+     * Dump the query to play it on mongo db
+     * 
+     * @return string
+     * 
+     */
+    public function dumpQuery(): string
+    {
+        $sQuery = json_encode($this->currentQuery);
+
+        if (count($this->currentPopulation) > 0) {
+            // aggregate
+            $dump = "db.getCollection('{$this->collection}').aggregate([";
+            foreach ($this->currentPopulation as $index => $populate) {
+
+                $dump .= $this->dumpPopulate($populate);
+
+                if ($index === 0) {
+                    $dump .= ", {\$match: $sQuery}";
+                }
+                if ($index !== array_key_last($this->currentPopulation)) {
+                    $dump .= ",";
+                }
+            }
+
+            if ($this->currentSkip > 0) {
+                $dump .= ",{ \$skip: {$this->currentSkip} }";
+            }
+            if ($this->currentLimit) {
+                $dump .= ",{ \$limit: {$this->currentLimit} }";
+            }
+
+            $dump .= "]);";
+        } else {
+            $dump = "db.getCollection('{$this->collection}').{$this->currentOp}($sQuery";
+
+            if (count($this->currentProjection) > 0) {
+                $sProjection = json_encode($this->currentProjection);
+                $dump .= ", $sProjection";
+            }
+
+            $dump .= ")";
+
+            if ($this->currentCollation) {
+                $dump .= ".collation({$this->currentCollation})";
+            }
+            if (count($this->currentSort) > 0) {
+                $sSort = json_encode($this->currentSort);
+                $dump .= ".sort($sSort)";
+            }
+            if ($this->currentLimit) {
+                $dump .= ".limit({$this->currentLimit})";
+            }
+            if ($this->currentSkip > 0) {
+                $dump .= ".skip({$this->currentSkip})";
+            }
+        }
+
+        return $dump;
+    }
+
+    /**
      *
      * Delete a record
      *
@@ -1000,7 +1062,8 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $doc->{$target}->{$pop[1]} = self::parsePopulate($doc->{$target}, $thepop);
+                        $subDoc = self::parsePopulate($doc->{$target}, $thepop);
+                        $doc->{$target}->{$pop[1]} = $subDoc->{$thepop['targetField']};
                     }
                 }
             } else {
@@ -1009,5 +1072,56 @@ trait QueryObject
         }
 
         return $doc;
+    }
+
+    private function dumpPopulate(array $populate, string $parent = null): string
+    {
+        $dump = '';
+
+        $class = $parent ? $populate[2] : $populate['class'];
+        $instance = new $class();
+        $collection = $instance->getCollection();
+        $field = $parent ? $populate[0] : $populate['field'];
+        $target = $parent ? $parent.'.'.$populate[1] : $populate['targetField'];
+        $subpop = $parent ? ($populate[3] ?? []) : $populate['subpopulates'];
+
+        $let = $parent ? "'let': {'$field': {'\$toObjectId': '\$$parent.$field'} }" : "'let': {'$field': {'\$toObjectId': '\$$field'} }";
+
+        // Column with several elements
+        if (str_contains($field, '.')) {
+            $fields = explode('.', $field);
+            $varfield = implode('_', $fields);
+            $dump .= "
+                { '\$addFields': { '$fields[0]': { '\$ifNull': ['\$$fields[0]', []] } } },
+                {'\$unwind': {'path': '\$$fields[0]', 'preserveNullAndEmptyArrays': true}},
+            ";
+            $let = "'let': {'$varfield': {'\$toObjectId': '\$$field'} }";
+            $field = $varfield;
+        }
+
+        $dump .= "{
+            '\$lookup': {
+                'from':'$collection',
+                $let,
+                'pipeline': [
+                    {
+                        '\$match': {
+                            '\$expr': {
+                                '\$eq': ['\$_id', '\$\$$field']
+                            }
+                        }
+                    }
+                ],
+                'as': '$target'
+            }
+        },
+        { '\$addFields': { '$target': { '\$ifNull': ['\$$target', []] } } },
+        { '\$unwind': {'path': '\$$target', 'preserveNullAndEmptyArrays': true} }";
+
+        foreach ($subpop as $pop) {
+            $dump .= ",".$this->dumpPopulate($pop, $target);
+        }
+
+        return $dump;
     }
 }

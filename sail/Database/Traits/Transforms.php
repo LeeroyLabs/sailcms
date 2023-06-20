@@ -37,7 +37,7 @@ trait Transforms
         }
 
         foreach ($this->properties as $key => $value) {
-            if (!in_array($key, $guards, true) && (in_array($key, $this->fields, true) || in_array('*', $this->fields, true))) {
+            if (!in_array($key, $guards, true) && (in_array($key, $this->loaded, true) || in_array('*', $this->loaded, true))) {
                 if ($key === '_id') {
                     $doc[$key] = (string)$value;
                 } elseif (!is_scalar($value)) {
@@ -108,9 +108,9 @@ trait Transforms
                                 foreach ($v->bsonSerialize() as $_value) {
                                     $casted = new $cast[1]();
 
-                                    if (is_object($_value) && get_class($_value) === BSONDocument::class) {
+                                    if ($_value instanceof BSONDocument) {
                                         foreach ($_value as $_k => $_v) {
-                                            if (is_object($_v) && get_class($_v) === BSONArray::class) {
+                                            if ($_v instanceof BSONArray) {
                                                 $_value->{$_k} = $_v->bsonSerialize();
                                             } else {
                                                 $_value->{$_k} = $_v;
@@ -122,7 +122,16 @@ trait Transforms
                                 }
 
                                 $castInstance = new $cast[0]($list);
-                                $instance->{$k} = $castInstance;
+
+                                if ($instance->{$k} instanceof Collection) {
+                                    if (is_array($castInstance)) {
+                                        $instance->{$k} = new Collection($castInstance);
+                                    } else {
+                                        $instance->{$k} = $castInstance;
+                                    }
+                                } else {
+                                    $instance->{$k} = $castInstance;
+                                }
                             }
                         } elseif ($cast === Collection::class) {
                             $castInstance = new $cast();

@@ -3,6 +3,8 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Debug;
+use SailCMS\Errors\EntryException;
 use SailCMS\Types\FieldInfo;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputSettings;
@@ -13,12 +15,19 @@ use stdClass;
 abstract class Field
 {
     public const SEARCHABLE = false;
+    public const REPEATABLE = false;
+
+    /* Errors from 6100 to 6119 */
+    public const WRONG_FIELD_CONTENT_TYPE = "6101: The field content must be an array since the repeater option has been activated.";
 
     /* Properties */
     public LocaleField $labels;
     public string $handle;
+    public bool $repeater;
     public Collection $baseConfigs;
     public Collection $configs;
+
+    public string $category = 'text';
 
     /**
      *
@@ -27,12 +36,14 @@ abstract class Field
      *
      * @param  LocaleField            $labels
      * @param  Collection|array|null  $settings
+     * @param  bool                   $repeater
      *
      */
-    public function __construct(LocaleField $labels, Collection|array|null $settings = null)
+    public function __construct(LocaleField $labels, Collection|array|null $settings = null, bool $repeater = false)
     {
         $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
+        $this->repeater = static::REPEATABLE ? $repeater : false;
 
         $this->defineBaseConfigs();
         $this->instantiateConfigs($labels, $settings);
@@ -95,6 +106,7 @@ abstract class Field
      *
      * @param  mixed  $content
      * @return Collection
+     * @throws EntryException
      *
      */
     public function validateContent(mixed $content): Collection
@@ -106,14 +118,19 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            $currentContent = $content;
-            if ($content instanceof Collection && !$fieldTypeClass::MULTIPLE) {
-                $currentContent = $content->get($index);
-            }
-            $error = $fieldTypeClass->validate($currentContent);
+            if ($this->repeater) {
+                if (!$content instanceof Collection) {
+                    throw new EntryException(self::WRONG_FIELD_CONTENT_TYPE, 6101);
+                }
 
-            if ($error->length > 0) {
-                $errors->pushKeyValue($index, $error);
+                $content->each(function ($k, $currentContent) use ($fieldTypeClass, &$errors) {
+                    if ($currentContent instanceof Collection) {
+                        Debug::ray($currentContent);
+                    }
+                    $this->validateInput($currentContent, $k, $fieldTypeClass, $errors);
+                });
+            } else {
+                $this->validateInput($content, $index, $fieldTypeClass, $errors);
             }
         });
 
@@ -135,7 +152,7 @@ abstract class Field
      */
     public function toLayoutField(): LayoutField
     {
-        return new LayoutField($this->labels, $this->handle, $this->configs);
+        return new LayoutField($this->labels, $this->handle, $this->configs, $this->repeater);
     }
 
     /**
@@ -164,7 +181,7 @@ abstract class Field
 
         $className = static::getClassFromHandle($data->handle);
         $labels = new LocaleField($data->labels ?? []);
-        return new $className($labels, $settings);
+        return new $className($labels, $settings, $data->repeater ?? false);
     }
 
     /**
@@ -224,8 +241,10 @@ abstract class Field
             static::class,
             $fakeInstance->handle,
             $fakeInstance->description(),
+            $fakeInstance->category(),
             $fakeInstance->storingType(),
             static::SEARCHABLE,
+            static::REPEATABLE,
             $availableSettings->unwrap()
         );
     }
@@ -261,10 +280,19 @@ abstract class Field
      *
      * Return the description of the field for the field info
      *
+     * @return LocaleField
+     *
+     */
+    abstract public function description(): LocaleField;
+
+    /**
+     *
+     * Get category of field (text, select, special)
+     *
      * @return string
      *
      */
-    abstract public function description(): string;
+    abstract public function category(): string;
 
     /**
      *
@@ -283,6 +311,30 @@ abstract class Field
      *
      */
     abstract public function defaultSettings(): Collection;
+
+    /**
+     *
+     * Call validate method for an input
+     *
+     * @param $currentContent
+     * @param $index
+     * @param $fieldTypeClass
+     * @param $errors
+     * @return void
+     *
+     */
+    protected function validateInput($currentContent, $index, $fieldTypeClass, &$errors): void
+    {
+        if ($currentContent instanceof Collection) {
+            $currentContent = $currentContent->get($index);
+        }
+
+        $error = $fieldTypeClass->validate($currentContent);
+
+        if ($error->length > 0) {
+            $errors->pushKeyValue($index, $error);
+        }
+    }
 
     /**
      *

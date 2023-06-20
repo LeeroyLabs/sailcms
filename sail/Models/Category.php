@@ -252,7 +252,6 @@ class Category extends Model
         if ($record) {
             $this->deleteById($id);
             $this->updateMany(['parent_id' => (string)$id], ['$set' => ['parent_id' => '']]);
-            $this->updateOrder('');
             return true;
         }
 
@@ -280,7 +279,6 @@ class Category extends Model
         if ($record) {
             $instance->deleteById($record->_id);
             $instance->updateMany(['parent_id' => (string)$record->_id], ['$set' => ['parent_id' => '']]);
-            $instance->updateOrder('');
             return true;
         }
 
@@ -291,26 +289,29 @@ class Category extends Model
      *
      * Update order for all sub categories
      *
-     * @param  string  $parent
-     * @param  string  $siteId
+     * @param  array|Collection  $tree
+     * @param  string            $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = '', string $siteId = 'main'): bool
+    public function updateOrder(array|Collection $tree = [], string $siteId = 'default'): bool
     {
         $this->hasPermissions();
-
-        $docs = $this->find(['parent_id' => $parent, 'site_id' => $siteId], QueryOptions::initWithSort(['order' => 1]))->exec();
         $writes = [];
 
-        foreach ($docs as $num => $doc) {
+        foreach ($tree as $element) {
             $writes[] = [
                 'updateOne' => [
-                    ['_id' => $doc->_id],
-                    ['$set' => ['order' => ($num + 1)]]
+                    ['_id' => $this->ensureObjectId($element->id), 'site_id' => $siteId],
+                    [
+                        '$set' => [
+                            'order' => $element->order,
+                            'parent_id' => $element->parent ?? ''
+                        ]
+                    ]
                 ]
             ];
         }

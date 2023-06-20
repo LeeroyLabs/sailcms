@@ -63,7 +63,7 @@ class InputDateField extends Field
     public static function availableProperties(): Collection
     {
         return new Collection([
-            new InputSettings('format', InputSettings::INPUT_TYPE_STRING),
+            new InputSettings('format', InputSettings::INPUT_TYPE_STRING, Collection::init(), true),
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
             new InputSettings('min', InputSettings::INPUT_TYPE_STRING),
             new InputSettings('max', InputSettings::INPUT_TYPE_STRING),

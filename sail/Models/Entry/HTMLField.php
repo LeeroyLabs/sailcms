@@ -3,11 +3,15 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\Fields\InputTextField;
+use SailCMS\Types\FieldCategory;
+use SailCMS\Types\Fields\InputHTMLField;
+use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
-class HTMLField extends TextField
+class HTMLField extends Field
 {
+    public const REPEATABLE = true;
+
     /* Errors from 6220 to 6239 */
     public const INVALID_TAGS = '6220: This string contains invalid tags';
 
@@ -15,12 +19,15 @@ class HTMLField extends TextField
      *
      * Description for field info
      *
-     * @return string
+     * @return LocaleField
      *
      */
-    public function description(): string
+    public function description(): LocaleField
     {
-        return 'Field to implement a HMTL input.';
+        return new LocaleField([
+            'en' => 'Allows rich HTML using a Word-like utility.',
+            'fr' => 'Permet l\'édition de texte riche HTML avec un outil style Word.'
+        ]);
     }
 
     /**
@@ -33,7 +40,7 @@ class HTMLField extends TextField
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputTextField::defaultSettings(true),
+            InputHTMLField::defaultSettings(true),
         ]);
     }
 
@@ -41,21 +48,38 @@ class HTMLField extends TextField
      *
      * There is nothing extra to validate for the text field
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      *
      */
     protected function validate(mixed $content): ?Collection
     {
-        $errors = Collection::init();
+        return null;
+    }
 
-        $validTags = ['p', 'a', 'div', 'i', 'strong'];
-        preg_match_all('~<(?P<tag>[^\/][^>]*?)>~', $content, $htmlTags);
+    /**
+     * @return string
+     */
+    public function category(): string
+    {
+        return FieldCategory::TEXT->value;
+    }
 
-        if (count(array_diff($htmlTags['tag'], $validTags)) > 0) {
-            $errors->push(self::INVALID_TAGS);
-        }
+    /**
+     * @return string
+     */
+    public function storingType(): string
+    {
+        return StoringType::STRING->value;
+    }
 
-        return $errors;
+    /**
+     * @return void
+     */
+    protected function defineBaseConfigs(): void
+    {
+        $this->baseConfigs = new Collection([
+            InputHTMLField::class
+        ]);
     }
 }

@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -72,7 +73,8 @@ class Entries
         $result = EntryType::getAll(true);
 
         $parsedResult = Collection::init();
-        $result->each(function ($key, &$entryType) use ($parsedResult) {
+        $result->each(function ($key, &$entryType) use ($parsedResult)
+        {
             /**
              * @var EntryType $entryType
              */
@@ -233,7 +235,8 @@ class Entries
 
         // Clean data before returning it.
         $data = Collection::init();
-        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data) {
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data)
+        {
             /**
              * @var Entry $entry
              */
@@ -592,6 +595,7 @@ class Entries
             if (!$obj['parent']['handle']) {
                 return null;
             }
+
             $parent = $entry->getParent();
             $parentHomepage = Entry::getHomepage($parent->site_id, $parent->locale);
             return $parent->simplify($parentHomepage);
@@ -684,6 +688,36 @@ class Entries
         return $obj->{$info->fieldName};
     }
 
+    /**
+     *
+     * EntryLayout resolver
+     *
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
+     * @return mixed
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function entryLayoutResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        $obj = (object)$obj;
+
+        if ($info->fieldName === 'used_by') {
+            return EntryType::getCountByLayout($obj->_id);
+        }
+
+        if ($info->fieldName === 'record_count') {
+            $types = EntryType::getTypesUsingLayout($obj->_id);
+            return Entry::countAllThatAre($types);
+        }
+
+        return $obj->{$info->fieldName};
+    }
 
     /**
      *
@@ -792,7 +826,8 @@ class Entries
         $entryLayouts = Collection::init();
         $result = (new EntryLayout())->getAll() ?? [];
 
-        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts) {
+        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts)
+        {
             /**
              * @var EntryLayout $entryLayout
              */
@@ -829,8 +864,7 @@ class Entries
         $generatedSchema = EntryLayout::generateLayoutSchema($schema);
 
         $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->create($titles, $generatedSchema, $slug);
-        return $entryLayout->simplify();
+        return $entryLayoutModel->create($titles, $generatedSchema, $slug)->simplify();
     }
 
     /**
@@ -915,9 +949,7 @@ class Entries
         $id = $args->get('id');
         $soft = $args->get('soft', true);
 
-        $entryLayoutModel = new EntryLayout();
-
-        return $entryLayoutModel->delete($id, $soft);
+        return (new EntryLayout())->delete($id, $soft);
     }
 
     /**

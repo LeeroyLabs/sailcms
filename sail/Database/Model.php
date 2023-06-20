@@ -55,7 +55,7 @@ abstract class Model implements JsonSerializable
     protected string $collection = '';
 
     // Fields and Guards
-    protected array $fields = ['*'];
+    protected array $loaded = ['*'];
     protected array $guards = [];
 
     // Automatic Casting of properties 
@@ -117,6 +117,18 @@ abstract class Model implements JsonSerializable
 
         $this->collection = $collection;
         $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $collection);
+    }
+
+    /**
+     *
+     * Get collection name
+     *
+     * @return string
+     *
+     */
+    public function getCollection(): string
+    {
+        return $this->collection;
     }
 
     /**

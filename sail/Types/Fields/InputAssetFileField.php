@@ -5,37 +5,39 @@ namespace SailCMS\Types\Fields;
 use SailCMS\Collection;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
-use stdClass;
 
-class InputEmailField extends Field
+class InputAssetFileField extends Field
 {
-    /* Errors 6240 to 6259 */
-    public const EMAIL_INVALID = '6240: This email is invalid';
-
     /**
      *
      * Input text field from html input:text attributes
      *
      * @param  LocaleField|null  $labels
      * @param  bool              $required
+     * @param  string            $allowedFormats
+     *
      */
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-    ) {
+        public readonly bool         $required = false,
+        public readonly string       $allowedFormats = '.pdf,.doc,.docx,.xls,.xlsx'
+    )
+    {
     }
 
     /**
      *
      * Define default settings for a Input Text Field
      *
+     * @param  bool  $multiline
      * @return Collection
      *
      */
-    public static function defaultSettings(): Collection
+    public static function defaultSettings(bool $multiline = false): Collection
     {
         return new Collection([
             'required' => false,
+            'allowedFormats' => '.pdf,.doc,.docx,.xls,.xlsx'
         ]);
     }
 
@@ -43,13 +45,14 @@ class InputEmailField extends Field
      *
      * Available properties of the settings
      *
-     * @param  array|null  $options
      * @return Collection
+     *
      */
-    public static function availableProperties(?array $options = null): Collection
+    public static function availableProperties(): Collection
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
+            new InputSettings('allowedFormats', InputSettings::INPUT_TYPE_STRING)
         ]);
     }
 
@@ -80,28 +83,7 @@ class InputEmailField extends Field
             $errors->push(self::FIELD_REQUIRED);
         }
 
-        if ($content && !filter_var($content, FILTER_VALIDATE_EMAIL)) {
-            $errors->push(self::EMAIL_INVALID);
-        }
-
         return $errors;
-    }
-
-    /**
-     *
-     * Cast to simpler form from InputTextField
-     *
-     * @return stdClass
-     *
-     */
-    public function castFrom(): stdClass
-    {
-        return (object)[
-            'labels' => $this->labels->castFrom(),
-            'settings' => [
-                'required' => $this->required
-            ]
-        ];
     }
 
     /**
@@ -109,7 +91,7 @@ class InputEmailField extends Field
      * Cast to InputTextField
      *
      * @param  mixed  $value
-     * @return InputEmailField
+     * @return InputAssetFileField
      *
      */
     public function castTo(mixed $value): self
@@ -117,6 +99,7 @@ class InputEmailField extends Field
         return new self(
             $value->labels,
             $value->settings->required ?? false,
+            $value->settings->allowedFormats ?? '.pdf,.doc,.docx,.xls,.xlsx',
         );
     }
 }
