@@ -24,7 +24,7 @@ class EntryField extends Field
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
      */
-    public function __construct(LocaleField $labels, array|Collection|null $settings)
+    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
     {
         parent::__construct($labels, $settings);
     }
@@ -118,7 +118,7 @@ class EntryField extends Field
      *
      * Parent override to get the entry data
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return mixed
      * @throws ACLException
      * @throws DatabaseException

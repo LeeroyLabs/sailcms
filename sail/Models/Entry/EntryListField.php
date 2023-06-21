@@ -5,10 +5,8 @@ namespace SailCMS\Models\Entry;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
-use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Models\EntryPublication;
-use SailCMS\Models\EntryType;
 use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
@@ -23,7 +21,7 @@ class EntryListField extends Field
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
      */
-    public function __construct(LocaleField $labels, array|Collection|null $settings)
+    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
     {
         parent::__construct($labels, $settings, true);
     }
@@ -91,7 +89,7 @@ class EntryListField extends Field
      *
      * Entry validation
      *
-     * @param mixed $content
+     * @param  mixed  $content
      * @return Collection|null
      * @throws ACLException
      * @throws DatabaseException
@@ -107,7 +105,7 @@ class EntryListField extends Field
             $entryPublications = $entryPublicationModel->getPublicationsByEntryIds($content, false, false);
 
             $missingEntries = new Collection();
-            foreach($content as $i => $entryId) {
+            foreach ($content as $i => $entryId) {
                 $missing = true;
                 foreach ($entryPublications as $publication) {
                     if ($publication->entry_id === $entryId) {
@@ -120,7 +118,9 @@ class EntryListField extends Field
                 }
             }
 
-            $errors->push($missingEntries);
+            if ($missingEntries->length > 0) {
+                $errors->push($missingEntries);
+            }
         }
 
         return $errors;
@@ -144,7 +144,7 @@ class EntryListField extends Field
             $entryPublications = $entryPublicationModel->getPublicationsByEntryIds($content, true, false);
 
             $publicationEntries = new Collection();
-            foreach($entryPublications as $publication) {
+            foreach ($entryPublications as $publication) {
                 /**
                  * @var EntryPublication $publication
                  */
