@@ -14,6 +14,8 @@ use SailCMS\Types\StoringType;
 
 class EntryListField extends Field
 {
+    public const REPEATABLE = true;
+
     /**
      *
      * Override the constructor to force the repeater attribute to true
