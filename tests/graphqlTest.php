@@ -237,6 +237,13 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Categories", fr: "Catégories" }
+                            key: "categories"
+                            handle: "SailCMS-Models-Entry-CategoryListField"
+                            repeater: true
+                            inputSettings: []
+                        }
                     ]
                     ) {
                     _id
@@ -277,6 +284,26 @@ test('Create layout, entry type & entry', function () {
             }
         ', [], $_ENV['test-token']);
         $assetId = (string)$assets->data->assets->list[0]->_id;
+
+        $categories = $this->client->run('
+            {
+                categoryFullTree(parent_id: "", site_id: "' . Sail::siteId() . '") {
+                     _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        if ($categories->data->categoryFullTree) {
+            $categoryList = "";
+            foreach ($categories->data->categoryFullTree as $i => $category) {
+                $categoryList .= '"' . $category->_id . '"';
+
+                if ($i < count($categories->data->categoryFullTree) - 1) {
+                    $categoryList .= ", ";
+                }
+            }
+        }
+        SailCMS\Debug::ray($categoryList);
 
         $newEntry = $this->client->run('
             mutation {
@@ -339,6 +366,10 @@ test('Create layout, entry type & entry', function () {
                             key: "repeater"
                             content: ["test", "test2", "test3"]
                         }
+                        {
+                            key: "categories"
+                            content: [' . $categoryList . ']
+                        }
                     ]
                 ) {
                     entry {
@@ -356,6 +387,7 @@ test('Create layout, entry type & entry', function () {
         ', [], $_ENV['test-token']);
 
         try {
+            \SailCMS\Debug::ray($newEntryLayout, $newEntryType, $newEntry);
             expect($newEntryLayout->status)->toBe('ok');
             expect($newEntryType->status)->toBe('ok');
             expect($newEntry->status)->toBe('ok');
