@@ -16,6 +16,7 @@ abstract class Field
 {
     public const SEARCHABLE = false;
     public const REPEATABLE = false;
+    public const MULTIPLIABLE = false;
 
     /* Errors from 6100 to 6119 */
     public const WRONG_FIELD_CONTENT_TYPE = "6101: The field content must be an array since the repeater option has been activated.";
@@ -24,6 +25,8 @@ abstract class Field
     public LocaleField $labels;
     public string $handle;
     public bool $repeater;
+    public bool $multiple;
+    public Collection $modes;
     public Collection $baseConfigs;
     public Collection $configs;
 
@@ -302,6 +305,8 @@ abstract class Field
      *
      */
     abstract public function storingType(): string;
+
+    abstract public function modes(): Collection;
 
     /**
      *
