@@ -12,6 +12,8 @@ use SailCMS\Types\StoringType;
 
 class CategoryListField extends Field
 {
+    public const REPEATABLE = true;
+
     /**
      *
      * Override the constructor to force the repeater property to be set to true
