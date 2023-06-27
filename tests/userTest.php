@@ -26,7 +26,6 @@ test('Create a user', function () {
         $id = $model->create($name, 'marc+johndoe@leeroy.ca', 'Hell0W0rld!', $roles, 'en', '', $meta);
         expect($id)->not->toBeEmpty();
     } catch (Exception $e) {
-        //print_r($e->getMessage());
         expect(true)->toBeFalse();
     }
 })->group('users');

@@ -12,21 +12,20 @@ use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
-class EntryField extends Field
+class EntryListField extends Field
 {
-    /* Error */
-    public const ENTRY_DOES_NOT_EXISTS = '6160: Entry of the given id does not exists or is not published.';
+    public const REPEATABLE = true;
 
     /**
      *
-     * Override the constructor to force the repeater attribute to false
+     * Override the constructor to force the repeater attribute to true
      *
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings = null)
     {
-        parent::__construct($labels, $settings);
+        parent::__construct($labels, $settings, true);
     }
 
     /**
@@ -37,13 +36,12 @@ class EntryField extends Field
     public function description(): LocaleField
     {
         return new LocaleField([
-            'en' => 'Allows the selection of an entry from a list.',
-            'fr' => 'Permet la sélection d\'une entrée à partir d\'une liste.'
+            'en' => 'Allows the selection of an list of entries from a list.',
+            'fr' => 'Permet la sélection d\'une liste d\'entrées à partir d\'une liste.'
         ]);
     }
 
     /**
-     *
      *
      * @return string
      *
@@ -104,10 +102,26 @@ class EntryField extends Field
     {
         $errors = Collection::init();
 
-        if (is_string($content)) {
+        if ($content instanceof Collection || is_array($content)) {
             $entryPublicationModel = new EntryPublication();
-            if (!$entryPublicationModel->getPublicationByEntryId($content)) {
-                $errors->push(new Collection([self::ENTRY_DOES_NOT_EXISTS]));
+            $entryPublications = $entryPublicationModel->getPublicationsByEntryIds($content, false, false);
+
+            $missingEntries = new Collection();
+            foreach ($content as $i => $entryId) {
+                $missing = true;
+                foreach ($entryPublications as $publication) {
+                    if ($publication->entry_id === $entryId) {
+                        $missing = false;
+                        break;
+                    }
+                }
+                if ($missing) {
+                    $missingEntries->pushKeyValue($i, EntryField::ENTRY_DOES_NOT_EXISTS);
+                }
+            }
+
+            if ($missingEntries->length > 0) {
+                $errors->push($missingEntries);
             }
         }
 
@@ -116,22 +130,29 @@ class EntryField extends Field
 
     /**
      *
-     * Parent override to get the entry data
+     * Parent override to get the list of entries
      *
-     * @param  mixed  $content
+     * @param $content
      * @return mixed
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function parse(mixed $content): mixed
+    public function parse($content): mixed
     {
-        if (is_string($content)) {
+        if ($content instanceof Collection || is_array($content)) {
             $entryPublicationModel = new EntryPublication();
-            $entryPublication = $entryPublicationModel->getPublicationByEntryId($content, true, false);
+            $entryPublications = $entryPublicationModel->getPublicationsByEntryIds($content, true, false);
 
-            return $entryPublication->version->entry->unwrap();
+            $publicationEntries = new Collection();
+            foreach ($entryPublications as $publication) {
+                /**
+                 * @var EntryPublication $publication
+                 */
+                $publicationEntries->push($publication->version->entry->unwrap());
+            }
+            return $publicationEntries;
         }
 
         return $content;
