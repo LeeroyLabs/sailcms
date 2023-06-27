@@ -260,11 +260,11 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public function getRecursiveParentUrls(object $currentHomepage, ?EntryParent $entryParent = null): string
+    public function getRecursiveParentUrls(?object $currentHomepage, ?EntryParent $entryParent = null): string
     {
         $url = "";
 
-        if ($entryParent) {
+        if ($entryParent && $entryParent->handle && $entryParent->parent_id) {
             $entryType = (new EntryType())->getByHandle($entryParent->handle);
             $parent = $entryType->getEntryModel()->getById($entryParent->parent_id);
         } else {
@@ -275,7 +275,7 @@ class Entry extends Model implements Validator, Castable
             $url .= $parent->getRecursiveParentUrls($currentHomepage);
 
             // If the parent is not the homepage
-            if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$parent->_id) {
+            if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$parent->_id) {
                 $url .= "/" . $parent->url;
             }
         } else {
@@ -1243,7 +1243,7 @@ class Entry extends Model implements Validator, Castable
 
         // Must override entryUrl if it's the homepage
         $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
-        if ($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) {
+        if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) {
             $entryLocale = $lastVersion->entry->get('locale');
             $entryUrl = "";
             if ($entryLocale !== Locale::default()) {

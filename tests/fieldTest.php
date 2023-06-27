@@ -8,6 +8,7 @@ use SailCMS\Models\Entry\DateField;
 use SailCMS\Models\Entry\DateTimeField;
 use SailCMS\Models\Entry\EmailField;
 use SailCMS\Models\Entry\EntryField;
+use SailCMS\Models\Entry\EntryListField;
 use SailCMS\Models\Entry\HTMLField;
 use SailCMS\Models\Entry\MultipleSelectField;
 use SailCMS\Models\Entry\NumberField;
@@ -37,7 +38,9 @@ beforeAll(function () {
     $entryType = (new EntryType)->create('field-test', 'Field Test', new LocaleField(['en' => 'field-test', 'fr' => 'test-de-champs']), $entryLayout->_id);
 
     $entryType->getEntryModel($entryType)->create(false, 'fr', 'Home Field Test', 'page');
-    $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
+    $entry = $entryType->getEntryModel($entryType)->create(false, 'fr', 'Related Page Test', 'page');
+    // Publish related entry
+    $entryType->getEntryModel()->publish($entry->_id, time(), 0);
 
     $asset = new Asset();
     $data = base64_decode(file_get_contents(__DIR__ . '/mock/asset/test.jpg.txt'));
@@ -99,6 +102,8 @@ test('Add all fields to the layout', function () {
     ], false, 2);
 
     $entryField = new EntryField(new LocaleField(['en' => 'Related Entry', 'fr' => 'Entrée Reliée']));
+
+    $entryListField = new EntryListField(new LocaleField(['en' => 'Entry List', 'fr' => 'Liste d\'entrées']));
 
     $htmlField = new HTMLField(new LocaleField(['en' => 'Wysiwyg content', 'fr' => 'Contenu Wysiwyg']));
 
@@ -169,6 +174,7 @@ test('Add all fields to the layout', function () {
         "integer" => $numberFieldInteger,
         "float" => $numberFieldFloat,
         "related" => $entryField,
+        "entryList" => $entryListField,
         "wysiwyg" => $htmlField,
         "email" => $emailField,
         "select" => $selectField,
@@ -206,9 +212,7 @@ test('Failed to update the entry content', function () {
             'content' => [
                 'float' => '0',
                 'phone' => '514-3344344',
-                'related' => [
-                    'id' => (string)$relatedEntry->_id
-                ],
+                'related' => [],
                 'wysiwyg' => '<script>console.log("hacked")</script><iframe>stuff happens</iframe><p><strong>Test</strong></p>',
                 'select' => 'test-failed',
                 'multipleSelect' => ['test', 'test-failed'],
@@ -228,9 +232,9 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))
             ->and($errors->get('phone')[0][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"))
-            ->and($errors->get('related')[0])->toBe(EntryField::ENTRY_ID_AND_HANDLE)
             ->and($errors->get('select')[0][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('url')[0][0])->toBe(sprintf(InputUrlField::FIELD_PATTERN_NO_MATCH, InputUrlField::DEFAULT_REGEX))
+            ->and($errors->get('related')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('image')[0][0])->toBe(AssetFileField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('multipleSelect')[1][0])->toBe(InputSelectField::OPTIONS_INVALID)
             ->and($errors->get('image')[0][0])->toBe(AssetImageField::ASSET_DOES_NOT_EXISTS)
@@ -262,10 +266,8 @@ test('Update content with success', function () {
                 'description' => 'This text contains line returns
 and must keep it through all the process',
                 'phone' => '514-514-5145',
-                'related' => [
-                    'id' => (string)$relatedEntry->_id,
-                    'typeHandle' => 'field-test'
-                ],
+                'related' => (string)$relatedEntry->_id,
+                'entryList' => [(string)$relatedEntry->_id,],
                 'wysiwyg' => '<p><strong>Test</strong></p>',
                 'email' => 'email-test@email.com',
                 'select' => 'test',
@@ -281,6 +283,7 @@ and must keep it through all the process',
                 'repeater' => ['514-514-5145', '514-514-1234', '514-123-1234']
             ]
         ], false);
+
         expect($errors->length)->toBe(0);
 
         $entryModel = EntryType::getEntryModelByHandle('field-test');

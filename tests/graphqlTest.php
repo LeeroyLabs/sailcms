@@ -115,6 +115,12 @@ test('Create layout, entry type & entry', function () {
                             inputSettings: []
                         }
                         {
+                            labels: { en: "Entry List", fr: "Liste dentrées" }
+                            key: "entryList"
+                            handle: "SailCMS-Models-Entry-EntryListField"
+                            inputSettings: []
+                        }
+                        {
                             labels: { en: "Email", fr: "Courriel" }
                             key: "email"
                             handle: "SailCMS-Models-Entry-EmailField"
@@ -278,6 +284,15 @@ test('Create layout, entry type & entry', function () {
         ', [], $_ENV['test-token']);
         $assetId = (string)$assets->data->assets->list[0]->_id;
 
+        $entry = $this->client->run('
+            {
+                entryByUrl(url: "") {
+                    _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $entryId = (string)$entry->data->entryByUrl->_id;
+
         $newEntry = $this->client->run('
             mutation {
                 createEntry(
@@ -307,6 +322,10 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "email"
                             content: "testleeroy@leeroy.ca"
+                        }
+                        {
+                            key: "entryList"
+                            content: ["' . $entryId . '"]
                         }
                         {
                             key: "select"
@@ -356,6 +375,11 @@ test('Create layout, entry type & entry', function () {
         ', [], $_ENV['test-token']);
 
         try {
+//            print_r($newEntryLayout);
+//            print_r($newEntryType);
+//            print_r($newEntry);
+//            ob_flush();
+
             expect($newEntryLayout->status)->toBe('ok');
             expect($newEntryType->status)->toBe('ok');
             expect($newEntry->status)->toBe('ok');

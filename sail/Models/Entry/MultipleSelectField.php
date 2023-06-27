@@ -16,17 +16,23 @@ class MultipleSelectField extends Field
 
     /**
      *
-     * Override the constructor to pass a precision to the multiple select
+     * Override the constructor to force the repeater attribute
      *
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
-     * @param  bool                   $repeater
      */
-    public function __construct(LocaleField $labels, array|Collection|null $settings, bool $repeater = true)
+    public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
-        parent::__construct($labels, $settings, $repeater);
+        parent::__construct($labels, $settings, true);
     }
 
+    /**
+     *
+     * Description of the Multiple Select Field
+     *
+     * @return LocaleField
+     *
+     */
     public function description(): LocaleField
     {
         return new LocaleField([
@@ -47,11 +53,25 @@ class MultipleSelectField extends Field
         return FieldCategory::SELECT->value;
     }
 
+    /**
+     *
+     * Storing type of the field
+     *
+     * @return string
+     *
+     */
     public function storingType(): string
     {
         return StoringType::STRING->value;
     }
 
+    /**
+     *
+     * Default setting for the Multiple Select Field
+     *
+     * @return Collection
+     *
+     */
     public function defaultSettings(): Collection
     {
         return new Collection([
@@ -59,6 +79,13 @@ class MultipleSelectField extends Field
         ]);
     }
 
+    /**
+     *
+     * List of inputs for the Multiple Select Field
+     *
+     * @return void
+     *
+     */
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
