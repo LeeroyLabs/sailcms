@@ -11,8 +11,7 @@ use SailCMS\Types\StoringType;
 
 class MultipleSelectField extends Field
 {
-    public const SEARCHABLE = false;
-    public const REPEATABLE = true;
+    public const MULTIPLE = true;
 
     /**
      *
@@ -23,7 +22,7 @@ class MultipleSelectField extends Field
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings)
     {
-        parent::__construct($labels, $settings, true);
+        parent::__construct($labels, $settings);
     }
 
     /**

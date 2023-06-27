@@ -14,7 +14,7 @@ use SailCMS\Types\StoringType;
 
 class EntryListField extends Field
 {
-    public const REPEATABLE = true;
+    public const MULTIPLE = true;
 
     /**
      *
@@ -25,7 +25,7 @@ class EntryListField extends Field
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings = null)
     {
-        parent::__construct($labels, $settings, true);
+        parent::__construct($labels, $settings);
     }
 
     /**

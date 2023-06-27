@@ -119,7 +119,7 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            if ($this->repeater || self::MULTIPLE) {
+            if ($this->repeater || static::MULTIPLE) {
                 if (!$content instanceof Collection) {
                     throw new EntryException(self::WRONG_FIELD_CONTENT_TYPE, 6101);
                 }
@@ -234,6 +234,18 @@ abstract class Field
 
         $className = array_reverse(explode('\\', static::class))[0];
 
+        $modes = Collection::init();
+
+        if (static::MULTIPLE) {
+            $modes->push('multiple');
+        }
+        if (static::SEARCHABLE) {
+            $modes->push('searchable');
+        }
+        if (static::REPEATABLE) {
+            $modes->push('repeatable');
+        }
+
         return new FieldInfo(
             $className,
             static::class,
@@ -241,8 +253,7 @@ abstract class Field
             $fakeInstance->description(),
             $fakeInstance->category(),
             $fakeInstance->storingType(),
-            static::SEARCHABLE,
-            static::REPEATABLE,
+            $modes->unwrap(),
             $availableSettings->unwrap()
         );
     }
@@ -300,8 +311,6 @@ abstract class Field
      *
      */
     abstract public function storingType(): string;
-
-    abstract public function modes(): Collection;
 
     /**
      *
