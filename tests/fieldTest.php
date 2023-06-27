@@ -2,8 +2,10 @@
 
 use SailCMS\Collection;
 use SailCMS\Models\Asset;
+use SailCMS\Models\Category;
 use SailCMS\Models\Entry\AssetFileField;
 use SailCMS\Models\Entry\AssetImageField;
+use SailCMS\Models\Entry\CategoryField;
 use SailCMS\Models\Entry\DateField;
 use SailCMS\Models\Entry\DateTimeField;
 use SailCMS\Models\Entry\EmailField;
@@ -167,6 +169,12 @@ test('Add all fields to the layout', function () {
         ]
     ], true);
 
+    $categoryField = new CategoryField(new LocaleField(['en' => 'Category', 'fr' => 'Catégorie']), [
+        [
+            'required' => true,
+        ]
+    ]);
+
     $fields = new Collection([
         "text" => $textField,
         "phone" => $phoneField,
@@ -184,7 +192,8 @@ test('Add all fields to the layout', function () {
         "date" => $dateField,
         "time" => $timeField,
         "datetime" => $dateTimeField,
-        "repeater" => $repeaterField
+        "repeater" => $repeaterField,
+        "category" => $categoryField
     ]);
 
     $schema = EntryLayout::generateLayoutSchema($fields);
@@ -237,11 +246,12 @@ test('Failed to update the entry content', function () {
             ->and($errors->get('related')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('image')[0][0])->toBe(AssetFileField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('multipleSelect')[1][0])->toBe(InputSelectField::OPTIONS_INVALID)
-            ->and($errors->get('image')[0][0])->toBe(AssetImageField::ASSET_DOES_NOT_EXISTS)
+            ->and($errors->get('image')[0][0])->toBe(AssetFileField::ASSET_DOES_NOT_EXISTS)
             ->and($errors->get('date')[0][0])->toBe(sprintf(InputDateField::FIELD_TOO_BIG, "2025-12-31"))
             ->and($errors->get('time')[0][0])->toBe(sprintf(InputTimeField::FIELD_TOO_SMALL, "10:00"))
             ->and($errors->get('datetime')[0])->toBe(DateTimeField::DATE_TIME_ARE_REQUIRED)
-            ->and($errors->get('repeater')[1][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"));
+            ->and($errors->get('repeater')[1][0])->toBe(sprintf(InputTextField::FIELD_PATTERN_NO_MATCH, "\d{3}-\d{3}-\d{4}"))
+            ->and($errors->get('category')[0][0])->toBe(InputField::FIELD_REQUIRED);
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -257,6 +267,7 @@ test('Update content with success', function () {
         'title' => 'Related Page Test'
     ]);
     $item = Asset::getByName('field-test-webp');
+    $category = Category::first();
 
     try {
         $errors = $entryModel->updateById($entry, [
@@ -280,7 +291,8 @@ and must keep it through all the process',
                     'date' => '2020-03-02',
                     'time' => '10:30'
                 ],
-                'repeater' => ['514-514-5145', '514-514-1234', '514-123-1234']
+                'repeater' => ['514-514-5145', '514-514-1234', '514-123-1234'],
+                'category' => (string)$category->_id
             ]
         ], false);
 
