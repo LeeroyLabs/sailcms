@@ -535,7 +535,7 @@ type FieldInfo {
 enum FieldMode {
     searchable,
     repeatable,
-    multipliable
+    multiple
 }
 
 type FieldInputInfo {

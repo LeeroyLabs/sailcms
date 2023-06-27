@@ -16,16 +16,15 @@ abstract class Field
 {
     public const SEARCHABLE = false;
     public const REPEATABLE = false;
-    public const MULTIPLIABLE = false;
+    public const MULTIPLE = false;
 
     /* Errors from 6100 to 6119 */
-    public const WRONG_FIELD_CONTENT_TYPE = "6101: The field content must be an array since the repeater option has been activated.";
+    public const WRONG_FIELD_CONTENT_TYPE = "6101: The field content must be an array.";
 
     /* Properties */
     public LocaleField $labels;
     public string $handle;
     public bool $repeater;
-    public bool $multiple;
     public Collection $modes;
     public Collection $baseConfigs;
     public Collection $configs;
@@ -121,7 +120,7 @@ abstract class Field
         }
 
         $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
-            if ($this->repeater) {
+            if ($this->repeater || self::MULTIPLE) {
                 if (!$content instanceof Collection) {
                     throw new EntryException(self::WRONG_FIELD_CONTENT_TYPE, 6101);
                 }
