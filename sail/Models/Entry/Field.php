@@ -3,7 +3,6 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Errors\EntryException;
 use SailCMS\Types\FieldInfo;
 use SailCMS\Types\Fields\Field as InputField;
@@ -126,9 +125,6 @@ abstract class Field
                 }
 
                 $content->each(function ($k, $currentContent) use ($fieldTypeClass, &$errors) {
-                    if ($currentContent instanceof Collection) {
-                        Debug::ray($currentContent);
-                    }
                     $this->validateInput($currentContent, $k, $fieldTypeClass, $errors);
                 });
             } else {

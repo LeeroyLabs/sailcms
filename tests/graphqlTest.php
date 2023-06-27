@@ -115,6 +115,12 @@ test('Create layout, entry type & entry', function () {
                             inputSettings: []
                         }
                         {
+                            labels: { en: "Entry List", fr: "Liste dentrées" }
+                            key: "entryList"
+                            handle: "SailCMS-Models-Entry-EntryListField"
+                            inputSettings: []
+                        }
+                        {
                             labels: { en: "Email", fr: "Courriel" }
                             key: "email"
                             handle: "SailCMS-Models-Entry-EmailField"
@@ -237,6 +243,13 @@ test('Create layout, entry type & entry', function () {
                                 }
                             ]
                         }
+                        {
+                            labels: { en: "Categories", fr: "Catégories" }
+                            key: "categories"
+                            handle: "SailCMS-Models-Entry-CategoryListField"
+                            repeater: true
+                            inputSettings: []
+                        }
                     ]
                     ) {
                     _id
@@ -278,6 +291,34 @@ test('Create layout, entry type & entry', function () {
         ', [], $_ENV['test-token']);
         $assetId = (string)$assets->data->assets->list[0]->_id;
 
+        $categories = $this->client->run('
+            {
+                categoryFullTree(parent_id: "", site_id: "' . Sail::siteId() . '") {
+                     _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        if ($categories->data->categoryFullTree) {
+            $categoryList = "";
+            foreach ($categories->data->categoryFullTree as $i => $category) {
+                $categoryList .= '"' . $category->_id . '"';
+
+                if ($i < count($categories->data->categoryFullTree) - 1) {
+                    $categoryList .= ", ";
+                }
+            }
+        }
+
+        $entry = $this->client->run('
+            {
+                entryByUrl(url: "") {
+                    _id
+                }
+            }
+        ', [], $_ENV['test-token']);
+        $entryId = (string)$entry->data->entryByUrl->_id;
+
         $newEntry = $this->client->run('
             mutation {
                 createEntry(
@@ -309,6 +350,10 @@ test('Create layout, entry type & entry', function () {
                             content: "testleeroy@leeroy.ca"
                         }
                         {
+                            key: "entryList"
+                            content: ["' . $entryId . '"]
+                        }
+                        {
                             key: "select"
                             content: "test"
                         }
@@ -338,6 +383,10 @@ test('Create layout, entry type & entry', function () {
                         {
                             key: "repeater"
                             content: ["test", "test2", "test3"]
+                        }
+                        {
+                            key: "categories"
+                            content: [' . $categoryList . ']
                         }
                     ]
                 ) {

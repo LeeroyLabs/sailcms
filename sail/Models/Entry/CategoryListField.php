@@ -3,30 +3,28 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
-use SailCMS\Errors\PermissionException;
-use SailCMS\Models\EntryPublication;
+use SailCMS\Models\Category;
 use SailCMS\Types\FieldCategory;
 use SailCMS\Types\Fields\InputTextField;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\StoringType;
 
-class EntryField extends Field
+class CategoryListField extends Field
 {
-    /* Error */
-    public const ENTRY_DOES_NOT_EXISTS = '6160: Entry of the given id does not exists or is not published.';
+    public const REPEATABLE = true;
 
     /**
      *
-     * Override the constructor to force the repeater attribute to false
+     * Override the constructor to force the repeater property to be set to true
      *
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
+     *
      */
     public function __construct(LocaleField $labels, array|Collection|null $settings = null)
     {
-        parent::__construct($labels, $settings);
+        parent::__construct($labels, $settings, true);
     }
 
     /**
@@ -37,13 +35,14 @@ class EntryField extends Field
     public function description(): LocaleField
     {
         return new LocaleField([
-            'en' => 'Allows the selection of an entry from a list.',
-            'fr' => 'Permet la sélection d\'une entrée à partir d\'une liste.'
+            'en' => 'Allows the selection of a category from a list.',
+            'fr' => 'Permet la sélection d\'une catégorie à partir d\'une liste.'
         ]);
     }
 
     /**
      *
+     * Category of field
      *
      * @return string
      *
@@ -54,6 +53,8 @@ class EntryField extends Field
     }
 
     /**
+     *
+     * Storing type
      *
      * @return string
      *
@@ -70,8 +71,7 @@ class EntryField extends Field
      */
     public function defaultSettings(): Collection
     {
-        // The only settings available is "required"
-        $defaultSettings = new Collection(['required' => true]);
+        $defaultSettings = new Collection(['required' => false]);
         return new Collection([
             $defaultSettings
         ]);
@@ -91,23 +91,40 @@ class EntryField extends Field
 
     /**
      *
-     * Entry validation
+     * Verify that the categories555 exist
      *
      * @param  mixed  $content
      * @return Collection|null
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
-     *
      */
     protected function validate(mixed $content): ?Collection
     {
         $errors = Collection::init();
 
-        if (is_string($content)) {
-            $entryPublicationModel = new EntryPublication();
-            if (!$entryPublicationModel->getPublicationByEntryId($content)) {
-                $errors->push(new Collection([self::ENTRY_DOES_NOT_EXISTS]));
+        if ($content instanceof Collection) {
+            $content = $content->unwrap();
+        }
+
+        if (is_array($content)) {
+            $categories = Category::getByIds($content);
+
+            $missingCategories = Collection::init();
+            foreach ($content as $i => $categoryId) {
+                $missing = true;
+                foreach ($categories as $category) {
+                    if ((string)$category->id === $categoryId) {
+                        $missing = false;
+                        break;
+                    }
+                }
+
+                if ($missing) {
+                    $missingCategories->pushKeyValue($i, CategoryField::CATEGORY_DOES_NOT_EXIST);
+                }
+            }
+
+            if ($missingCategories->length > 0) {
+                $errors->push($missingCategories);
             }
         }
 
@@ -116,24 +133,22 @@ class EntryField extends Field
 
     /**
      *
-     * Parent override to get the entry data
+     * Transform id to the category object
      *
      * @param  mixed  $content
      * @return mixed
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
      *
      */
     public function parse(mixed $content): mixed
     {
-        if (is_string($content)) {
-            $entryPublicationModel = new EntryPublication();
-            $entryPublication = $entryPublicationModel->getPublicationByEntryId($content, true, false);
-
-            return $entryPublication->version->entry->unwrap();
+        if ($content instanceof Collection) {
+            $content = $content->unwrap();
         }
 
+        if (is_array($content)) {
+            return Category::getByIds($content);
+        }
         return $content;
     }
 }
