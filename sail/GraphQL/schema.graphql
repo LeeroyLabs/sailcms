@@ -528,9 +528,14 @@ type FieldInfo {
     description: LocaleField!
     category: String!
     storingType: String!
-    searchable: Boolean!
-    repeatable: Boolean!
+    modes: [FieldMode]!
     inputs: [FieldInputInfo]!
+}
+
+enum FieldMode {
+    searchable,
+    repeatable,
+    multiple
 }
 
 type FieldInputInfo {

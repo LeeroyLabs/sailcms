@@ -10,8 +10,6 @@ use SailCMS\Types\StoringType;
 
 class SelectField extends Field
 {
-    public const SEARCHABLE = false;
-
     public function description(): LocaleField
     {
         return new LocaleField([

@@ -10,10 +10,8 @@ use SailCMS\Types\StoringType;
 
 class HTMLField extends Field
 {
+    public const SEARCHABLE = true;
     public const REPEATABLE = true;
-
-    /* Errors from 6220 to 6239 */
-    public const INVALID_TAGS = '6220: This string contains invalid tags';
 
     /**
      *

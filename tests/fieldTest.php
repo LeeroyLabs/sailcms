@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Models\Asset;
 use SailCMS\Models\Category;
 use SailCMS\Models\Entry\AssetFileField;
@@ -125,10 +126,9 @@ test('Add all fields to the layout', function () {
         ]
     ]);
 
-    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Select', 'fr' => 'Selection']), [
+    $multipleSelectField = new MultipleSelectField(new LocaleField(['en' => 'Select Multiple', 'fr' => 'Selection multiple']), [
         [
             'required' => false,
-            'multiple' => true,
             'options' => new Collection([
                 'test' => 'Big test',
                 'test2' => 'The real big test'
@@ -236,7 +236,7 @@ test('Failed to update the entry content', function () {
                 'repeater' => ['514-514-5145', 'test']
             ]
         ], false);
-
+        Debug::ray($errors);
         expect($errors->length)->toBeGreaterThan(0)
             ->and($errors->get('text')[0][0])->toBe(InputField::FIELD_REQUIRED)
             ->and($errors->get('float')[0][0])->toBe(sprintf(InputNumberField::FIELD_TOO_SMALL, '0.03'))

@@ -12,6 +12,7 @@ use SailCMS\Types\StoringType;
 class NumberField extends Field
 {
     public const REPEATABLE = true;
+    
     public const PRECISION_MAX_LIMIT = 14;
     public const INVALID_PRECISION = '6200: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
     public int $precision = 0;

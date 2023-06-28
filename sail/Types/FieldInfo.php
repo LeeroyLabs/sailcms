@@ -11,8 +11,7 @@ class FieldInfo
         public readonly LocaleField $description,
         public readonly string      $category,
         public readonly string      $storingType,
-        public readonly bool        $searchable,
-        public readonly bool        $repeatable,
+        public readonly array       $modes,
         public readonly array       $inputs
     )
     {
