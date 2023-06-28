@@ -420,10 +420,12 @@ input SocialMetaContentInput {
 
 input FieldConfigsInput {
     labels: LocaleFieldInput
+    placeholders: LocaleFieldInput
     key: String!
     handle: String!
     repeater: Boolean
-    inputSettings: [InputSettingsInput]!
+    required: Boolean
+    configs: Json
 }
 
 input SchemaUpdateInput {

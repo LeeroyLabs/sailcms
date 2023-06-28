@@ -15,18 +15,6 @@ class MultipleSelectField extends Field
 
     /**
      *
-     * Override the constructor to force the repeater attribute
-     *
-     * @param  LocaleField            $labels
-     * @param  array|Collection|null  $settings
-     */
-    public function __construct(LocaleField $labels, array|Collection|null $settings)
-    {
-        parent::__construct($labels, $settings);
-    }
-
-    /**
-     *
      * Description of the Multiple Select Field
      *
      * @return LocaleField

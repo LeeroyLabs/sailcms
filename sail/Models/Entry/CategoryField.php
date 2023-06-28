@@ -15,18 +15,6 @@ class CategoryField extends Field
     /* Errors 6300 to 6319 */
     public const CATEGORY_DOES_NOT_EXIST = '6300: Category of the given id does not exists';
 
-    /**
-     *
-     * Override the constructor to force the repeater attribute to false
-     *
-     * @param  LocaleField            $labels
-     * @param  array|Collection|null  $settings
-     */
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
-
     public function description(): LocaleField
     {
         return new LocaleField([

@@ -15,19 +15,7 @@ use SailCMS\Types\StoringType;
 class EntryListField extends Field
 {
     public const MULTIPLE = true;
-
-    /**
-     *
-     * Override the constructor to force the repeater attribute to true
-     *
-     * @param  LocaleField            $labels
-     * @param  array|Collection|null  $settings
-     */
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
-
+    
     /**
      *
      * @return LocaleField

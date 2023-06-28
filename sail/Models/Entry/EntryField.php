@@ -16,19 +16,7 @@ class EntryField extends Field
 {
     /* Error */
     public const ENTRY_DOES_NOT_EXISTS = '6160: Entry of the given id does not exists or is not published.';
-
-    /**
-     *
-     * Override the constructor to force the repeater attribute to false
-     *
-     * @param  LocaleField            $labels
-     * @param  array|Collection|null  $settings
-     */
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
-
+    
     /**
      *
      * @return LocaleField

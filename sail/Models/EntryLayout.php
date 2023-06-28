@@ -461,6 +461,7 @@ class EntryLayout extends Model implements Castable
         foreach ($configs as $fieldSettings) {
             $fieldClass = ModelField::getClassFromHandle($fieldSettings->handle);
             $labels = new LocaleField($fieldSettings->labels->unwrap());
+            $placeholders = new LocaleField($fieldSettings->placeholders->unwrap());
 
             if (!$keys->has($fieldSettings->key)) {
                 $keys->push($fieldSettings->key);
@@ -469,21 +470,24 @@ class EntryLayout extends Model implements Castable
             }
 
             $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
-                $settings = Collection::init();
-                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
-                    $options = EntryLayout::parseOptions($setting->options ?? null);
-                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value, $options));
-                });
-                $inputKey = $fieldsData->inputKey ?? $index;
 
-                $parsedConfigs->pushKeyValue($inputKey, $settings);
-            });
+            // TODO add required
+            // TODO add configs
+//            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
+//                $settings = Collection::init();
+//                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
+//                    $options = EntryLayout::parseOptions($setting->options ?? null);
+//                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value, $options));
+//                });
+//                $inputKey = $fieldsData->inputKey ?? $index;
+//
+//                $parsedConfigs->pushKeyValue($inputKey, $settings);
+//            });
 
             /**
              * @var ModelField $field
              */
-            $field = new $fieldClass($labels, $parsedConfigs, $fieldSettings->repeater ?? false);
+            $field = new $fieldClass($labels, $placeholders, $parsedConfigs, $fieldSettings->repeater ?? false);
             $schema->pushKeyValue($fieldSettings->key, $field);
         }
 

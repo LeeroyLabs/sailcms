@@ -22,6 +22,7 @@ abstract class Field
 
     /* Properties */
     public LocaleField $labels;
+    public LocaleField $placeholders;
     public string $handle;
     public bool $repeater;
     public Collection $modes;
@@ -36,14 +37,16 @@ abstract class Field
      *  > If settings is null the default settings will be used
      *
      * @param  LocaleField            $labels
+     * @param  LocaleField            $placeholders
      * @param  Collection|array|null  $settings
      * @param  bool                   $repeater
      *
      */
-    public function __construct(LocaleField $labels, Collection|array|null $settings = null, bool $repeater = false)
+    public function __construct(LocaleField $labels, LocaleField $placeholders, Collection|array|null $settings = null, bool $repeater = false)
     {
         $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
+        $this->placeholders = $placeholders;
         $this->repeater = static::REPEATABLE ? $repeater : false;
 
         $this->defineBaseConfigs();

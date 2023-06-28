@@ -16,19 +16,6 @@ class CategoryListField extends Field
 
     /**
      *
-     * Override the constructor to force the repeater property to be set to true
-     *
-     * @param  LocaleField            $labels
-     * @param  array|Collection|null  $settings
-     *
-     */
-    public function __construct(LocaleField $labels, array|Collection|null $settings = null)
-    {
-        parent::__construct($labels, $settings);
-    }
-
-    /**
-     *
      * @return LocaleField
      *
      */
