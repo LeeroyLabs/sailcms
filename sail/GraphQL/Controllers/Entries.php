@@ -6,7 +6,6 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -73,8 +72,7 @@ class Entries
         $result = EntryType::getAll(true);
 
         $parsedResult = Collection::init();
-        $result->each(function ($key, &$entryType) use ($parsedResult)
-        {
+        $result->each(function ($key, &$entryType) use ($parsedResult) {
             /**
              * @var EntryType $entryType
              */
@@ -235,8 +233,7 @@ class Entries
 
         // Clean data before returning it.
         $data = Collection::init();
-        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data)
-        {
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data) {
             /**
              * @var Entry $entry
              */
@@ -580,7 +577,8 @@ class Entries
         }
 
         if ($info->fieldName === "schema") {
-            return $entry->getSchema(true, true)->unwrap();
+            return [];
+//            return $entry->getSchema(true, true)->unwrap();
         }
 
         if ($info->fieldName === "seo") {
@@ -826,8 +824,7 @@ class Entries
         $entryLayouts = Collection::init();
         $result = (new EntryLayout())->getAll() ?? [];
 
-        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts)
-        {
+        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts) {
             /**
              * @var EntryLayout $entryLayout
              */

@@ -470,8 +470,7 @@ class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value)
-        {
+        $models->each(function ($key, $value) {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -776,9 +775,6 @@ class Sail
         // Register Search Adapters
         Search::registerSystemAdapters();
         Search::init();
-
-        // Load cms Fields
-        Field::init();
 
         // Initialize the logger
         Log::init();

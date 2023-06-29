@@ -24,17 +24,7 @@ beforeAll(function () {
 test('Create an entry layout', function () {
     $model = new EntryLayout();
 
-    $labels = new LocaleField([
-        'fr' => 'Titre',
-        'en' => 'Title'
-    ]);
-    $textField = new TextField($labels, [
-        ['required' => true,],
-    ]);
-
-    $schema = EntryLayout::generateLayoutSchema(new Collection([
-        'title' => $textField
-    ]));
+    $schema = Collection::init();
 
     try {
         $titles = new LocaleField([
@@ -46,65 +36,6 @@ test('Create an entry layout', function () {
     } catch (Exception $exception) {
 //        print_r($exception->getTraceAsString());
         expect(true)->toBe(false);
-    }
-})->group('entry-layout');
-
-test('Update the config of an entry layout', function () {
-    $model = new EntryLayout();
-    $entryLayout = $model->bySlug('layout-test');
-
-    $entryLayout->updateSchemaConfig('title', [
-        'maxLength' => 255,
-        'minLength' => 10
-    ], 0, new LocaleField([
-        'fr' => 'Titre de section',
-        'en' => 'Section title'
-    ]));
-
-    try {
-        $result = $model->updateById($entryLayout->_id, null, $entryLayout->schema);
-        $updatedEntryLayout = $model->one([
-            '_id' => $entryLayout->_id
-        ]);
-
-        expect($result)->toBe(true)
-            ->and($updatedEntryLayout->schema->get("title.configs.0.maxLength"))->toBe(255)
-            ->and($updatedEntryLayout->schema->get("title.configs.0.minLength"))->toBe(10)
-            ->and($updatedEntryLayout->schema->get("title.configs.0.labels")->fr)->toBe('Titre de section');
-    } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        print_r($exception->getTraceAsString());
-        expect(true)->toBe(false);
-    }
-})->group('entry-layout');
-
-test('Update a key of a entry layout schema', function () {
-    $model = new EntryLayout();
-    $entryLayout = $model->bySlug('layout-test');
-
-    try {
-        $entryLayout->updateSchemaKey('title', 'sub title');
-        $entryLayout = $model->bySlug('layout-test');
-        expect($entryLayout->schema->get('title'))->toBe(null)
-            ->and($entryLayout->schema->get('sub title.handle'))->toBe('SailCMS-Models-Entry-TextField');
-    } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        print_r($exception->getTraceAsString());
-        expect(true)->toBe(false);
-    }
-})->group('entry-layout');
-
-test('Failed to update a key of a entry layout schema', function () {
-    $model = new EntryLayout();
-    $entryLayout = $model->bySlug('layout-test');
-
-    try {
-        $entryLayout->updateSchemaKey('title', 'sub title');
-        expect(true)->toBe(false);
-    } catch (Exception $exception) {
-//        print_r($exception->getMessage());
-//        print_r($exception->getTraceAsString());
-        expect($exception->getMessage())->toBe('6005: The given key "title" does not exists in the schema.');
     }
 })->group('entry-layout');
 
@@ -325,24 +256,6 @@ test('Get a validated slug for an existing slug', function () {
     ]), 'test-de-test', Sail::siteId(), 'fr');
 
     expect($newSlug)->toBe('test-de-test-3');
-})->group('entry');
-
-test('Failed to update content because a field does not validated', function () {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-    $entry = $entryModel->one([
-        'title' => 'Test 2'
-    ]);
-    $entry->content->{"sub title"} = "TooShort";
-
-    try {
-        $entryModel->updateById($entry->_id, [
-            'content' => $entry->content
-        ]);
-        expect(true)->toBe(false);
-    } catch (EntryException $exception) {
-//        print_r($exception->getMessage());
-        expect($exception->getMessage())->toBe("5005: The content has theses errors :" . PHP_EOL . "6121: The content is too short (10) (sub title)");
-    }
 })->group('entry');
 
 test('Update an entry with the default type', function () {

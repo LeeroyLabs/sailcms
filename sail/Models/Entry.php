@@ -323,26 +323,26 @@ class Entry extends Model implements Validator, Castable
     {
         $parsedContent = Collection::init();
 
-        $schema = $this->getSchema(true);
+//        $schema = $this->getSchema(true);
+//
+//        $schema->each(function ($key, $modelField) use (&$parsedContent) {
+//            /**
+//             * @var ModelField $modelField
+//             */
+//            $content = $this->content->get($key);
+//
+//            $parsedFieldContent = $modelField->parse($content);
+//
+//            $parsedContent->pushKeyValue($key, [
+//                'type' => $modelField->storingType(),
+//                'repeater' => $modelField->repeater,
+//                'handle' => $modelField->handle,
+//                'content' => $parsedFieldContent ?? '',
+//                'key' => $key
+//            ]);
+//        });
 
-        $schema->each(function ($key, $modelField) use (&$parsedContent) {
-            /**
-             * @var ModelField $modelField
-             */
-            $content = $this->content->get($key);
-
-            $parsedFieldContent = $modelField->parse($content);
-
-            $parsedContent->pushKeyValue($key, [
-                'type' => $modelField->storingType(),
-                'repeater' => $modelField->repeater,
-                'handle' => $modelField->handle,
-                'content' => $parsedFieldContent ?? '',
-                'key' => $key
-            ]);
-        });
-
-        return $parsedContent;
+        return $this->content;
     }
 
     /**
@@ -358,23 +358,23 @@ class Entry extends Model implements Validator, Castable
      */
     private function processContentBeforeSave(Collection $content): array
     {
-        $processedContents = [];
-        $schema = $this->getSchema(true);
+//        $processedContents = [];
+//        $schema = $this->getSchema(true);
+//
+//        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
+//            $fieldContent = $content->get($key);
+//
+//            if ($fieldContent) {
+//                /**
+//                 * @var ModelField $modelField
+//                 */
+//                $processedFieldContent = $modelField->convert($fieldContent);
+//
+//                $processedContents[$key] = $processedFieldContent;
+//            }
+//        });
 
-        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
-            $fieldContent = $content->get($key);
-
-            if ($fieldContent) {
-                /**
-                 * @var ModelField $modelField
-                 */
-                $processedFieldContent = $modelField->convert($fieldContent);
-
-                $processedContents[$key] = $processedFieldContent;
-            }
-        });
-
-        return $processedContents;
+        return $content->unwrap();
     }
 
     /**
@@ -490,25 +490,26 @@ class Entry extends Model implements Validator, Castable
         $parsedContents = [
             'entry_type_handle' => $this->entryType->handle
         ];
-        $schema = $this->getSchema(true);
+//        $schema = $this->getSchema(true);
+        $schema = Collection::init();
         $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
             $parsedContent = $content;
 
-            /**
-             * @var ModelField $field
-             */
-            $field = $schema->get($key);
-            $isSearchable = $field::SEARCHABLE && $field;
-
-            if ($isSearchable) {
-                if (is_object($content)) {
-                    if ($content instanceof Collection) {
-                        $content = $content->unwrap();
-                    }
-                    $parsedContent = implode('|', (array)$content);
-                }
-                $parsedContents[$key] = $parsedContent;
-            }
+//            /**
+//             * @var ModelField $field
+//             */
+//            $field = $schema->get($key);
+//            $isSearchable = $field::SEARCHABLE && $field;
+//
+//            if ($isSearchable) {
+//                if (is_object($content)) {
+//                    if ($content instanceof Collection) {
+//                        $content = $content->unwrap();
+//                    }
+//                    $parsedContent = implode('|', (array)$content);
+//                }
+//                $parsedContents[$key] = $parsedContent;
+//            }
         });
 
 
@@ -1719,15 +1720,15 @@ class Entry extends Model implements Validator, Castable
         // VALIDATION & PARSING
         if ($content instanceof Collection && $content->length > 0) {
             // Check if there is errors
-            $errors = $this->validateContent($content);
+//            $errors = $this->validateContent($content);
 
-            if ($errors->length > 0) {
-                if ($throwErrors) {
-                    self::throwErrorContent($errors);
-                } else {
-                    return $errors;
-                }
-            }
+//            if ($errors->length > 0) {
+//                if ($throwErrors) {
+//                    self::throwErrorContent($errors);
+//                } else {
+//                    return $errors;
+//                }
+//            }
 
             $content = $this->processContentBeforeSave($content);
         }
@@ -1855,15 +1856,15 @@ class Entry extends Model implements Validator, Castable
             }
 
             if (in_array('content', $data->keys()->unwrap()) && $data->get('content')) {
-                $errors = $this->validateContent($data->get('content'));
-
-                if ($errors->length > 0) {
-                    if ($throwErrors) {
-                        self::throwErrorContent($errors);
-                    } else {
-                        return $errors;
-                    }
-                }
+//                $errors = $this->validateContent($data->get('content'));
+//
+//                if ($errors->length > 0) {
+//                    if ($throwErrors) {
+//                        self::throwErrorContent($errors);
+//                    } else {
+//                        return $errors;
+//                    }
+//                }
             }
         }
 
