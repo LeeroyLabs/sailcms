@@ -136,6 +136,19 @@ class Validator
 
     /**
      *
+     * Check if value is numeric
+     *
+     * @param  mixed  $number
+     * @return bool
+     *
+     */
+    public static function numeric(mixed $number): bool
+    {
+        return v::numericVal()->validate($number);
+    }
+
+    /**
+     *
      * Check if string is alpha only (and allowed special chars)
      *
      * @param  string  $string
