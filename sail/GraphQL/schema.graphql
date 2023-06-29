@@ -44,6 +44,11 @@ type Query {
     entryVersion(id: ID!): EntryVersion
     entryVersions(entry_id: ID!): [EntryVersion!]
 
+    # Entry Fields
+    entryField(key: String): EntryField
+    entryFieldById(id: ID!): EntryField
+    entryFields: [EntryField!]!
+
     # Registers
     registeredExtensions: RegisteredExtensions!
 
@@ -355,6 +360,20 @@ type EntryPublication {
     entry_url: String!
     user_full_name: String!
     user_email: String!
+}
+
+type EntryField {
+    _id: ID!
+    key: String!
+    name: String!
+    label: LocaleField!
+    placeholder: LocaleField!
+    explain: LocaleField!
+    validate: Boolean!
+    validation: String!
+    required: Boolean!
+    type: String!
+    config: Json!
 }
 
 type SocialMeta {
