@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -549,6 +550,7 @@ class Entries
         // For EntryVersion
         if (!isset($obj['current'])) {
             if ($info->fieldName === "content") {
+                Debug::ray('allllllllo');
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
                 $entryType = $obj['entry_type'] ?? null;
 
@@ -573,7 +575,7 @@ class Entries
 
         // Entry fields to resolve
         if ($info->fieldName === "content") {
-            return $entry->getContent();
+            return Entry::processContentForGraphQL($entry->getContent());
         }
 
         if ($info->fieldName === "schema") {
@@ -857,74 +859,8 @@ class Entries
 
         $titles = new LocaleField($titles->unwrap());
 
-        $schema = EntryLayout::processSchemaFromGraphQL($graphqlSchema);
-        $generatedSchema = EntryLayout::generateLayoutSchema($schema);
-
         $entryLayoutModel = new EntryLayout();
-        return $entryLayoutModel->create($titles, $generatedSchema, $slug)->simplify();
-    }
-
-    /**
-     *
-     * Update an entry layout
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function updateEntryLayoutSchema(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $args->get('id');
-        $titles = $args->get('titles');
-        $schemaUpdate = $args->get('schema_update');
-
-        $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->one(['_id' => $id]);
-
-        if (!$entryLayout) {
-            throw new EntryException(sprintf(EntryLayout::DOES_NOT_EXISTS, $id));
-        }
-
-        EntryLayout::updateSchemaFromGraphQL($schemaUpdate, $entryLayout);
-
-        return $entryLayoutModel->updateById($id, $titles, $entryLayout->schema);
-    }
-
-    /**
-     *
-     * Update a key in an entry layout schema
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     * @throws JsonException
-     *
-     */
-    public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $args->get('id');
-        $key = $args->get('key');
-        $newKey = $args->get('newKey');
-
-        $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->one(['_id' => $id]);
-
-        if (!$entryLayout) {
-            throw new EntryException(sprintf(EntryLayout::DOES_NOT_EXISTS, $id));
-        }
-
-        return $entryLayout->updateSchemaKey($key, $newKey);
+        return $entryLayoutModel->create($titles, $graphqlSchema, $slug)->simplify();
     }
 
     /**
@@ -947,21 +883,6 @@ class Entries
         $soft = $args->get('soft', true);
 
         return (new EntryLayout())->delete($id, $soft);
-    }
-
-    /**
-     *
-     * Get all fields Info
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return Collection
-     *
-     */
-    public function fields(mixed $obj, Collection $args, Context $context): Collection
-    {
-        return Field::getAvailableFields();
     }
 
     /**

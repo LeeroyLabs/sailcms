@@ -151,7 +151,6 @@ test('Get a entry', function () {
                             en
                             fr
                         }
-                        entry_layout_id
                     }
                     parent {
                         _id
@@ -213,8 +212,6 @@ test('Get a entry', function () {
                     content {
                         key
                         content
-                        handle
-                        type
                     }
                     seo {
                         _id
@@ -243,6 +240,7 @@ test('Get a entry', function () {
             }
         }
     ', [], $_ENV['test-token']);
+        SailCMS\Debug::ray($entryResponse);
         expect($entryResponse->data->entries->list[0])->not()->toBeNull();
     }
 
