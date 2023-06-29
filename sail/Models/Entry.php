@@ -11,6 +11,7 @@ use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -23,7 +24,6 @@ use SailCMS\Log;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Entry as MEntry;
-use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Search as SailSearch;
 use SailCMS\Text;
@@ -31,7 +31,6 @@ use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryAlternate;
 use SailCMS\Types\EntryParent;
-use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\MiddlewareType;
@@ -251,7 +250,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Get parent url
      *
-     * @param  object            $currentHomepage
+     * @param  object|null       $currentHomepage
      * @param  EntryParent|null  $entryParent
      * @return string
      * @throws ACLException
@@ -313,15 +312,11 @@ class Entry extends Model implements Validator, Castable
      * Get content with Model Field data
      *
      * @return Collection
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      *
      */
     public function getContent(): Collection
     {
-        $parsedContent = Collection::init();
+        Collection::init();
 
 //        $schema = $this->getSchema(true);
 //
@@ -351,10 +346,6 @@ class Entry extends Model implements Validator, Castable
      *
      * @param  Collection  $content
      * @return array
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      */
     private function processContentBeforeSave(Collection $content): array
     {
@@ -464,6 +455,7 @@ class Entry extends Model implements Validator, Castable
             'url' => $this->url,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
+            'content' => $this->content,
             'categories' => $this->categories->castFrom()
         ];
 
@@ -479,10 +471,6 @@ class Entry extends Model implements Validator, Castable
      * Gather data for search purpose
      *
      * @return array
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      *
      */
     public function searchData(): array
@@ -490,11 +478,11 @@ class Entry extends Model implements Validator, Castable
         $parsedContents = [
             'entry_type_handle' => $this->entryType->handle
         ];
-//        $schema = $this->getSchema(true);
-        $schema = Collection::init();
-        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
-            $parsedContent = $content;
 
+//        $schema = $this->getSchema(true);
+//        $schema = Collection::init();
+//        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
+//            $parsedContent = $content;
 //            /**
 //             * @var ModelField $field
 //             */
@@ -510,8 +498,7 @@ class Entry extends Model implements Validator, Castable
 //                }
 //                $parsedContents[$key] = $parsedContent;
 //            }
-        });
-
+//        })
 
         return [
             '_id' => $this->_id,
@@ -838,6 +825,24 @@ class Entry extends Model implements Validator, Castable
         return $newSlug;
     }
 
+    public static function processContentForGraphQL(?Collection $content): array
+    {
+        $parsedContent = [];
+        Debug::ray($content);
+        $content->each(function ($key, $value) use (&$parsedContent) {
+//            if ($value instanceof stdClass) {
+//                Debug::ray('yooooo', $value);
+//                $value = implode(', ', (array)$value);
+//            }
+            $parsedContent[] = [
+                'key' => $key,
+                'content' => json_encode($value)
+            ];
+        });
+        Debug::ray('parsed', $parsedContent);
+        return $parsedContent;
+    }
+
     /**
      *
      * Process content from graphQL to be able to create/update
@@ -859,7 +864,6 @@ class Entry extends Model implements Validator, Castable
 
             $parsedContent->pushKeyValue($toParse->key, $parsed);
         });
-
         return $parsedContent;
     }
 
@@ -1323,7 +1327,7 @@ class Entry extends Model implements Validator, Castable
      * Get schema from entryLayout
      *
      * @param  bool  $silent
-     * @param  bool  $simplified
+     * @param  bool  $simplified  Deprecated
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1349,9 +1353,9 @@ class Entry extends Model implements Validator, Castable
             }
         }
 
-        if ($simplified) {
-            return $entryLayout ? $entryLayout->simplifySchema() : Collection::init();
-        }
+//        if ($simplified) {
+//            return $entryLayout ? $entryLayout->simplifySchema() : Collection::init();
+//        }
 
         $result = $entryLayout ? $entryLayout->schema : Collection::init();
 
@@ -1568,27 +1572,6 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Validate content from schema
-        $schema->each(function ($key, $modelField) use ($content, $errors) {
-            /**
-             * @var ModelField $modelField
-             */
-            $modelFieldContent = $content->get($key);
-
-            // Cannot find content, it's not filled at all
-            if ($modelFieldContent === null && $modelField->isRequired()) {
-                $errors->pushKeyValue($key, [[InputField::FIELD_REQUIRED]]);
-                return;
-            } else {
-                if ($modelFieldContent === null) {
-                    return;
-                }
-            }
-            $modelFieldErrors = $modelField->validateContent($modelFieldContent);
-
-            if ($modelFieldErrors->length > 0) {
-                $errors->pushKeyValue($key, $modelFieldErrors->unwrap());
-            }
-        });
 
         $content->each(function ($key, $content) use ($schema) {
             if (!$schema->get($key)) {
