@@ -11,7 +11,6 @@ use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -828,18 +827,12 @@ class Entry extends Model implements Validator, Castable
     public static function processContentForGraphQL(?Collection $content): array
     {
         $parsedContent = [];
-        Debug::ray($content);
         $content->each(function ($key, $value) use (&$parsedContent) {
-//            if ($value instanceof stdClass) {
-//                Debug::ray('yooooo', $value);
-//                $value = implode(', ', (array)$value);
-//            }
             $parsedContent[] = [
                 'key' => $key,
                 'content' => json_encode($value)
             ];
         });
-        Debug::ray('parsed', $parsedContent);
         return $parsedContent;
     }
 

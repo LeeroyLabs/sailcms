@@ -26,6 +26,9 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\EntryFields;
+use SailCMS\GraphQL\Controllers\EntryLayouts;
+use SailCMS\GraphQL\Controllers\EntryTypes;
 use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
@@ -416,14 +419,15 @@ final class GraphQL
         self::addMutationResolver('testEmail', Emails::class, 'testEmail');
         self::addMutationResolver('createPreviewEmail', Emails::class, 'createPreviewEmail');
 
+        // Entry types
+        self::addQueryResolver('entryTypes', EntryTypes::class, 'entryTypes');
+        self::addQueryResolver('entryType', EntryTypes::class, 'entryType');
+        self::addMutationResolver('createEntryType', EntryTypes::class, 'createEntryType');
+        self::addMutationResolver('updateEntryType', EntryTypes::class, 'updateEntryType');
+        self::addMutationResolver('deleteEntryType', EntryTypes::class, 'deleteEntryType');
+
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
-
-        self::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
-        self::addQueryResolver('entryType', Entries::class, 'entryType');
-        self::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
-        self::addMutationResolver('updateEntryType', Entries::class, 'updateEntryType');
-        self::addMutationResolver('deleteEntryType', Entries::class, 'deleteEntryType');
 
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
@@ -439,21 +443,24 @@ final class GraphQL
         self::addQueryResolver('entryVersions', Entries::class, 'entryVersions');
         self::addMutationResolver('applyVersion', Entries::class, 'applyVersion');
 
-        self::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
-        self::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
-        self::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
-        self::addMutationResolver('updateEntryLayoutSchema', Entries::class, 'updateEntryLayoutSchema');
-        self::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
-        self::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
-
-        self::addQueryResolver('fields', Entries::class, 'fields');
-
-        // Types and Resolvers
         self::addResolver('Entry', Entries::class, 'entryResolver');
         self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
         self::addResolver('Authors', Entries::class, 'authorsResolver');
         self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
-        self::addResolver('EntryLayout', Entries::class, 'entryLayoutResolver');
+
+        // Entry fields
+        self::addQueryResolver('entryField', EntryFields::class, 'entryField');
+        self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
+        self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
+        self::addMutationResolver('createEntryField', EntryFields::class, 'createEntryField');
+        self::addMutationResolver('deleteEntryField', EntryFields::class, 'deleteEntryField');
+
+        // Entry layouts
+        self::addQueryResolver('entryLayout', EntryLayouts::class, 'entryLayout');
+        self::addQueryResolver('entryLayouts', EntryLayouts::class, 'entryLayouts');
+        self::addMutationResolver('createEntryLayout', EntryLayouts::class, 'createEntryLayout');
+        self::addMutationResolver('deleteEntryLayout', EntryLayouts::class, 'deleteEntryLayout');
+        self::addResolver('EntryLayout', EntryLayouts::class, 'entryLayoutResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
@@ -599,8 +606,7 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver)
-        {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

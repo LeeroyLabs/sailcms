@@ -14,13 +14,12 @@ use stdClass;
 
 /**
  *
- * @property string      $key
+ * @property string      $key  // TODO must be unique, set from Name or throw errors
  * @property string      $name
  * @property LocaleField $label
  * @property LocaleField $placeholder
  * @property LocaleField $explain
  * @property bool        $repeatable
- * @property bool        $validate
  * @property string      $validation
  * @property bool        $required
  * @property string      $type
@@ -90,13 +89,13 @@ class EntryField extends Model implements Castable
     public function castFrom(): array
     {
         return [
+            '_id' => $this->_id,
             'key' => $this->key,
             'name' => $this->name,
             'label' => $this->label->castFrom(),
-            'placeholder' => $this->placeholder->castFrom(),
-            'explain' => $this->explain->castFrom(),
+            'placeholder' => $this->placeholder ? $this->placeholder->castFrom() : null,
+            'explain' => $this->explain ? $this->explain->castFrom() : null,
             'repeatable' => $this->repeatable,
-            'validate' => $this->validate,
             'validation' => $this->validation,
             'required' => $this->required,
             'type' => $this->type,

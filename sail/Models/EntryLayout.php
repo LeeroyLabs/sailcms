@@ -71,6 +71,10 @@ class EntryLayout extends Model implements Castable
      */
     public function castTo(mixed $value): Collection
     {
+        if ($value instanceof \stdClass) {
+            $value = (array)$value;
+        }
+
         return new Collection($value);
     }
 
@@ -120,7 +124,7 @@ class EntryLayout extends Model implements Castable
             '_id' => (string)$this->_id,
             'slug' => $this->slug,
             'titles' => $this->titles->castFrom(),
-            'schema' => $this->schema,
+            'schema' => $this->schema->castFrom(),
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
@@ -316,7 +320,9 @@ class EntryLayout extends Model implements Castable
      */
     private static function validateSchema(Collection $schema): void
     {
-        // TODO
+        $schema->each(function ($i, $tab) {
+            // TODO Tab validation throw error or throw logs
+        });
     }
 
     /**

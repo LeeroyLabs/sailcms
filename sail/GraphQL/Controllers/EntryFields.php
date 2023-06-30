@@ -5,6 +5,7 @@ namespace SailCMS\GraphQL\Controllers;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\EntryField;
@@ -63,5 +64,33 @@ class EntryFields
     public function entryFields(mixed $obj, Collection $args, Context $context): Collection
     {
         return (new EntryField())->getList();
+    }
+
+    /**
+     *
+     * Create an entry field
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return array
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    public function createEntryField(mixed $obj, Collection $args, Context $context): array
+    {
+        $entryFieldModel = new EntryField();
+
+        /**
+         * @var EntryField $entryField
+         */
+        $entryField = $entryFieldModel->castTo($args);
+
+        if (!$entryField->save()) {
+            throw new EntryException("Could not create entry field");
+        }
+
+        return $entryField->castFrom();
     }
 }

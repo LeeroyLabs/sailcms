@@ -240,10 +240,8 @@ test('Get a entry', function () {
             }
         }
     ', [], $_ENV['test-token']);
-        SailCMS\Debug::ray($entryResponse);
         expect($entryResponse->data->entries->list[0])->not()->toBeNull();
     }
-
 })->group('graphql');
 
 test('Delete test asset', function () {
