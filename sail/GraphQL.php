@@ -486,6 +486,8 @@ final class GraphQL
 
         # UI Related
         self::addQueryResolver('navigationElements', Misc::class, 'navigationElements');
+        self::addQueryResolver('settingsElements', Misc::class, 'settingsElements');
+        self::addQueryResolver('handshakeKey', Misc::class, 'handshakeKey');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
