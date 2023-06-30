@@ -371,6 +371,7 @@ type EntryField {
     label: LocaleField!
     placeholder: LocaleField!
     explain: LocaleField!
+    repeatable: Boolean!
     validate: Boolean!
     validation: String!
     required: Boolean!

@@ -26,6 +26,7 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\EntryFields;
 use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
@@ -446,7 +447,13 @@ final class GraphQL
         self::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
         self::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
 
-        self::addQueryResolver('fields', Entries::class, 'fields');
+        //self::addQueryResolver('fields', Entries::class, 'fields');
+
+        # Entry Fields
+        self::addQueryResolver('entryField', EntryFields::class, 'entryField');
+        self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
+        self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
+
 
         // Types and Resolvers
         self::addResolver('Entry', Entries::class, 'entryResolver');
