@@ -11,6 +11,7 @@ use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
 use SailCMS\DI;
 use SailCMS\Email\Controller;
+use SailCMS\Routing\Controller as RoutingController;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -26,6 +27,7 @@ use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
+use SailCMS\UI;
 use SodiumException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -445,7 +447,7 @@ class Router
     public static function setupThirdPartyContent(): void
     {
         $instance = new self();
-        $instance->get('/ui-content/:any', 'en', Controller::class, 'loadThirdPartyApplication');
+        $instance->get('/extension/:string/:all', 'en', RoutingController::class, 'loadThirdPartyApplication');
     }
 
     // -------------------------------------------------- Private -------------------------------------------------- //

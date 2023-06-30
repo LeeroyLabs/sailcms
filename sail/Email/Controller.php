@@ -5,7 +5,6 @@ namespace SailCMS\Email;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Contracts\AppController;
-use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
@@ -99,36 +98,6 @@ class Controller extends AppController
         }
 
         $this->response->setArray($context);
-    }
-
-    /**
-     *
-     * Load third-party UI content
-     *
-     * @param  string  $appHash
-     * @return void
-     *
-     */
-    public function loadThirdPartyApplication(string $appHash): void
-    {
-        $elements = UI::getNavigationElements();
-        $target = null;
-        $listing = [];
-
-        foreach ($elements as $key => $list) {
-            foreach ($list as $item) {
-                $listing[] = $item;
-            }
-        }
-
-        foreach ($listing as $item) {
-            if (hash('sha256', $item->class . $item->method) === $appHash) {
-                $target = $item;
-            }
-        }
-
-        $instance = new $target->class();
-        $this->response->template = $instance->{$target->method}();
     }
 
     private static function processContext(array $context): array
