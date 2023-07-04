@@ -8,28 +8,37 @@ use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Types\LocaleField;
 use stdClass;
 
 /**
  *
- * @property string      $key  // TODO must be unique, set from Name or throw errors
- * @property string      $name
- * @property LocaleField $label
- * @property LocaleField $placeholder
- * @property LocaleField $explain
- * @property bool        $repeatable
- * @property string      $validation
- * @property bool        $required
- * @property string      $type
- * @property stdClass    $config
+ * @property string       $key  // TODO must be unique, set from Name or throw errors
+ * @property string       $name
+ * @property LocaleField  $label
+ * @property ?LocaleField $placeholder
+ * @property ?LocaleField $explain
+ * @property bool         $repeatable
+ * @property string       $validation
+ * @property bool         $required
+ * @property string       $type
+ * @property stdClass     $config
  *
  */
 class EntryField extends Model implements Castable
 {
+    /* Errors */
+    public const DATABASE_ERROR = '6100: Exception when %s an entry field.';
+    public const ENTRY_FIELD_KEY_ERROR = '6101: The key "%s" is invalid or already used.';
+
     protected string $collection = 'entry_fields';
     protected string $permissionGroup = 'entryfields';
+    protected array $casting = [
+        'placeholder' => LocaleField::class,
+        'explain' => LocaleField::class
+    ];
 
     /**
      *
@@ -83,6 +92,86 @@ class EntryField extends Model implements Castable
 
     /**
      *
+     * Validate key for entry field
+     *
+     * @param  string|null  $key
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function validateKey(?string $key = null): bool
+    {
+        if (!is_string($key)) {
+            $key = $this->key;
+        }
+
+        // Format validation
+        preg_match("/^[a-zA-Z0-9_]+$/", $key, $matches);
+        if (($matches && count($matches) < 1) || !$matches) {
+            return false;
+        }
+
+        // Presence validation
+        if (self::getByKey($key)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     *
+     * Create entry field
+     *
+     * @param  Collection  $args
+     * @return EntryField|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function create(Collection $args): ?EntryField
+    {
+        $this->hasPermissions();
+
+        // Default property that has not been sets
+        if (!$args->get('explain')) {
+            $args->setFor('explain', '');
+        }
+        if (!$args->get('placeholder')) {
+            $args->setFor('placeholder', '');
+        }
+        if ($args->get('repeatable') === null) {
+            $args->setFor('repeatable', false);
+        }
+        if (!$args->get('validation')) {
+            $args->setFor('validation', '');
+        }
+        if (!$args->get('config')) {
+            $args->setFor('config', '');
+        }
+
+        /**
+         * @var EntryField $entryField
+         */
+        $entryField = $this::fill($args);
+
+        if (!$entryField->validateKey()) {
+            throw new EntryException(sprintf(self::ENTRY_FIELD_KEY_ERROR, $entryField->key), 6101);
+        }
+
+        if (!$entryField->save()) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating'), 6100);
+        }
+
+        return $entryField;
+    }
+
+    /**
+     *
      * Simplify object
      *
      */
@@ -108,10 +197,10 @@ class EntryField extends Model implements Castable
      * Cast simple object/array to EntryField
      *
      * @param  mixed  $value
-     * @return mixed
+     * @return Model
      *
      */
-    public function castTo(mixed $value): mixed
+    public function castTo(mixed $value): Model
     {
         return self::fill($value);
     }

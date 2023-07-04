@@ -47,6 +47,7 @@ type Query {
     entryField(key: String): EntryField
     entryFieldById(id: ID!): EntryField
     entryFields: [EntryField!]!
+    entryFieldValidateKey(key: String!): Boolean
 
     entryLayout(id: ID!): EntryLayout
     entryLayouts: [EntryLayout!]!
@@ -375,11 +376,11 @@ type EntryField {
     key: String!
     name: String!
     label: LocaleField!
-    placeholder: LocaleField!
-    explain: LocaleField!
-    validate: Boolean!
-    validation: String!
+    placeholder: LocaleField
+    explain: LocaleField
+    validation: String
     required: Boolean!
+    repeatable: Boolean!
     type: String!
     config: Json!
 }

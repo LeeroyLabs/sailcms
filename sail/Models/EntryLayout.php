@@ -41,8 +41,8 @@ class EntryLayout extends Model implements Castable
 
     /* Errors */
     public const DATABASE_ERROR = '6001: Exception when %s an entry.';
-    public const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
-    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
+    public const SCHEMA_IS_USED = '6002: Cannot delete the schema because it is used by entry types.';
+    public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
 
     /* Cache */
     private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';

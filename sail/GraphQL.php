@@ -452,6 +452,7 @@ final class GraphQL
         self::addQueryResolver('entryField', EntryFields::class, 'entryField');
         self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
         self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
+        self::addQueryResolver('entryFieldValidateKey', EntryFields::class, 'entryFieldValidateKey');
         self::addMutationResolver('createEntryField', EntryFields::class, 'createEntryField');
         self::addMutationResolver('deleteEntryField', EntryFields::class, 'deleteEntryField');
 

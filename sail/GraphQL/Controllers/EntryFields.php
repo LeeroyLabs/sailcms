@@ -68,29 +68,40 @@ class EntryFields
 
     /**
      *
+     * Validate a key for entry field
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryFieldValidateKey(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new EntryField())->validateKey($args->get('key'));
+    }
+
+    /**
+     *
      * Create an entry field
      *
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return array
+     * @return EntryField
+     * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
-    public function createEntryField(mixed $obj, Collection $args, Context $context): array
+    public function createEntryField(mixed $obj, Collection $args, Context $context): EntryField
     {
         $entryFieldModel = new EntryField();
 
-        /**
-         * @var EntryField $entryField
-         */
-        $entryField = $entryFieldModel->castTo($args);
-
-        if (!$entryField->save()) {
-            throw new EntryException("Could not create entry field");
-        }
-
-        return $entryField->castFrom();
+        return $entryFieldModel->create($args);
     }
 }
