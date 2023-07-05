@@ -7,7 +7,6 @@ use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
-use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
@@ -82,7 +81,6 @@ class EntryLayouts
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     * @throws FieldException
      *
      */
     public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?array

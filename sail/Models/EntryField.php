@@ -32,6 +32,7 @@ class EntryField extends Model implements Castable
     /* Errors */
     public const DATABASE_ERROR = '6100: Exception when %s an entry field.';
     public const ENTRY_FIELD_KEY_ERROR = '6101: The key "%s" is invalid or already used.';
+    public const ENTRY_FIELD_DOES_NOT_EXIST = '6102: The entry field with key "%s" does not exist.';
 
     protected string $collection = 'entry_fields';
     protected string $permissionGroup = 'entryfields';
@@ -168,6 +169,42 @@ class EntryField extends Model implements Castable
         }
 
         return $entryField;
+    }
+
+    /**
+     *
+     * Delete by id or key
+     *
+     * @param  Collection  $args
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     * @throws EntryException
+     *
+     */
+    public function deleteByIdOrKey(Collection $args): bool
+    {
+        $this->hasPermissions();
+        $result = true;
+
+        // Check if used
+        // TODO
+
+        if ($args->get('id')) {
+            $result = $this->deleteById($args->get('id'));
+        }
+
+        if ($args->get('key')) {
+            $entryField = self::getByKey($args->get('key'));
+
+            if (!$entryField) {
+                throw new EntryException(sprintf(self::ENTRY_FIELD_DOES_NOT_EXIST, $args->get('key')));
+            }
+            $result = $entryField->remove();
+        }
+
+        return $result;
     }
 
     /**

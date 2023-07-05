@@ -104,4 +104,27 @@ class EntryFields
 
         return $entryFieldModel->create($args);
     }
+
+    /**
+     *
+     * Delete by id or key
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function deleteEntryField(mixed $obj, Collection $args, Context $context): bool
+    {
+        if (!$args->get('id') && !$args->get('key')) {
+            throw new EntryException('Must send an id or a least a key to delete an entry field');
+        }
+
+        return (new EntryField())->deleteByIdOrKey($args);
+    }
 }
