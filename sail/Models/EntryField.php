@@ -31,8 +31,10 @@ class EntryField extends Model implements Castable
 {
     /* Errors */
     public const DATABASE_ERROR = '6100: Exception when %s an entry field.';
-    public const ENTRY_FIELD_KEY_ERROR = '6101: The key "%s" is invalid or already used.';
-    public const ENTRY_FIELD_DOES_NOT_EXIST = '6102: The entry field with key "%s" does not exist.';
+    public const KEY_ERROR = '6101: The key "%s" is invalid or already used.';
+    public const DOES_NOT_EXIST = '6102: The entry field with key "%s" does not exist.';
+    public const MISSING_PARAM_FOR_DELETE = '6103: Must give an id a key to delete an entry field.';
+    public const CANNOT_DELETE = '6104: Cannot delete the entry field because it is used by some entry layout.';
 
     protected string $collection = 'entry_fields';
     protected string $permissionGroup = 'entryfields';
@@ -161,7 +163,7 @@ class EntryField extends Model implements Castable
         $entryField = $this::fill($args);
 
         if (!$entryField->validateKey()) {
-            throw new EntryException(sprintf(self::ENTRY_FIELD_KEY_ERROR, $entryField->key), 6101);
+            throw new EntryException(sprintf(self::KEY_ERROR, $entryField->key), 6101);
         }
 
         if (!$entryField->save()) {
@@ -175,33 +177,41 @@ class EntryField extends Model implements Castable
      *
      * Delete by id or key
      *
-     * @param  Collection  $args
+     * @param  string|null  $id
+     * @param  string|null  $key
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
      * @throws EntryException
-     *
+     * @throws PermissionException
      */
-    public function deleteByIdOrKey(Collection $args): bool
+    public function deleteByIdOrKey(?string $id = null, ?string $key = null): bool
     {
         $this->hasPermissions();
         $result = true;
 
-        // Check if used
-        // TODO
-
-        if ($args->get('id')) {
-            $result = $this->deleteById($args->get('id'));
+        // Validate the presence of id or key
+        if (!$id && !$key) {
+            throw new EntryException(self::MISSING_PARAM_FOR_DELETE);
         }
 
-        if ($args->get('key')) {
-            $entryField = self::getByKey($args->get('key'));
-
+        // Acquire entry field id if key is passed
+        $entryFieldId = $id;
+        if ($key) {
+            $entryField = self::getByKey($key);
             if (!$entryField) {
-                throw new EntryException(sprintf(self::ENTRY_FIELD_DOES_NOT_EXIST, $args->get('key')));
+                throw new EntryException(sprintf(self::DOES_NOT_EXIST, $key));
             }
-            $result = $entryField->remove();
+            $entryFieldId = $entryField->_id;
+        }
+
+        // Check if entry field is used
+        if (EntryLayout::countUsedEntryField((string)$entryFieldId) > 0) {
+            throw new EntryException(self::CANNOT_DELETE);
+        }
+
+        if ($entryFieldId) {
+            $result = $this->deleteById($entryFieldId);
         }
 
         return $result;

@@ -71,7 +71,7 @@ class EntryLayout extends Model implements Castable
      */
     public function castTo(mixed $value): Collection
     {
-        if ($value instanceof \stdClass) {
+        if (!is_array($value)) {
             $value = (array)$value;
         }
 
@@ -206,6 +206,19 @@ class EntryLayout extends Model implements Castable
             return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
         }
         return $this->findOne($filters)->exec();
+    }
+
+    /**
+     *
+     * Get usage count of an entry field for a given id
+     *
+     * @param  string  $entryFieldId
+     * @return int
+     *
+     */
+    public static function countUsedEntryField(string $entryFieldId)
+    {
+        return (new static())->count(['schema.fields' => ['$in' => [$entryFieldId]]]);
     }
 
     /**
