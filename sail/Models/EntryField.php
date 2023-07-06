@@ -155,21 +155,27 @@ class EntryField extends Model implements Castable
     {
         $this->hasPermissions();
 
-        // TODO check if arg are in available property
-        // Default property that has not been sets
-        if (!$args->get('explain')) {
+        $toCreate = Collection::init();
+        $args->each(function ($key, $value) use (&$toCreate) {
+            if (in_array($key, self::availableProperties())) {
+                $toCreate->setFor($key, $value);
+            }
+        });
+
+        // Default properties that has not been sets
+        if (!$toCreate->get('explain')) {
             $args->setFor('explain', '');
         }
-        if (!$args->get('placeholder')) {
+        if (!$toCreate->get('placeholder')) {
             $args->setFor('placeholder', '');
         }
-        if ($args->get('repeatable') === null) {
+        if ($toCreate->get('repeatable') === null) {
             $args->setFor('repeatable', false);
         }
-        if (!$args->get('validation')) {
+        if (!$toCreate->get('validation')) {
             $args->setFor('validation', '');
         }
-        if (!$args->get('config')) {
+        if (!$toCreate->get('config')) {
             $args->setFor('config', '');
         }
 
