@@ -155,6 +155,7 @@ class EntryField extends Model implements Castable
     {
         $this->hasPermissions();
 
+        // TODO check if arg are in available property
         // Default property that has not been sets
         if (!$args->get('explain')) {
             $args->setFor('explain', '');

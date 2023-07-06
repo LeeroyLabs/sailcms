@@ -4,6 +4,7 @@ use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\Entry\TextField;
+use SailCMS\Models\EntryField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
@@ -19,6 +20,38 @@ beforeAll(function () {
 
     // Ensure default type exists
     EntryType::getDefaultType();
+});
+
+test('Create an entry field', function () {
+    $model = new EntryField();
+
+    $entryField = $model->create(new Collection([
+        'key' => 'test',
+        'name' => 'Test',
+        'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
+        'type' => 'text',
+        'required' => true
+    ]));
+
+    expect($entryField->key)->toBe('test')
+        ->and($entryField->_id)->not->toBeNull();
+});
+
+test('Fail to create an entry field', function () {
+    $model = new EntryField();
+
+    try {
+        $model->create(new Collection([
+            'key' => 'test',
+            'name' => 'Test',
+            'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
+            'type' => 'text',
+            'required' => true
+        ]));
+        expect(false)->toBeTrue();
+    } catch (EntryException $exception) {
+        expect($exception->getMessage())->toBe(sprintf(EntryField::KEY_ERROR, 'test'));
+    }
 });
 
 test('Create an entry layout', function () {
@@ -509,3 +542,11 @@ test('Fail to get homepage entry after deletion', function () {
 
     expect($entry)->toBe(null);
 })->group('entry');
+
+test('Delete an entry field', function () {
+    $model = new EntryField();
+
+    $result = $model->deleteByIdOrKey(null, 'test');
+
+    expect($result)->toBeTrue();
+});
