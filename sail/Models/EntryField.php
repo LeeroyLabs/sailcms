@@ -43,6 +43,21 @@ class EntryField extends Model implements Castable
         'explain' => LocaleField::class
     ];
 
+    public static function availableProperties(): array
+    {
+        return [
+            'name',
+            'label',
+            'placeholder',
+            'explain',
+            'repeatable',
+            'validation',
+            'required',
+            'type',
+            'config'
+        ];
+    }
+
     /**
      *
      * Get a field by its key
@@ -175,6 +190,37 @@ class EntryField extends Model implements Castable
 
     /**
      *
+     * Update an entry field for a given id
+     *
+     * @param  string      $id
+     * @param  Collection  $args
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function update(string $id, Collection $args): bool
+    {
+        $result = true;
+        $toUpdate = [];
+
+
+        $args->each(function ($key, $value) use (&$toUpdate) {
+            if (in_array($key, self::availableProperties())) {
+                $toUpdate[$key] = $value;
+            }
+        });
+
+        if (count($toUpdate) > 0) {
+            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
+                '$set' => $toUpdate
+            ]);
+        }
+
+        return (bool)$result;
+    }
+
+    /**
+     *
      * Delete by id or key
      *
      * @param  string|null  $id
@@ -214,7 +260,7 @@ class EntryField extends Model implements Castable
             $result = $this->deleteById($entryFieldId);
         }
 
-        return $result;
+        return (bool)$result;
     }
 
     /**
