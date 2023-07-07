@@ -36,18 +36,21 @@ type Query {
 
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
-    entryTypes: [EntryType!]
+    entryTypes: [EntryType!]!
     entryType(handle: String): EntryType
     entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
     entryByUrl(url: String!, site_id: String): Entry
     entry(id: ID!, entry_type_handle: String): Entry
     entryVersion(id: ID!): EntryVersion
-    entryVersions(entry_id: ID!): [EntryVersion!]
+    entryVersions(entry_id: ID!): [EntryVersion!]!
 
-    # Entry Fields
     entryField(key: String): EntryField
     entryFieldById(id: ID!): EntryField
     entryFields: [EntryField!]!
+    entryFieldValidateKey(key: String!): Boolean
+
+    entryLayout(id: ID!): EntryLayout
+    entryLayouts: [EntryLayout!]!
 
     # Registers
     registeredExtensions: RegisteredExtensions!
@@ -119,6 +122,7 @@ type Mutation {
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
     deleteEntryType(id: ID!): Boolean
+
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
@@ -126,6 +130,10 @@ type Mutation {
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
     unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
+
+    createEntryField(key: String!, name: String!, label: LocaleFieldInput!, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String!, validation: String, repeatable: Boolean, required: Boolean!,  config: Json): EntryField
+    updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, required: Boolean, config: Json): Boolean!
+    deleteEntryField(id: ID, key: String): Boolean!
 
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
@@ -327,6 +335,7 @@ type EntryLayout {
     is_trashed: Boolean!
     used_by: Int
     record_count: Int
+    schema: [EntryLayoutTab!]
 }
 
 type EntrySeo {
@@ -369,12 +378,11 @@ type EntryField {
     key: String!
     name: String!
     label: LocaleField!
-    placeholder: LocaleField!
-    explain: LocaleField!
-    repeatable: Boolean!
-    validate: Boolean!
-    validation: String!
+    placeholder: LocaleField
+    explain: LocaleField
+    validation: String
     required: Boolean!
+    repeatable: Boolean!
     type: String!
     config: Json!
 }
@@ -407,19 +415,6 @@ input SocialMetaContentInput {
 input ModelFieldContentInput {
     key: String!
     content: Json
-}
-
-input FieldContentInput {
-    value: String
-    type: InputType!
-}
-
-enum InputType {
-    integer
-    float
-    string
-    boolean
-    array
 }
 
 type Alternate {
@@ -468,6 +463,11 @@ type EntryErrors {
 type EntryListing {
     pagination: Pagination!
     list: [Entry!]!
+}
+
+type EntryLayoutTab {
+    label: String!
+    fields: [EntryField!]
 }
 
 type LocaleField {

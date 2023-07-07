@@ -41,8 +41,8 @@ class EntryLayout extends Model implements Castable
 
     /* Errors */
     public const DATABASE_ERROR = '6001: Exception when %s an entry.';
-    public const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
-    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
+    public const SCHEMA_IS_USED = '6002: Cannot delete the schema because it is used by entry types.';
+    public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
 
     /* Cache */
     private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
@@ -71,6 +71,10 @@ class EntryLayout extends Model implements Castable
      */
     public function castTo(mixed $value): Collection
     {
+        if (!is_array($value)) {
+            $value = (array)$value;
+        }
+
         return new Collection($value);
     }
 
@@ -120,7 +124,7 @@ class EntryLayout extends Model implements Castable
             '_id' => (string)$this->_id,
             'slug' => $this->slug,
             'titles' => $this->titles->castFrom(),
-            'schema' => $this->schema,
+            'schema' => $this->schema->castFrom(),
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
@@ -202,6 +206,19 @@ class EntryLayout extends Model implements Castable
             return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
         }
         return $this->findOne($filters)->exec();
+    }
+
+    /**
+     *
+     * Get usage count of an entry field for a given id
+     *
+     * @param  string  $entryFieldId
+     * @return int
+     *
+     */
+    public static function countUsedEntryField(string $entryFieldId)
+    {
+        return (new static())->count(['schema.fields' => ['$in' => [$entryFieldId]]]);
     }
 
     /**
@@ -316,7 +333,9 @@ class EntryLayout extends Model implements Castable
      */
     private static function validateSchema(Collection $schema): void
     {
-        // TODO
+        $schema->each(function ($i, $tab) {
+            // TODO Tab validation throw error or throw logs
+        });
     }
 
     /**

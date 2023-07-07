@@ -193,6 +193,7 @@ trait ActiveRecord
                 } catch (DatabaseException $e) {
                     return false;
                 }
+                return true;
             } else {
                 $call = [];
 

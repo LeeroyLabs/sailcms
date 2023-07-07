@@ -31,8 +31,6 @@ abstract class AppContainer
 
     abstract public function events(): void;
 
-    abstract public function fields(): Collection;
-
     public function __construct()
     {
         $this->router = new Router();

@@ -4,7 +4,7 @@ namespace SailCMS\Database\Traits;
 
 use Carbon\Carbon;
 use Exception;
-use \JsonException;
+use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
