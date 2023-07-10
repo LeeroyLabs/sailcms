@@ -43,6 +43,9 @@ class EntryLayout extends Model implements Castable
     public const DATABASE_ERROR = '6001: Exception when %s an entry layout.';
     public const SCHEMA_IS_USED = '6002: Cannot delete the schema because it is used by entry types.';
     public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
+    public const SCHEMA_MISSING_TAB_LABEL = '6005: Missing label on a tab #%s of your schema.';
+    public const SCHEMA_INVALID_TAB_FIELDS = '6006: Invalid field value on tab #%s of your schema.';
+    public const SCHEMA_INVALID_TAB_FIELD_ID = '6007: Invalid field id on tab #$s of your schema.';
 
     /* Cache */
     private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
@@ -216,6 +219,7 @@ class EntryLayout extends Model implements Castable
 
         $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
         EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+
         return $entryLayout;
     }
 
@@ -344,8 +348,19 @@ class EntryLayout extends Model implements Castable
      */
     private static function validateSchema(Collection $schema): void
     {
-        $schema->each(function ($i, $tab) {
-            // TODO Tab validation throw error or throw logs
+        $schema->each(function ($i, $tabFields) {
+            if (!is_string($tabFields["tab"])) {
+                throw new EntryException(self::SCHEMA_MISSING_TAB_LABEL);
+            }
+            if (!is_array($tabFields["fields"])) {
+                throw new EntryException(self::SCHEMA_INVALID_TAB_FIELDS);
+            }
+
+            foreach ($tabFields["fields"] as $fieldId) {
+                if (!is_string($fieldId)) {
+                    throw new EntryException(self::SCHEMA_INVALID_TAB_FIELD_ID);
+                }
+            }
         });
     }
 

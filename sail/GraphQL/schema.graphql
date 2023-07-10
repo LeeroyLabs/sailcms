@@ -467,7 +467,7 @@ type EntryListing {
 }
 
 type EntryLayoutTab {
-    tab: String!
+    tab: String! # todo change that to Layout
     fields: [EntryField!]
 }
 

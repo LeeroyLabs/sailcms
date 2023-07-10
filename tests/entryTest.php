@@ -3,7 +3,6 @@
 use SailCMS\Collection;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
-use SailCMS\Models\Entry\TextField;
 use SailCMS\Models\EntryField;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryPublication;
@@ -27,6 +26,13 @@ test('Create an entry field', function () {
 
     $entryField = $model->create(new Collection([
         'key' => 'test',
+        'name' => 'Test',
+        'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
+        'type' => 'text',
+        'required' => true
+    ]));
+    $model->create(new Collection([
+        'key' => 'test_2',
         'name' => 'Test',
         'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
         'type' => 'text',
@@ -56,8 +62,17 @@ test('Fail to create an entry field', function () {
 
 test('Create an entry layout', function () {
     $model = new EntryLayout();
+    $testField = EntryField::getByKey('test');
 
-    $schema = Collection::init();
+    $schema = new Collection();
+    $schema->push([ // todo create a type for that
+        'tab' => 'Test',
+        'fields' => [(string)$testField->_id],
+    ]);
+    $schema->push([
+        'tab' => 'Test 2',
+        'fields' => [(string)$testField->_id, (string)EntryField::getByKey('test_2')->_id]
+    ]);
 
     try {
         $titles = new LocaleField([
@@ -67,10 +82,12 @@ test('Create an entry layout', function () {
         $entryLayout = $model->create($titles, $schema);
         expect($entryLayout->_id)->not->toBe('');
     } catch (Exception $exception) {
-//        print_r($exception->getTraceAsString());
+        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 })->group('entry-layout');
+
+// TODO must add tests failed create layout
 
 test('Create an entry type', function () {
     $model = new EntryType();
@@ -321,7 +338,7 @@ test('Get homepage entry after update', function () {
 })->group('entry');
 
 test('Find the entry by url', function () {
-    $entry = Entry::findByURL('fr/', false);
+    $entry = Entry::findByURL('fr/', Sail::siteId(), false);
 
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')
@@ -547,6 +564,7 @@ test('Delete an entry field', function () {
     $model = new EntryField();
 
     $result = $model->deleteByIdOrKey(null, 'test');
+    $model->deleteByIdOrKey(null, 'test_2');
 
     expect($result)->toBeTrue();
 });
