@@ -100,9 +100,26 @@ class EntryFields
      */
     public function createEntryField(mixed $obj, Collection $args, Context $context): EntryField
     {
-        $entryFieldModel = new EntryField();
+        return (new EntryField())->create($args);
+    }
 
-        return $entryFieldModel->create($args);
+    /**
+     *
+     * Update entry field
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function updateEntryField(mixed $obj, Collection $args, Context $context): bool
+    {
+        $id = $args->get('id');
+        $args->offsetUnset('id');
+
+        return (new EntryField())->update($id, $args);
     }
 
     /**

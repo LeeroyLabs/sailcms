@@ -133,6 +133,7 @@ type Mutation {
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
 
     createEntryField(key: String!, name: String!, label: LocaleFieldInput!, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String!, validation: String, repeatable: Boolean, required: Boolean!,  config: Json): EntryField
+    updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, required: Boolean, config: Json): Boolean!
     deleteEntryField(id: ID, key: String): Boolean!
 
     # Categories

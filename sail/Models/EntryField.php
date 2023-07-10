@@ -43,6 +43,21 @@ class EntryField extends Model implements Castable
         'explain' => LocaleField::class
     ];
 
+    public static function availableProperties(): array
+    {
+        return [
+            'name',
+            'label',
+            'placeholder',
+            'explain',
+            'repeatable',
+            'validation',
+            'required',
+            'type',
+            'config'
+        ];
+    }
+
     /**
      *
      * Get a field by its key
@@ -141,20 +156,27 @@ class EntryField extends Model implements Castable
     {
         $this->hasPermissions();
 
-        // Default property that has not been sets
-        if (!$args->get('explain')) {
+        $toCreate = Collection::init();
+        $args->each(function ($key, $value) use (&$toCreate) {
+            if (in_array($key, self::availableProperties())) {
+                $toCreate->setFor($key, $value);
+            }
+        });
+
+        // Default properties that has not been sets
+        if (!$toCreate->get('explain')) {
             $args->setFor('explain', '');
         }
-        if (!$args->get('placeholder')) {
+        if (!$toCreate->get('placeholder')) {
             $args->setFor('placeholder', '');
         }
-        if ($args->get('repeatable') === null) {
+        if ($toCreate->get('repeatable') === null) {
             $args->setFor('repeatable', false);
         }
-        if (!$args->get('validation')) {
+        if (!$toCreate->get('validation')) {
             $args->setFor('validation', '');
         }
-        if (!$args->get('config')) {
+        if (!$toCreate->get('config')) {
             $args->setFor('config', '');
         }
 
@@ -172,6 +194,37 @@ class EntryField extends Model implements Castable
         }
 
         return $entryField;
+    }
+
+    /**
+     *
+     * Update an entry field for a given id
+     *
+     * @param  string      $id
+     * @param  Collection  $args
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function update(string $id, Collection $args): bool
+    {
+        $result = true;
+        $toUpdate = [];
+
+
+        $args->each(function ($key, $value) use (&$toUpdate) {
+            if (in_array($key, self::availableProperties())) {
+                $toUpdate[$key] = $value;
+            }
+        });
+
+        if (count($toUpdate) > 0) {
+            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
+                '$set' => $toUpdate
+            ]);
+        }
+
+        return (bool)$result;
     }
 
     /**
@@ -215,7 +268,7 @@ class EntryField extends Model implements Castable
             $result = $this->deleteById($entryFieldId);
         }
 
-        return $result;
+        return (bool)$result;
     }
 
     /**
