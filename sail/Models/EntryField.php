@@ -15,7 +15,7 @@ use stdClass;
 
 /**
  *
- * @property string       $key  // TODO must be unique, set from Name or throw errors
+ * @property string       $key
  * @property string       $name
  * @property LocaleField  $label
  * @property ?LocaleField $placeholder
@@ -33,7 +33,7 @@ class EntryField extends Model implements Castable
     public const DATABASE_ERROR = '6100: Exception when %s an entry field.';
     public const KEY_ERROR = '6101: The key "%s" is invalid or already used.';
     public const DOES_NOT_EXIST = '6102: The entry field with key "%s" does not exist.';
-    public const MISSING_PARAM_FOR_DELETE = '6103: Must give an id a key to delete an entry field.';
+    public const MISSING_PARAM_FOR_DELETE = '6103: Must give an id or a key to delete an entry field.';
     public const CANNOT_DELETE = '6104: Cannot delete the entry field because it is used by some entry layout.';
 
     protected string $collection = 'entry_fields';
@@ -81,16 +81,17 @@ class EntryField extends Model implements Castable
      *
      * Get list of existing fields
      *
+     * @param  array|null  $query
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function getList(): Collection
+    public function getList(?array $query = null): Collection
     {
         $this->hasPermissions(true);
-        return new Collection($this->find([])->sort(['name' => 1])->exec());
+        return new Collection($this->find($query ?? [])->sort(['name' => 1])->exec());
     }
 
     /**

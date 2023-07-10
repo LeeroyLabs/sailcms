@@ -458,6 +458,7 @@ final class GraphQL
 
         // Entry layouts
         self::addQueryResolver('entryLayout', EntryLayouts::class, 'entryLayout');
+        self::addQueryResolver('entryLayoutById', EntryLayouts::class, 'entryLayoutById');
         self::addQueryResolver('entryLayouts', EntryLayouts::class, 'entryLayouts');
         self::addMutationResolver('createEntryLayout', EntryLayouts::class, 'createEntryLayout');
         self::addMutationResolver('deleteEntryLayout', EntryLayouts::class, 'deleteEntryLayout');

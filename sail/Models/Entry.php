@@ -1529,8 +1529,11 @@ class Entry extends Model implements Validator, Castable
         $total = 0;
 
         foreach ($types as $type) {
-            $model = new self('', $type);
-            $total += $model->count(['entry_type_id' => ['$in' => $type->id]]);
+            /**
+             * @var EntryType $type
+             */
+            $model = $type->getEntryModel($type);
+            $total += $model->count([]);
         }
 
         return $total;

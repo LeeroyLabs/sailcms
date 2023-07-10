@@ -18,27 +18,40 @@ class EntryLayouts
 {
     /**
      *
-     * Get an entry layout by id
+     * Get an entry layout by slug
      *
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return array|null
+     * @return EntryLayout|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function entryLayout(mixed $obj, Collection $args, Context $context): ?array
+    public function entryLayout(mixed $obj, Collection $args, Context $context): ?EntryLayout
     {
-        $entryLayoutId = $args->get('id');
+        return (new EntryLayout())->bySlug($args->get('slug'));
+    }
 
-        $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->one([
-            '_id' => $entryLayoutId
+    /**
+     *
+     * Get an entry layout by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryLayoutById(mixed $obj, Collection $args, Context $context): ?EntryLayout
+    {
+        return (new EntryLayout())->one([
+            '_id' => $args->get('id')
         ]);
-
-        return $entryLayout?->simplify();
     }
 
     /**
@@ -56,15 +69,12 @@ class EntryLayouts
      */
     public function entryLayouts(mixed $obj, Collection $args, Context $context): ?array
     {
-        $entryLayouts = Collection::init();
         $result = (new EntryLayout())->getAll() ?? [];
+        $entryLayouts = new Collection($result);
 
-        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts) {
-            /**
-             * @var EntryLayout $entryLayout
-             */
-            $entryLayouts->push($entryLayout->simplify());
-        });
+        //
+        $fieldIds = EntryLayout::getEntryFieldIds($entryLayouts);
+        EntryLayout::fetchFields($fieldIds, $entryLayouts);
 
         return $entryLayouts->unwrap();
     }

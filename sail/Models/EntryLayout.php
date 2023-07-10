@@ -40,7 +40,7 @@ class EntryLayout extends Model implements Castable
     ];
 
     /* Errors */
-    public const DATABASE_ERROR = '6001: Exception when %s an entry.';
+    public const DATABASE_ERROR = '6001: Exception when %s an entry layout.';
     public const SCHEMA_IS_USED = '6002: Cannot delete the schema because it is used by entry types.';
     public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
 
@@ -74,7 +74,6 @@ class EntryLayout extends Model implements Castable
         if (!is_array($value)) {
             $value = (array)$value;
         }
-
         return new Collection($value);
     }
 
@@ -124,7 +123,7 @@ class EntryLayout extends Model implements Castable
             '_id' => (string)$this->_id,
             'slug' => $this->slug,
             'titles' => $this->titles->castFrom(),
-            'schema' => $this->schema->castFrom(),
+            'schema' => $this->schema,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
@@ -175,8 +174,11 @@ class EntryLayout extends Model implements Castable
         // Cache Time To Live value from setting or default
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
         $cacheKey = self::ENTRY_LAYOUT_BY_SLUG . $slug;
+        $entryLayout = $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
 
-        return $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
+        $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
+        EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+        return $entryLayout;
     }
 
     /**
@@ -203,9 +205,18 @@ class EntryLayout extends Model implements Castable
             // Cache Time To Live value from setting or default
             $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
             $cacheKey = self::ENTRY_LAYOUT_ID_ . $filters['_id'];
-            return $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
+            $entryLayout = $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
+        } else {
+            $entryLayout = $this->findOne($filters)->exec();
         }
-        return $this->findOne($filters)->exec();
+
+        if (!$entryLayout) {
+            return null;
+        }
+
+        $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
+        EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+        return $entryLayout;
     }
 
     /**
@@ -351,6 +362,68 @@ class EntryLayout extends Model implements Castable
         $entryTypeCount = (new EntryType())->count(['entry_layout_id' => (string)$entryLayoutId]);
 
         return $entryTypeCount > 0;
+    }
+
+
+    /**
+     *
+     * Get entry field ids from schema of a collection of entry layouts
+     *
+     * @param  Collection  $entryLayouts
+     * @return array
+     *
+     */
+    public static function getEntryFieldIds(Collection $entryLayouts): array
+    {
+        $fieldIds = [];
+
+        $entryLayouts->each(function ($k, $entryLayout) use (&$fieldIds) {
+            foreach ($entryLayout->schema as $fieldTab) {
+                if (isset($fieldTab->fields)) {
+                    foreach ($fieldTab->fields as $fieldId) {
+                        if (!in_array($fieldId, $fieldIds)) {
+                            $fieldIds[] = $fieldId;
+                        }
+                    }
+                }
+            }
+        });
+
+        return (new self)->ensureObjectIds($fieldIds, true);
+    }
+
+    /**
+     *
+     * Fetch fields for a collection of schema of entry layouts
+     *
+     * @param  array       $fieldIds
+     * @param  Collection  $entryLayouts
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function fetchFields(array $fieldIds, Collection $entryLayouts): void
+    {
+        $fields = (new EntryField)->getList(['_id' => ['$in' => $fieldIds]]);
+        $fieldsById = [];
+        $fields->each(function ($k, $field) use (&$fieldsById) {
+            /**
+             * @var EntryField $field
+             */
+            $fieldsById[(string)$field->_id] = $field;
+        });
+
+        $entryLayouts->each(function ($k, $entryLayout) use ($fieldsById) {
+            foreach ($entryLayout->schema as $tab) {
+                if ($tab->fields) {
+                    foreach ($tab->fields as &$fieldId) {
+                        $fieldId = $fieldsById[$fieldId] ?? null;
+                    }
+                }
+            }
+        });
     }
 
     /**

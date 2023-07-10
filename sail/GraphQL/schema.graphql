@@ -49,7 +49,8 @@ type Query {
     entryFields: [EntryField!]!
     entryFieldValidateKey(key: String!): Boolean
 
-    entryLayout(id: ID!): EntryLayout
+    entryLayout(slug: String!): EntryLayout
+    entryLayoutById(id: ID!): EntryLayout
     entryLayouts: [EntryLayout!]!
 
     # Registers
@@ -465,7 +466,7 @@ type EntryListing {
 }
 
 type EntryLayoutTab {
-    label: String!
+    tab: String!
     fields: [EntryField!]
 }
 

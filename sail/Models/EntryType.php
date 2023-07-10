@@ -6,7 +6,6 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -450,7 +449,7 @@ class EntryType extends Model implements Validator
      */
     public static function getTypesUsingLayout(string|ObjectId $layoutId): Collection
     {
-        return new Collection(self::query()->find(['entry_layout_id' => self::query()->ensureObjectId($layoutId)])->exec());
+        return new Collection(self::query()->find(['entry_layout_id' => $layoutId])->exec());
     }
 
     /**
