@@ -59,6 +59,9 @@ type Query {
     group(id: ID!): Group
     groups: [Group!]!
 
+    # Queue
+    taskList(limit: Int): [Task!]!
+
     #{CUSTOM_QUERIES}#
 }
 
@@ -127,6 +130,13 @@ type Mutation {
     createGroup(name: String!): String!
     updateGroup(id: ID!, name: String!): Boolean!
     deleteGroup(id: ID!): Boolean!
+
+    # Queue
+    createTask(name: String!, handler: String!, action: String!, settings: Json!, priority: Int!, retriable: Boolean!): Boolean!
+    stopTask(id: ID!, pid: String!): Boolean!
+    stopAllTasks: Boolean!
+    cancelTask(id: ID!): Boolean!
+    #rescheduleTask(id: ID!, pid: String!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
@@ -699,6 +709,23 @@ type Permission {
     group: String!
     category: String!
     description: LocaleField!
+}
+
+type Task {
+    _id: ID!
+    name: String!
+    handler: String!
+    action: String!
+    settings: Json!
+    priority: Int!
+    retriable: Boolean!
+    retry_count: Int!
+    scheduled_at: Int!
+    locked: Boolean!
+    executed: Boolean!
+    executed_at: Int!
+    execution_result: String!
+    execution_success: Boolean!
 }
 
 #{CUSTOM_TYPES}#

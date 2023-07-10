@@ -172,4 +172,34 @@ class Queue extends Model
         $count = (new self)->getCountForTask($task);
         return ($count > 0);
     }
+
+    /**
+     *
+     * Delete a task
+     *
+     * @param ObjectId $id
+     * @return bool
+     * @throws DatabaseException
+     *
+     */
+    public function cancelTask(ObjectId $id): bool
+    {
+        $this->deleteById($id);
+        return true;
+    }
+
+    /**
+     *
+     * Stop the process of a task
+     *
+     * @param ObjectId $id
+     * @param string $pid
+     * @return bool
+     *
+     */
+    public function stopTask(ObjectId $id, string $pid): bool
+    {
+        shell_exec('kill -9 ' . $pid);
+        return true;
+    }
 }

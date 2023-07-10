@@ -28,6 +28,7 @@ use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
 use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Navigation;
+use SailCMS\GraphQL\Controllers\Queue;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -472,6 +473,12 @@ final class GraphQL
         self::addMutationResolver('updateGroup', Groups::class, 'updateGroup');
         self::addMutationResolver('deleteGroup', Groups::class, 'deleteGroup');
         self::addResolver('Group', Groups::class, 'groupResolver');
+
+        // Queue
+        self::addQueryResolver('taskList', Queue::class, 'getList');
+        self::addMutationResolver('createTask', Queue::class, 'createTask');
+        self::addMutationResolver('stopTask', Queue::class, 'stopTask');
+        self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
