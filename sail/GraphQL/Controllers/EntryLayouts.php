@@ -12,6 +12,7 @@ use SailCMS\GraphQL\Context;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
+use SailCMS\Types\EntryLayoutTab;
 use SailCMS\Types\LocaleField;
 
 class EntryLayouts
@@ -72,7 +73,6 @@ class EntryLayouts
         $result = (new EntryLayout())->getAll() ?? [];
         $entryLayouts = new Collection($result);
 
-        //
         $fieldIds = EntryLayout::getEntryFieldIds($entryLayouts);
         EntryLayout::fetchFields($fieldIds, $entryLayouts);
 
@@ -86,14 +86,14 @@ class EntryLayouts
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return array|null
+     * @return EntryLayout|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
      *
      */
-    public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?array
+    public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?EntryLayout
     {
         $titles = $args->get('titles');
         $graphqlSchema = $args->get('schema');
@@ -101,8 +101,15 @@ class EntryLayouts
 
         $titles = new LocaleField($titles->unwrap());
 
+        $schema = Collection::init();
+        foreach ($graphqlSchema as $tab) {
+            $fields = $tab->fields->unwrap() ?? [];
+
+            $schema->push(new EntryLayoutTab($tab->label, $fields));
+        }
+
         $entryLayoutModel = new EntryLayout();
-        return $entryLayoutModel->create($titles, $graphqlSchema, $slug)->simplify();
+        return $entryLayoutModel->create($titles, $schema, $slug);
     }
 
     /**

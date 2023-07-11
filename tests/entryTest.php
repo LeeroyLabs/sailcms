@@ -11,6 +11,7 @@ use SailCMS\Models\EntryType;
 use SailCMS\Models\EntryVersion;
 use SailCMS\Sail;
 use SailCMS\Text;
+use SailCMS\Types\EntryLayoutTab;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\SocialMeta;
 
@@ -65,14 +66,8 @@ test('Create an entry layout', function () {
     $testField = EntryField::getByKey('test');
 
     $schema = new Collection();
-    $schema->push([ // todo create a type for that
-        'tab' => 'Test',
-        'fields' => [(string)$testField->_id],
-    ]);
-    $schema->push([
-        'tab' => 'Test 2',
-        'fields' => [(string)$testField->_id, (string)EntryField::getByKey('test_2')->_id]
-    ]);
+    $schema->push(new EntryLayoutTab('Test', [(string)$testField->_id]));
+    $schema->push(new EntryLayoutTab('Test 2', [(string)$testField->_id, (string)EntryField::getByKey('test_2')->_id]));
 
     try {
         $titles = new LocaleField([
@@ -87,7 +82,36 @@ test('Create an entry layout', function () {
     }
 })->group('entry-layout');
 
-// TODO must add tests failed create layout
+test('Fail to create an entry layout', function () {
+    $model = new EntryLayout();
+    $schema = new Collection();
+    $schema->push(new EntryLayoutTab('Test', ['bugs!']));
+
+    try {
+        $titles = new LocaleField([
+            'fr' => 'Erreur',
+            'en' => 'Error'
+        ]);
+        $model->create($titles, $schema);
+        expect(false)->toBeTrue();
+    } catch (Exception $exception) {
+        expect($exception->getMessage())->toBe(sprintf(EntryLayout::SCHEMA_INVALID_TAB_FIELD_ID, 1));
+    }
+
+    $schema = new Collection();
+    $schema->push(['label' => 'No good', 'fields' => []]);
+
+    try {
+        $titles = new LocaleField([
+            'fr' => 'Erreur',
+            'en' => 'Error'
+        ]);
+        $model->create($titles, $schema);
+        expect(false)->toBeTrue();
+    } catch (Exception $exception) {
+        expect($exception->getMessage())->toBe(sprintf(EntryLayout::SCHEMA_INVALID_TAB_VALUE, 1));
+    }
+})->group('entry-layout');
 
 test('Create an entry type', function () {
     $model = new EntryType();
@@ -224,7 +248,7 @@ test('Update an entry type', function () {
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
-})->group('entry-layout');
+})->group('entry-type');
 
 test('Get homepage entry', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');

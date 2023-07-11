@@ -136,6 +136,8 @@ type Mutation {
     updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, required: Boolean, config: Json): Boolean!
     deleteEntryField(id: ID, key: String): Boolean!
 
+    createEntryLayout(titles: LocaleFieldInput!, schema: [EntryLayoutTabInput!]!, slug: String): EntryLayout
+
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
     updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: ID!): Boolean!
@@ -467,8 +469,13 @@ type EntryListing {
 }
 
 type EntryLayoutTab {
-    tab: String! # todo change that to Layout
+    label: String!
     fields: [EntryField!]
+}
+
+input EntryLayoutTabInput {
+    label: String!
+    fields: [ID!]!
 }
 
 type LocaleField {
