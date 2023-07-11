@@ -46,6 +46,7 @@ class EntryLayout extends Model implements Castable
     public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
     public const SCHEMA_INVALID_TAB_VALUE = '6005: Invalid tab value on tab #%s of your schema, must be an instance of EntryLayoutTab.';
     public const SCHEMA_INVALID_TAB_FIELD_ID = '6006: Invalid field id on tab #%s of your schema.';
+    public const NOTHING_TO_UPDATE = '6007: No params filled, there is nothing to update.';
 
     /* Cache */
     private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
@@ -264,9 +265,10 @@ class EntryLayout extends Model implements Castable
      *
      * Update an entry layout for a given id or entryLayout instance
      *
-     * @param  Entry|string      $entryOrId
-     * @param  LocaleField|null  $titles
-     * @param  Collection|null   $schema
+     * @param  EntryLayout|string  $entryLayoutOrId
+     * @param  LocaleField|null    $titles
+     * @param  Collection|null     $schema
+     * @param  string|null         $slug
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -274,14 +276,14 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
+    public function updateById(EntryLayout|string $entryLayoutOrId, ?LocaleField $titles, ?Collection $schema, ?string $slug): bool
     {
         $this->hasPermissions();
 
-        if (is_string($entryOrId)) {
-            $entry = $this->findById($entryOrId)->exec();
+        if (is_string($entryLayoutOrId)) {
+            $entryLayout = $this->findById($entryLayoutOrId)->exec();
         } else {
-            $entry = $entryOrId;
+            $entryLayout = $entryLayoutOrId;
         }
 
         $data = Collection::init();
@@ -295,8 +297,12 @@ class EntryLayout extends Model implements Castable
             $data->pushKeyValue('schema', $schema);
         }
 
+        if ($slug) {
+            $data->pushKeyValue('slug', $slug);
+        }
+
         if ($data->length > 0) {
-            return $this->updateWithoutPermission($entry, $data);
+            return $this->updateWithoutPermission($entryLayout, $data);
         }
         return false;
     }
@@ -510,7 +516,7 @@ class EntryLayout extends Model implements Castable
 
         $slug = $data->get('slug');
         if ($slug) {
-            $update['slug'] = $slug;
+            $update['slug'] = self::generateSlug($slug, (string)$entryLayout->_id);
         }
 
         try {

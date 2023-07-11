@@ -136,6 +136,113 @@ test('Get a page and modify his SEO', function () {
     }
 })->group('graphql');
 
+test('Create field and layout', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryFieldResponse = $this->client->run('
+            mutation {
+                createEntryField(key: "graphql_test", name: "Text", label: {en: "Text", fr: "Texte"}, type: "text", required: true) {
+                    _id
+                    key
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryFieldResponse->status)->toBe('ok');
+
+        $entryLayoutResponse = $this->client->run('
+            mutation {
+                createEntryLayout(titles: {fr: "Test Graphql", en: "GraphQL Test"}, schema: {label: "First tab", fields: ["' . $entryFieldResponse->data->createEntryField->_id . '"]}) {
+                    _id
+                    slug
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutResponse->status)->toBe('ok')
+            ->and($entryLayoutResponse->data->createEntryLayout->slug)->toBe('graphql-test');
+    }
+});
+
+test('Delete field and layout', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryLayoutResponse = $this->client->run('
+            {
+                entryLayout(slug: "graphql-test") {
+                    _id
+                    slug
+                    is_trashed
+                    authors {
+                        created_by {
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        updated_by {
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        deleted_by {
+                            email
+                            name {
+                                full
+                            }
+                        }
+                    }
+                    dates {
+                        created
+                        updated
+                        deleted
+                    }
+                    schema {
+                        label
+                        fields {
+                            _id
+                            key
+                            type
+                            name
+                            label {
+                                fr
+                                en
+                            }
+                            placeholder {
+                                fr
+                                en
+                            }
+                            explain {
+                                fr
+                                en
+                            }
+                            validation
+                            repeatable
+                            required
+                            config
+                        }
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $entryLayoutDeleteResponse = $this->client->run('
+            mutation {
+                deleteEntryLayout(id: "' . $entryLayoutResponse->data->entryLayout->_id . '", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutDeleteResponse->status)->toBe('ok');
+
+        $entryFieldResponse = $this->client->run('
+            mutation {
+                deleteEntryField(key: "graphql_test")
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryFieldResponse->status)->toBe('ok');
+    }
+});
+
 test('Get a entry', function () {
     if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('

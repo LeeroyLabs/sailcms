@@ -103,6 +103,7 @@ class EntryLayouts
 
         $titles = new LocaleField($titles->unwrap());
 
+        // Process schema from graphql
         $schema = Collection::init();
         foreach ($graphqlSchema as $tab) {
             $fields = $tab->fields->unwrap() ?? [];
@@ -112,6 +113,50 @@ class EntryLayouts
 
         $entryLayoutModel = new EntryLayout();
         return $entryLayoutModel->create($titles, $schema, $slug);
+    }
+
+    /**
+     *
+     * Update an entry layout
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function updateEntryLayout(mixed $obj, Collection $args, Context $context): bool
+    {
+        $graphqlSchema = $args->get('schema');
+        $graphqlTitles = $args->get('titles');
+        $schema = null;
+        $titles = null;
+
+        // There is nothing sent to be updated !
+        if (!$graphqlSchema && !$graphqlTitles && !$args->get('slug')) {
+            throw new EntryException(EntryLayout::NOTHING_TO_UPDATE);
+        }
+
+        // Process titles from graphql
+        if ($graphqlTitles) {
+            $titles = new LocaleField($graphqlTitles->unwrap());
+        }
+
+        // Process schema from graphql
+        if ($graphqlSchema) {
+            $schema = Collection::init();
+            foreach ($graphqlSchema as $tab) {
+                $fields = $tab->fields->unwrap() ?? [];
+
+                $schema->push(new EntryLayoutTab($tab->label, $fields));
+            }
+        }
+
+        return (new EntryLayout())->updateById($args->get('id'), $titles, $schema, $args->get('slug'));
     }
 
     /**

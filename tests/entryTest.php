@@ -552,6 +552,27 @@ test('Delete an entry type', function () {
     expect($entryType)->toBe(null);
 })->group('entry-type');
 
+test('Update an entry layout', function () {
+    $model = new EntryLayout();
+    $entryLayout = $model->bySlug('layout-test');
+
+    $schema = Collection::init();
+    $schema->push(new EntryLayoutTab('Test', [(string)EntryField::getByKey('test')->_id]));
+    $schema->push(new EntryLayoutTab('Test 2', [(string)EntryField::getByKey('test_2')->_id]));
+    $newTitles = new LocaleField(['en' => 'Layout to delete', 'fr' => 'Disposition à supprimer']);
+
+    try {
+        $entryLayout->updateById($entryLayout->_id, $newTitles, $schema, null);
+        $entryLayout = $model->bySlug('layout-test');
+
+        expect($entryLayout->titles->get('en'))->toBe($newTitles->get('en'))
+            ->and($entryLayout->schema[0]->label)->toBe($schema[0]->label)
+            ->and(count($entryLayout->schema[1]->fields))->toBe(1);
+    } catch (Exception $exception) {
+        expect(true)->not->toBeTrue();
+    }
+})->group('entry-layout');
+
 test('Soft delete an entry layout', function () {
     $model = new EntryLayout();
     $entryLayout = $model->bySlug('layout-test');

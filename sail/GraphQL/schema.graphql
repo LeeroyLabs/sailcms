@@ -137,6 +137,7 @@ type Mutation {
     deleteEntryField(id: ID, key: String): Boolean!
 
     createEntryLayout(titles: LocaleFieldInput!, schema: [EntryLayoutTabInput!]!, slug: String): EntryLayout
+    updateEntryLayout(id: ID!, titles: LocaleFieldInput, schema: [EntryLayoutTabInput!], slug: String): Boolean!
     deleteEntryLayout(id: ID!, soft: Boolean): Boolean!
 
     # Categories
