@@ -70,7 +70,9 @@ class EntryLayouts
      */
     public function entryLayouts(mixed $obj, Collection $args, Context $context): ?array
     {
-        $result = (new EntryLayout())->getAll() ?? [];
+        $ignoreTrashed = $args->get('ignoredTrashed', false);
+
+        $result = (new EntryLayout())->getAll($ignoreTrashed) ?? [];
         $entryLayouts = new Collection($result);
 
         $fieldIds = EntryLayout::getEntryFieldIds($entryLayouts);

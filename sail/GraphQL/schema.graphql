@@ -51,7 +51,7 @@ type Query {
 
     entryLayout(slug: String!): EntryLayout
     entryLayoutById(id: ID!): EntryLayout
-    entryLayouts: [EntryLayout!]!
+    entryLayouts(ignoreTrashed: Boolean): [EntryLayout!]!
 
     # Registers
     registeredExtensions: RegisteredExtensions!
@@ -137,6 +137,7 @@ type Mutation {
     deleteEntryField(id: ID, key: String): Boolean!
 
     createEntryLayout(titles: LocaleFieldInput!, schema: [EntryLayoutTabInput!]!, slug: String): EntryLayout
+    deleteEntryLayout(id: ID!, soft: Boolean): Boolean!
 
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
