@@ -47,7 +47,7 @@ type Query {
     entryField(key: String): EntryField
     entryFieldById(id: ID!): EntryField
     entryFields: [EntryField!]!
-    entryFieldValidateKey(key: String!): Boolean
+    entryFieldValidateKey(key: String!): Boolean!
 
     entryLayout(slug: String!): EntryLayout
     entryLayoutById(id: ID!): EntryLayout
