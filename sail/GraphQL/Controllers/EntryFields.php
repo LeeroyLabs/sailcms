@@ -140,4 +140,25 @@ class EntryFields
     {
         return (new EntryField())->deleteByIdOrKey($args->get('id'), $args->get('key'));
     }
+
+    /**
+     *
+     * Delete entry fields by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return int
+     * @throws DatabaseException
+     *
+     */
+    public function deleteEntryFields(mixed $obj, Collection $args, Context $context): int
+    {
+        $ids = $args->get('ids');
+
+        if ($ids->length > 0) {
+            return (new EntryField())->deleteManyByIds($ids);
+        }
+        return 0;
+    }
 }

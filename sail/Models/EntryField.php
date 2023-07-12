@@ -274,6 +274,25 @@ class EntryField extends Model implements Castable
 
     /**
      *
+     * Delete many entry fields by id
+     *
+     * @param  Collection|array  $ids
+     * @return int
+     * @throws DatabaseException
+     *
+     */
+    public function deleteManyByIds(Collection|array $ids): int
+    {
+        if ($ids instanceof Collection) {
+            $ids = $ids->unwrap();
+        }
+        $ids = $this->ensureObjectIds($ids, true);
+
+        return $this->deleteMany(['_id' => ['$in' => $ids]]);
+    }
+
+    /**
+     *
      * Simplify object
      *
      */
