@@ -3,7 +3,7 @@
 namespace SailCMS;
 
 use Exception;
-use JsonException;
+use SailCMS\Errors\DatabaseException;
 use \SailCMS\Models\Queue as QueueModel;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -38,12 +38,11 @@ final class Queue
      *
      * Note: All = 50 000 items max
      *
+     * @param Collection|null $tasks
      * @return void
-     * @throws Errors\DatabaseException
-     * @throws JsonException
-     *
+     * @throws DatabaseException
      */
-    public function process(): void
+    public function process(Collection $tasks = null): void
     {
         $maxProcess = env('queue_max_process_per_run', 'all');
 
@@ -54,7 +53,9 @@ final class Queue
         }
 
         $model = new QueueModel();
-        $tasks = $model->getList($maxProcess);
+        if (!$tasks) {
+            $tasks = $model->getList($maxProcess);
+        }
 
         $tasks->each(function ($key, $value) use ($model)
         {
@@ -89,10 +90,11 @@ final class Queue
 
                             $result = new Process($action);
                             $result->start();
-                            $result->wait();
 
                             $pid = $result->getPid();
-                            ray($pid);
+                            (new QueueModel)->updatePid($value->_id, $pid);
+
+                            $result->wait();
 
 //                            if (!$result->isSuccessful()) {
 //                                throw new ProcessFailedException($result);

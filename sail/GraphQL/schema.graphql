@@ -60,7 +60,9 @@ type Query {
     groups: [Group!]!
 
     # Queue
+    task(id: ID!): Task!
     taskList(limit: Int): [Task!]!
+    taskSearch(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): TasksListing!
 
     #{CUSTOM_QUERIES}#
 }
@@ -133,15 +135,22 @@ type Mutation {
 
     # Queue
     createTask(name: String!, handler: String!, action: String!, settings: Json!, priority: Int!, retriable: Boolean!): Boolean!
-    stopTask(id: ID!, pid: String!): Boolean!
+    retryTask(id: ID!): Boolean!
+    startAllTasks: Boolean!
+    stopTask(pid: Int!): Boolean!
     stopAllTasks: Boolean!
     cancelTask(id: ID!): Boolean!
-    #rescheduleTask(id: ID!, pid: String!): Boolean!
+    #rescheduleTask(id: ID!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
 
 scalar Json
+
+type TasksListing {
+    pagination: Pagination!
+    list: [Task!]!
+}
 
 input CategorySortItem {
     id: String!

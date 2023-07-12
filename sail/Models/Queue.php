@@ -3,11 +3,14 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\Regex;
 use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Queue\Task;
+use SailCMS\Types\Listing;
+use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 use stdClass;
 
@@ -26,6 +29,7 @@ use stdClass;
  * @property int                   $retry_count
  * @property BSONDocument|stdClass $settings
  * @property int                   $priority
+ * @property int                   $pid
  *
  */
 class Queue extends Model
@@ -50,6 +54,7 @@ class Queue extends Model
             'settings' => $task->settings,
             'priority' => $task->priority,
             'retriable' => $task->retriable,
+            'pid' => 0,
             'retry_count' => 0,
             'scheduled_at' => time(),
             'locked' => false,
@@ -58,6 +63,59 @@ class Queue extends Model
             'execution_result' => '',
             'execution_success' => false
         ]);
+    }
+
+    /**
+     *
+     * Update the process ID of a task
+     *
+     * @param string $id
+     * @param int $pid
+     * @return bool
+     *
+     */
+    public function updatePid(string $id, int $pid):bool
+    {
+        try {
+            $info = [
+                'pid' => $pid,
+            ];
+
+            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
+                '$set' => $info
+            ]);
+        } catch (DatabaseException $exception) {
+            return false;
+        }
+
+        return $result === 1;
+    }
+
+    /**
+     *
+     * Return task process ID
+     *
+     * @param string $id
+     * @return int
+     * @throws DatabaseException
+     */
+    public function getProcessId(string $id):int
+    {
+        return $this->findById($id)->exec()->pid;
+    }
+
+    /**
+     *
+     * Get task by id
+     *
+     * @param string $id
+     * @return Queue|null
+     * @throws DatabaseException
+     *
+     */
+    public function getById(string $id): ?Queue
+    {
+        return $this->findById($id)->exec();
     }
 
     /**
@@ -76,6 +134,49 @@ class Queue extends Model
         $options->sort = ['priority' => 1];
 
         return new Collection($this->find(['locked' => false, 'executed' => false], $options)->exec());
+    }
+
+    /**
+     *
+     * Get a list of tasks to perform
+     *
+     * @param int $page
+     * @param int $limit
+     * @param string $search
+     * @param string $sort
+     * @param int $direction
+     * @return Listing
+     * @throws DatabaseException
+     */
+    public function searchTasks(
+        int $page = 0,
+        int $limit = 25,
+        string $search = '',
+        string $sort = 'name',
+        int $direction = Model::SORT_ASC
+    ): Listing
+    {
+        $offset = $page * $limit - $limit;
+
+        $options = QueryOptions::initWithSort([$sort => $direction]);
+        $options->skip = $offset;
+        $options->limit = $limit;
+
+        $query = [];
+
+        if ($search !== '') {
+            $query['name'] = new Regex($search, 'gi');
+        }
+
+        // Pagination
+        $total = $this->count($query);
+        $pages = ceil($total / $limit);
+        $current = $page;
+        $pagination = new Pagination($current, (int)$pages, $total);
+
+        $list = $this->find($query, $options)->exec();
+
+        return new Listing($pagination, new Collection($list));
     }
 
     /**
@@ -192,14 +293,12 @@ class Queue extends Model
      *
      * Stop the process of a task
      *
-     * @param ObjectId $id
-     * @param string $pid
+     * @param int $pid
      * @return bool
-     *
      */
-    public function stopTask(ObjectId $id, string $pid): bool
+    public function stopTask(int $pid): bool
     {
-        shell_exec('kill -9 ' . $pid);
+        shell_exec("kill -9 $pid");
         return true;
     }
 }

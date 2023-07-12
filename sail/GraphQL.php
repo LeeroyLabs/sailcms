@@ -475,10 +475,15 @@ final class GraphQL
         self::addResolver('Group', Groups::class, 'groupResolver');
 
         // Queue
+        self::addQueryResolver('task', Queue::class, 'getTask');
         self::addQueryResolver('taskList', Queue::class, 'getList');
+        self::addQueryResolver('taskSearch', Queue::class, 'searchTasks');
         self::addMutationResolver('createTask', Queue::class, 'createTask');
         self::addMutationResolver('stopTask', Queue::class, 'stopTask');
+        self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
         self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
+        self::addMutationResolver('retryTask', Queue::class, 'retryTask');
+        self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
