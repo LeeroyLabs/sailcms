@@ -36,6 +36,9 @@ class EntryField extends Model implements Castable
     public const MISSING_PARAM_FOR_DELETE = '6103: Must give an id or a key to delete an entry field.';
     public const CANNOT_DELETE = '6104: Cannot delete the entry field because it is used by some entry layout.';
 
+    /* Content errors */
+    public const FIELD_REQUIRED = '6105: The field %s is required';
+
     protected string $collection = 'entry_fields';
     protected string $permissionGroup = 'entryfields';
     protected array $casting = [

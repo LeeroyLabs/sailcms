@@ -385,6 +385,32 @@ class EntryLayout extends Model implements Castable
         return $entryTypeCount > 0;
     }
 
+    public static function getFieldInSchema(Collection $schema, string $fieldKey): ?EntryField
+    {
+        $entryField = null;
+
+        foreach ($schema as $tab) {
+            /**
+             * @var EntryLayoutTab $tab
+             */
+            $fields = $tab->fields;
+            foreach ($fields as $field) {
+                /**
+                 * @var EntryField $field
+                 */
+                if ($field->key == $fieldKey) {
+                    $entryField = $field;
+                    break;
+                }
+            }
+
+            if ($entryField) {
+                break;
+            }
+        }
+
+        return $entryField;
+    }
 
     /**
      *

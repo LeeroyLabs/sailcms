@@ -34,9 +34,10 @@ test('Create an entry field', function () {
     ]));
     $model->create(new Collection([
         'key' => 'test_2',
-        'name' => 'Test',
+        'name' => 'Email',
         'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
         'type' => 'text',
+        'validation' => 'email',
         'required' => true
     ]));
 
@@ -77,7 +78,6 @@ test('Create an entry layout', function () {
         $entryLayout = $model->create($titles, $schema);
         expect($entryLayout->_id)->not->toBe('');
     } catch (Exception $exception) {
-        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 })->group('entry-layout');

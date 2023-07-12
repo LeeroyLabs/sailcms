@@ -6,11 +6,64 @@ use Exception;
 use MongoDB\BSON\ObjectId;
 use Respect\Validation\Rules\CreditCard;
 use Respect\Validation\Validator as v;
-
+use SailCMS\Models\EntryField;
 use const SailCMS\Validator\COUNTRY_LIST;
 
 class Validator
 {
+    public const METHOD_DOES_NOT_EXIST = "6500: Validation method '%s' does not exist.";
+    public const VALIDATION_FAILED = "6501: Validation of '%s' type failed.";
+
+    public static function validateContentWithEntryField(mixed $content, EntryField $entryField): bool
+    {
+        switch ($entryField->validation) {
+            case 'domain':
+                $tld = $entryField->config?->tld ?? true;
+                $args = [$content, $tld];
+                break;
+            case 'alpha':
+            case 'alphanum':
+                $extraChars = $entryField->config?->extraChars ?? [];
+                $args = [$content, $extraChars];
+                break;
+            case 'min':
+                $min = $entryField->config?->min ?? -INF;
+                $args = [$content, $min];
+                break;
+            case 'max':
+                $max = $entryField->config?->max ?? INF;
+                $args = [$content, $max];
+                break;
+            case 'between':
+                $min = $entryField->config?->min ?? -INF;
+                $max = $entryField->config?->max ?? INF;
+                $args = [$content, $min, $max];
+                break;
+            case 'postal':
+            case 'phone':
+                $country = $entryField->config?->country ?? 'all';
+                $args = [$country, $content];
+                break;
+            case 'format':
+                $format = $entryField->config?->format ?? 'Y-m-d';
+                $args = [$format, $content];
+                break;
+            case 'creditcard':
+                $cardBrand = $entryField->config?->cardBrand ?? CreditCard::ANY;
+                $args = [$content, $cardBrand];
+                break;
+            case 'uuid':
+                $version = $entryField->config?->version ?? 4;
+                $args = [$content, $version];
+                break;
+            default:
+                $args = [$content];
+                break;
+        }
+
+        return call_user_func([static::class, $entryField->validation], $args);
+    }
+
     /**
      *
      * Validate that given value is not empty
