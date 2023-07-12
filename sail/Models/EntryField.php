@@ -39,6 +39,7 @@ class EntryField extends Model implements Castable
     protected string $collection = 'entry_fields';
     protected string $permissionGroup = 'entryfields';
     protected array $casting = [
+        'label' => LocaleField::class,
         'placeholder' => LocaleField::class,
         'explain' => LocaleField::class
     ];
