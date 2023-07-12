@@ -44,7 +44,7 @@ type Query {
     entryVersion(id: ID!): EntryVersion
     entryVersions(entry_id: ID!): [EntryVersion!]!
 
-    entryField(key: String): EntryField
+    entryField(key: String!): EntryField
     entryFieldById(id: ID!): EntryField
     entryFields: [EntryField!]!
     entryFieldValidateKey(key: String!): Boolean!
