@@ -25,9 +25,14 @@ type Query {
     assetConfig: AssetConfig!
     assetTransformForId(id: ID!, transform_name: String!): String!
 
+    # Emails v1
+    emailV1(id: ID!): Email
+    emailsV1: [Email!]!
+
     # Emails
     email(id: ID!): Email
-    emails: [Email!]!
+    emails(site_id: String!): [Email!]!
+    emailTemplates(site_id: String!): [EmailTemplate!]!
 
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
@@ -54,6 +59,11 @@ type Query {
     # Navigation
     navigation(name: String!): [NavigationItem!]!
     navigationDetails(name: String!): Navigation
+
+    # UI Related
+    navigationElements: NavigationElements!
+    settingsElements: SettingsElements!
+    handshakeKey: String!
 
     # Groups
     group(id: ID!): Group
@@ -93,12 +103,20 @@ type Mutation {
     addFolder(folder: String!, site_id: String!): Int!
     removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
 
+    # Emails V1
+    createEmailV1(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
+    updateEmailV1(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    deleteEmailV1(id: ID!): Boolean!
+    deleteEmailBySlugV1(slug: String!): Boolean!
+
     # Emails
-    createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
-    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    createEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!, preview: Boolean): Boolean!
+    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, fields: [EmailFieldInput!]!, template: String): Boolean!
     deleteEmail(id: ID!): Boolean!
-    deleteEmailBySlug(slug: String!): Boolean!
+    deleteEmails(ids: [ID!]!): Boolean!
+    deleteEmailBySlug(slug: String!, site_id: String!): Boolean!
     testEmail(email: String!): Boolean!
+    createPreviewEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!): String!
 
     # Entries
     createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
@@ -124,9 +142,9 @@ type Mutation {
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
     # Navigation
-    createNavigation(name: String!, structure: NavigationItemInput!, locale: String!): String!
-    updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
-    deleteNavigation(name: String!): Boolean!
+    createNavigation(name: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
+    updateNavigation(id: ID!, name: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
+    deleteNavigation(id: ID!): Boolean!
 
     # Groups
     createGroup(name: String!): String!
@@ -381,6 +399,7 @@ type SocialMetaContent {
 
 type LayoutField {
     key: String!
+    repeater: Boolean
     fieldConfigs: [FieldConfig!]!
 }
 
@@ -399,6 +418,7 @@ type Setting {
     name: String!
     value: String
     options: [Options]!
+    explain: Boolean!
     type: String!
 }
 
@@ -423,12 +443,14 @@ input FieldConfigsInput {
     labels: LocaleFieldInput
     key: String!
     handle: String!
+    repeater: Boolean
     inputSettings: [InputSettingsInput]!
 }
 
 input SchemaUpdateInput {
     key: String!
     labels: LocaleFieldInput
+    repeater: Boolean
     inputSettings: [InputSettingsInput]!
 }
 
@@ -527,8 +549,14 @@ type FieldInfo {
     description: LocaleField!
     category: String!
     storingType: String!
-    searchable: Boolean!
+    modes: [FieldMode]!
     inputs: [FieldInputInfo]!
+}
+
+enum FieldMode {
+    searchable,
+    repeatable,
+    multiple
 }
 
 type FieldInputInfo {
@@ -570,23 +598,27 @@ type Email {
     name: String!
     slug: String!
     subject: LocaleField!
-    title: LocaleField!
-    content: LocaleField!
-    cta: LocaleField!
-    cta_title: LocaleField!
+    fields: [EmailField!]!
     template: String!
     created_at: Int!
     last_modified: Int!
 }
 
+type EmailField {
+    key: String!
+    value: LocaleField!
+}
+
 input EmailInput {
     name: String!
     subject: LocaleFieldInput!
-    title: LocaleFieldInput!
-    content: LocaleFieldInput!
-    cta: LocaleFieldInput!
-    cta_title: LocaleFieldInput!
+    fields: EmailFieldInput!
     template: String!
+}
+
+input EmailFieldInput {
+    key: String!
+    value: LocaleFieldInput!
 }
 
 type PasswordChangeResult {
@@ -683,6 +715,7 @@ type NavigationItem {
     label: String!
     url: String!
     is_entry: Boolean!
+    is_category: Boolean!
     entry_id: String!
     external: Boolean!
     children: [NavigationItem!]!
@@ -692,6 +725,7 @@ input NavigationItemInput {
     label: String!
     url: String!
     is_entry: Boolean!
+    is_category: Boolean!
     entry_id: String!
     external: Boolean!
     children: [NavigationItemInput!]!
@@ -718,6 +752,48 @@ type Permission {
     group: String!
     category: String!
     description: LocaleField!
+}
+
+type NavigationElements {
+    post_entries: [NavigationElement!]!
+    pre_users: [NavigationElement!]!
+    pre_settings: [NavigationElement!]!
+}
+
+type NavigationElement {
+    name: String!
+    icon: String!
+    url: String!
+    label: LocaleField!
+    slug: String!
+    parent: String!
+    permission: String!
+}
+
+type SettingsElements {
+    entries: [SettingsElement!]!
+    emails: [SettingsElement!]!
+    others: [SettingsElement!]!
+}
+
+type SettingsElement {
+    name: String!
+    icon: String!
+    url: String!
+    label: LocaleField!
+    slug: String!
+    permission: String!
+}
+
+type EmailTemplate {
+    name: String!
+    configs: [EmailFieldConfig!]!
+}
+
+type EmailFieldConfig {
+    type: String!
+    key: String!
+    label: LocaleField!
 }
 
 type Task {

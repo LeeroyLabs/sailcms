@@ -91,8 +91,6 @@ class Category extends Model
      */
     public static function getByIds(array $ids): ?array
     {
-        $idsStr = implode("_", $ids);
-
         $modelInstance = new static();
         foreach ($ids as &$id) {
             $id = $modelInstance->ensureObjectId($id);
@@ -252,7 +250,6 @@ class Category extends Model
         if ($record) {
             $this->deleteById($id);
             $this->updateMany(['parent_id' => (string)$id], ['$set' => ['parent_id' => '']]);
-            //$this->updateOrder('');
             return true;
         }
 
@@ -280,7 +277,6 @@ class Category extends Model
         if ($record) {
             $instance->deleteById($record->_id);
             $instance->updateMany(['parent_id' => (string)$record->_id], ['$set' => ['parent_id' => '']]);
-            $instance->updateOrder('');
             return true;
         }
 
@@ -370,8 +366,7 @@ class Category extends Model
         foreach ($basicTree as $id => $children) {
             $childrenList = $this->parseChildrenList($listCollection, $basicTree, $id);
 
-            $item = $listCollection->find(function ($key, $cat) use ($id)
-            {
+            $item = $listCollection->find(function ($key, $cat) use ($id) {
                 return ((string)$cat->_id === $id);
             });
 
@@ -383,8 +378,7 @@ class Category extends Model
         $final = [];
 
         foreach ($structured as $num => $tree) {
-            $item = $listCollection->find(function ($key, $cat) use ($tree)
-            {
+            $item = $listCollection->find(function ($key, $cat) use ($tree) {
                 return ((string)$cat->_id === (string)$tree->_id);
             });
 
@@ -411,8 +405,7 @@ class Category extends Model
         $children = [];
 
         foreach ($tree[$id] as $_id) {
-            $item = $categories->find(function ($key, $cat) use ($_id)
-            {
+            $item = $categories->find(function ($key, $cat) use ($_id) {
                 return ((string)$cat->_id === $_id);
             });
 

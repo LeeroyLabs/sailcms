@@ -11,6 +11,8 @@ use SailCMS\Types\StoringType;
 
 class NumberField extends Field
 {
+    public const REPEATABLE = true;
+    
     public const PRECISION_MAX_LIMIT = 14;
     public const INVALID_PRECISION = '6200: Number field precision must be between 0 and ' . self::PRECISION_MAX_LIMIT;
     public int $precision = 0;
@@ -22,9 +24,11 @@ class NumberField extends Field
      * @param  LocaleField            $labels
      * @param  array|Collection|null  $settings
      * @param  int                    $precision
+     * @param  bool                   $repeater
      * @throws Exception
+     *
      */
-    public function __construct(LocaleField $labels, array|Collection|null $settings, int $precision = 0)
+    public function __construct(LocaleField $labels, array|Collection|null $settings, bool $repeater = false, int $precision = 0)
     {
         // Validate precision to avoid errors
         if ($precision < 0 || $precision > self::PRECISION_MAX_LIMIT) {
@@ -36,7 +40,7 @@ class NumberField extends Field
             $settings[0]['step'] = 1 / pow(10, $precision);
         }
 
-        parent::__construct($labels, $settings);
+        parent::__construct($labels, $settings, $repeater);
     }
 
     /**

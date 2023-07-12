@@ -3,14 +3,11 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
-use SailCMS\Types\Fields\InputTextareaField;
+use SailCMS\Types\Fields\InputAssetImageField;
 use SailCMS\Types\LocaleField;
 
-class TextareaField extends TextField
+class AssetImageField extends AssetFileField
 {
-    public const SEARCHABLE = true;
-    public const REPEATABLE = true;
-
     /**
      *
      * Description for field info
@@ -21,8 +18,8 @@ class TextareaField extends TextField
     public function description(): LocaleField
     {
         return new LocaleField([
-            'en' => 'Allows multiple lines of text.',
-            'fr' => 'Permet plusieurs lignes de texte.'
+            'en' => 'Field that allows selection one or more images.',
+            'fr' => 'Champ qui permet la sélection d\'une ou plusieurs images.'
         ]);
     }
 
@@ -36,7 +33,7 @@ class TextareaField extends TextField
     public function defaultSettings(): Collection
     {
         return new Collection([
-            InputTextAreaField::defaultSettings(true),
+            InputAssetImageField::defaultSettings()
         ]);
     }
 
@@ -49,7 +46,7 @@ class TextareaField extends TextField
     protected function defineBaseConfigs(): void
     {
         $this->baseConfigs = new Collection([
-            InputTextAreaField::class
+            InputAssetImageField::class
         ]);
     }
 }

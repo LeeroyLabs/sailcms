@@ -17,9 +17,10 @@ class InputUrlField extends Field
 
     public function __construct(
         public readonly ?LocaleField $labels = null,
-        public readonly bool $required = false,
-        public readonly string $pattern = self::DEFAULT_REGEX
-    ) {
+        public readonly bool         $required = false,
+        public readonly string       $pattern = self::DEFAULT_REGEX
+    )
+    {
     }
 
     public static function defaultSettings(): Collection
@@ -34,7 +35,7 @@ class InputUrlField extends Field
     {
         return new Collection([
             new InputSettings('required', InputSettings::INPUT_TYPE_CHECKBOX),
-            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING),
+            new InputSettings('pattern', InputSettings::INPUT_TYPE_STRING, Collection::init(), true),
         ]);
     }
 

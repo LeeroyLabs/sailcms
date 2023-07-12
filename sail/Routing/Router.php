@@ -11,7 +11,9 @@ use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
 use SailCMS\DI;
 use SailCMS\Email\Controller;
+use SailCMS\Routing\Controller as RoutingController;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FileException;
@@ -25,6 +27,7 @@ use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
+use SailCMS\UI;
 use SodiumException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -53,7 +56,7 @@ class Router
      *
      * Get all routes of the given method
      *
-     * @param string $method
+     * @param  string  $method
      * @return Collection
      *
      */
@@ -66,7 +69,7 @@ class Router
      *
      * Stop everything and redirect to given url
      *
-     * @param string $url
+     * @param  string  $url
      * @return void
      *
      */
@@ -80,12 +83,12 @@ class Router
      *
      * Add a GET route
      *
-     * @param string $url
-     * @param string $locale
-     * @param AppController|string $controller
-     * @param string $method
-     * @param string $name
-     * @param bool $secure
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
@@ -98,12 +101,12 @@ class Router
      *
      * Add a POST route
      *
-     * @param string $url
-     * @param string $locale
-     * @param AppController|string $controller
-     * @param string $method
-     * @param string $name
-     * @param bool $secure
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
@@ -116,12 +119,12 @@ class Router
      *
      * Add a DELETE route
      *
-     * @param string $url
-     * @param string $locale
-     * @param AppController|string $controller
-     * @param string $method
-     * @param string $name
-     * @param bool $secure
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
@@ -134,12 +137,12 @@ class Router
      *
      * Add a PUT route
      *
-     * @param string $url
-     * @param string $locale
-     * @param AppController|string $controller
-     * @param string $method
-     * @param string $name
-     * @param bool $secure
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
@@ -152,12 +155,12 @@ class Router
      *
      * Add a Any route
      *
-     * @param string $url
-     * @param string $locale
-     * @param AppController|string $controller
-     * @param string $method
-     * @param string $name
-     * @param bool $secure
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */
@@ -170,8 +173,8 @@ class Router
      *
      * Add a redirected route
      *
-     * @param string $from
-     * @param string $to
+     * @param  string  $from
+     * @param  string  $to
      * @return void
      *
      */
@@ -185,7 +188,7 @@ class Router
      *
      * Dispatch the route detection and execute and render matching route
      *
-     * @param bool $isForbidden
+     * @param  bool  $isForbidden
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -199,6 +202,7 @@ class Router
      * @throws RuntimeError
      * @throws SodiumException
      * @throws SyntaxError
+     * @throws CollectionException
      *
      */
     public static function dispatch(bool $isForbidden = false): void
@@ -270,7 +274,8 @@ class Router
         }
 
         // Try the redirect list to see if the url is one of them
-        self::$redirects->each(function ($key, $redirect) use ($uri) {
+        self::$redirects->each(function ($key, $redirect) use ($uri)
+        {
             $redirect->matchAndExecute($uri);
         });
 
@@ -296,7 +301,7 @@ class Router
      *
      * Find the alternate routes for the given name
      *
-     * @param Route $route
+     * @param  Route  $route
      * @return Collection
      */
     public function alternate(Route $route): Collection
@@ -304,7 +309,8 @@ class Router
         $alternateRoutes = Collection::init();
         $method = $route->getHTTPMethod();
 
-        self::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $route) {
+        self::$routes->get($method)->each(static function ($key, $value) use (&$alternateRoutes, $route)
+        {
             if ($value->getName() === $route->getName() && $value->getLocale() !== Locale::current()) {
                 $alternateRoutes->push($value);
             }
@@ -317,17 +323,18 @@ class Router
      *
      * Get a route by name, method and locale, optionally process arguments to replace dynamic placeholders
      *
-     * @param string $name
-     * @param string $method
-     * @param string $locale
-     * @param Collection|array $arguments
+     * @param  string            $name
+     * @param  string            $method
+     * @param  string            $locale
+     * @param  Collection|array  $arguments
      * @return string|null
      *
      */
     public static function getBy(string $name, string $method, string $locale = 'en', Collection|array $arguments = []): ?string
     {
         $route = null;
-        self::$routes->get($method)->each(static function ($key, $value) use (&$route, $name, $locale) {
+        self::$routes->get($method)->each(static function ($key, $value) use (&$route, $name, $locale)
+        {
             if ($value->getName() === $name && $value->getLocale() === $locale) {
                 $route = $value;
             }
@@ -344,16 +351,17 @@ class Router
      *
      * Get all routes that match name and method, optionally process all dynamics placeholders
      *
-     * @param string $name
-     * @param string $method
-     * @param Collection|array $arguments
+     * @param  string            $name
+     * @param  string            $method
+     * @param  Collection|array  $arguments
      * @return Collection
      *
      */
     public static function getAllBy(string $name, string $method, Collection|array $arguments = []): Collection
     {
         $routes = Collection::init();
-        self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name) {
+        self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
+        {
             if ($value->getName() === $name) {
                 $routes->pushKeyValue($value->getLocale(), $value);
             }
@@ -376,7 +384,7 @@ class Router
      *
      * Get all routes with the given name
      *
-     * @param string $name
+     * @param  string  $name
      * @return Collection
      *
      */
@@ -386,7 +394,8 @@ class Router
         $methods = ['get', 'post', 'delete', 'put', 'any'];
 
         foreach ($methods as $method) {
-            self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name) {
+            self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
+            {
                 if ($value->getName() === $name) {
                     $routes->push($value);
                 }
@@ -428,19 +437,32 @@ class Router
         $instance->get('/email-preview/:any/:any', 'en', Controller::class, 'previewEmail');
     }
 
+    /**
+     *
+     * Load Application content for the requested party
+     *
+     * @return void
+     *
+     */
+    public static function setupThirdPartyContent(): void
+    {
+        $instance = new self();
+        $instance->get('/extension/:string/:all', 'en', RoutingController::class, 'loadThirdPartyApplication');
+    }
+
     // -------------------------------------------------- Private -------------------------------------------------- //
 
     /**
      *
      * Add a route
      *
-     * @param string $method
-     * @param string $url
-     * @param string $locale
-     * @param AppController|string $controller
-     * @param string $callback
-     * @param string $name
-     * @param bool $secure
+     * @param  string                $method
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $callback
+     * @param  string                $name
+     * @param  bool                  $secure
      * @return void
      *
      */

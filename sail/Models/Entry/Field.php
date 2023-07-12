@@ -3,6 +3,7 @@
 namespace SailCMS\Models\Entry;
 
 use SailCMS\Collection;
+use SailCMS\Errors\EntryException;
 use SailCMS\Types\FieldInfo;
 use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Fields\InputSettings;
@@ -13,10 +14,17 @@ use stdClass;
 abstract class Field
 {
     public const SEARCHABLE = false;
+    public const REPEATABLE = false;
+    public const MULTIPLE = false;
+
+    /* Errors from 6100 to 6119 */
+    public const WRONG_FIELD_CONTENT_TYPE = "6101: The field content must be an array.";
 
     /* Properties */
     public LocaleField $labels;
     public string $handle;
+    public bool $repeater;
+    public Collection $modes;
     public Collection $baseConfigs;
     public Collection $configs;
 
@@ -29,12 +37,14 @@ abstract class Field
      *
      * @param  LocaleField            $labels
      * @param  Collection|array|null  $settings
+     * @param  bool                   $repeater
      *
      */
-    public function __construct(LocaleField $labels, Collection|array|null $settings = null)
+    public function __construct(LocaleField $labels, Collection|array|null $settings = null, bool $repeater = false)
     {
         $this->handle = str_replace('\\', '-', get_class($this));
         $this->labels = $labels;
+        $this->repeater = static::REPEATABLE ? $repeater : false;
 
         $this->defineBaseConfigs();
         $this->instantiateConfigs($labels, $settings);
@@ -58,8 +68,7 @@ abstract class Field
             $settings = new Collection($settings);
         }
 
-        $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings)
-        {
+        $this->baseConfigs->each(function ($key, $fieldTypeClass) use ($labels, $settings) {
             $currentSetting = $settings->get($key);
             $defaultSettings = $this::class::defaultSettings()->get($key);
             $currentSetting = $fieldTypeClass::validateSettings($currentSetting, $defaultSettings);
@@ -98,6 +107,7 @@ abstract class Field
      *
      * @param  mixed  $content
      * @return Collection
+     * @throws EntryException
      *
      */
     public function validateContent(mixed $content): Collection
@@ -108,16 +118,17 @@ abstract class Field
             $content = new Collection($content);
         }
 
-        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors)
-        {
-            $currentContent = $content;
-            if ($content instanceof Collection && !$fieldTypeClass::MULTIPLE) {
-                $currentContent = $content->get($index);
-            }
-            $error = $fieldTypeClass->validate($currentContent);
+        $this->configs->each(function ($index, $fieldTypeClass) use ($content, &$errors) {
+            if ($this->repeater || static::MULTIPLE) {
+                if (!$content instanceof Collection) {
+                    throw new EntryException(self::WRONG_FIELD_CONTENT_TYPE, 6101);
+                }
 
-            if ($error->length > 0) {
-                $errors->pushKeyValue($index, $error);
+                $content->each(function ($k, $currentContent) use ($fieldTypeClass, &$errors) {
+                    $this->validateInput($currentContent, $k, $fieldTypeClass, $errors);
+                });
+            } else {
+                $this->validateInput($content, $index, $fieldTypeClass, $errors);
             }
         });
 
@@ -139,7 +150,7 @@ abstract class Field
      */
     public function toLayoutField(): LayoutField
     {
-        return new LayoutField($this->labels, $this->handle, $this->configs);
+        return new LayoutField($this->labels, $this->handle, $this->configs, $this->repeater);
     }
 
     /**
@@ -155,8 +166,7 @@ abstract class Field
         $settings = [];
         $configsData = new Collection((array)$data->configs);
 
-        $configsData->each(function ($key, $field) use (&$settings)
-        {
+        $configsData->each(function ($key, $field) use (&$settings) {
             // FIX : for when and EntryLayout is from the cache.
             if (!isset($field->settings)) {
                 $fieldSettings = (array)$field;
@@ -169,7 +179,7 @@ abstract class Field
 
         $className = static::getClassFromHandle($data->handle);
         $labels = new LocaleField($data->labels ?? []);
-        return new $className($labels, $settings);
+        return new $className($labels, $settings, $data->repeater ?? false);
     }
 
     /**
@@ -198,14 +208,12 @@ abstract class Field
         $fakeInstance = new static($fakeLabels, []);
 
         $availableSettings = Collection::init();
-        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings)
-        {
+        $fakeInstance->baseConfigs->each(function ($i, $inputFieldClass) use (&$availableSettings) {
             /**
              * @var InputField $inputFieldClass
              */
             $settings = Collection::init();
-            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings)
-            {
+            $inputFieldClass::availableProperties()->each(function ($i, $inputSettings) use (&$settings) {
                 /**
                  * @var InputSettings $inputSettings
                  */
@@ -226,6 +234,18 @@ abstract class Field
 
         $className = array_reverse(explode('\\', static::class))[0];
 
+        $modes = Collection::init();
+
+        if (static::MULTIPLE) {
+            $modes->push('multiple');
+        }
+        if (static::SEARCHABLE) {
+            $modes->push('searchable');
+        }
+        if (static::REPEATABLE) {
+            $modes->push('repeatable');
+        }
+
         return new FieldInfo(
             $className,
             static::class,
@@ -233,7 +253,7 @@ abstract class Field
             $fakeInstance->description(),
             $fakeInstance->category(),
             $fakeInstance->storingType(),
-            static::SEARCHABLE,
+            $modes->unwrap(),
             $availableSettings->unwrap()
         );
     }
@@ -300,6 +320,30 @@ abstract class Field
      *
      */
     abstract public function defaultSettings(): Collection;
+
+    /**
+     *
+     * Call validate method for an input
+     *
+     * @param $currentContent
+     * @param $index
+     * @param $fieldTypeClass
+     * @param $errors
+     * @return void
+     *
+     */
+    protected function validateInput($currentContent, $index, $fieldTypeClass, &$errors): void
+    {
+        if ($currentContent instanceof Collection) {
+            $currentContent = $currentContent->get($index);
+        }
+
+        $error = $fieldTypeClass->validate($currentContent);
+
+        if ($error->length > 0) {
+            $errors->pushKeyValue($index, $error);
+        }
+    }
 
     /**
      *

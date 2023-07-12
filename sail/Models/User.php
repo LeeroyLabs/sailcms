@@ -9,7 +9,6 @@ use Ramsey\Uuid\Uuid;
 use SailCMS\ACL;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -218,11 +217,11 @@ class User extends Model
         $skip = $page * $limit - $limit;
         $list = new Collection(
             $this->find($query)
-                 ->skip($skip)
-                 ->limit($limit)
-                 ->collation($collation)
-                 ->sort([$sort => $order])
-                 ->exec()
+                ->skip($skip)
+                ->limit($limit)
+                ->collation($collation)
+                ->sort([$sort => $order])
+                ->exec()
         );
 
         $total = $this->count($query);
@@ -249,17 +248,18 @@ class User extends Model
      *
      */
     public function createRegularUser(
-        Username $name,
-        string $email,
-        string $password,
-        string $locale = 'en',
-        string $avatar = '',
-        ?UserMeta $meta = null,
+        Username         $name,
+        string           $email,
+        string           $password,
+        string           $locale = 'en',
+        string           $avatar = '',
+        ?UserMeta        $meta = null,
         Collection|array $roles = ['general-user'],
-        string $group = '',
-        bool $createWithSetPassword = false,
-        string $emailTemplate = ''
-    ): string {
+        string           $group = '',
+        bool             $createWithSetPassword = false,
+        string           $emailTemplate = ''
+    ): string
+    {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
@@ -330,32 +330,34 @@ class User extends Model
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
 
                     $mail->to($email)
-                         ->useEmail($emailName, $locale, [
-                             'replacements' => [
-                                 'name' => $name->first,
-                                 'who' => $who
-                             ],
-                             'verification_code' => $code,
-                             'reset_pass_code' => $passCode,
-                             'user_email' => $email,
-                             'name' => $name->first,
-                             'who' => $who
-                         ])
-                         ->send();
+                        ->useEmail(
+                            2,
+                            $emailName, $locale, [
+                            'replacements' => [
+                                'name' => $name->first,
+                                'who' => $who
+                            ],
+                            'verification_code' => $code,
+                            'reset_pass_code' => $passCode,
+                            'user_email' => $email,
+                            'name' => $name->first,
+                            'who' => $who
+                        ])
+                        ->send();
                 } else {
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
                     $mail->to($email)
-                         ->useEmail($emailName, $locale, [
-                             'replacements' => [
-                                 'name' => $name->first,
-                                 'who' => $who
-                             ],
-                             'user_email' => $email,
-                             'reset_pass_code' => $passCode,
-                             'verification_code' => $code,
-                             'who' => $who
-                         ])
-                         ->send();
+                        ->useEmail($emailName, $locale, [
+                            'replacements' => [
+                                'name' => $name->first,
+                                'who' => $who
+                            ],
+                            'user_email' => $email,
+                            'reset_pass_code' => $passCode,
+                            'verification_code' => $code,
+                            'who' => $who
+                        ])
+                        ->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
@@ -502,6 +504,7 @@ class User extends Model
                 // Overwrite the cta url for the admin one
                 $mail = new Mail();
                 $mail->to($email)->useEmail(
+                    2,
                     'new_admin_account',
                     $locale,
                     [
@@ -558,14 +561,15 @@ class User extends Model
      */
     public function update(
         string|ObjectId $id,
-        ?Username $name = null,
-        ?string $email = null,
-        ?string $password = null,
-        ?Collection $roles = null,
-        ?string $avatar = '',
-        ?UserMeta $meta = null,
-        string $locale = ''
-    ): bool {
+        ?Username       $name = null,
+        ?string         $email = null,
+        ?string         $password = null,
+        ?Collection     $roles = null,
+        ?string         $avatar = '',
+        ?UserMeta       $meta = null,
+        string          $locale = ''
+    ): bool
+    {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -637,16 +641,17 @@ class User extends Model
      *
      */
     public function getList(
-        int $page = 0,
-        int $limit = 25,
-        string $search = '',
-        UserSorting $sorting = null,
+        int                 $page = 0,
+        int                 $limit = 25,
+        string              $search = '',
+        UserSorting         $sorting = null,
         UserTypeSearch|null $typeSearch = null,
-        MetaSearch|null $metaSearch = null,
-        bool|null $status = null,
-        bool|null $validated = null,
-        string $groupId = ''
-    ): Listing {
+        MetaSearch|null     $metaSearch = null,
+        bool|null           $status = null,
+        bool|null           $validated = null,
+        string              $groupId = ''
+    ): Listing
+    {
         $this->hasPermissions(true);
 
         if (!isset($sorting)) {
@@ -956,8 +961,7 @@ class User extends Model
 
         // Remove anonymous from array of ids
         if (in_array($anonymous, $ids, true)) {
-            array_filter($ids, function ($id) use ($anonymous)
-            {
+            array_filter($ids, function ($id) use ($anonymous) {
                 return ($id !== $anonymous);
             });
         }

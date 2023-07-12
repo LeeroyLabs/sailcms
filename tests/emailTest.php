@@ -2,23 +2,29 @@
 
 use SailCMS\Mail;
 use SailCMS\Models\Email;
+use SailCMS\Sail;
 
 include_once __DIR__ . '/mock/db.php';
 include_once __DIR__ . '/mock/email.php';
+
+beforeAll(function ()
+{
+    Sail::setupForTests(__DIR__, 'tests/mock/templates');
+});
 
 test('Load "new_account" email settings', function ()
 {
     $email = Email::getBySlug('new_account');
     expect($email)->not->toBeNull();
-});
+})->group('email');
 
 test('Get list of emails', function ()
 {
     $email = new Email();
-    $list = $email->getList();
+    $list = $email->getList('default');
 
     expect($list->length)->toBeGreaterThanOrEqual(1);
-});
+})->group('email');
 
 test('Create a new email called "test_email"', function ()
 {
@@ -28,10 +34,10 @@ test('Create a new email called "test_email"', function ()
         $result = $email->create(
             'test Email',
             ['fr' => 'Sujet', 'en' => 'Subject'],
-            ['fr' => 'Titre', 'en' => 'Title'],
-            ['fr' => 'Content', 'en' => 'Contenu'],
-            ['fr' => 'CTA', 'en' => 'CTA'],
-            ['fr' => 'https://google.ca', 'en' => 'https://google.ca'],
+            [
+                ['key' => 'title', 'value' => ['fr' => '', 'en' => '']],
+                ['key' => 'content', 'value' => ['fr' => '', 'en' => '']]
+            ],
             'test_email'
         );
 
@@ -39,7 +45,7 @@ test('Create a new email called "test_email"', function ()
     } catch (Exception $e) {
         expect(false)->toBeTrue();
     }
-});
+})->group('email');
 
 test('Update email named "test_email"', function ()
 {
@@ -47,11 +53,11 @@ test('Update email named "test_email"', function ()
         Email::updateBySlug(
             'test_email',
             'test Email Updated',
-            ['fr' => 'Sujet1', 'en' => 'Subject1'],
-            ['fr' => 'Titre', 'en' => 'Title'],
-            ['fr' => 'Content', 'en' => 'Contenu'],
-            ['fr' => 'CTA', 'en' => 'CTA'],
-            ['fr' => 'https://google.ca', 'en' => 'https://google.ca'],
+            ['fr' => 'Sujet', 'en' => 'Subject'],
+            [
+                ['key' => 'title', 'value' => ['fr' => '', 'en' => '']],
+                ['key' => 'content', 'value' => ['fr' => '', 'en' => '']]
+            ],
             'test_email'
         );
 
@@ -61,7 +67,7 @@ test('Update email named "test_email"', function ()
     } catch (Exception $e) {
         expect(false)->toBeTrue();
     }
-});
+})->group('email');
 
 test('Delete email named "test_email"', function ()
 {
@@ -71,4 +77,18 @@ test('Delete email named "test_email"', function ()
     } catch (Exception $e) {
         expect(true)->toBeFalse();
     }
-});
+})->group('email');
+
+test('Send an email use templating', function ()
+{
+//    $mail = new Mail();
+//    $mail->to('')->useEmail(
+//        'new_system',
+//        'en',
+//        [
+//            'replacements' => [],
+//            'verification_code' => '111111111111',
+//            'user_email' => ''
+//        ]
+//    )->send();
+})->group('email2');

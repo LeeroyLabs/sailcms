@@ -8,6 +8,7 @@ use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Http\Request;
 use SailCMS\Models\Email;
+use SailCMS\Models\EmailDeprecated;
 use SailCMS\Templating\Engine;
 use SailCMS\Templating\Extensions\Bundled;
 use SailCMS\Templating\Extensions\Navigation;
@@ -17,6 +18,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Yaml\Yaml;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Loader\FilesystemLoader;
@@ -304,6 +306,54 @@ class Mail
 
     /**
      *
+     * Get the Emails configuration and parse it
+     *
+     * @param  string  $siteId
+     * @return Collection
+     *
+     */
+    public static function loadAndParseTemplates(string $siteId): Collection
+    {
+        $file = Sail::getWorkingDirectory() . '/config/emails.' . $siteId . '.yaml';
+        $yaml = Yaml::parse(file_get_contents($file));
+
+        $list = [];
+
+        foreach ($yaml as $file => $config) {
+            $list[] = (object)[
+                'name' => $file,
+                'configs' => $config
+            ];
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Version selector for this feature
+     *
+     * @param  int               $version
+     * @param  string            $slug
+     * @param  string            $locale
+     * @param  Collection|array  $context
+     * @return $this
+     * @throws EmailException
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     *
+     */
+    public function useEmail(int $version, string $slug, string $locale, Collection|array $context = []): static
+    {
+        if ($version === 1) {
+            return $this->useEmailVersion1($slug, $locale, $context);
+        }
+
+        return $this->useEmailVersion2($slug, $locale, $context);
+    }
+
+    /**
+     *
      * Setup email to use a template from the templating system
      *
      * @param  string            $slug
@@ -315,7 +365,7 @@ class Mail
      * @throws EmailException
      *
      */
-    public function useEmail(string $slug, string $locale, Collection|array $context = []): static
+    public function useEmailVersion2(string $slug, string $locale, Collection|array $context = []): static
     {
         if ($slug === 'test') {
             $settings = setting('emails', []);
@@ -331,6 +381,127 @@ class Mail
         }
 
         $template = Email::getBySlug($slug);
+
+        if ($template) {
+            $settings = setting('emails', []);
+
+            if (is_array($context)) {
+                $context = new Collection($context);
+            }
+
+            $fields = [
+                'subject' => $template->subject->{$locale}
+            ];
+
+            foreach ($template->fields as $field) {
+                $fields[$field->key] = $field->value->{$locale};
+            }
+
+            $providedContent = new Collection($fields);
+
+            // Context squashes providedContent to enable extensibility
+            $superContext = $providedContent->merge($context);
+
+            // Fetch the global scoped context
+            $globalContext = setting('emails.globalContext', ['locales' => ['fr' => [], 'en' => []]]);
+            $locales = $globalContext->get('locales.' . $locale);
+            $gc = $globalContext->unwrap();
+            unset($gc['locales']); // don't add twice
+
+            $superContext->pushSpreadKeyValue(...$locales->unwrap(), ...$gc);
+
+            // Replace {code} and {reset_code} in every field (just in case)
+            foreach ($superContext as $key => $value) {
+                $vcode = $context->get('verification_code', '');
+                $rcode = $context->get('reset_code', '');
+                $code = ($vcode !== '' && $rcode === '') ? $vcode : $rcode;
+                $rpcode = $context->get('reset_pass_code', '');
+
+                if (is_string($value)) {
+                    $superContext[$key] = str_replace(['{code}', '{reset_code}'], [$code, $rpcode], $value);
+                }
+            }
+
+            // Replace locale variable in template name to the actual locale
+            $template->template = str_replace('{locale}', $locale, $template->template);
+
+            // Go through the context's title, subject, content and cta title to parse any replacement variable
+            // Replacement variables are {xx} format (different to twigs {{xx}} format)
+
+            $replacements = $superContext->get('replacements', []);
+            $subject = $template->subject->{$locale};
+
+            foreach ($replacements as $key => $value) {
+                foreach ($superContext as $k => $v) {
+                    $superContext[$k] = str_replace('{' . $key . '}', $value, $v);
+                }
+            }
+
+            // Determine what host to use (if no override, use .env url) otherwise use override if allowed
+            $request = new Request();
+            $override = $request->header('x-domain-override');
+            $host = env('SITE_URL');
+
+            if ($override !== '') {
+                $allowed = setting('emails.overrides', new Collection(['allow' => false, 'acceptedDomains' => []]))->unwrap();
+
+                if ($allowed['allow'] && in_array($override, $allowed['acceptedDomains'], true)) {
+                    if (str_contains($override, 'localhost')) {
+                        $host = 'http://' . $override;
+                    } else {
+                        $host = 'https://' . $override;
+                    }
+                }
+            }
+
+            // Replace {host}
+            foreach ($superContext as $key => $value) {
+                if (is_string($value)) {
+                    $superContext[$key] = str_replace('{host}', $host, $value);
+                }
+            }
+
+            $superContext->pushKeyValue('host', $host);
+
+            return $this
+                ->fromWithName($settings->get('fromName.' . $locale), $settings->get('from'))
+                ->subject($subject)
+                ->template($template->template, $superContext);
+        }
+
+        throw new EmailException("Cannot find the email '{$slug}' from database, please make sure it's not a typo", 0404);
+    }
+
+    /**
+     *
+     * Setup email to use a template from the templating system
+     *
+     * @param  string            $slug
+     * @param  string            $locale
+     * @param  Collection|array  $context
+     * @return $this
+     * @throws Errors\DatabaseException
+     * @throws FileException
+     * @throws EmailException
+     * @deprecated
+     *
+     */
+    public function useEmailVersion1(string $slug, string $locale, Collection|array $context = []): static
+    {
+        if ($slug === 'test') {
+            $settings = setting('emails', []);
+
+            if (is_array($context)) {
+                $context = new Collection($context);
+            }
+
+            return $this
+                ->from($settings->get('from'))
+                ->subject('SailCMS Test')
+                ->template('test', $context);
+        }
+
+        $template = EmailDeprecated::getBySlug($slug);
 
         if ($template) {
             $settings = setting('emails', []);

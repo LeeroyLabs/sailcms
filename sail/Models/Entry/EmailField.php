@@ -10,6 +10,8 @@ use SailCMS\Types\StoringType;
 
 class EmailField extends Field
 {
+    public const REPEATABLE = true;
+
     /**
      *
      * Description for field info
