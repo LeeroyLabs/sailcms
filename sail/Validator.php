@@ -16,6 +16,9 @@ class Validator
 
     public static function validateContentWithEntryField(mixed $content, EntryField $entryField): bool
     {
+        // TODO Handle multiple validation with pipe (|)
+        // TODO Handle repeatable
+
         switch ($entryField->validation) {
             case 'domain':
                 $tld = $entryField->config?->tld ?? true;
@@ -23,7 +26,7 @@ class Validator
                 break;
             case 'alpha':
             case 'alphanum':
-                $extraChars = $entryField->config?->extraChars ?? [];
+                $extraChars = (array)$entryField->config?->extraChars ?? [];
                 $args = [$content, $extraChars];
                 break;
             case 'min':
@@ -42,10 +45,23 @@ class Validator
             case 'postal':
             case 'phone':
                 $country = $entryField->config?->country ?? 'all';
+
+                if (!is_string($country)) {
+                    $country = (array)$country;
+                }
+
                 $args = [$country, $content];
                 break;
-            case 'format':
+            case 'date':
                 $format = $entryField->config?->format ?? 'Y-m-d';
+                $args = [$format, $content];
+                break;
+            case 'time':
+                $format = $entryField->config?->format ?? 'H:i';
+                $args = [$format, $content];
+                break;
+            case 'datetime':
+                $format = $entryField->config?->format ?? 'Y-m-d H:i';
                 $args = [$format, $content];
                 break;
             case 'creditcard':
@@ -61,7 +77,7 @@ class Validator
                 break;
         }
 
-        return call_user_func([static::class, $entryField->validation], $args);
+        return call_user_func([static::class, $entryField->validation], ...$args);
     }
 
     /**
@@ -425,6 +441,7 @@ class Validator
      */
     public static function phone(string|array $country, string $value): bool
     {
+        // This code is not supported in the current version of
         if (is_string($country) && $country !== 'all') {
             return v::phone($country)->validate($value);
         }
@@ -458,6 +475,34 @@ class Validator
     public static function date(string $format, string $date): bool
     {
         return v::date($format)->validate($date);
+    }
+
+    /**
+     *
+     * Validate time is in the accepted format
+     *
+     * @param  string  $format
+     * @param  string  $date
+     * @return bool
+     *
+     */
+    public static function time(string $format, string $date): bool
+    {
+        return v::time($format)->validate($date);
+    }
+
+    /**
+     *
+     * Validate datetime is in the accepted format
+     *
+     * @param  string  $format
+     * @param  string  $date
+     * @return bool
+     *
+     */
+    public static function datetime(string $format, string $date): bool
+    {
+        return v::dateTime($format)->validate($date);
     }
 
     /**

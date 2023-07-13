@@ -1,104 +1,105 @@
 {
-    "name": "leeroy/sailcms",
-    "description": "Powerful CMS focusing on performance, DX and extensibility",
-    "type": "library",
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "SailCMS\\": "sail/"
-        }
+  "name": "leeroy/sailcms",
+  "description": "Powerful CMS focusing on performance, DX and extensibility",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "SailCMS\\": "sail/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Marc Giroux",
+      "email": "marc@leeroy.ca"
     },
-    "authors": [
-        {
-            "name": "Marc Giroux",
-            "email": "marc@leeroy.ca"
-        },
-        {
-            "name": "Philippe B\u00e9dard De Launi\u00e8re",
-            "email": "philippe@leeroy.ca"
-        },
-        {
-            "name": "Antoine Chouinard",
-            "email": "antoine@leeroy.ca"
-        },
-        {
-            "name": "Thibaut Leclere",
-            "email": "thibautl@leeroy.ca"
-        }
-    ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:marcLeeroy/clockwork.git"
-        }
-    ],
-    "require": {
-        "php": ">=8.2",
-        "ext-sodium": "*",
-        "ext-imagick": "*",
-        "ext-exif": "*",
-        "ext-mbstring": "*",
-        "ext-intl": "*",
-        "ext-mongodb": "*",
-        "ext-curl": "*",
-        "ext-dom": "*",
-        "vlucas/phpdotenv": "^v5.5.0",
-        "myclabs/php-enum": "^1.8.4",
-        "filp/whoops": "2.15.1",
-        "nesbot/carbon": "^2.66.0",
-        "mongodb/mongodb": "^1.15.0",
-        "twig/twig": "^3.5.1",
-        "guzzlehttp/guzzle": "^7.5",
-        "webonyx/graphql-php": "^15.2.4",
-        "league/flysystem": "^3.12.3",
-        "league/mime-type-detection": "^1.11",
-        "spatie/ray": "^1.37.1",
-        "nunomaduro/termwind": "^v1.15.1",
-        "robthree/twofactorauth": "^1.8.2",
-        "bacon/bacon-qr-code": "^2.0",
-        "ramsey/uuid": "^4.7",
-        "monolog/monolog": "^3.3",
-        "josantonius/session": "^2.0",
-        "lcobucci/jwt": "^4.3",
-        "symfony/string": "^v6.2.8",
-        "symfony/translation-contracts": "^v3.2.1",
-        "symfony/yaml": "^v6.2.7",
-        "symfony/console": "^v6.2.8",
-        "symfony/mailer": "^v6.2.2",
-        "symfony/sendgrid-mailer": "^v6.2.7",
-        "symfony/twig-bridge": "^v6.2.8",
-        "symfony/security-csrf": "^v6.2.7",
-        "intervention/image": "^2.7",
-        "leeroy/clockwork": "^5.1",
-        "predis/predis": "^2.1",
-        "leeroy/php-inflector": "^1.0.1",
-        "league/csv": "^9.0",
-        "respect/validation": "^2.2"
+    {
+      "name": "Philippe B\u00e9dard De Launi\u00e8re",
+      "email": "philippe@leeroy.ca"
     },
-    "require-dev": {
-        "phpstan/phpstan": "^1.10",
-        "pestphp/pest": "^v2.2.2",
-        "marcocesarato/php-conventional-changelog": "^1.17"
+    {
+      "name": "Antoine Chouinard",
+      "email": "antoine@leeroy.ca"
     },
-    "config": {
-        "allow-plugins": {
-            "composer/package-versions-deprecated": true,
-            "pestphp/pest-plugin": true
-        }
-    },
-    "scripts": {
-        "changelog": "conventional-changelog",
-        "release": "conventional-changelog --commit",
-        "release:patch": "conventional-changelog --patch --commit",
-        "release:minor": "conventional-changelog --minor --commit",
-        "release:major": "conventional-changelog --major --commit",
-        "test": "./vendor/bin/pest",
-        "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
-        "testall": "composer test; composer analyze"
-    },
-    "sailcms": {
-        "containers": [],
-        "modules": []
-    },
-    "version": "dev-release/3.0.0"
+    {
+      "name": "Thibaut Leclere",
+      "email": "thibautl@leeroy.ca"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git@github.com:marcLeeroy/clockwork.git"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "ext-sodium": "*",
+    "ext-imagick": "*",
+    "ext-exif": "*",
+    "ext-mbstring": "*",
+    "ext-intl": "*",
+    "ext-mongodb": "*",
+    "ext-curl": "*",
+    "ext-dom": "*",
+    "vlucas/phpdotenv": "^v5.5.0",
+    "myclabs/php-enum": "^1.8.4",
+    "filp/whoops": "2.15.1",
+    "nesbot/carbon": "^2.66.0",
+    "mongodb/mongodb": "^1.15.0",
+    "twig/twig": "^3.5.1",
+    "guzzlehttp/guzzle": "^7.5",
+    "webonyx/graphql-php": "^15.2.4",
+    "league/flysystem": "^3.12.3",
+    "league/mime-type-detection": "^1.11",
+    "spatie/ray": "^1.37.1",
+    "nunomaduro/termwind": "^v1.15.1",
+    "robthree/twofactorauth": "^1.8.2",
+    "bacon/bacon-qr-code": "^2.0",
+    "ramsey/uuid": "^4.7",
+    "monolog/monolog": "^3.3",
+    "josantonius/session": "^2.0",
+    "lcobucci/jwt": "^4.3",
+    "symfony/string": "^v6.2.8",
+    "symfony/translation-contracts": "^v3.2.1",
+    "symfony/yaml": "^v6.2.7",
+    "symfony/console": "^v6.2.8",
+    "symfony/mailer": "^v6.2.2",
+    "symfony/sendgrid-mailer": "^v6.2.7",
+    "symfony/twig-bridge": "^v6.2.8",
+    "symfony/security-csrf": "^v6.2.7",
+    "intervention/image": "^2.7",
+    "leeroy/clockwork": "^5.1",
+    "predis/predis": "^2.1",
+    "leeroy/php-inflector": "^1.0.1",
+    "league/csv": "^9.0",
+    "respect/validation": "^2.3.0-RC",
+    "giggsey/libphonenumber-for-php-lite": "^8.13"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^1.10",
+    "pestphp/pest": "^v2.2.2",
+    "marcocesarato/php-conventional-changelog": "^1.17"
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/package-versions-deprecated": true,
+      "pestphp/pest-plugin": true
+    }
+  },
+  "scripts": {
+    "changelog": "conventional-changelog",
+    "release": "conventional-changelog --commit",
+    "release:patch": "conventional-changelog --patch --commit",
+    "release:minor": "conventional-changelog --minor --commit",
+    "release:major": "conventional-changelog --major --commit",
+    "test": "./vendor/bin/pest",
+    "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
+    "testall": "composer test; composer analyze"
+  },
+  "sailcms": {
+    "containers": [],
+    "modules": []
+  },
+  "version": "dev-release/3.0.0"
 }
