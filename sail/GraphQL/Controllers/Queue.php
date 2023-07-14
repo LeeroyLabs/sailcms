@@ -78,11 +78,17 @@ class Queue
      */
     public function createTask(mixed $obj, Collection $args, Context $context): bool
     {
+        $action = $args->get('action');
+
+        if (!str_contains($action, 'php sail')) {
+            $action = 'php sail ' . $action;
+        }
+
         $task = new Task(
             $args->get('name'),
             $args->get('retriable'),
             $args->get('handler'),
-            $args->get('action'),
+            $action,
             new Collection([$args->get('settings')]),
             $args->get('priority'),
         );
@@ -91,12 +97,26 @@ class Queue
     }
 
     /**
+     *
+     * Start all tasks
+     *
      * @throws DatabaseException
      */
     public function startAllTasks(mixed $obj, Collection $args, Context $context): bool
     {
         $queue = QueueMan::manager();
         $queue->process();
+        return true;
+    }
+
+    /**
+     *
+     * Change the schedule of a task
+     *
+     */
+    public function changeTaskSchedule(mixed $obj, Collection $args, Context $context): bool
+    {
+        (new QueueModel())->changeSchedule($args->get('id'), $args->get('timestamp'));
         return true;
     }
 

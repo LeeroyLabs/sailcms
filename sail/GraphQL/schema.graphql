@@ -154,11 +154,11 @@ type Mutation {
     # Queue
     createTask(name: String!, handler: String!, action: String!, settings: Json!, priority: Int!, retriable: Boolean!): Boolean!
     retryTask(id: ID!): Boolean!
+    changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
     startAllTasks: Boolean!
     stopTask(pid: Int!): Boolean!
     stopAllTasks: Boolean!
     cancelTask(id: ID!): Boolean!
-    #rescheduleTask(id: ID!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }

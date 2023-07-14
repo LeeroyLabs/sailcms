@@ -30,11 +30,16 @@ use stdClass;
  * @property BSONDocument|stdClass $settings
  * @property int                   $priority
  * @property int                   $pid
+ * @property ?Collection           $logs
  *
  */
 class Queue extends Model
 {
     protected string $collection = 'queue';
+
+    protected array $casting = [
+        'logs' => Collection::class
+    ];
 
     /**
      *
@@ -93,6 +98,56 @@ class Queue extends Model
 
     /**
      *
+     * Update the logs of a task
+     *
+     * @param string $id
+     * @param Collection $logs
+     * @return bool
+     */
+    public function updateLogs(string $id, Collection $logs):bool
+    {
+        try {
+            $info = [
+                'logs' => $logs,
+            ];
+
+            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
+                '$set' => $info
+            ]);
+        } catch (DatabaseException $exception) {
+            return false;
+        }
+
+        return $result === 1;
+    }
+
+    /**
+     *
+     * Change the schedule of a task
+     *
+     * @param string $id
+     * @param int $timestamp
+     * @return bool
+     */
+    public function changeSchedule(string $id, int $timestamp):bool
+    {
+        try {
+            $info = [
+                'schedule_at' => $timestamp,
+            ];
+
+            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
+                '$set' => $info
+            ]);
+        } catch (DatabaseException $exception) {
+            return false;
+        }
+
+        return $result === 1;
+    }
+
+    /**
+     *
      * Return task process ID
      *
      * @param string $id
@@ -102,6 +157,19 @@ class Queue extends Model
     public function getProcessId(string $id):int
     {
         return $this->findById($id)->exec()->pid;
+    }
+
+    /**
+     *
+     * Return task logs
+     *
+     * @param string $id
+     * @return Collection
+     * @throws DatabaseException
+     */
+    public function getLogs(string $id):Collection
+    {
+        return $this->findById($id)->exec()->logs;
     }
 
     /**
@@ -298,7 +366,7 @@ class Queue extends Model
      */
     public function stopTask(int $pid): bool
     {
-        shell_exec("kill -9 $pid");
+        exec("kill -9 " . $pid,  $out, $code);
         return true;
     }
 }

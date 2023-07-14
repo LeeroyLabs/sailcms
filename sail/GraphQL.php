@@ -497,6 +497,7 @@ final class GraphQL
         self::addMutationResolver('createTask', Queue::class, 'createTask');
         self::addMutationResolver('stopTask', Queue::class, 'stopTask');
         self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
+        self::addMutationResolver('changeTaskSchedule', Queue::class, 'changeTaskSchedule');
         self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
         self::addMutationResolver('retryTask', Queue::class, 'retryTask');
         self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
