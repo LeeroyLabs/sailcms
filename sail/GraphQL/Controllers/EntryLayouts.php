@@ -13,7 +13,6 @@ use SailCMS\Models\Entry;
 use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryType;
 use SailCMS\Types\EntryLayoutTab;
-use SailCMS\Types\LocaleField;
 
 class EntryLayouts
 {
@@ -97,11 +96,9 @@ class EntryLayouts
      */
     public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?EntryLayout
     {
-        $titles = $args->get('titles');
+        $title = $args->get('title');
         $graphqlSchema = $args->get('schema');
         $slug = $args->get('slug');
-
-        $titles = new LocaleField($titles->unwrap());
 
         // Process schema from graphql
         $schema = Collection::init();
@@ -112,7 +109,7 @@ class EntryLayouts
         }
 
         $entryLayoutModel = new EntryLayout();
-        return $entryLayoutModel->create($titles, $schema, $slug);
+        return $entryLayoutModel->create($title, $schema, $slug);
     }
 
     /**
@@ -132,18 +129,12 @@ class EntryLayouts
     public function updateEntryLayout(mixed $obj, Collection $args, Context $context): bool
     {
         $graphqlSchema = $args->get('schema');
-        $graphqlTitles = $args->get('titles');
+        $title = $args->get('title');
         $schema = null;
-        $titles = null;
 
         // There is nothing sent to be updated !
-        if (!$graphqlSchema && !$graphqlTitles && !$args->get('slug')) {
+        if (!$graphqlSchema && !$title && !$args->get('slug')) {
             throw new EntryException(EntryLayout::NOTHING_TO_UPDATE);
-        }
-
-        // Process titles from graphql
-        if ($graphqlTitles) {
-            $titles = new LocaleField($graphqlTitles->unwrap());
         }
 
         // Process schema from graphql
@@ -156,7 +147,7 @@ class EntryLayouts
             }
         }
 
-        return (new EntryLayout())->updateById($args->get('id'), $titles, $schema, $args->get('slug'));
+        return (new EntryLayout())->updateById($args->get('id'), $title, $schema, $args->get('slug'));
     }
 
     /**

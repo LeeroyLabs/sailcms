@@ -71,11 +71,7 @@ test('Create an entry layout', function () {
     $schema->push(new EntryLayoutTab('Test 2', [(string)$testField->_id, (string)EntryField::getByKey('test_2')->_id]));
 
     try {
-        $titles = new LocaleField([
-            'fr' => 'Test de disposition',
-            'en' => 'Layout Test'
-        ]);
-        $entryLayout = $model->create($titles, $schema);
+        $entryLayout = $model->create('Layout Test', $schema);
         expect($entryLayout->_id)->not->toBe('');
     } catch (Exception $exception) {
         expect(true)->toBe(false);
@@ -88,11 +84,7 @@ test('Fail to create an entry layout', function () {
     $schema->push(new EntryLayoutTab('Test', ['bugs!']));
 
     try {
-        $titles = new LocaleField([
-            'fr' => 'Erreur',
-            'en' => 'Error'
-        ]);
-        $model->create($titles, $schema);
+        $model->create('Error', $schema);
         expect(false)->toBeTrue();
     } catch (Exception $exception) {
         expect($exception->getMessage())->toBe(sprintf(EntryLayout::SCHEMA_INVALID_TAB_FIELD_ID, 1));
@@ -102,11 +94,7 @@ test('Fail to create an entry layout', function () {
     $schema->push(['label' => 'No good', 'fields' => []]);
 
     try {
-        $titles = new LocaleField([
-            'fr' => 'Erreur',
-            'en' => 'Error'
-        ]);
-        $model->create($titles, $schema);
+        $model->create('Error', $schema);
         expect(false)->toBeTrue();
     } catch (Exception $exception) {
         expect($exception->getMessage())->toBe(sprintf(EntryLayout::SCHEMA_INVALID_TAB_VALUE, 1));
@@ -559,13 +547,12 @@ test('Update an entry layout', function () {
     $schema = Collection::init();
     $schema->push(new EntryLayoutTab('Test', [(string)EntryField::getByKey('test')->_id]));
     $schema->push(new EntryLayoutTab('Test 2', [(string)EntryField::getByKey('test_2')->_id]));
-    $newTitles = new LocaleField(['en' => 'Layout to delete', 'fr' => 'Disposition à supprimer']);
 
     try {
-        $entryLayout->updateById($entryLayout->_id, $newTitles, $schema, null);
+        $entryLayout->updateById($entryLayout->_id, 'Layout to delete', $schema, null);
         $entryLayout = $model->bySlug('layout-test');
 
-        expect($entryLayout->titles->get('en'))->toBe($newTitles->get('en'))
+        expect($entryLayout->title)->toBe('Layout to delete')
             ->and($entryLayout->schema[0]->label)->toBe($schema[0]->label)
             ->and(count($entryLayout->schema[1]->fields))->toBe(1);
     } catch (Exception $exception) {

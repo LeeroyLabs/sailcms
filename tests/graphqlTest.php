@@ -151,7 +151,7 @@ test('Create field and layout', function () {
 
         $entryLayoutResponse = $this->client->run('
             mutation {
-                createEntryLayout(titles: {fr: "Test Graphql", en: "GraphQL Test"}, schema: {label: "First tab", fields: ["' . $entryFieldResponse->data->createEntryField->_id . '"]}) {
+                createEntryLayout(title: "GraphQL Test", schema: {label: "First tab", fields: ["' . $entryFieldResponse->data->createEntryField->_id . '"]}) {
                     _id
                     slug
                 }

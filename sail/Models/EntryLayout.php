@@ -11,18 +11,16 @@ use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
-use SailCMS\Locale;
 use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryLayoutTab;
-use SailCMS\Types\LocaleField;
 
 /**
  *
  *
  * @property string           $slug
- * @property LocaleField      $titles
+ * @property string           $title
  * @property array|Collection $schema
  * @property Authors          $authors
  * @property Dates            $dates
@@ -34,7 +32,6 @@ class EntryLayout extends Model implements Castable
     protected string $collection = 'entry_layouts';
     protected string $permissionGroup = 'entrylayout';
     protected array $casting = [
-        'titles' => LocaleField::class,
         'schema' => self::class,
         'authors' => Authors::class,
         'dates' => Dates::class
@@ -44,9 +41,9 @@ class EntryLayout extends Model implements Castable
     public const DATABASE_ERROR = '6001: Exception when %s an entry layout.';
     public const SCHEMA_IS_USED = '6002: Cannot delete the schema because it is used by entry types.';
     public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
-    public const SCHEMA_INVALID_TAB_VALUE = '6005: Invalid tab value on tab #%s of your schema, must be an instance of EntryLayoutTab.';
-    public const SCHEMA_INVALID_TAB_FIELD_ID = '6006: Invalid field id on tab #%s of your schema.';
-    public const NOTHING_TO_UPDATE = '6007: No params filled, there is nothing to update.';
+    public const SCHEMA_INVALID_TAB_VALUE = '6004: Invalid tab value on tab #%s of your schema, must be an instance of EntryLayoutTab.';
+    public const SCHEMA_INVALID_TAB_FIELD_ID = '6005: Invalid field id on tab #%s of your schema.';
+    public const NOTHING_TO_UPDATE = '6006: No params filled, there is nothing to update.';
 
     /* Cache */
     private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
@@ -126,7 +123,7 @@ class EntryLayout extends Model implements Castable
         return [
             '_id' => (string)$this->_id,
             'slug' => $this->slug,
-            'titles' => $this->titles->castFrom(),
+            'title' => $this->title,
             'schema' => $this->schema,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
@@ -241,7 +238,7 @@ class EntryLayout extends Model implements Castable
      *
      * Create an entry layout
      *
-     * @param  LocaleField  $titles
+     * @param  string       $title
      * @param  Collection   $schema
      * @param  string|null  $slug  slug is set to $title->{Locale::default()}
      * @return EntryLayout
@@ -251,14 +248,14 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function create(LocaleField $titles, Collection $schema, ?string $slug = null): EntryLayout
+    public function create(string $title, Collection $schema, ?string $slug = null): EntryLayout
     {
         $this->hasPermissions();
 
         // Schema preparation
         self::validateSchema($schema);
 
-        return $this->createWithoutPermission($titles, $schema, $slug);
+        return $this->createWithoutPermission($title, $schema, $slug);
     }
 
     /**
@@ -266,7 +263,7 @@ class EntryLayout extends Model implements Castable
      * Update an entry layout for a given id or entryLayout instance
      *
      * @param  EntryLayout|string  $entryLayoutOrId
-     * @param  LocaleField|null    $titles
+     * @param  string|null         $title
      * @param  Collection|null     $schema
      * @param  string|null         $slug
      * @return bool
@@ -276,7 +273,7 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function updateById(EntryLayout|string $entryLayoutOrId, ?LocaleField $titles, ?Collection $schema, ?string $slug): bool
+    public function updateById(EntryLayout|string $entryLayoutOrId, ?string $title, ?Collection $schema, ?string $slug): bool
     {
         $this->hasPermissions();
 
@@ -288,8 +285,8 @@ class EntryLayout extends Model implements Castable
 
         $data = Collection::init();
 
-        if ($titles) {
-            $data->pushKeyValue('titles', $titles);
+        if ($title) {
+            $data->pushKeyValue('title', $title);
         }
 
         if ($schema) {
@@ -477,7 +474,7 @@ class EntryLayout extends Model implements Castable
      *
      * Create an entry layout
      *
-     * @param  LocaleField  $titles
+     * @param  string       $title
      * @param  Collection   $schema
      * @param  string|null  $slug
      * @return EntryLayout
@@ -485,19 +482,19 @@ class EntryLayout extends Model implements Castable
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(LocaleField $titles, Collection $schema, string $slug = null): EntryLayout
+    private function createWithoutPermission(string $title, Collection $schema, string $slug = null): EntryLayout
     {
         $dates = Dates::init();
         $author = User::$currentUser ?? User::anonymousUser();
         $authors = Authors::init($author);
 
-        $slug = $slug ?? Text::from($titles->{Locale::default()})->slug()->value();
+        $slug = $slug ?? Text::from($title)->slug()->value();
         $slug = self::generateSlug($slug);
 
         try {
             $entryLayoutId = $this->insert([
                 'slug' => $slug,
-                'titles' => $titles,
+                '$title' => $title,
                 'schema' => $schema,
                 'authors' => $authors,
                 'dates' => $dates,
@@ -530,9 +527,9 @@ class EntryLayout extends Model implements Castable
             'authors' => Authors::updated($entryLayout->authors, $author->_id)
         ];
 
-        $titles = $data->get('titles');
-        if ($titles) {
-            $update['titles'] = $titles;
+        $title = $data->get('title');
+        if ($title) {
+            $update['title'] = $title;
         }
 
         $schema = $data->get('schema');
