@@ -20,7 +20,7 @@ use stdClass;
  * @property LocaleField  $label
  * @property ?LocaleField $placeholder
  * @property ?LocaleField $explain
- * @property bool         $repeatable
+ * @property bool         $repeatable # todo add searchable
  * @property string       $validation
  * @property bool         $required
  * @property string       $type

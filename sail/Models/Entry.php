@@ -349,8 +349,11 @@ class Entry extends Model implements Validator, Castable
      * @param  Collection  $content
      * @return array
      */
-    private function processContentBeforeSave(Collection $content): array
+    private function processContentBeforeSave(stdClass|Collection $content): array
     {
+        if ($content instanceof stdClass) {
+            $content = new Collection((array)$content);
+        }
 //        $processedContents = [];
 //        $schema = $this->getSchema(true);
 //
@@ -1575,6 +1578,7 @@ class Entry extends Model implements Validator, Castable
             if (!$entryField) {
                 // Fail silently to avoid an error on saving
                 Log::warning(sprintf(self::CONTENT_KEY_ERROR[0], $key), ['contents' => $contents, 'schema' => $schema]);
+                return false;
             }
 
             if ($entryField->required && !ContentValidator::required($content)) {
@@ -1582,12 +1586,17 @@ class Entry extends Model implements Validator, Castable
             } else {
                 if (method_exists(ContentValidator::class, $entryField->validation)) {
                     if (!ContentValidator::validateContentWithEntryField($content, $entryField)) {
-                        $errors->pushKeyValue($key, sprintf(ContentValidator::VALIDATION_FAILED, $entryField->validation));
+                        $contentFieldErrors->push(sprintf(ContentValidator::VALIDATION_FAILED, $entryField->validation));
                     }
                 } else {
                     Log::error(sprintf(ContentValidator::METHOD_DOES_NOT_EXIST, $entryField->validation), ['entryField' => $entryField]);
                 }
             }
+
+            if ($contentFieldErrors->length > 0) {
+                $errors->pushKeyValue($key, $contentFieldErrors);
+            }
+            return true;
         });
 
         return $errors;

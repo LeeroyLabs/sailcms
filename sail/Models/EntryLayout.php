@@ -185,6 +185,7 @@ class EntryLayout extends Model implements Castable
     /**
      *
      * Find one user with filters
+     * # TODO this method is a mess
      *
      * @param  array  $filters
      * @param  bool   $cache
@@ -200,7 +201,10 @@ class EntryLayout extends Model implements Castable
 
         if (isset($filters['_id'])) {
             if (!$cache) {
-                return $this->findById($filters['_id'])->exec();
+                $entryLayout = $this->findById($filters['_id'])->exec();
+                $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
+                EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+                return $entryLayout;
             }
 
             // Cache Time To Live value from setting or default
@@ -382,6 +386,15 @@ class EntryLayout extends Model implements Castable
         return $entryTypeCount > 0;
     }
 
+    /**
+     *
+     * Get field in schema
+     *
+     * @param  Collection  $schema
+     * @param  string      $fieldKey
+     * @return EntryField|null
+     *
+     */
     public static function getFieldInSchema(Collection $schema, string $fieldKey): ?EntryField
     {
         $entryField = null;

@@ -26,7 +26,10 @@ class Validator
                 break;
             case 'alpha':
             case 'alphanum':
-                $extraChars = (array)$entryField->config?->extraChars ?? [];
+                $extraChars = $entryField->config?->extraChars ?? [];
+                if (!is_array($extraChars)) {
+                    $extraChars = (array)$extraChars;
+                }
                 $args = [$content, $extraChars];
                 break;
             case 'min':

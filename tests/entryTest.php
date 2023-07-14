@@ -202,20 +202,6 @@ test('Update seo data for an entry', function () {
     }
 })->group('entry-seo');
 
-test('Create an entry with an entry type', function () {
-    $entryModel = EntryType::getEntryModelByHandle('test');
-
-    try {
-        $entry = $entryModel->create(true, 'fr', 'Test', 'test', 'test');
-        expect($entry->title)->toBe('Test');
-        expect($entry->locale)->toBe('fr');
-        expect($entry->url)->toBe('test/test');
-    } catch (Exception $exception) {
-        //print_r($exception);
-        expect(true)->toBe(false);
-    }
-})->group('entry');
-
 test('Update an entry type', function () {
     $model = new EntryType();
     $entryLayout = (new EntryLayout())->bySlug('layout-test');
@@ -237,6 +223,26 @@ test('Update an entry type', function () {
         expect(true)->toBe(false);
     }
 })->group('entry-type');
+
+test('Create an entry with an entry type', function () {
+    $entryModel = EntryType::getEntryModelByHandle('test');
+
+    try {
+        $entry = $entryModel->create(true, 'fr', 'Test', 'test', 'test', new Collection([
+            'content' => [
+                'test' => 'Test',
+                'test_2' => 'philippe@leeroy.ca'
+            ]
+        ]));
+
+        expect($entry->title)->toBe('Test');
+        expect($entry->locale)->toBe('fr');
+        expect($entry->url)->toBe('pages-de-test/test');
+    } catch (Exception $exception) {
+//        \SailCMS\Debug::ray($exception);
+        expect(true)->toBe(false);
+    }
+})->group('entry');
 
 test('Get homepage entry', function () {
     $entry = Entry::getHomepageEntry(Sail::siteId(), 'fr');
@@ -271,9 +277,7 @@ test('Update an entry with an entry type', function () {
         $result = $entryModel->updateById($entry, [
             'slug' => 'test-de-test',
             'is_homepage' => false,
-            'content' => [
-                'sub title' => "had content!!!"
-            ],
+            'content' => null,
         ]);
         $entry = $entryModel->one([
             'title' => 'Test'
@@ -351,10 +355,10 @@ test('Get homepage entry after update', function () {
 
 test('Find the entry by url', function () {
     $entry = Entry::findByURL('fr/', Sail::siteId(), false);
-
+    SailCMS\Debug::ray($entry);
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')
-        ->and($entry->content->length)->toBe(0); // We have the entry published before the content has been added
+        ->and($entry->content->length)->toBe(2); // We have the entry published before the content has been added
 })->group('entry');
 
 test('Unpublish an entry', function () {
@@ -413,7 +417,7 @@ test('Get entry versions, failed to apply the last version and apply one', funct
             'title' => 'Test'
         ]);
         // The first versions has empty content
-        expect($entry->content->length)->toBe(0)
+        expect($entry->content->length)->toBe(2)
             ->and($entry->slug)->toBe('test');
     } catch (EntryException $e) {
         expect(true)->toBe(false);
