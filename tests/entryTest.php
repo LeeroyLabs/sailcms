@@ -30,7 +30,8 @@ test('Create an entry field', function () {
         'name' => 'Test',
         'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
         'type' => 'text',
-        'required' => true
+        'required' => true,
+        'searchable' => true
     ]));
     $model->create(new Collection([
         'key' => 'test_2',
@@ -42,7 +43,8 @@ test('Create an entry field', function () {
     ]));
 
     expect($entryField->key)->toBe('test')
-        ->and($entryField->_id)->not->toBeNull();
+        ->and($entryField->_id)->not->toBeNull()
+        ->and($entryField->searchable)->toBeTrue();
 });
 
 test('Fail to create an entry field', function () {
@@ -355,7 +357,7 @@ test('Get homepage entry after update', function () {
 
 test('Find the entry by url', function () {
     $entry = Entry::findByURL('fr/', Sail::siteId(), false);
-    SailCMS\Debug::ray($entry);
+
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')
         ->and($entry->content->length)->toBe(2); // We have the entry published before the content has been added

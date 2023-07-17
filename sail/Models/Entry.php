@@ -484,26 +484,24 @@ class Entry extends Model implements Validator, Castable
             'entry_type_handle' => $this->entryType->handle
         ];
 
-//        $schema = $this->getSchema(true);
-//        $schema = Collection::init();
-//        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
-//            $parsedContent = $content;
-//            /**
-//             * @var ModelField $field
-//             */
-//            $field = $schema->get($key);
-//            $isSearchable = $field::SEARCHABLE && $field;
-//
-//            if ($isSearchable) {
-//                if (is_object($content)) {
-//                    if ($content instanceof Collection) {
-//                        $content = $content->unwrap();
-//                    }
-//                    $parsedContent = implode('|', (array)$content);
-//                }
-//                $parsedContents[$key] = $parsedContent;
-//            }
-//        })
+        $schema = $this->getSchema(true);
+
+        $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
+            $parsedContent = $content;
+
+            $entryField = EntryLayout::getFieldInSchema($schema, $key);
+            $isSearchable = $entryField->searchable ?? false;
+
+            if ($isSearchable) {
+                if (is_object($content)) {
+                    if ($content instanceof Collection) {
+                        $content = $content->unwrap();
+                    }
+                    $parsedContent = implode('|', (array)$content);
+                }
+                $parsedContents[$key] = $parsedContent;
+            }
+        });
 
         return [
             '_id' => $this->_id,

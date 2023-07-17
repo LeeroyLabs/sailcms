@@ -132,8 +132,8 @@ type Mutation {
     unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
 
-    createEntryField(key: String!, name: String!, label: LocaleFieldInput!, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String!, validation: String, repeatable: Boolean, required: Boolean!,  config: Json): EntryField
-    updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, required: Boolean, config: Json): Boolean!
+    createEntryField(key: String!, name: String!, label: LocaleFieldInput!, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String!, validation: String, repeatable: Boolean, searchable: Boolean, required: Boolean!,  config: Json): EntryField
+    updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, searchable: Boolean, required: Boolean, config: Json): Boolean!
     deleteEntryField(id: ID, key: String): Boolean!
     deleteEntryFields(ids: [ID!]!): Int!
 
@@ -389,6 +389,7 @@ type EntryField {
     validation: String
     required: Boolean!
     repeatable: Boolean!
+    searchable: Boolean!
     type: String!
     config: Json!
 }

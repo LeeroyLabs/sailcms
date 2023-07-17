@@ -20,7 +20,8 @@ use stdClass;
  * @property LocaleField  $label
  * @property ?LocaleField $placeholder
  * @property ?LocaleField $explain
- * @property bool         $repeatable # todo add searchable
+ * @property bool         $repeatable
+ * @property bool         $searchable
  * @property string       $validation
  * @property bool         $required
  * @property string       $type
@@ -55,6 +56,7 @@ class EntryField extends Model implements Castable
             'placeholder',
             'explain',
             'repeatable',
+            'searchable',
             'validation',
             'required',
             'type',
@@ -176,6 +178,9 @@ class EntryField extends Model implements Castable
         }
         if ($toCreate->get('repeatable') === null) {
             $args->setFor('repeatable', false);
+        }
+        if ($toCreate->get('searchable') === null) {
+            $args->setFor('searchable', false);
         }
         if (!$toCreate->get('validation')) {
             $args->setFor('validation', '');
