@@ -1582,12 +1582,9 @@ class Entry extends Model implements Validator, Castable
             if ($entryField->required && !ContentValidator::required($content)) {
                 $contentFieldErrors->push(EntryField::FIELD_REQUIRED);
             } else {
-                if (method_exists(ContentValidator::class, $entryField->validation)) {
-                    if (!ContentValidator::validateContentWithEntryField($content, $entryField)) {
-                        $contentFieldErrors->push(sprintf(ContentValidator::VALIDATION_FAILED, $entryField->validation));
-                    }
-                } else {
-                    Log::error(sprintf(ContentValidator::METHOD_DOES_NOT_EXIST, $entryField->validation), ['entryField' => $entryField]);
+                $failedValidations = ContentValidator::validateContentWithEntryField($content, $entryField, true);
+                if ($failedValidations->length > 0) {
+                    $contentFieldErrors->merge($failedValidations);
                 }
             }
 

@@ -243,7 +243,7 @@ test('Create an entry with an entry type', function () {
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('pages-de-test/test');
     } catch (Exception $exception) {
-//        \SailCMS\Debug::ray($exception);
+        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 })->group('entry');

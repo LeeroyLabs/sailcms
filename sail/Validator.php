@@ -6,20 +6,98 @@ use Exception;
 use MongoDB\BSON\ObjectId;
 use Respect\Validation\Rules\CreditCard;
 use Respect\Validation\Validator as v;
+use SailCMS\Errors\EntryException;
 use SailCMS\Models\EntryField;
 use const SailCMS\Validator\COUNTRY_LIST;
 
 class Validator
 {
+    public const VALIDATION_SEPARATOR = "|";
     public const METHOD_DOES_NOT_EXIST = "6500: Validation method '%s' does not exist.";
     public const VALIDATION_FAILED = "6501: Validation of '%s' type failed.";
 
-    public static function validateContentWithEntryField(mixed $content, EntryField $entryField): bool
+    /**
+     *
+     * Return a collection of validation failed
+     *  -> if repeatable each failure index represent content index
+     *
+     * @param  mixed       $content
+     * @param  EntryField  $entryField
+     * @param  bool        $silently
+     * @return Collection
+     * @throws EntryException
+     *
+     */
+    public static function validateContentWithEntryField(mixed $content, EntryField $entryField, bool $silently = false): Collection
     {
-        // TODO Handle multiple validation with pipe (|)
-        // TODO Handle repeatable
+        $failedValidations = Collection::init();
 
-        switch ($entryField->validation) {
+        // No need to validate if the field does have validation value
+        if (!$entryField->validation) {
+            return $failedValidations;
+        }
+
+        if ($content instanceof Collection) {
+            $content = $content->unwrap();
+        }
+
+        $validations = explode(self::VALIDATION_SEPARATOR, $entryField->validation);
+
+        if ($entryField->repeatable || is_array($content)) {
+            foreach ($content as $contentKey => $value) {
+                $failedValidation = Collection::init();
+                foreach ($validations as $validation) {
+                    if (!self::validateContent($value, $entryField, $validation, $silently)) {
+                        $failedValidation->push(sprintf(self::VALIDATION_FAILED, $validation));
+                    }
+                }
+                if ($failedValidation->length > 0) {
+                    $failedValidations->pushKeyValue($contentKey, $failedValidation);
+                }
+            }
+        } else {
+            foreach ($validations as $validation) {
+                if (!self::validateContent($content, $entryField, $validation, $silently)) {
+                    $failedValidations->push(sprintf(self::VALIDATION_FAILED, $validation));
+                }
+            }
+        }
+
+        // For multiple validation, empty the errors if one validation passed
+        if ($failedValidations->length < count($validations)) {
+            return Collection::init();
+        }
+
+        return $failedValidations;
+    }
+
+    /**
+     *
+     * Validate a content with a validation string
+     *
+     * @param  mixed        $content
+     * @param  EntryField   $entryField
+     * @param  string|null  $validation
+     * @param  bool         $silently
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    public static function validateContent(mixed $content, EntryField $entryField, string $validation = null, bool $silently = false): bool
+    {
+        if (!$validation) {
+            $validation = $entryField->validation;
+        }
+
+        if (str_contains(self::VALIDATION_SEPARATOR, $validation) || !method_exists(self::class, $validation) || !$validation) {
+            if ($silently) {
+                Log::error(self::METHOD_DOES_NOT_EXIST, ['content' => $content, 'field' => $entryField, 'validation' => $validation]);
+            } else {
+                throw new EntryException(self::METHOD_DOES_NOT_EXIST);
+            }
+        }
+
+        switch ($validation) {
             case 'domain':
                 $tld = $entryField->config?->tld ?? true;
                 $args = [$content, $tld];
@@ -80,7 +158,7 @@ class Validator
                 break;
         }
 
-        return call_user_func([static::class, $entryField->validation], ...$args);
+        return call_user_func([static::class, $validation], ...$args);
     }
 
     /**
