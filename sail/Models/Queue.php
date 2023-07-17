@@ -174,6 +174,18 @@ class Queue extends Model
 
     /**
      *
+     * Return current execution time of task
+     *
+     * @param int $pid
+     * @return string
+     */
+    public function getTaskRunningTime(int $pid):string
+    {
+        return exec('ps -o etimes= -p ' . $pid, $out, $code);
+    }
+
+    /**
+     *
      * Get task by id
      *
      * @param string $id

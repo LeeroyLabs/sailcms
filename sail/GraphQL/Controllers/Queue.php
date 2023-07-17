@@ -46,6 +46,21 @@ class Queue
 
     /**
      *
+     * Return current process time of a task
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return int
+     *
+     */
+    public function getTaskRunningTime(mixed $obj, Collection $args, Context $context): int
+    {
+        return (new QueueModel())->getTaskRunningTime($args->get('pid'));
+    }
+
+    /**
+     *
      * Get all tasks
      *
      * @param mixed $obj
