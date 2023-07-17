@@ -120,8 +120,8 @@ type Mutation {
     createPreviewEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!): String!
 
     # Entries
-    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
-    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
+    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID, use_categories: Boolean): EntryType
+    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID, use_categories: Boolean): Boolean
     deleteEntryType(id: ID!): Boolean
 
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
@@ -330,6 +330,7 @@ type EntryType {
     handle: String!
     url_prefix: LocaleField!
     entry_layout_id: ID
+    use_categories: Boolean!
 }
 
 type EntryLayout {

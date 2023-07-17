@@ -215,12 +215,14 @@ test('Update an entry type', function () {
                 'en' => 'test-pages',
                 'fr' => 'pages-de-test'
             ]),
-            'entry_layout_id' => $entryLayout->_id
+            'entry_layout_id' => $entryLayout->_id,
+            'use_categories' => true
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
         expect($entryType->title)->toBe('Test Pages')
-            ->and($entryType->url_prefix->en)->toBe('test-pages');
+            ->and($entryType->url_prefix->en)->toBe('test-pages')
+            ->and($entryType->use_categories)->toBeTrue();
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
