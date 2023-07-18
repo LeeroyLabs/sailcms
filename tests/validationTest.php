@@ -15,7 +15,7 @@ beforeAll(function () {
         'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
         'type' => 'text',
         'required' => true,
-        'validation' => 'boolean'
+        'validation' => ''
     ]));
 });
 
@@ -23,11 +23,22 @@ afterAll(function () {
     (new EntryField())->deleteByIdOrKey(null, 'validationtest');
 });
 
-test("Boolean validation with an entry field", function () {
+
+test('Empty validation', function () {
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(true, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('not a bool', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("whatever value", $entryField)->length)->toBe(0);
+})->group('validation');
+
+test("Boolean validation with an entry field", function () {
+    $entryField = EntryField::getByKey('validationtest');
+    (new EntryField())->update($entryField->_id, new Collection([
+        'validation' => 'boolean'
+    ]));
+    $entryField = EntryField::getByKey('validationtest');
+
+    expect(Validator::validateContentWithEntryField(true, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('not a bool', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Email validation with an entry field", function () {
@@ -37,8 +48,15 @@ test("Email validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField("philippe@leeroy.ca", $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('false', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("philippe@leeroy.ca", $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('false', $entryField)->length)->toBe(1);
+})->group('validation');
+
+test("Repeatable validation with an entry field", function () {
+    $entryField = EntryField::getByKey('validationtest');
+
+    expect(Validator::validateContentWithEntryField(["philippe@leeroy.ca", "good@address.ca"], $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField(["philippe@leeroy.ca", "badaddress.ca"], $entryField)[1][0])->toBe(sprintf(Validator::VALIDATION_FAILED, 'email'));
 })->group('validation');
 
 test("Url validation with an entry field", function () {
@@ -48,8 +66,8 @@ test("Url validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField("https://domain.test/url/is/ok", $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('this/is/false', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("https://domain.test/url/is/ok", $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('this/is/false', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Domain validation with an entry field", function () {
@@ -60,8 +78,8 @@ test("Domain validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField("domain.test", $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('false', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("domain.test", $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('false', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("IP validation with an entry field", function () {
@@ -72,8 +90,8 @@ test("IP validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField("0.0.0.0", $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('false', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("0.0.0.0", $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('false', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Integer validation with an entry field", function () {
@@ -84,8 +102,8 @@ test("Integer validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(101, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('not a number', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField(101, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('not a number', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Float validation with an entry field", function () {
@@ -96,8 +114,8 @@ test("Float validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(10.2, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('not a float', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField(10.2, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('not a float', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Numeric validation with an entry field", function () {
@@ -108,8 +126,8 @@ test("Numeric validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('10.2', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('not numeric', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('10.2', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('not numeric', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Alpha validation with an entry field", function () {
@@ -120,8 +138,8 @@ test("Alpha validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('alpha value plus -', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('0001-0001', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('alpha value plus -', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('0001-0001', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Alphanum validation with an entry field", function () {
@@ -132,8 +150,8 @@ test("Alphanum validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('200 - Alphanum value plus -', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('500 - Not allowed!', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('200 - Alphanum value plus -', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('500 - Not allowed!', $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Min validation with an entry field", function () {
@@ -144,8 +162,8 @@ test("Min validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('-10', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField(-11, $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('-10', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField(-11, $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Max validation with an entry field", function () {
@@ -156,8 +174,8 @@ test("Max validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(-10.1, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField(101, $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField(-10.1, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField(101, $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Between validation with an entry field", function () {
@@ -168,8 +186,8 @@ test("Between validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(2, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField(-INF, $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField(2, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField(-INF, $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("ID validation with an entry field", function () {
@@ -180,8 +198,8 @@ test("ID validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField("64b0258a02e57cf28d0e1f22", $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("64b0258a02e57cf28d0e1f2", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("64b0258a02e57cf28d0e1f22", $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("64b0258a02e57cf28d0e1f2", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Hex color validation with an entry field", function () {
@@ -192,8 +210,8 @@ test("Hex color validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField("b34410", $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("wswsws", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField("b34410", $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("wswsws", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Directory validation with an entry field", function () {
@@ -204,8 +222,8 @@ test("Directory validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(__DIR__, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("not a dir", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField(__DIR__, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("not a dir", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("File validation with an entry field", function () {
@@ -216,8 +234,8 @@ test("File validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField(__FILE__, $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("not a file", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField(__FILE__, $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("not a file", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Postal code validation with an entry field", function () {
@@ -228,8 +246,8 @@ test("Postal code validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('H1V 1V1', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("not a PC", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('H1V 1V1', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("not a PC", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Zip code validation with an entry field", function () {
@@ -240,8 +258,8 @@ test("Zip code validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('20001', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("not a zip", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('20001', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("not a zip", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Postal (with country list) validation with an entry field", function () {
@@ -252,8 +270,8 @@ test("Postal (with country list) validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('127308', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("H1V 1V1", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('127308', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("H1V 1V1", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Country code validation with an entry field", function () {
@@ -264,8 +282,8 @@ test("Country code validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('CA', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("not a country code", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('CA', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("not a country code", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Phone validation with an entry field", function () {
@@ -276,8 +294,8 @@ test("Phone validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('15145145145', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("1234567890", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('15145145145', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("1234567890", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Date validation with an entry field", function () {
@@ -288,8 +306,8 @@ test("Date validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('2023-10', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("2023-10-10", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('2023-10', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("2023-10-10", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Time validation with an entry field", function () {
@@ -300,8 +318,8 @@ test("Time validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('23:10', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("23:20:20", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('23:10', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("23:20:20", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Datetime validation with an entry field", function () {
@@ -312,8 +330,8 @@ test("Datetime validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('2023-10-20 23:10', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("2023-10 23:20:20", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('2023-10-20 23:10', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("2023-10 23:20:20", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Credit card validation with an entry field", function () {
@@ -324,8 +342,8 @@ test("Credit card validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('4242424242424242', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField("2023-10 23:20:20", $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('4242424242424242', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField("2023-10 23:20:20", $entryField)->length)->toBe(1);
 })->group('validation');
 
 test("Uuid validation with an entry field", function () {
@@ -336,6 +354,19 @@ test("Uuid validation with an entry field", function () {
     ]));
     $entryField = EntryField::getByKey('validationtest');
 
-    expect(Validator::validateContentWithEntryField('428478f6-21ae-11ee-be56-0242ac120002', $entryField))->toBeTrue()
-        ->and(Validator::validateContentWithEntryField('eb3115e5-bd16-4939-ab12-2b95745a30f3', $entryField))->toBeFalse();
+    expect(Validator::validateContentWithEntryField('428478f6-21ae-11ee-be56-0242ac120002', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('eb3115e5-bd16-4939-ab12-2b95745a30f3', $entryField)->length)->toBe(1);
+})->group('validation');
+
+test("Multiple validation with an entry field", function () {
+    $entryField = EntryField::getByKey('validationtest');
+    (new EntryField())->update($entryField->_id, new Collection([
+        'validation' => 'uuid|email',
+        'config' => ['version' => 1]
+    ]));
+    $entryField = EntryField::getByKey('validationtest');
+
+    expect(Validator::validateContentWithEntryField('428478f6-21ae-11ee-be56-0242ac120002', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('philippe@leeroy.ca', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('eb3115e5-bd16-4939-ab12-2b95745a30f3', $entryField)->length)->toBe(2);
 })->group('validation');

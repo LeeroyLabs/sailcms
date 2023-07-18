@@ -96,15 +96,11 @@ class EntryTypes
         $title = $args->get('title');
         $urlPrefix = $args->get('url_prefix');
         $entryLayoutId = $args->get('entry_layout_id');
+        $useCategories = $args->get('use_categories');
 
         $urlPrefix = new LocaleField($urlPrefix->unwrap());
 
-        $result = (new EntryType())->create($handle, $title, $urlPrefix, $entryLayoutId);
-
-        if (!$result->entry_layout_id) {
-            $result->entry_layout_id = "";
-        }
-
+        $result = (new EntryType())->create($handle, $title, $urlPrefix, $entryLayoutId, $useCategories);
         return $result->simplify();
     }
 

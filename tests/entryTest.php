@@ -30,7 +30,8 @@ test('Create an entry field', function () {
         'name' => 'Test',
         'label' => new LocaleField(['en' => 'Test', 'fr' => 'Test']),
         'type' => 'text',
-        'required' => true
+        'required' => true,
+        'searchable' => true
     ]));
     $model->create(new Collection([
         'key' => 'test_2',
@@ -42,7 +43,8 @@ test('Create an entry field', function () {
     ]));
 
     expect($entryField->key)->toBe('test')
-        ->and($entryField->_id)->not->toBeNull();
+        ->and($entryField->_id)->not->toBeNull()
+        ->and($entryField->searchable)->toBeTrue();
 });
 
 test('Fail to create an entry field', function () {
@@ -213,12 +215,14 @@ test('Update an entry type', function () {
                 'en' => 'test-pages',
                 'fr' => 'pages-de-test'
             ]),
-            'entry_layout_id' => $entryLayout->_id
+            'entry_layout_id' => $entryLayout->_id,
+            'use_categories' => true
         ]));
         expect($result)->toBe(true);
         $entryType = $model->getByHandle('test');
         expect($entryType->title)->toBe('Test Pages')
-            ->and($entryType->url_prefix->en)->toBe('test-pages');
+            ->and($entryType->url_prefix->en)->toBe('test-pages')
+            ->and($entryType->use_categories)->toBeTrue();
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }
@@ -239,7 +243,7 @@ test('Create an entry with an entry type', function () {
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('pages-de-test/test');
     } catch (Exception $exception) {
-//        \SailCMS\Debug::ray($exception);
+        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 })->group('entry');
@@ -355,7 +359,7 @@ test('Get homepage entry after update', function () {
 
 test('Find the entry by url', function () {
     $entry = Entry::findByURL('fr/', Sail::siteId(), false);
-    SailCMS\Debug::ray($entry);
+
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')
         ->and($entry->content->length)->toBe(2); // We have the entry published before the content has been added

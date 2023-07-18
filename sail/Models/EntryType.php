@@ -20,6 +20,7 @@ use SailCMS\Types\LocaleField;
  * @property string      $handle
  * @property LocaleField $url_prefix
  * @property ?string     $entry_layout_id
+ * @property bool        $use_categories
  *
  */
 class EntryType extends Model implements Validator
@@ -109,7 +110,8 @@ class EntryType extends Model implements Validator
             'title' => $this->title,
             'handle' => $this->handle,
             'url_prefix' => $this->url_prefix->castFrom(),
-            'entry_layout_id' => $this->entry_layout_id ?? ""
+            'entry_layout_id' => $this->entry_layout_id ?? "",
+            'use_categories' => $this->use_categories ?? false
         ];
     }
 
@@ -186,16 +188,17 @@ class EntryType extends Model implements Validator
         $defaultTitle = setting('entry.defaultType.title', self::DEFAULT_TITLE);
         $defaultUrlPrefix = new LocaleField($urlPrefixConfig);
         $defaultEntryLayoutId = setting('entry.defaultType.entryLayoutId', false);
+        $defaultUseCategories = setting('entry.defaultType.useCategories', false);
 
         $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
 
         if (!$entryType) {
-            $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
+            $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId, $defaultUseCategories);
         } else {
             if (!$avoidUpdate
                 && ($entryType->title !== $defaultTitle || $entryType->url_prefix->castFrom() !== $defaultUrlPrefix->castFrom() || $entryType->entry_layout_id !== $defaultEntryLayoutId)) {
                 // Update the settings because it changed.
-                $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId);
+                $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId, $defaultUseCategories);
 
                 if ($result) {
                     $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
@@ -338,21 +341,20 @@ class EntryType extends Model implements Validator
      * @param  string                $title
      * @param  LocaleField           $urlPrefix
      * @param  string|ObjectId|null  $entryLayoutId
-     * @param  bool                  $getObject
+     * @param  bool                  $useCategories
      * @return array|EntryType|string|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
-     *
      */
-    public function create(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
+    public function create(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $useCategories = false): array|EntryType|string|null
     {
         $this->hasPermissions();
 
         $this->checkHandle($handle);
 
-        return $this->createWithoutPermission($handle, $title, $urlPrefix, $entryLayoutId);
+        return $this->createWithoutPermission($handle, $title, $urlPrefix, $entryLayoutId, $useCategories);
     }
 
     /**
@@ -385,8 +387,9 @@ class EntryType extends Model implements Validator
         $title = $data->get('title');
         $urlPrefix = $data->get('url_prefix');
         $entryLayoutId = $data->get('entry_layout_id');
+        $useCategories = $data->get('use_categories');
 
-        return $this->updateWithoutPermission($entryType, $title, $urlPrefix, $entryLayoutId);
+        return $this->updateWithoutPermission($entryType, $title, $urlPrefix, $entryLayoutId, $useCategories);
     }
 
     /**
@@ -498,13 +501,13 @@ class EntryType extends Model implements Validator
      * @param  string                $title
      * @param  LocaleField           $urlPrefix
      * @param  string|ObjectId|null  $entryLayoutId
-     * @param  bool                  $getObject  throw new PermissionException('Permission Denied', 0403);
-     * @return array|EntryType|string|null
+     * @param  bool                  $useCategories  (default false)
+     * @return EntryType|null
      * @throws DatabaseException
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $getObject = true): array|EntryType|string|null
+    private function createWithoutPermission(string $handle, string $title, LocaleField $urlPrefix, string|ObjectId|null $entryLayoutId = null, bool $useCategories = false): EntryType|null
     {
         $collectionName = $this->getCollectionName($handle);
 
@@ -515,17 +518,14 @@ class EntryType extends Model implements Validator
                 'handle' => $handle,
                 'title' => $title,
                 'url_prefix' => $urlPrefix,
-                'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null
+                'entry_layout_id' => $entryLayoutId ? (string)$entryLayoutId : null,
+                'use_categories' => $useCategories
             ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
-        if ($getObject) {
-            return $this->findById($entryTypeId)->exec();
-        }
-
-        return $entryTypeId;
+        return $this->findById($entryTypeId)->exec();
     }
 
     /**
@@ -536,13 +536,15 @@ class EntryType extends Model implements Validator
      * @param  string|null       $title
      * @param  LocaleField|null  $urlPrefix
      * @param  string|bool|null  $entryLayoutId
+     * @param  bool|null         $useCategories
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
-    private function updateWithoutPermission(EntryType $entryType, ?string $title, ?LocaleField $urlPrefix, string|bool|null $entryLayoutId): bool
+    private function updateWithoutPermission(EntryType $entryType, ?string $title, ?LocaleField $urlPrefix, string|bool|null $entryLayoutId, bool|null $useCategories): bool
     {
         $update = [];
 
@@ -559,6 +561,9 @@ class EntryType extends Model implements Validator
             if ($entryLayoutId) {
                 $update['entry_layout_id'] = $entryLayoutId;
             }
+        }
+        if ($useCategories !== null) {
+            $update['use_categories'] = $useCategories;
         }
 
         if (count($update) > 0) {
