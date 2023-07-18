@@ -194,6 +194,13 @@ class EntryLayouts
         return (new EntryLayout())->deleteManyByIds($ids, $soft);
     }
 
+    public function restoreEntryLayouts(mixed $obj, Collection $args, Context $context): bool
+    {
+        $ids = $args->get('ids');
+
+        return (new EntryLayout())->restoreMany($ids);
+    }
+
     /**
      *
      * EntryLayout resolver

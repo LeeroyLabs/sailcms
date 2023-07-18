@@ -466,6 +466,7 @@ final class GraphQL
         self::addMutationResolver('updateEntryLayout', EntryLayouts::class, 'updateEntryLayout');
         self::addMutationResolver('deleteEntryLayout', EntryLayouts::class, 'deleteEntryLayout');
         self::addMutationResolver('deleteEntryLayouts', EntryLayouts::class, 'deleteEntryLayouts');
+        self::addMutationResolver('restoreEntryLayouts', EntryLayouts::class, 'restoreEntryLayouts');
         self::addResolver('EntryLayout', EntryLayouts::class, 'entryLayoutResolver');
 
         // Register
