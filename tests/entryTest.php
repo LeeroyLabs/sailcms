@@ -533,6 +533,24 @@ test('Fail to delete an entry layout because it is used', function () {
     }
 })->group('entry-layout');
 
+test('Fail to delete a batch of entry layouts because one is used', function () {
+    $model = new EntryLayout();
+    $entryLayout1 = $model->create('To delete 1', Collection::init());
+    $entryLayout2 = $model->create('To delete 2', Collection::init());
+    $cannotDeleteEntryLayout = $model->bySlug('layout-test');
+
+    try {
+        $result = $model->deleteManyByIds([
+            $entryLayout1->_id,
+            $entryLayout2->_id,
+            $cannotDeleteEntryLayout->_id
+        ]);
+        expect($result)->toBe(false);
+    } catch (Exception $exception) {
+        expect($exception->getMessage())->toBe(EntryLayout::SCHEMA_IS_USED);
+    }
+})->group('entry-layout');
+
 test('Delete an entry type', function () {
     $model = new EntryType();
     $entryType = $model->getByHandle('test');
@@ -589,6 +607,38 @@ test('Hard delete an entry layout', function () {
     try {
         $result = $model->delete($entryLayout->_id, false);
         expect($result)->toBe(true);
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+})->group('entry-layout');
+
+test('Soft delete a batch of entry layout', function () {
+    $model = new EntryLayout();
+    $toDelete1 = $model->bySlug('to-delete-1');
+    $toDelete2 = $model->bySlug('to-delete-2');
+
+    try {
+        $result = $model->deleteManyByIds(new Collection([
+            $toDelete1->_id,
+            $toDelete2->_id
+        ]));
+        expect($result)->toBeTrue();
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+})->group('entry-layout');
+
+test('Hard delete a batch of entry layout', function () {
+    $model = new EntryLayout();
+    $toDelete1 = $model->bySlug('to-delete-1');
+    $toDelete2 = $model->bySlug('to-delete-2');
+
+    try {
+        $result = $model->deleteManyByIds(new Collection([
+            $toDelete1->_id,
+            $toDelete2->_id
+        ]), false);
+        expect($result)->toBeTrue();
     } catch (Exception $exception) {
         expect(true)->toBe(false);
     }

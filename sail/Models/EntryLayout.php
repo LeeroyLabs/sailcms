@@ -38,8 +38,8 @@ class EntryLayout extends Model implements Castable
     ];
 
     /* Errors */
-    public const DATABASE_ERROR = '6001: Exception when %s an entry layout.';
-    public const SCHEMA_IS_USED = '6002: Cannot delete the schema because it is used by entry types.';
+    public const DATABASE_ERROR = '6001: Exception when %s entry layout.';
+    public const SCHEMA_IS_USED = '6002: Cannot delete the entry layout(s) because it is used by entry types.';
     public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
     public const SCHEMA_INVALID_TAB_VALUE = '6004: Invalid tab value on tab #%s of your schema, must be an instance of EntryLayoutTab.';
     public const SCHEMA_INVALID_TAB_FIELD_ID = '6005: Invalid field id on tab #%s of your schema.';
@@ -93,7 +93,6 @@ class EntryLayout extends Model implements Castable
         if ($entryLayoutId) {
             $filters['_id'] = ['$ne' => new ObjectId($entryLayoutId)];
         }
-
         $count = (new EntryLayout())->count($filters);
 
         if ($count > 0) {
@@ -326,7 +325,7 @@ class EntryLayout extends Model implements Castable
         $this->hasPermissions();
 
         // Check if there is and entry type is using the layout
-        if (self::hasEntryTypes($entryLayoutId)) {
+        if (self::hasEntryTypes([$entryLayoutId])) {
             throw new EntryException(self::SCHEMA_IS_USED);
         }
 
@@ -343,6 +342,37 @@ class EntryLayout extends Model implements Castable
         }
 
         return $result;
+    }
+
+    /**
+     *
+     * Delete many by ids in soft mode or not
+     *
+     * @param  array|Collection  $ids
+     * @param  bool              $soft
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function deleteManyByIds(array|Collection $ids, bool $soft = true): bool
+    {
+        $this->hasPermissions();
+
+        // Is one of them is used
+        if (self::hasEntryTypes($ids)) {
+            throw new EntryException(self::SCHEMA_IS_USED);
+        }
+
+        // All ids must be ObjectId
+        $ids = self::ensureObjectIds($ids, true);
+
+        if ($soft) {
+            return $this->softDeleteMany($ids);
+        }
+        return $this->hardDeleteMany($ids);
     }
 
     /**
@@ -375,14 +405,21 @@ class EntryLayout extends Model implements Castable
      *
      * Check if an entry layout have a related entry type
      *
-     * @param  string|ObjectId  $entryLayoutId
+     * @param  Collection|array  $entryLayoutIds
      * @return bool
-     *
      */
-    public static function hasEntryTypes(string|ObjectId $entryLayoutId): bool
+    public static function hasEntryTypes(Collection|array $entryLayoutIds): bool
     {
-        $entryTypeCount = (new EntryType())->count(['entry_layout_id' => (string)$entryLayoutId]);
+        if ($entryLayoutIds instanceof Collection) {
+            $entryLayoutIds = $entryLayoutIds->unwrap();
+        }
 
+        // All ids must be string
+        $entryLayoutIds = array_map(function ($value) {
+            return (string)$value;
+        }, $entryLayoutIds);
+
+        $entryTypeCount = (new EntryType())->count(['entry_layout_id' => ['$in' => $entryLayoutIds]]);
         return $entryTypeCount > 0;
     }
 
@@ -514,7 +551,7 @@ class EntryLayout extends Model implements Castable
                 'is_trashed' => false
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating an') . PHP_EOL . $exception->getMessage());
         }
 
         return $this->findById($entryLayoutId)->exec();
@@ -560,7 +597,7 @@ class EntryLayout extends Model implements Castable
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating an') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -591,7 +628,7 @@ class EntryLayout extends Model implements Castable
                 ]
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting an') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -611,9 +648,59 @@ class EntryLayout extends Model implements Castable
         try {
             $qtyDeleted = $this->deleteById((string)$entryLayoutId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting an') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
+    }
+
+    /**
+     *
+     * Soft delete many entry layouts by ids
+     *
+     * @param  array  $ids
+     * @return bool
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    private function softDeleteMany(array $ids): bool
+    {
+        $author = User::$currentUser ?? User::anonymousUser();
+        $now = time();
+
+        try {
+            $count = $this->updateMany(['_id' => ['$in' => $ids]], ['$set' => [
+                'authors.deleted_by' => $author->_id,
+                'dates.deleted' => $now,
+                'is_trashed' => true
+            ]]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting a batch of') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $count == count($ids);
+    }
+
+    /**
+     *
+     * Delete many entry fields by id
+     *
+     * @param  array  $ids
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    private function hardDeleteMany(array $ids): bool
+    {
+        $ids = $this->ensureObjectIds($ids, true);
+
+        try {
+            $count = $this->deleteMany(['_id' => ['$in' => $ids]]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting a batch of') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $count === count($ids);
     }
 }

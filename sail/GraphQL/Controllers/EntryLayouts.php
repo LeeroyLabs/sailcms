@@ -174,6 +174,28 @@ class EntryLayouts
 
     /**
      *
+     * Delete an entry layout
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function deleteEntryLayouts(mixed $obj, Collection $args, Context $context): bool
+    {
+        $ids = $args->get('ids');
+        $soft = $args->get('soft', true);
+
+        return (new EntryLayout())->deleteManyByIds($ids, $soft);
+    }
+
+    /**
+     *
      * EntryLayout resolver
      *
      * @param  mixed        $obj

@@ -151,7 +151,7 @@ test('Create field and layout', function () {
 
         $entryLayoutResponse = $this->client->run('
             mutation {
-                createEntryLayout(title: "GraphQL Test", schema: {label: "First tab", fields: ["' . $entryFieldResponse->data->createEntryField->_id . '"]}) {
+                createEntryLayout(title: "GraphQL Test", schema: {label: "First tab", fields: ["' . $entryFieldResponse->data->createEntryField->_id . '"]}, slug: "graphql-test") {
                     _id
                     slug
                 }
@@ -348,6 +348,44 @@ test('Get a entry', function () {
         }
     ', [], $_ENV['test-token']);
         expect($entryResponse->data->entries->list[0])->not()->toBeNull();
+    }
+})->group('graphql');
+
+test('Create and soft/hard delete entry layouts', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryLayoutIds = "";
+        $titleAndSlugs = ['to-delete-1', 'to-delete-2'];
+        foreach ($titleAndSlugs as $i => $titleAndSlug) {
+            $entryLayoutResponse = $this->client->run('
+                mutation {
+                    createEntryLayout(title: "' . $titleAndSlug . '", schema: [], slug: "' . $titleAndSlug . '") {
+                        _id
+                        slug
+                    }
+                }
+            ', [], $_ENV['test-token']);
+            $entryLayoutIds .= '"' . (string)$entryLayoutResponse->data->createEntryLayout->_id . '"';
+
+            if ($i < count($titleAndSlugs) - 1) {
+                $entryLayoutIds .= ', ';
+            }
+        }
+
+        $entryLayoutSoftDelete = $this->client->run('
+            mutation {
+                deleteEntryLayouts(ids: [' . $entryLayoutIds . '])
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutSoftDelete->status)->toBe('ok');
+
+        $entryLayoutHardDelete = $this->client->run('
+            mutation {
+                deleteEntryLayouts(ids: [' . $entryLayoutIds . '], soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutHardDelete->status)->toBe('ok');
     }
 })->group('graphql');
 
