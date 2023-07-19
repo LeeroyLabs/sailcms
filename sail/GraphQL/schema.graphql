@@ -625,7 +625,7 @@ type Category {
     slug: String!
     order: Int!
     parent_id: String!
-    children: [Category!]!
+    children: [Json!]!
 }
 
 type NavigationItem {
