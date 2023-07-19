@@ -521,7 +521,7 @@ class Entry extends Model implements Validator, Castable
      * @param  int     $limit
      * @param  string  $sort
      * @param  int     $direction
-     * @param  bool    $ignoreTrash
+     * @param  bool    $onlyTrash
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -529,16 +529,24 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $ignoreTrash = true): Listing
+    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $onlyTrash = false, string $locale = null): Listing
     {
         $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
         $offset = $page * $limit - $limit;
 
-        // Ignore trash entries
         $filters = [];
-        if ($ignoreTrash) {
+
+        // Ignore trash entries
+        if ($onlyTrash) {
+            $filters['trashed'] = true;
+        } else {
             $filters['trashed'] = ['$in' => [false, null]];
+        }
+
+        // Specify locale
+        if ($locale) {
+            $filters['locale'] = $locale;
         }
 
         // Option for pagination

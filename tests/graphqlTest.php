@@ -379,6 +379,14 @@ test('Create and soft/hard delete entry layouts', function () {
 
         expect($entryLayoutSoftDelete->status)->toBe('ok');
 
+        $entryLayoutRestore = $this->client->run('
+            mutation {
+                restoreEntryLayouts(ids: [' . $entryLayoutIds . '])
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutRestore->status)->toBe('ok');
+
         $entryLayoutHardDelete = $this->client->run('
             mutation {
                 deleteEntryLayouts(ids: [' . $entryLayoutIds . '], soft: false)

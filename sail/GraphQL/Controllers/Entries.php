@@ -76,10 +76,11 @@ class Entries
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
         $search = $args->get('search', '');
-        $ignoreTrash = $args->get('ignore_trash', true);
+        $onlyTrash = $args->get('only_trash', false);
+        $locale = $args->get('locale');
 
         // Get the result!
-        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $ignoreTrash); // By entry type instead
+        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $onlyTrash, $locale); // By entry type instead
 
         // Get homepage to set is_homepage on each entry
         $currentSiteHomepages = Entry::getHomepage(Sail::siteId());

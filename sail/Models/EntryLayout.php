@@ -377,6 +377,37 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
+     * Restore soft deleted entry layouts by ids
+     *
+     * @param  array|Collection  $ids
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function restoreMany(array|Collection $ids): bool
+    {
+        $this->hasPermissions();
+
+        $ids = self::ensureObjectIds($ids, true);
+
+        try {
+            $count = $this->updateMany(['_id' => ['$in' => $ids]], ['$set' => [
+                'authors.deleted_by' => '',
+                'dates.deleted' => 0,
+                'is_trashed' => false
+            ]]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating an') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $count === count($ids);
+    }
+
+    /**
+     *
      * Validate the schema before save
      *
      * @param  Collection  $schema

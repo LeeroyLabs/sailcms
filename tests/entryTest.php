@@ -628,6 +628,22 @@ test('Soft delete a batch of entry layout', function () {
     }
 })->group('entry-layout');
 
+test('Restore a batch of entry layout', function () {
+    $model = new EntryLayout();
+    $toDelete1 = $model->bySlug('to-delete-1');
+    $toDelete2 = $model->bySlug('to-delete-2');
+
+    try {
+        $result = $model->restoreMany(new Collection([
+            $toDelete1->_id,
+            $toDelete2->_id
+        ]));
+        expect($result)->toBeTrue();
+    } catch (Exception $exception) {
+        expect(true)->toBe(false);
+    }
+})->group('entry-layout');
+
 test('Hard delete a batch of entry layout', function () {
     $model = new EntryLayout();
     $toDelete1 = $model->bySlug('to-delete-1');
