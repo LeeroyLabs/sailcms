@@ -82,6 +82,25 @@ class Category extends Model
 
     /**
      *
+     * Get many categories with a given ids list
+     *
+     * @param  array  $ids
+     * @return ?array
+     * @throws DatabaseException
+     *
+     */
+    public static function getByIds(array $ids): ?array
+    {
+        $modelInstance = new static();
+        foreach ($ids as &$id) {
+            $id = $modelInstance->ensureObjectId($id);
+        }
+
+        return self::query()->find(['_id' => ['$in' => $ids]])->exec();
+    }
+
+    /**
+     *
      * Get all entries that are in the given category id
      *
      * @param  ObjectId|string  $id
@@ -144,7 +163,7 @@ class Category extends Model
 
         // Count the total categories based on parent_id being present or not
         $count = $this->count(['site_id' => $siteId, 'parent_id' => $parentId]);
-        $slug = Text::slugify($name->get('en'));
+        $slug = Text::from($name->get('en'))->slug()->value();
 
         // Check that it does not exist for the site already
         $exists = $this->count(['slug' => $slug, 'site_id' => $siteId]);
@@ -231,7 +250,6 @@ class Category extends Model
         if ($record) {
             $this->deleteById($id);
             $this->updateMany(['parent_id' => (string)$id], ['$set' => ['parent_id' => '']]);
-            $this->updateOrder('');
             return true;
         }
 
@@ -259,7 +277,6 @@ class Category extends Model
         if ($record) {
             $instance->deleteById($record->_id);
             $instance->updateMany(['parent_id' => (string)$record->_id], ['$set' => ['parent_id' => '']]);
-            $instance->updateOrder('');
             return true;
         }
 
@@ -270,26 +287,29 @@ class Category extends Model
      *
      * Update order for all sub categories
      *
-     * @param  string  $parent
-     * @param  string  $siteId
+     * @param  array|Collection  $tree
+     * @param  string            $siteId
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      *
      */
-    public function updateOrder(string $parent = '', string $siteId = 'main'): bool
+    public function updateOrder(array|Collection $tree = [], string $siteId = 'default'): bool
     {
         $this->hasPermissions();
-
-        $docs = $this->find(['parent_id' => $parent, 'site_id' => $siteId], QueryOptions::initWithSort(['order' => 1]))->exec();
         $writes = [];
 
-        foreach ($docs as $num => $doc) {
+        foreach ($tree as $element) {
             $writes[] = [
                 'updateOne' => [
-                    ['_id' => $doc->_id],
-                    ['$set' => ['order' => ($num + 1)]]
+                    ['_id' => $this->ensureObjectId($element->id), 'site_id' => $siteId],
+                    [
+                        '$set' => [
+                            'order' => $element->order,
+                            'parent_id' => $element->parent ?? ''
+                        ]
+                    ]
                 ]
             ];
         }
@@ -346,8 +366,7 @@ class Category extends Model
         foreach ($basicTree as $id => $children) {
             $childrenList = $this->parseChildrenList($listCollection, $basicTree, $id);
 
-            $item = $listCollection->find(function ($key, $cat) use ($id)
-            {
+            $item = $listCollection->find(function ($key, $cat) use ($id) {
                 return ((string)$cat->_id === $id);
             });
 
@@ -359,8 +378,7 @@ class Category extends Model
         $final = [];
 
         foreach ($structured as $num => $tree) {
-            $item = $listCollection->find(function ($key, $cat) use ($tree)
-            {
+            $item = $listCollection->find(function ($key, $cat) use ($tree) {
                 return ((string)$cat->_id === (string)$tree->_id);
             });
 
@@ -387,8 +405,7 @@ class Category extends Model
         $children = [];
 
         foreach ($tree[$id] as $_id) {
-            $item = $categories->find(function ($key, $cat) use ($_id)
-            {
+            $item = $categories->find(function ($key, $cat) use ($_id) {
                 return ((string)$cat->_id === $_id);
             });
 

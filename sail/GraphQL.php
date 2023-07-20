@@ -26,7 +26,13 @@ use SailCMS\GraphQL\Controllers\Basics;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
+use SailCMS\GraphQL\Controllers\EntryFields;
+use SailCMS\GraphQL\Controllers\EntryLayouts;
+use SailCMS\GraphQL\Controllers\EntryTypes;
+use SailCMS\GraphQL\Controllers\Groups;
+use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
+use SailCMS\GraphQL\Controllers\Queue;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -50,9 +56,9 @@ final class GraphQL
      *
      * Add a Query Resolver
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -75,9 +81,9 @@ final class GraphQL
      *
      * Add a Mutation Resolver to the Schema
      *
-     * @param string $operationName
-     * @param string $className
-     * @param string $method
+     * @param  string  $operationName
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -100,9 +106,9 @@ final class GraphQL
      *
      * Add a Resolver to the Schema
      *
-     * @param string $type
-     * @param string $className
-     * @param string $method
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
      * @return void
      * @throws GraphqlException
      *
@@ -139,7 +145,7 @@ final class GraphQL
      *
      * Add parts of the schema for queries
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -152,7 +158,7 @@ final class GraphQL
      *
      * Add parts of the schema for mutation
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -165,7 +171,7 @@ final class GraphQL
      *
      * Add parts of the schema for custom types
      *
-     * @param string $content
+     * @param  string  $content
      * @return void
      *
      */
@@ -319,11 +325,11 @@ final class GraphQL
                     $mresult->data->errors = [
                         [
                             'message' => $error['debugMessage'] ?? $error['message'],
-                            'extensions' => ['category' => 'internal'],
+                            'extensions' => $error['extensions'] ?? ['category' => 'internal'],
                             'locations' => (isset($error['trace'])) ? [['line' => $error['trace'][0]['line'], 'column' => 1]] : $locations,
                             'file' => $error['trace'][0]['file'] ?? 'unknown file',
                             'stack' => $error['trace'] ?? [],
-                            'path' => ['']
+                            'path' => $error['path'] ?? ['']
                         ]
                     ];
                 }
@@ -357,7 +363,9 @@ final class GraphQL
         self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
         self::addMutationResolver('updateUser', Users::class, 'updateUser');
         self::addMutationResolver('deleteUser', Users::class, 'deleteUser');
+        self::addMutationResolver('deleteUsers', Users::class, 'deleteUsers');
         self::addMutationResolver('validateAccount', Users::class, 'validateAccount');
+        self::addMutationResolver('changeUserStatus', Users::class, 'changeUserStatus');
 
         // Authentication
         self::addQueryResolver('authenticate', Users::class, 'authenticate');
@@ -370,34 +378,57 @@ final class GraphQL
         // Roles & ACL
         self::addQueryResolver('role', Roles::class, 'role');
         self::addQueryResolver('roles', Roles::class, 'roles');
-        self::addQueryResolver('acls', Roles::class, 'acls');
+        self::addQueryResolver('permissions', Roles::class, 'permissions');
+        self::addMutationResolver('createRole', Roles::class, 'createRole');
+        self::addMutationResolver('updateRole', Roles::class, 'updateRole');
         self::addMutationResolver('deleteRole', Roles::class, 'delete');
+        self::addResolver('Role', Roles::class, 'resolver');
+        self::addResolver('Permission', Roles::class, 'permissionResolver');
 
         // Assets
         self::addQueryResolver('asset', Assets::class, 'asset');
         self::addQueryResolver('assets', Assets::class, 'assets');
+        self::addQueryResolver('assetFolders', Assets::class, 'assetFolders');
+        self::addQueryResolver('assetConfig', Assets::class, 'assetConfig');
+        self::addQueryResolver('assetTransformForId', Assets::class, 'assetTransformForId');
         self::addMutationResolver('uploadAsset', Assets::class, 'createAsset');
         self::addMutationResolver('updateAssetTitle', Assets::class, 'updateAssetTitle');
-        self::addMutationResolver('deleteAsset', Assets::class, 'deleteAsset');
+        self::addMutationResolver('removeAssets', Assets::class, 'removeAssets');
         self::addMutationResolver('transformAsset', Assets::class, 'transformAsset');
+        self::addMutationResolver('customTransformAsset', Assets::class, 'customTransformAsset');
+        self::addMutationResolver('moveFiles', Assets::class, 'moveFiles');
+        self::addMutationResolver('addFolder', Assets::class, 'addFolder');
+        self::addMutationResolver('removeFolder', Assets::class, 'removeFolder');
         self::addResolver('Asset', Assets::class, 'assetResolver');
 
-        // Emails
+        // Emails 1
+        self::addQueryResolver('emailV1', Emails::class, 'emailV1');
+        self::addQueryResolver('emailsV1', Emails::class, 'emailsV1');
+        self::addMutationResolver('createEmailV1', Emails::class, 'createEmailV1');
+        self::addMutationResolver('updateEmailV1', Emails::class, 'updateEmailV1');
+        self::addMutationResolver('deleteEmailV1', Emails::class, 'deleteEmailV1');
+        self::addMutationResolver('deleteEmailBySlugV1', Emails::class, 'deleteEmailBySlugV1');
+
+        // Emails 2
         self::addQueryResolver('email', Emails::class, 'email');
         self::addQueryResolver('emails', Emails::class, 'emails');
+        self::addQueryResolver('emailTemplates', Emails::class, 'emailTemplates');
         self::addMutationResolver('createEmail', Emails::class, 'createEmail');
         self::addMutationResolver('updateEmail', Emails::class, 'updateEmail');
         self::addMutationResolver('deleteEmail', Emails::class, 'deleteEmail');
         self::addMutationResolver('deleteEmailBySlug', Emails::class, 'deleteEmailBySlug');
+        self::addMutationResolver('testEmail', Emails::class, 'testEmail');
+        self::addMutationResolver('createPreviewEmail', Emails::class, 'createPreviewEmail');
+
+        // Entry types
+        self::addQueryResolver('entryTypes', EntryTypes::class, 'entryTypes');
+        self::addQueryResolver('entryType', EntryTypes::class, 'entryType');
+        self::addMutationResolver('createEntryType', EntryTypes::class, 'createEntryType');
+        self::addMutationResolver('updateEntryType', EntryTypes::class, 'updateEntryType');
+        self::addMutationResolver('deleteEntryType', EntryTypes::class, 'deleteEntryType');
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
-
-        self::addQueryResolver('entryTypes', Entries::class, 'entryTypes');
-        self::addQueryResolver('entryType', Entries::class, 'entryType');
-        self::addMutationResolver('createEntryType', Entries::class, 'createEntryType');
-        self::addMutationResolver('updateEntryType', Entries::class, 'updateEntryType');
-        self::addMutationResolver('deleteEntryType', Entries::class, 'deleteEntryType');
 
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
@@ -413,18 +444,31 @@ final class GraphQL
         self::addQueryResolver('entryVersions', Entries::class, 'entryVersions');
         self::addMutationResolver('applyVersion', Entries::class, 'applyVersion');
 
-        self::addQueryResolver('entryLayout', Entries::class, 'entryLayout');
-        self::addQueryResolver('entryLayouts', Entries::class, 'entryLayouts');
-        self::addMutationResolver('createEntryLayout', Entries::class, 'createEntryLayout');
-        self::addMutationResolver('updateEntryLayoutSchema', Entries::class, 'updateEntryLayoutSchema');
-        self::addMutationResolver('updateEntryLayoutSchemaKey', Entries::class, 'updateEntryLayoutSchemaKey');
-        self::addMutationResolver('deleteEntryLayout', Entries::class, 'deleteEntryLayout');
-
-        self::addQueryResolver('fields', Entries::class, 'fields');
-
-        // Types and Resolvers
         self::addResolver('Entry', Entries::class, 'entryResolver');
+        self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
+        self::addResolver('Authors', Entries::class, 'authorsResolver');
         self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
+
+        // Entry fields
+        self::addQueryResolver('entryField', EntryFields::class, 'entryField');
+        self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
+        self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
+        self::addQueryResolver('entryFieldValidateKey', EntryFields::class, 'entryFieldValidateKey');
+        self::addMutationResolver('createEntryField', EntryFields::class, 'createEntryField');
+        self::addMutationResolver('updateEntryField', EntryFields::class, 'updateEntryField');
+        self::addMutationResolver('deleteEntryField', EntryFields::class, 'deleteEntryField');
+        self::addMutationResolver('deleteEntryFields', EntryFields::class, 'deleteEntryFields');
+
+        // Entry layouts
+        self::addQueryResolver('entryLayout', EntryLayouts::class, 'entryLayout');
+        self::addQueryResolver('entryLayoutById', EntryLayouts::class, 'entryLayoutById');
+        self::addQueryResolver('entryLayouts', EntryLayouts::class, 'entryLayouts');
+        self::addMutationResolver('createEntryLayout', EntryLayouts::class, 'createEntryLayout');
+        self::addMutationResolver('updateEntryLayout', EntryLayouts::class, 'updateEntryLayout');
+        self::addMutationResolver('deleteEntryLayout', EntryLayouts::class, 'deleteEntryLayout');
+        self::addMutationResolver('deleteEntryLayouts', EntryLayouts::class, 'deleteEntryLayouts');
+        self::addMutationResolver('restoreEntryLayouts', EntryLayouts::class, 'restoreEntryLayouts');
+        self::addResolver('EntryLayout', EntryLayouts::class, 'entryLayoutResolver');
 
         // Register
         self::addQueryResolver('registeredExtensions', Registers::class, 'registeredExtensions');
@@ -447,6 +491,32 @@ final class GraphQL
         self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
         self::addMutationResolver('deleteNavigation', Navigation::class, 'deleteNavigation');
 
+        // Groups
+        self::addQueryResolver('group', Groups::class, 'group');
+        self::addQueryResolver('groups', Groups::class, 'groups');
+        self::addMutationResolver('createGroup', Groups::class, 'createGroup');
+        self::addMutationResolver('updateGroup', Groups::class, 'updateGroup');
+        self::addMutationResolver('deleteGroup', Groups::class, 'deleteGroup');
+        self::addResolver('Group', Groups::class, 'groupResolver');
+
+        # UI Related
+        self::addQueryResolver('navigationElements', Misc::class, 'navigationElements');
+        self::addQueryResolver('settingsElements', Misc::class, 'settingsElements');
+        self::addQueryResolver('handshakeKey', Misc::class, 'handshakeKey');
+
+        // Queue
+        self::addQueryResolver('task', Queue::class, 'getTask');
+        self::addQueryResolver('taskList', Queue::class, 'getList');
+        self::addQueryResolver('taskSearch', Queue::class, 'searchTasks');
+        self::addQueryResolver('taskRunningTime', Queue::class, 'getTaskRunningTime');
+        self::addMutationResolver('createTask', Queue::class, 'createTask');
+        self::addMutationResolver('stopTask', Queue::class, 'stopTask');
+        self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
+        self::addMutationResolver('changeTaskSchedule', Queue::class, 'changeTaskSchedule');
+        self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
+        self::addMutationResolver('retryTask', Queue::class, 'retryTask');
+        self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
+
         // Misc calls
         // TODO: GET LOGS (from file or db)
 
@@ -459,9 +529,9 @@ final class GraphQL
      * Resolve everything
      *
      * @param               $objectValue
-     * @param array $args
+     * @param  array        $args
      * @param               $contextValue
-     * @param ResolveInfo $info
+     * @param  ResolveInfo  $info
      * @return ArrayAccess|mixed
      *
      */
@@ -541,8 +611,8 @@ final class GraphQL
      *
      * Run custom types on possible resolver for them
      *
-     * @param array $typeConfig
-     * @param TypeDefinitionNode $typeDefinitionNode
+     * @param  array               $typeConfig
+     * @param  TypeDefinitionNode  $typeDefinitionNode
      * @return array
      *
      */

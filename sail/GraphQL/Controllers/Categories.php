@@ -10,15 +10,16 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Category;
+use SailCMS\Types\LocaleField;
 
 class Categories
 {
     /**
      * Get a single category by id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Category|null
      * @throws DatabaseException
      *
@@ -32,9 +33,9 @@ class Categories
      *
      * Get a category by slug
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array|null
      * @throws DatabaseException
      *
@@ -48,9 +49,9 @@ class Categories
      *
      * Get a full tree of categories
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Collection
      * @throws DatabaseException
      *
@@ -64,9 +65,9 @@ class Categories
      *
      * Get entries from a category slug or id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -100,9 +101,9 @@ class Categories
      *
      * Create a category
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws DatabaseException
      * @throws ACLException
@@ -111,16 +112,17 @@ class Categories
      */
     public function createCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->create($args->get('name'), $args->get('parent_id'), $args->get('site_id'));
+        $name = new LocaleField($args->get('name')->unwrap());
+        return (new Category())->create($name, $args->get('parent_id'), $args->get('site_id'));
     }
 
     /**
      *
      * Update a category
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -129,16 +131,17 @@ class Categories
      */
     public function updateCategory(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->update($args->get('id'), $args->get('name'), $args->get('parent_id'));
+        $name = new LocaleField($args->get('name')->unwrap());
+        return (new Category())->update($args->get('id'), $name, $args->get('parent_id'));
     }
 
     /**
      *
      * Update category orders for given root parent
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -147,16 +150,16 @@ class Categories
      */
     public function updateCategoryOrders(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new Category())->updateOrder($args->get('parent_id'), $args->get('site_id'));
+        return (new Category())->updateOrder($args->get('tree'), $args->get('site_id'));
     }
 
     /**
      *
      * Delete a category by id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -172,9 +175,9 @@ class Categories
      *
      * Delete a category by slug
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws ACLException
      * @throws DatabaseException

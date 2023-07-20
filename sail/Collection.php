@@ -8,7 +8,12 @@ use SailCMS\Errors\CollectionException;
 use SailCMS\Types\Sorting;
 
 /**
+ *
  * @property mixed $length
+ * @property mixed $first
+ * @property mixed $last
+ * @property bool  $empty
+ *
  */
 class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 {
@@ -126,6 +131,53 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         }
 
         return new self($value);
+    }
+
+    /**
+     *
+     * Create a collection from a json string
+     *
+     * @param  string  $json
+     * @return Collection
+     * @throws CollectionException
+     * @throws JsonException
+     *
+     */
+    public static function fromJSON(string $json): Collection
+    {
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        if (!is_array($data)) {
+            throw new CollectionException('Cannot creation Collection from json object', 0500);
+        }
+
+        return new self($data);
+    }
+
+    /**
+     *
+     * Create a collection from a json file
+     *
+     * @param  string  $file
+     * @return Collection
+     * @throws CollectionException
+     * @throws JsonException
+     *
+     */
+    public static function fromJSONFile(string $file): Collection
+    {
+        if (file_exists($file)) {
+            $json = file_get_contents($file);
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+            if (!is_array($data)) {
+                throw new CollectionException('Cannot creation Collection from json object file', 0500);
+            }
+
+            return new self($data);
+        }
+
+        throw new CollectionException('JSON file does not exist', 0404);
     }
 
     /**
@@ -482,7 +534,8 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
     public function contains(mixed $value): bool
     {
         $index = array_search($value, $this->_internal, true);
-        return $index !== '';
+        // Add $index !== false, because array_search return false when not found.
+        return $index !== "" && $index !== false;
     }
 
     /**
@@ -613,7 +666,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         usort($this->_internal, static function ($a, $b) use ($key)
         {
             if (is_string($a->{$key})) {
-                return strcasecmp(Text::deburr($a->{$key}), Text::deburr($b->{$key}));
+                return strcasecmp(Text::from($a->{$key})->deburr()->value(), Text::from($b->{$key})->deburr()->value());
             }
 
             if (is_numeric($a->{$key})) {

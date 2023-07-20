@@ -3,7 +3,7 @@ type Query {
 
     # Users
     user(id: ID!): User
-    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean): UserListing
+    users(page: Int!, limit: Int!, search: String, sorting: UserSort, type: UserType, meta: MetaSearch, status: Boolean, validated: Boolean, group_id: String): UserListing
 
     # Authentication
     resendValidationEmail(email: String!): Boolean!
@@ -16,27 +16,42 @@ type Query {
     # Roles & ACL
     roles: [Role!]!
     role(id: ID!): RoleConfig
+    permissions: [Permission!]!
 
     # Assets
     asset(id: ID!): Asset
-    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder): AssetListing
+    assets(page: Int!, limit: Int!, folder: String, search: String, sort: String, direction: SortingOrder, site_id: String!): AssetListing
+    assetFolders(site_id: String!): [Folder!]!
+    assetConfig: AssetConfig!
+    assetTransformForId(id: ID!, transform_name: String!): String!
+
+    # Emails v1
+    emailV1(id: ID!): Email
+    emailsV1: [Email!]!
 
     # Emails
     email(id: ID!): Email
-    emails: [Email!]!
+    emails(site_id: String!): [Email!]!
+    emailTemplates(site_id: String!): [EmailTemplate!]!
 
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
-    entryTypes: [EntryType!]
+    entryTypes: [EntryType!]!
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, only_trash: Boolean, locale: String): EntryListing
     entryByUrl(url: String!, site_id: String): Entry
     entry(id: ID!, entry_type_handle: String): Entry
-    entryLayout(id: ID!): EntryLayout
-    entryLayouts: [EntryLayout!]
     entryVersion(id: ID!): EntryVersion
-    entryVersions(entry_id: ID!): [EntryVersion!]
-    fields: [FieldInfo]
+    entryVersions(entry_id: ID!): [EntryVersion!]!
+
+    entryField(key: String!): EntryField
+    entryFieldById(id: ID!): EntryField
+    entryFields: [EntryField!]!
+    entryFieldValidateKey(key: String!): Boolean!
+
+    entryLayout(slug: String!): EntryLayout
+    entryLayoutById(id: ID!): EntryLayout
+    entryLayouts(ignoreTrashed: Boolean): [EntryLayout!]!
 
     # Registers
     registeredExtensions: RegisteredExtensions!
@@ -51,17 +66,34 @@ type Query {
     navigation(name: String!): [NavigationItem!]!
     navigationDetails(name: String!): Navigation
 
+    # UI Related
+    navigationElements: NavigationElements!
+    settingsElements: SettingsElements!
+    handshakeKey: String!
+
+    # Groups
+    group(id: ID!): Group
+    groups: [Group!]!
+
+    # Queue
+    task(id: ID!): Task!
+    taskList(limit: Int): [Task!]!
+    taskSearch(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): TasksListing!
+    taskRunningTime(pid: ID!): Int!
+
     #{CUSTOM_QUERIES}#
 }
 
 type Mutation {
     # Users
-    createUser(name: UserNameInput!, email: String!, password: String!, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], createWithSetPassword: Boolean, useEmailTemplate: String): ID!
-    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, avatar: String, meta: UserMetaInput!, locale: String): ID!
+    createUser(name: UserNameInput!, email: String!, password: String!, group: String, avatar: String, meta: UserMetaInput!, locale: String, roles: [String!], create_qith_aet_password: Boolean, use_email_template: String): ID!
+    createAdminUser(name: UserNameInput!, email: String!, roles: [String!]!, group: String, avatar: String, meta: UserMetaInput!, locale: String, pre_activated: Boolean): ID!
     updateUser(id: ID!, name: UserNameInput! email: String, password: String, roles: [String!], avatar: String, meta: UserMetaInput, locale: String): Boolean!
     deleteUser(id: ID!): Boolean!
+    deleteUsers(ids: [ID!]!): Boolean!
     validateAccount(code: String!): Boolean!
     changePassword(code: String!, password: String!): PasswordChangeResult!
+    changeUserStatus(ids: [ID!]!, status: Boolean!): Boolean!
 
     # Roles
     createRole(name: String!, description: String!, level: Int!, permissions: [String!]!): Boolean!
@@ -69,44 +101,79 @@ type Mutation {
     deleteRole(id: ID!): Boolean!
 
     # Assets
-    uploadAsset(src: String!, filename: String!, folder: String): String!
+    uploadAsset(src: String!, filename: String!, folder: String, site_id: String!): Asset
     updateAssetTitle(id: ID!, locale: String!, title: String!): Boolean!
-    deleteAsset(id: ID!): Boolean!
+    removeAssets(assets: [ID!]!): Boolean!
     transformAsset(id: ID!, name: String!, size: SizeInput!): String!
+    customTransformAsset(id: ID!, name: String!, src: String!): String!
+    moveFiles(ids: [ID!]!, folder: String!): Boolean!
+    addFolder(folder: String!, site_id: String!): Int!
+    removeFolder(folder: String, move_to: String!, site_id: String!): Boolean!
+
+    # Emails V1
+    createEmailV1(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
+    updateEmailV1(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    deleteEmailV1(id: ID!): Boolean!
+    deleteEmailBySlugV1(slug: String!): Boolean!
 
     # Emails
-    createEmail(name: String!, subject: LocaleFieldInput!, title: LocaleFieldInput!, content: LocaleFieldInput!, cta: LocaleFieldInput!, cta_title: LocaleFieldInput!, template: String!): Boolean!
-    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, title: LocaleFieldInput, content: LocaleFieldInput, cta: LocaleFieldInput, cta_title: LocaleFieldInput, template: String): Boolean!
+    createEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!, preview: Boolean): Boolean!
+    updateEmail(id: ID!, name: String, subject: LocaleFieldInput, fields: [EmailFieldInput!]!, template: String): Boolean!
     deleteEmail(id: ID!): Boolean!
-    deleteEmailBySlug(slug: String!): Boolean!
+    deleteEmails(ids: [ID!]!): Boolean!
+    deleteEmailBySlug(slug: String!, site_id: String!): Boolean!
+    testEmail(email: String!): Boolean!
+    createPreviewEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!): String!
 
     # Entries
-    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
-    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
+    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID, use_categories: Boolean): EntryType
+    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID, use_categories: Boolean): Boolean
     deleteEntryType(id: ID!): Boolean
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [String], bypass_validation: Boolean): [EntryErrors]
+
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
     unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
-    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!): EntryLayout
-    updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
-    updateEntryLayoutSchemaKey(id: ID!, key: String!, newKey: String!): Boolean
-    deleteEntryLayout(id: ID!, soft: Boolean): Boolean
+
+    createEntryField(key: String!, name: String!, label: LocaleFieldInput!, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String!, validation: String, repeatable: Boolean, searchable: Boolean, required: Boolean!,  config: Json): EntryField
+    updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, searchable: Boolean, required: Boolean, config: Json): Boolean!
+    deleteEntryField(id: ID, key: String): Boolean!
+    deleteEntryFields(ids: [ID!]!): Int!
+
+    createEntryLayout(title: String!, schema: [EntryLayoutTabInput!]!, slug: String!): EntryLayout
+    updateEntryLayout(id: ID!, title: String!, schema: [EntryLayoutTabInput!]!, slug: String!): Boolean!
+    deleteEntryLayout(id: ID!, soft: Boolean): Boolean!
+    deleteEntryLayouts(ids: [ID!]!, soft: Boolean): Boolean!
+    restoreEntryLayouts(ids: [ID!]!): Boolean!
 
     # Categories
-    createCategory(name: LocaleFieldInput!, parent_id: String!, site_id: String!): Boolean!
-    updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: String!): Boolean!
-    updateCategoryOrders(parent_id: ID!, order: [String!]!, site_id: String!): Boolean!
+    createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
+    updateCategory(id: ID!, name: LocaleFieldInput!, parent_id: ID!): Boolean!
+    updateCategoryOrders(tree: [CategorySortItem!]!, site_id: String!): Boolean!
     deleteCategory(id: ID!): Boolean!
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
     # Navigation
-    createNavigation(name: String!, structure: NavigationItemInput!, locale: String!): String!
-    updateNavigation(name: String!, structure: NavigationItemInput!, locale: String!): Boolean!
-    deleteNavigation(name: String!): Boolean!
+    createNavigation(name: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
+    updateNavigation(id: ID!, name: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
+    deleteNavigation(id: ID!): Boolean!
+
+    # Groups
+    createGroup(name: String!): String!
+    updateGroup(id: ID!, name: String!): Boolean!
+    deleteGroup(id: ID!): Boolean!
+
+    # Queue
+    createTask(name: String!, handler: String!, action: String!, settings: Json!, priority: Int!, retriable: Boolean!): Boolean!
+    retryTask(id: ID!): Boolean!
+    changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
+    startAllTasks: Boolean!
+    stopTask(pid: Int!): Boolean!
+    stopAllTasks: Boolean!
+    cancelTask(id: ID!): Boolean!
 
     # Forms
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
@@ -125,6 +192,17 @@ type FormProcessingResult {
 }
 
 scalar Json
+
+type TasksListing {
+    pagination: Pagination!
+    list: [Task!]!
+}
+
+input CategorySortItem {
+    id: String!
+    parent: String
+    order: Int!
+}
 
 input UserSort {
     sort: String!
@@ -164,6 +242,8 @@ type User {
     created_at: Int!
     validated: Boolean!
     locale: String!
+    group: String
+    highest_level: Int!
 }
 
 type UserListing {
@@ -211,6 +291,7 @@ type Role {
     slug: String!
     level: Int!
     permissions: [String!]!
+    member_count: Int!
 }
 
 type RoleConfig {
@@ -226,6 +307,7 @@ type ACL {
 }
 
 type Asset {
+    _id: ID!
     filename: String!
     site_id: String!
     name: String!
@@ -240,15 +322,26 @@ type Asset {
     transforms: [Transform!]!
 }
 
+type Folder {
+    slug: String!
+    name: String!
+    deletable: Boolean!
+}
+
 type AssetListing {
     pagination: Pagination!
     list: [Asset!]!
 }
 
+type AssetConfig {
+    maxSize: Int!
+    blacklist: [String!]!
+}
+
 type Entry {
     _id: ID!
-    entry_type_id: ID!
-    parent: Parent
+    entry_type: EntryType!
+    parent: Entry
     site_id: String!
     locale: String!
     alternates: [Alternate]!
@@ -261,9 +354,8 @@ type Entry {
     url: String!
     authors: Authors!
     dates: Dates!
-    categories: [ID!]!
+    categories: [Category!]!
     content: [ModelFieldContent!]!
-    schema: [LayoutField]!
     seo: EntrySeo
 }
 
@@ -273,19 +365,23 @@ type EntryType {
     handle: String!
     url_prefix: LocaleField!
     entry_layout_id: ID
+    use_categories: Boolean!
 }
 
 type EntryLayout {
     _id: ID!
-    titles: LocaleField!
-    schema: [LayoutField]!
+    slug: String
+    title: String!
     authors: Authors!
     dates: Dates!
     is_trashed: Boolean!
+    used_by: Int
+    record_count: Int
+    schema: [EntryLayoutTab!]
 }
 
 type EntrySeo {
-    entry_seo_id: ID!
+    _id: ID!
     title: String!
     alternates: [Alternate!]!
     url: String
@@ -315,9 +411,23 @@ type EntryPublication {
     dates: PublicationDates!
     site_id: String!
     entry_url: String!
-    user_id: ID!
     user_full_name: String!
     user_email: String!
+}
+
+type EntryField {
+    _id: ID!
+    key: String!
+    name: String!
+    label: LocaleField!
+    placeholder: LocaleField
+    explain: LocaleField
+    validation: String
+    required: Boolean!
+    repeatable: Boolean!
+    searchable: Boolean!
+    type: String!
+    config: Json!
 }
 
 type SocialMeta {
@@ -330,34 +440,9 @@ type SocialMetaContent {
     content: String!
 }
 
-type LayoutField {
-    key: String!
-    fieldConfigs: [FieldConfig!]!
-}
-
-type FieldConfig {
-    labels: LocaleField!
-    handle: String!
-    inputSettings: [InputSetting!]!
-}
-
-type InputSetting {
-    inputKey: String!
-    settings: [Setting]!
-}
-
-type Setting {
-    name: String!
-    value: String
-    choices: [String]
-    type: String!
-}
-
 type ModelFieldContent {
     key: String!
     content: Json
-    handle: String!
-    type: Json!
 }
 
 input SocialMetaInput {
@@ -370,57 +455,26 @@ input SocialMetaContentInput {
     content: String!
 }
 
-input FieldConfigsInput {
-    labels: LocaleFieldInput
-    key: String!
-    handle: String!
-    inputSettings: [InputSettingsInput]!
-}
-
-input SchemaUpdateInput {
-    key: String!
-    labels: LocaleFieldInput
-    inputSettings: [InputSettingsInput]!
-}
-
-input InputSettingsInput {
-    inputKey: String
-    settings: [SettingsInput]
-}
-
-input SettingsInput {
-    name: String!
-    value: String!
-    type: InputType!
-}
-
 input ModelFieldContentInput {
     key: String!
     content: Json
 }
 
-input FieldContentInput {
-    value: String
-    type: InputType!
-}
-
-enum InputType {
-    integer
-    float
-    string
-    boolean
-    array
-}
-
 type Alternate {
+    locale: String!
+    url: String!
+    entry_id: ID!
+}
+
+input AlternateInput {
     locale: String!
     entry_id: ID!
 }
 
 type Authors {
-    created_by: ID
-    updated_by: ID
-    deleted_by: ID
+    created_by: User
+    updated_by: User
+    deleted_by: User
 }
 
 type Dates {
@@ -432,11 +486,6 @@ type Dates {
 type PublicationDates {
     published: Int!
     expired: Int
-}
-
-type Parent {
-    handle: String!
-    parent_id: ID!
 }
 
 input ParenInput {
@@ -451,7 +500,7 @@ type EntryResult {
 
 type EntryErrors {
     key: String!
-    errors: [[String]]!
+    errors: [String]!
 }
 
 type EntryListing {
@@ -459,22 +508,14 @@ type EntryListing {
     list: [Entry!]!
 }
 
-type FieldInfo {
-    name: String!
-    fullname: String!
-    handle: String!
-    description: String!
-    storingType: String!
-    searchable: Boolean!
-    inputs: [FieldInputInfo]!
+type EntryLayoutTab {
+    label: String!
+    fields: [EntryField!]
 }
 
-type FieldInputInfo {
-    name: String!
-    fullname: String!
-    type: String!
-    inputKey: String
-    availableSettings: [Setting!]!
+input EntryLayoutTabInput {
+    label: String!
+    fields: [ID!]!
 }
 
 type LocaleField {
@@ -508,28 +549,32 @@ type Email {
     name: String!
     slug: String!
     subject: LocaleField!
-    title: LocaleField!
-    content: LocaleField!
-    cta: LocaleField!
-    cta_title: LocaleField!
+    fields: [EmailField!]!
     template: String!
     created_at: Int!
     last_modified: Int!
 }
 
+type EmailField {
+    key: String!
+    value: LocaleField!
+}
+
 input EmailInput {
     name: String!
     subject: LocaleFieldInput!
-    title: LocaleFieldInput!
-    content: LocaleFieldInput!
-    cta: LocaleFieldInput!
-    cta_title: LocaleFieldInput!
+    fields: EmailFieldInput!
     template: String!
 }
 
+input EmailFieldInput {
+    key: String!
+    value: LocaleFieldInput!
+}
+
 type PasswordChangeResult {
-    passwordCheck: Boolean!
-    codeCheck: Boolean!
+    password_check: Boolean!
+    code_check: Boolean!
 }
 
 type RegisteredExtensions {
@@ -549,7 +594,7 @@ type Container {
     info: ContainerInfo!
     class: String!
     middlewares: [Middleware!]!
-    graphql: [GraphQLInfo!]!
+    graphql: GraphQLInfo!
     routes: Routes!
 }
 
@@ -579,6 +624,7 @@ type Middleware {
 type GraphQLInfo {
     queries: [QueryInfo!]!
     mutations: [MutationInfo!]!
+    resolvers: [ResolverInfo!]!
 }
 
 type QueryInfo {
@@ -588,6 +634,12 @@ type QueryInfo {
 }
 
 type MutationInfo {
+    operation: String!
+    handler: String!
+    method: String!
+}
+
+type ResolverInfo {
     operation: String!
     handler: String!
     method: String!
@@ -607,13 +659,14 @@ type Category {
     slug: String!
     order: Int!
     parent_id: String!
-    children: [Category!]!
+    children: [Json!]!
 }
 
 type NavigationItem {
     label: String!
     url: String!
     is_entry: Boolean!
+    is_category: Boolean!
     entry_id: String!
     external: Boolean!
     children: [NavigationItem!]!
@@ -623,6 +676,7 @@ input NavigationItemInput {
     label: String!
     url: String!
     is_entry: Boolean!
+    is_category: Boolean!
     entry_id: String!
     external: Boolean!
     children: [NavigationItemInput!]!
@@ -634,6 +688,80 @@ type Navigation {
     name: String!
     structure: [NavigationItem!]!
     locale: String!
+}
+
+type Group {
+    _id: ID!
+    name: String!
+    slug: String!
+    user_count: Int!
+}
+
+type Permission {
+    name: String!
+    unnormalized_name: String!
+    group: String!
+    category: String!
+    description: LocaleField!
+}
+
+type NavigationElements {
+    post_entries: [NavigationElement!]!
+    pre_users: [NavigationElement!]!
+    pre_settings: [NavigationElement!]!
+}
+
+type NavigationElement {
+    name: String!
+    icon: String!
+    url: String!
+    label: LocaleField!
+    slug: String!
+    parent: String!
+    permission: String!
+}
+
+type SettingsElements {
+    entries: [SettingsElement!]!
+    emails: [SettingsElement!]!
+    others: [SettingsElement!]!
+}
+
+type SettingsElement {
+    name: String!
+    icon: String!
+    url: String!
+    label: LocaleField!
+    slug: String!
+    permission: String!
+}
+
+type EmailTemplate {
+    name: String!
+    configs: [EmailFieldConfig!]!
+}
+
+type EmailFieldConfig {
+    type: String!
+    key: String!
+    label: LocaleField!
+}
+
+type Task {
+    _id: ID!
+    name: String!
+    handler: String!
+    action: String!
+    settings: Json!
+    priority: Int!
+    retriable: Boolean!
+    retry_count: Int!
+    scheduled_at: Int!
+    locked: Boolean!
+    executed: Boolean!
+    executed_at: Int!
+    execution_result: String!
+    execution_success: Boolean!
 }
 
 #{CUSTOM_TYPES}#

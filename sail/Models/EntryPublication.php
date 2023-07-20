@@ -15,17 +15,17 @@ use SailCMS\Types\PublicationDates;
 
 /**
  *
- * @property string $entry_id
- * @property string $entry_version_id
- * @property string $site_id
+ * @property string           $entry_id
+ * @property string           $entry_version_id
+ * @property string           $site_id
  * @property PublicationDates $dates
- * @property string $entry_url
- * @property string $user_id
- * @property string $user_full_name
- * @property string $user_email
+ * @property string           $entry_url
+ * @property string           $user_id
+ * @property string           $user_full_name
+ * @property string           $user_email
  *
  * optional
- * @property EntryVersion $version = null
+ * @property EntryVersion     $version = null
  *
  */
 class EntryPublication extends Model
@@ -45,9 +45,9 @@ class EntryPublication extends Model
      *
      * Get publication by entry id
      *
-     * @param string|ObjectId $entryId
-     * @param bool $getVersion
-     * @param bool $api
+     * @param  string|ObjectId  $entryId
+     * @param  bool             $getVersion
+     * @param  bool             $api
      * @return EntryPublication|null
      * @throws ACLException
      * @throws DatabaseException
@@ -71,9 +71,42 @@ class EntryPublication extends Model
 
     /**
      *
+     * Get publications with a list of entry ids
+     *
+     * @param  array|Collection  $entryIds
+     * @param  bool              $getVersion
+     * @param  bool              $api
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getPublicationsByEntryIds(array|Collection $entryIds, bool $getVersion = true, bool $api = true): ?array
+    {
+        if ($api) {
+            $this->hasPermissions(true);
+        }
+
+        if ($entryIds instanceof Collection) {
+            $entryIds = $entryIds->unwrap();
+        }
+
+        $qs = $this->find(['entry_id' => ['$in' => $entryIds]]);
+
+        if ($getVersion) {
+            $qs->populate('entry_version_id', 'version', EntryVersion::class);
+        }
+
+        return $qs->exec();
+    }
+
+    /**
+     *
      * Get a publication by url
      *
-     * @param string $url
+     * @param  string       $url
+     * @param  string|null  $siteId
      * @return EntryPublication|null
      * @throws DatabaseException
      *
@@ -94,13 +127,13 @@ class EntryPublication extends Model
 
     /**
      *
-     * @param User $user
-     * @param string $entryId
-     * @param string $siteId
-     * @param string $entryUrl
-     * @param string $entryVersionId
-     * @param int $publicationDate
-     * @param int $expirationDate
+     * @param  User    $user
+     * @param  string  $entryId
+     * @param  string  $siteId
+     * @param  string  $entryUrl
+     * @param  string  $entryVersionId
+     * @param  int     $publicationDate
+     * @param  int     $expirationDate
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -142,7 +175,8 @@ class EntryPublication extends Model
      *
      * Delete publications for a given entry id
      *
-     * @param string $entryId
+     * @param  string  $entryId
+     * @param  bool    $api
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -150,9 +184,11 @@ class EntryPublication extends Model
      * @throws PermissionException
      *
      */
-    public function deleteAllByEntryId(string $entryId): bool
+    public function deleteAllByEntryId(string $entryId, bool $api = true): bool
     {
-        $this->hasPermissions();
+        if ($api) {
+            $this->hasPermissions();
+        }
 
         try {
             $result = $this->deleteMany(['entry_id' => $entryId]);

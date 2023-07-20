@@ -3,29 +3,28 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
-use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
-use SailCMS\Models\Entry\Field as ModelField;
+use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
-use SailCMS\Types\Fields\Field;
-use SailCMS\Types\LayoutField;
-use SailCMS\Types\LocaleField;
-use stdClass;
+use SailCMS\Types\EntryLayoutTab;
 
 /**
  *
- * @property LocaleField $titles
+ *
+ * @property string           $slug
+ * @property string           $title
  * @property array|Collection $schema
- * @property Authors $authors
- * @property Dates $dates
- * @property bool $is_trashed
+ * @property Authors          $authors
+ * @property Dates            $dates
+ * @property bool             $is_trashed
  *
  */
 class EntryLayout extends Model implements Castable
@@ -33,20 +32,23 @@ class EntryLayout extends Model implements Castable
     protected string $collection = 'entry_layouts';
     protected string $permissionGroup = 'entrylayout';
     protected array $casting = [
-        'titles' => LocaleField::class,
         'schema' => self::class,
         'authors' => Authors::class,
         'dates' => Dates::class
     ];
 
     /* Errors */
-    public const DATABASE_ERROR = '6001: Exception when %s an entry.';
-    public const SCHEMA_MUST_CONTAIN_FIELDS = '6002: The schema must contains only SailCMS\Models\Entry\Field instances.';
-    public const SCHEMA_IS_USED = '6003: Cannot delete the schema because it is used by entry types.';
-    public const SCHEMA_KEY_ALREADY_EXISTS = '6004: Cannot use "%s" again, it is already in the schema.';
-    public const SCHEMA_KEY_DOES_NOT_EXISTS = '6005: The given key "%s" does not exists in the schema.';
-    public const DOES_NOT_EXISTS = '6006: Entry layout "%s" does not exists.';
-    public const INVALID_SCHEMA = '6007: Invalid schema structure.';
+    public const DATABASE_ERROR = '6001: Exception when %s entry layout.';
+    public const SCHEMA_IS_USED = '6002: Cannot delete the entry layout(s) because it is used by entry types.';
+    public const DOES_NOT_EXISTS = '6003: Entry layout "%s" does not exists.';
+    public const SCHEMA_INVALID_TAB_VALUE = '6004: Invalid tab value on tab #%s of your schema, must be an instance of EntryLayoutTab.';
+    public const SCHEMA_INVALID_TAB_FIELD_ID = '6005: Invalid field id on tab #%s of your schema.';
+    public const NOTHING_TO_UPDATE = '6006: No params filled, there is nothing to update.';
+
+    /* Cache */
+    private const ENTRY_LAYOUT_CACHE_ALL = 'all_entry_layout';
+    private const ENTRY_LAYOUT_BY_SLUG = 'entry_layout_';
+    private const ENTRY_LAYOUT_ID_ = 'entry_layout_id_';
 
     /**
      *
@@ -64,13 +66,48 @@ class EntryLayout extends Model implements Castable
      *
      * Process Schema
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return Collection
      *
      */
     public function castTo(mixed $value): Collection
     {
-        return $this->processSchemaOnFetch($value);
+        if (!is_array($value)) {
+            $value = (array)$value;
+        }
+        return new Collection($value);
+    }
+
+    /**
+     *
+     * Generate slug to be unique
+     *
+     * @param  string       $slug
+     * @param  string|null  $entryLayoutId
+     * @return string
+     *
+     */
+    private static function generateSlug(string $slug, string $entryLayoutId = null): string
+    {
+        $filters = ['slug' => $slug];
+        if ($entryLayoutId) {
+            $filters['_id'] = ['$ne' => new ObjectId($entryLayoutId)];
+        }
+        $count = (new EntryLayout())->count($filters);
+
+        if ($count > 0) {
+            preg_match("/(?<base>[\w-]+-)(?<increment>\d+)$/", $slug, $matches);
+
+            if (count($matches) > 0) {
+                $increment = (int)$matches['increment'];
+                $newSlug = $matches['base'] . ($increment + 1);
+            } else {
+                $newSlug = $slug . "-2";
+            }
+
+            return self::generateSlug($newSlug, $entryLayoutId);
+        }
+        return $slug;
     }
 
     /**
@@ -83,9 +120,10 @@ class EntryLayout extends Model implements Castable
     public function simplify(): array
     {
         return [
-            '_id' => $this->_id,
-            'titles' => $this->titles->castFrom(),
-            'schema' => $this->simplifySchema(),
+            '_id' => (string)$this->_id,
+            'slug' => $this->slug,
+            'title' => $this->title,
+            'schema' => $this->schema,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
             'is_trashed' => $this->is_trashed
@@ -94,32 +132,9 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Generate a schema for a layout for list of given fields
-     *
-     * @param Collection $fields
-     * @return Collection
-     * @throws FieldException
-     *
-     */
-    public static function generateLayoutSchema(Collection $fields): Collection
-    {
-        $schema = Collection::init();
-        $fields->each(function ($key, $field) use ($schema) {
-            if (!$field instanceof ModelField) {
-                throw new FieldException(self::SCHEMA_MUST_CONTAIN_FIELDS);
-            }
-
-            $schema->pushKeyValue($key, $field->toLayoutField());
-        });
-
-        return $schema;
-    }
-
-    /**
-     *
      * Get all entry layouts
      *
-     * @param bool $ignoreTrashed default true
+     * @param  bool  $ignoreTrashed  default true
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -135,35 +150,100 @@ class EntryLayout extends Model implements Castable
             $filters = ['is_trashed' => false];
         }
 
-        return $this->find($filters)->exec();
+        // Cache Time To Live value from setting or default
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+
+        return $this->find($filters)->exec(self::ENTRY_LAYOUT_CACHE_ALL, $cacheTtl);
+    }
+
+    /**
+     *
+     * Get entry layout by slug.
+     *
+     * @param  string  $slug
+     * @return EntryLayout|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function bySlug(string $slug): ?EntryLayout
+    {
+        $this->hasPermissions(true);
+
+        // Cache Time To Live value from setting or default
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+        $cacheKey = self::ENTRY_LAYOUT_BY_SLUG . $slug;
+        $entryLayout = $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
+
+        $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
+        EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+        return $entryLayout;
     }
 
     /**
      *
      * Find one user with filters
+     * # TODO this method is a mess
      *
-     * @param array $filters
+     * @param  array  $filters
+     * @param  bool   $cache
      * @return EntryLayout|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     *
      */
-    public function one(array $filters): ?EntryLayout
+    public function one(array $filters, bool $cache = true): ?EntryLayout
     {
         $this->hasPermissions(true);
 
         if (isset($filters['_id'])) {
-            return $this->findById($filters['_id'])->exec();
+            if (!$cache) {
+                $entryLayout = $this->findById($filters['_id'])->exec();
+                $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
+                EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+                return $entryLayout;
+            }
+
+            // Cache Time To Live value from setting or default
+            $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+            $cacheKey = self::ENTRY_LAYOUT_ID_ . $filters['_id'];
+            $entryLayout = $this->findById($filters['_id'])->exec($cacheKey, $cacheTtl);
+        } else {
+            $entryLayout = $this->findOne($filters)->exec();
         }
-        return $this->findOne($filters)->exec();
+
+        if (!$entryLayout) {
+            return null;
+        }
+
+        $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
+        EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+
+        return $entryLayout;
     }
 
     /**
      *
-     * Create an entry layout with
+     * Get usage count of an entry field for a given id
      *
-     * @param LocaleField $titles
-     * @param Collection $schema
+     * @param  string  $entryFieldId
+     * @return int
+     *
+     */
+    public static function countUsedEntryField(string $entryFieldId)
+    {
+        return (new static())->count(['schema.fields' => ['$in' => [$entryFieldId]]]);
+    }
+
+    /**
+     *
+     * Create an entry layout
+     *
+     * @param  string       $title
+     * @param  Collection   $schema
+     * @param  string|null  $slug  slug is set to $title->{Locale::default()}
      * @return EntryLayout
      * @throws ACLException
      * @throws DatabaseException
@@ -171,160 +251,68 @@ class EntryLayout extends Model implements Castable
      * @throws PermissionException
      *
      */
-    public function create(LocaleField $titles, Collection $schema): EntryLayout
+    public function create(string $title, Collection $schema, ?string $slug = null): EntryLayout
     {
         $this->hasPermissions();
 
         // Schema preparation
         self::validateSchema($schema);
-        $schema = $this->processSchemaOnStore($schema);
 
-        return $this->createWithoutPermission($titles, $schema);
-    }
-
-    /**
-     *
-     * Update the current schema with a field key, an array of keys and values and a field index
-     * > The field key is generated at the entry layout creation with the Models\Entry\Field->generateKey method
-     * > The to update array keys must be property of the Input type of the field index, if not there will be an error
-     * > The field index is the index according to the baseConfigs of a Models\Entry\Field class,
-     *      ¬ normally the Field class has only one element, but more complex ones can have many fields
-     *
-     * @param string $fieldKey
-     * @param array $toUpdate
-     * @param int|string $fieldIndexName
-     * @param LocaleField|null $labels
-     * @return void
-     *
-     */
-    public function updateSchemaConfig(string $fieldKey, array $toUpdate, int|string $fieldIndexName = 0, ?LocaleField $labels = null): void
-    {
-        $this->schema->each(function ($currentFieldKey, $field) use ($fieldKey, $toUpdate, $fieldIndexName, $labels) {
-            /**
-             * @var ModelField $field
-             */
-            if ($currentFieldKey === $fieldKey && $field->configs->get((string)$fieldIndexName)) {
-                $currentInput = $field->configs->get((string)$fieldIndexName)->castFrom();
-                $inputClass = $field->configs->get((string)$fieldIndexName)::class;
-
-                foreach ($toUpdate as $key => $value) {
-                    $currentInput->settings[$key] = $value;
-                }
-
-                $newLabels = $labels ?? new LocaleField($currentInput->labels);
-
-                $input = new $inputClass($newLabels, ...$currentInput->settings);
-                $field->configs->pushKeyValue($fieldIndexName, $input);
-
-                $this->schema->pushKeyValue($currentFieldKey, new LayoutField($newLabels, $field->handle, $field->configs));
-            } else {
-                $this->schema->pushKeyValue($currentFieldKey, $field->toLayoutField());
-            }
-        });
+        return $this->createWithoutPermission($title, $schema, $slug);
     }
 
     /**
      *
      * Update an entry layout for a given id or entryLayout instance
      *
-     * @param Entry|string $entryOrId
-     * @param LocaleField|null $titles
-     * @param Collection|null $schema
+     * @param  EntryLayout|string  $entryLayoutOrId
+     * @param  string|null         $title
+     * @param  Collection|null     $schema
+     * @param  string|null         $slug
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
-    public function updateById(Entry|string $entryOrId, ?LocaleField $titles, ?Collection $schema): bool
+    public function updateById(EntryLayout|string $entryLayoutOrId, ?string $title, ?Collection $schema, ?string $slug): bool
     {
         $this->hasPermissions();
 
-        if (is_string($entryOrId)) {
-            $entry = $this->findById($entryOrId)->exec();
+        if (is_string($entryLayoutOrId)) {
+            $entryLayout = $this->findById($entryLayoutOrId)->exec();
         } else {
-            $entry = $entryOrId;
+            $entryLayout = $entryLayoutOrId;
         }
 
         $data = Collection::init();
 
-        if ($titles) {
-            $data->pushKeyValue('titles', $titles);
+        if ($title) {
+            $data->pushKeyValue('title', $title);
         }
 
         if ($schema) {
             self::validateSchema($schema);
-            $schema = $this->processSchemaOnStore($schema);
             $data->pushKeyValue('schema', $schema);
         }
 
+        if ($slug) {
+            $data->pushKeyValue('slug', $slug);
+        }
+
         if ($data->length > 0) {
-            return $this->updateWithoutPermission($entry, $data);
+            return $this->updateWithoutPermission($entryLayout, $data);
         }
         return false;
     }
 
     /**
      *
-     * Update a key in the schema
-     *
-     * @param string $key
-     * @param string $newKey
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function updateSchemaKey(string $key, string $newKey): bool
-    {
-        $this->hasPermissions();
-
-        if (!in_array($key, $this->schema->keys()->unwrap(), true)) {
-            throw new EntryException(sprintf(self::SCHEMA_KEY_DOES_NOT_EXISTS, $key));
-        }
-
-        if (in_array($newKey, $this->schema->keys()->unwrap(), true)) {
-            throw new EntryException(sprintf(self::SCHEMA_KEY_ALREADY_EXISTS, $newKey));
-        }
-
-        $newSchema = Collection::init();
-        $this->schema->each(function ($currentKey, $modelField) use (&$newSchema, $key, $newKey) {
-            /**
-             * @var ModelField $modelField
-             */
-            if ($key === $currentKey) {
-                $currentKey = $newKey;
-            }
-            $newSchema->pushKeyValue($currentKey, $modelField->toLayoutField());
-        });
-
-        $result = $this->updateById($this->_id, null, $newSchema);
-
-        if ($result) {
-            $entryTypes = EntryType::findAll([
-                'entry_layout_id' => (string)$this->_id
-            ]);
-
-            $entryTypes->each(function ($k, $entryType) use ($key, $newKey) {
-                /**
-                 * @var EntryType $entryType
-                 */
-                $entryModel = $entryType->getEntryModel();
-                $entryModel->updateAllContentKey($key, $newKey);
-            });
-        }
-
-        return $result;
-    }
-
-    /**
-     *
      * Delete an entry layout with soft or hard mode
      *
-     * @param string|ObjectId $entryLayoutId
-     * @param bool $soft
+     * @param  string|ObjectId  $entryLayoutId
+     * @param  bool             $soft
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -337,7 +325,7 @@ class EntryLayout extends Model implements Castable
         $this->hasPermissions();
 
         // Check if there is and entry type is using the layout
-        if ($this->hasEntryTypes($entryLayoutId)) {
+        if (self::hasEntryTypes([$entryLayoutId])) {
             throw new EntryException(self::SCHEMA_IS_USED);
         }
 
@@ -358,290 +346,243 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Process schema from GraphQL inputs
+     * Delete many by ids in soft mode or not
      *
-     * @param array|Collection $configs
-     * @return Collection
+     * @param  array|Collection  $ids
+     * @param  bool              $soft
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
+     * @throws PermissionException
      *
      */
-    public static function processSchemaFromGraphQL(array|Collection $configs): Collection
+    public function deleteManyByIds(array|Collection $ids, bool $soft = true): bool
     {
-        $schema = new Collection();
+        $this->hasPermissions();
 
-        if (is_array($configs)) {
-            $configs = new Collection($configs);
+        // Is one of them is used
+        if (self::hasEntryTypes($ids)) {
+            throw new EntryException(self::SCHEMA_IS_USED);
         }
 
-        $keys = Collection::init();
-        foreach ($configs as $fieldSettings) {
-            $fieldClass = ModelField::getClassFromHandle($fieldSettings->handle);
-            $labels = new LocaleField($fieldSettings->labels->unwrap());
+        // All ids must be ObjectId
+        $ids = self::ensureObjectIds($ids, true);
 
-            if (!$keys->has($fieldSettings->key)) {
-                $keys->push($fieldSettings->key);
-            } else {
-                throw new EntryException(sprintf(self::SCHEMA_KEY_ALREADY_EXISTS, $fieldSettings->key));
-            }
-
-            $parsedConfigs = Collection::init();
-            $fieldSettings->inputSettings->each(function ($index, $fieldsData) use (&$parsedConfigs) {
-                $settings = Collection::init();
-                $fieldsData->settings->each(function ($key, $setting) use (&$settings) {
-                    $settings->pushKeyValue($setting->name, EntryLayout::parseSettingValue($setting->type, $setting->value));
-                });
-
-                $inputKey = $index;
-                if (isset($fieldsData->inputKey)) {
-                    $inputKey = $fieldsData->inputKey;
-                }
-
-                $parsedConfigs->pushKeyValue($inputKey, $settings);
-            });
-
-            /**
-             * @var ModelField $field
-             */
-            $field = new $fieldClass($labels, $parsedConfigs);
-            $schema->pushKeyValue($fieldSettings->key, $field);
+        if ($soft) {
+            return $this->softDeleteMany($ids);
         }
-
-        return $schema;
+        return $this->hardDeleteMany($ids);
     }
 
     /**
      *
-     * Update a schema from graphQL inputs
+     * Restore soft deleted entry layouts by ids
      *
-     * @param Collection $schemaUpdate
-     * @param EntryLayout $entryLayout
-     * @return void
-     *
-     */
-    public static function updateSchemaFromGraphQL(Collection $schemaUpdate, EntryLayout $entryLayout): void
-    {
-        $schemaUpdate->each(function ($key, $updateInput) use (&$entryLayout) {
-            if (isset($updateInput->inputSettings)) {
-                /**
-                 * @var object $updateInput
-                 */
-                $updateInput->inputSettings->each(function ($index, $toUpdate) use ($entryLayout, $updateInput) {
-                    $settings = [];
-
-                    $inputKey = $toUpdate->inputKey ?? $index;
-
-                    $toUpdate->settings->each(function ($k, $setting) use (&$settings) {
-                        $settings[$setting->name] = EntryLayout::parseSettingValue($setting->type, $setting->value);
-                    });
-
-                    $labels = null;
-                    if (isset($updateInput->labels)) {
-                        $labels = new LocaleField($updateInput->labels->unwrap());
-                    }
-                    $entryLayout->updateSchemaConfig($updateInput->key, $settings, $inputKey, $labels);
-                });
-            } else {
-                if (isset($updateInput->labels)) {
-                    /**
-                     * @var object $updateInput
-                     */
-                    $labels = new LocaleField($updateInput->labels->unwrap());
-                    $entryLayout->updateSchemaConfig($updateInput->key, [], 0, $labels);
-                }
-            }
-        });
-    }
-
-    /**
-     *
-     * Process schema to GraphQL inputs
-     *
-     * @return Collection
+     * @param  array|Collection  $ids
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
      *
      */
-    public function simplifySchema(): Collection
+    public function restoreMany(array|Collection $ids): bool
     {
-        $apiSchema = Collection::init();
+        $this->hasPermissions();
 
-        $this->schema->each(function ($fieldKey, $layoutField) use ($apiSchema) {
-            $layoutFieldConfigs = Collection::init();
-            $layoutFieldSettings = Collection::init();
+        $ids = self::ensureObjectIds($ids, true);
 
-            $layoutField->configs->each(function ($fieldIndex, $input) use (&$layoutFieldSettings) {
-                /**
-                 * @var Field $input
-                 */
-                $settings = new Collection($input->castFrom()->settings);
-                $fieldSettings = Collection::init();
-
-                $settings->each(function ($name, $value) use ($fieldSettings, $input) {
-                    if (is_bool($value)) {
-                        $value = $value ? 'true' : 'false';
-                    }
-
-                    $type = $input->getSettingType($name, $value);
-
-                    $fieldSettings->push([
-                        'name' => $name,
-                        'value' => (string)$value,
-                        'choices' => [],
-                        'type' => $type
-                    ]);
-                });
-
-                $layoutFieldSettings->push([
-                    'inputKey' => $fieldIndex,
-                    'settings' => $fieldSettings
-                ]);
-            });
-            $layoutFieldConfigs->push([
-                'handle' => $layoutField->handle,
-                'labels' => $layoutField->labels->castFrom(),
-                'inputSettings' => $layoutFieldSettings->unwrap()
-            ]);
-
-            $apiSchema->push([
-                'key' => $fieldKey,
-                'fieldConfigs' => $layoutFieldConfigs->unwrap()
-            ]);
-        });
-
-        return $apiSchema;
-    }
-
-    /**
-     *
-     * Parse an input setting value according the given type
-     *
-     * @param string $type
-     * @param string $value
-     * @return string
-     *
-     */
-    private static function parseSettingValue(string $type, string $value): string
-    {
-        if ($type === "boolean") {
-            $result = !($value === "false");
-        } else {
-            if ($type === "integer") {
-                $result = (integer)$value;
-            } else {
-                if ($type === "float") {
-                    $result = (float)$value;
-                } else {
-                    $result = $value;
-                }
-            }
+        try {
+            $count = $this->updateMany(['_id' => ['$in' => $ids]], ['$set' => [
+                'authors.deleted_by' => '',
+                'dates.deleted' => 0,
+                'is_trashed' => false
+            ]]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating an') . PHP_EOL . $exception->getMessage());
         }
-        return $result;
+
+        return $count === count($ids);
     }
 
     /**
      *
      * Validate the schema before save
      *
-     * @param Collection $schema
+     * @param  Collection  $schema
      * @return void
      * @throws EntryException
      *
      */
     private static function validateSchema(Collection $schema): void
     {
-        $schema->each(function ($key, $value) {
-            if (!$value instanceof LayoutField) {
-                throw new EntryException(self::INVALID_SCHEMA);
+        $schema->each(function ($i, $tabFields) {
+            if (!$tabFields instanceof EntryLayoutTab) {
+                throw new EntryException(sprintf(self::SCHEMA_INVALID_TAB_VALUE, $i + 1));
+            }
+
+            foreach ($tabFields->fields as $fieldId) {
+                try {
+                    (new EntryLayout())->ensureObjectId($fieldId);
+                } catch (\Throwable $exception) {
+                    throw new EntryException(sprintf(self::SCHEMA_INVALID_TAB_FIELD_ID, $i + 1));
+                }
             }
         });
     }
 
     /**
      *
-     * Process schema on fetch
-     *
-     * @param stdClass|array|null $value
-     * @return Collection
-     *
-     */
-    private function processSchemaOnFetch(stdClass|array|null $value): Collection
-    {
-        if (!$value) {
-            return Collection::init();
-        }
-
-        $schema = Collection::init();
-        $schemaFromDb = new Collection((array)$value);
-
-        $schemaFromDb->each(function ($key, $value) use (&$schema) {
-            $valueParsed = ModelField::fromLayoutField($value);
-            $schema->pushKeyValue($key, $valueParsed);
-        });
-
-        return $schema;
-    }
-
-    /**
-     *
-     * Process schema on store AKA convert all type to db object
-     *
-     * @param Collection $schema
-     * @return Collection
-     *
-     */
-    private function processSchemaOnStore(Collection $schema): Collection
-    {
-        $schemaForDb = Collection::init();
-        $schema->each(function ($fieldId, $layoutField) use ($schemaForDb) {
-            /**
-             * @var LayoutField $layoutField
-             */
-            $layoutField = $layoutField->castFrom();
-
-            $schemaForDb->pushKeyValue($fieldId, $layoutField);
-        });
-        return $schemaForDb;
-    }
-
-    /**
-     *
      * Check if an entry layout have a related entry type
      *
-     * @param string|ObjectId $entryLayoutId
+     * @param  Collection|array  $entryLayoutIds
      * @return bool
+     */
+    public static function hasEntryTypes(Collection|array $entryLayoutIds): bool
+    {
+        if ($entryLayoutIds instanceof Collection) {
+            $entryLayoutIds = $entryLayoutIds->unwrap();
+        }
+
+        // All ids must be string
+        $entryLayoutIds = array_map(function ($value) {
+            return (string)$value;
+        }, $entryLayoutIds);
+
+        $entryTypeCount = (new EntryType())->count(['entry_layout_id' => ['$in' => $entryLayoutIds]]);
+        return $entryTypeCount > 0;
+    }
+
+    /**
+     *
+     * Get field in schema
+     *
+     * @param  Collection  $schema
+     * @param  string      $fieldKey
+     * @return EntryField|null
      *
      */
-    public static function hasEntryTypes(string|ObjectId $entryLayoutId): bool
+    public static function getFieldInSchema(Collection $schema, string $fieldKey): ?EntryField
     {
-        $entryTypeCount = (new EntryType())->count(['entry_layout_id' => (string)$entryLayoutId]);
+        $entryField = null;
 
-        return $entryTypeCount > 0;
+        foreach ($schema as $tab) {
+            /**
+             * @var EntryLayoutTab $tab
+             */
+            $fields = $tab->fields;
+            foreach ($fields as $field) {
+                /**
+                 * @var EntryField $field
+                 */
+                if ($field->key == $fieldKey) {
+                    $entryField = $field;
+                    break;
+                }
+            }
+
+            if ($entryField) {
+                break;
+            }
+        }
+
+        return $entryField;
+    }
+
+    /**
+     *
+     * Get entry field ids from schema of a collection of entry layouts
+     *
+     * @param  Collection  $entryLayouts
+     * @return array
+     *
+     */
+    public static function getEntryFieldIds(Collection $entryLayouts): array
+    {
+        $fieldIds = [];
+
+        $entryLayouts->each(function ($k, $entryLayout) use (&$fieldIds) {
+            foreach ($entryLayout->schema as $fieldTab) {
+                if (isset($fieldTab->fields)) {
+                    foreach ($fieldTab->fields as $fieldId) {
+                        if (!in_array($fieldId, $fieldIds)) {
+                            $fieldIds[] = $fieldId;
+                        }
+                    }
+                }
+            }
+        });
+
+        return (new self)->ensureObjectIds($fieldIds, true);
+    }
+
+    /**
+     *
+     * Fetch fields for a collection of schema of entry layouts
+     *
+     * @param  array       $fieldIds
+     * @param  Collection  $entryLayouts
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function fetchFields(array $fieldIds, Collection $entryLayouts): void
+    {
+        $fields = (new EntryField)->getList(['_id' => ['$in' => $fieldIds]]);
+        $fieldsById = [];
+        $fields->each(function ($k, $field) use (&$fieldsById) {
+            /**
+             * @var EntryField $field
+             */
+            $fieldsById[(string)$field->_id] = $field;
+        });
+
+        $entryLayouts->each(function ($k, $entryLayout) use ($fieldsById) {
+            foreach ($entryLayout->schema as $tab) {
+                if ($tab->fields) {
+                    foreach ($tab->fields as &$fieldId) {
+                        $fieldId = $fieldsById[$fieldId] ?? null;
+                    }
+                }
+            }
+        });
     }
 
     /**
      *
      * Create an entry layout
      *
-     * @param LocaleField $titles
-     * @param Collection $schema
+     * @param  string       $title
+     * @param  Collection   $schema
+     * @param  string|null  $slug
      * @return EntryLayout
      * @throws DatabaseException
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(LocaleField $titles, Collection $schema): EntryLayout
+    private function createWithoutPermission(string $title, Collection $schema, string $slug = null): EntryLayout
     {
         $dates = Dates::init();
-        $authors = Authors::init(User::$currentUser);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::init($author);
+
+        $slug = $slug ?? Text::from($title)->slug()->value();
+        $slug = self::generateSlug($slug);
 
         try {
             $entryLayoutId = $this->insert([
-                'titles' => $titles,
+                'slug' => $slug,
+                '$title' => $title,
                 'schema' => $schema,
                 'authors' => $authors,
                 'dates' => $dates,
                 'is_trashed' => false
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating an') . PHP_EOL . $exception->getMessage());
         }
 
         return $this->findById($entryLayoutId)->exec();
@@ -651,22 +592,25 @@ class EntryLayout extends Model implements Castable
      *
      * Update an entry layout
      *
-     * @param EntryLayout $entryLayout
-     * @param Collection $data
+     * @param  EntryLayout  $entryLayout
+     * @param  Collection   $data
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function updateWithoutPermission(EntryLayout $entryLayout, Collection $data): bool
     {
+        $author = User::$currentUser ?? User::anonymousUser();
+
         $update = [
             'dates' => Dates::updated($entryLayout->dates),
-            'authors' => Authors::updated($entryLayout->authors, User::$currentUser->_id)
+            'authors' => Authors::updated($entryLayout->authors, $author->_id)
         ];
 
-        $titles = $data->get('titles');
-        if ($titles) {
-            $update['titles'] = $titles;
+        $title = $data->get('title');
+        if ($title) {
+            $update['title'] = $title;
         }
 
         $schema = $data->get('schema');
@@ -674,12 +618,17 @@ class EntryLayout extends Model implements Castable
             $update['schema'] = $schema;
         }
 
+        $slug = $data->get('slug');
+        if ($slug) {
+            $update['slug'] = self::generateSlug($slug, (string)$entryLayout->_id);
+        }
+
         try {
             $qtyUpdated = $this->updateOne(['_id' => $entryLayout->_id], [
                 '$set' => $update
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'updating an') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -689,14 +638,16 @@ class EntryLayout extends Model implements Castable
      *
      * Delete an entry layout to the trash
      *
-     * @param EntryLayout $entryLayout
+     * @param  EntryLayout  $entryLayout
      * @return bool
      * @throws EntryException
+     * @throws DatabaseException
      *
      */
     private function softDelete(EntryLayout $entryLayout): bool
     {
-        $authors = Authors::deleted($entryLayout->authors, User::$currentUser->_id);
+        $author = User::$currentUser ?? User::anonymousUser();
+        $authors = Authors::deleted($entryLayout->authors, $author->_id);
         $dates = Dates::deleted($entryLayout->dates);
 
         try {
@@ -708,7 +659,7 @@ class EntryLayout extends Model implements Castable
                 ]
             ]);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting an') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyUpdated === 1;
@@ -718,7 +669,7 @@ class EntryLayout extends Model implements Castable
      *
      * Delete an entry layout forever
      *
-     * @param string|ObjectId $entryLayoutId
+     * @param  string|ObjectId  $entryLayoutId
      * @return bool
      * @throws EntryException
      *
@@ -728,9 +679,59 @@ class EntryLayout extends Model implements Castable
         try {
             $qtyDeleted = $this->deleteById((string)$entryLayoutId);
         } catch (DatabaseException $exception) {
-            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting') . PHP_EOL . $exception->getMessage());
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting an') . PHP_EOL . $exception->getMessage());
         }
 
         return $qtyDeleted === 1;
+    }
+
+    /**
+     *
+     * Soft delete many entry layouts by ids
+     *
+     * @param  array  $ids
+     * @return bool
+     * @throws DatabaseException
+     * @throws EntryException
+     *
+     */
+    private function softDeleteMany(array $ids): bool
+    {
+        $author = User::$currentUser ?? User::anonymousUser();
+        $now = time();
+
+        try {
+            $count = $this->updateMany(['_id' => ['$in' => $ids]], ['$set' => [
+                'authors.deleted_by' => $author->_id,
+                'dates.deleted' => $now,
+                'is_trashed' => true
+            ]]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting a batch of') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $count == count($ids);
+    }
+
+    /**
+     *
+     * Delete many entry fields by id
+     *
+     * @param  array  $ids
+     * @return bool
+     * @throws EntryException
+     *
+     */
+    private function hardDeleteMany(array $ids): bool
+    {
+        $ids = $this->ensureObjectIds($ids, true);
+
+        try {
+            $count = $this->deleteMany(['_id' => ['$in' => $ids]]);
+        } catch (DatabaseException $exception) {
+            throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting a batch of') . PHP_EOL . $exception->getMessage());
+        }
+
+        return $count === count($ids);
     }
 }

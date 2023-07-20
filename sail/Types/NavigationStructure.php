@@ -96,13 +96,12 @@ class NavigationStructure implements Castable
      *
      * @param  mixed  $value
      * @return $this
-     * @throws NavigationException
      *
      */
     public function castTo(mixed $value): self
     {
         $list = $this->bsonToArray($value);
-        return new self($list);
+        return new $this($list);
     }
 
     private function bsonToArray(BSONArray|array $children): array

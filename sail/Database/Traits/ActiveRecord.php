@@ -84,7 +84,7 @@ trait ActiveRecord
     /**
      *
      * Push many elements at once in an array
-     * You can also sort the array afterwards, and you can slice the array afterwards ($slice)
+     * You can also sort the array afterwards and you can slice the array afterwards ($slice)
      *
      * @param  string  $field
      * @param  mixed   $values
@@ -193,6 +193,7 @@ trait ActiveRecord
                 } catch (DatabaseException $e) {
                     return false;
                 }
+                return true;
             } else {
                 $call = [];
 

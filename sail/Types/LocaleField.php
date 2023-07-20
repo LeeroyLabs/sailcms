@@ -2,17 +2,25 @@
 
 namespace SailCMS\Types;
 
+use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
-use SailCMS\Contracts\DatabaseType;
 
 class LocaleField implements Castable
 {
     private Collection $combinations;
 
-    public function __construct(array|\stdClass|LocaleField|null $combinations = null)
+    public function __construct(array|\stdClass|BSONDocument|LocaleField|Collection|null $combinations = null)
     {
         $this->combinations = Collection::init();
+
+        if ($combinations instanceof Collection) {
+            $combinations = $combinations->unwrap();
+        }
+
+        if (is_object($combinations) && get_class($combinations) === BSONDocument::class) {
+            $combinations = (array)$combinations;
+        }
 
         if (is_object($combinations) && get_class($combinations) === __CLASS__) {
             $combinations = $combinations->castFrom();
@@ -29,8 +37,7 @@ class LocaleField implements Castable
     {
         $out = '';
 
-        $this->combinations->find(function ($key, $value) use (&$out, $locale)
-        {
+        $this->combinations->find(function ($key, $value) use (&$out, $locale) {
             if ($value['locale'] === $locale) {
                 $out = $value['value'];
             }
@@ -46,8 +53,7 @@ class LocaleField implements Castable
 
     public function __set(string $locale, string $value): void
     {
-        $this->combinations->find(function ($key, $val) use ($locale, $value)
-        {
+        $this->combinations->find(function ($key, $val) use ($locale, $value) {
             if ($val['locale'] === $locale) {
                 $val['value'] = $value;
             }

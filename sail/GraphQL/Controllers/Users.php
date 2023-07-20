@@ -5,7 +5,6 @@ namespace SailCMS\GraphQL\Controllers;
 use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
@@ -14,12 +13,16 @@ use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
+use SailCMS\Middleware;
+use SailCMS\Models\Role;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LoginResult;
 use SailCMS\Types\MetaSearch;
+use SailCMS\Types\MiddlewareType;
+use SailCMS\Types\PasswordChangeResult;
 use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
@@ -113,7 +116,7 @@ class Users
 
         $meta = $args->get('meta', '');
         $userType = $args->get('type', '');
-        $sorting = $args->get('sorting', null);
+        $sorting = $args->get('sorting');
 
         if ($meta) {
             $metaSearch = new MetaSearch($meta->get('key'), $meta->get('value'));
@@ -136,8 +139,9 @@ class Users
             $sorting,
             $userTypeSearch ?? null,
             $metaSearch ?? null,
-            $args->get('status', null),
-            $args->get('validated', null)
+            $args->get('status'),
+            $args->get('validated'),
+            $args->get('group_id', '')
         );
 
         $list->list->each(function ($key, $value)
@@ -212,8 +216,7 @@ class Users
                 $user = User::get($args->get('user_id'));
 
                 if ($user) {
-                    $umodel = new User();
-                    return $umodel->verifyTemporaryToken($user->temporary_token);
+                    return (new User())->verifyTemporaryToken($user->temporary_token);
                 }
             }
         }
@@ -260,6 +263,7 @@ class Users
             $args->get('avatar', ''),
             $meta,
             $args->get('roles', []),
+            $args->get('group', ''),
             $args->get('createWithSetPassword', false),
             $args->get('useEmailTemplate', '')
         );
@@ -311,9 +315,9 @@ class Users
     public function updateUser(mixed $obj, Collection $args, Context $context): bool
     {
         $user = new User();
-        $roles = $args->get('roles', null);
-        $meta = $args->get('meta', null);
-        $name = $args->get('name', null);
+        $roles = $args->get('roles');
+        $meta = $args->get('meta');
+        $name = $args->get('name');
 
         if ($roles && is_array($roles)) {
             $roles = new Collection($roles);
@@ -330,12 +334,12 @@ class Users
         return $user->update(
             $args->get('id'),
             $name,
-            $args->get('email', null),
-            $args->get('password', null),
+            $args->get('email'),
+            $args->get('password'),
             $roles,
-            $args->get('avatar', null),
+            $args->get('avatar'),
             $meta,
-            $args->get('locale', '')
+            $args->get('locale')
         );
     }
 
@@ -355,6 +359,24 @@ class Users
     public function deleteUser(mixed $obj, Collection $args, Context $context): bool
     {
         return (new User())->removeById($args->get('id'));
+    }
+
+    /**
+     *
+     * Delete users from given list
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function deleteUsers(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new User())->removeByIdList($args->get('ids'));
     }
 
     /**
@@ -397,13 +419,28 @@ class Users
      * @param  mixed       $obj
      * @param  Collection  $args
      * @param  Context     $context
-     * @return mixed
+     * @return PasswordChangeResult
      * @throws DatabaseException
      *
      */
-    public function changePassword(mixed $obj, Collection $args, Context $context): mixed
+    public function changePassword(mixed $obj, Collection $args, Context $context): PasswordChangeResult
     {
         return User::changePassword($args->get('code', ''), $args->get('password', ''));
+    }
+
+    /**
+     *
+     * Change status of given users (only users with lower roles will actually change)
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     *
+     */
+    public function changeUserStatus(mixed $obj, Collection $args, Context $context): bool
+    {
+        return (new User())->changeUserStatus($args->get('ids'), $args->get('status'));
     }
 
     /**
@@ -415,12 +452,17 @@ class Users
      * @param  Context      $context
      * @param  ResolveInfo  $info
      * @return mixed
+     * @throws DatabaseException
      *
      */
     public function resolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
         // This fixes the "expecting String but got instance of"
         if ($info->fieldName === 'meta') {
+            // Ask Middleware
+            $data = new Middleware\Data(Middleware\Login::Meta, $obj);
+            $obj = Middleware::execute(MiddlewareType::LOGIN, $data)->data;
+
             if (is_object($obj->meta) && get_class($obj->meta) === stdClass::class) {
                 $meta = new UserMeta();
                 return $meta->castTo($obj->meta)->castFrom();
@@ -431,6 +473,22 @@ class Users
             }
 
             return $obj->meta;
+        }
+
+        if (($info->fieldName === 'group') && !isset($obj->group)) {
+            return '';
+        }
+
+        if ($info->fieldName === 'permissions') {
+            return $obj->permissions();
+        }
+
+        if ($info->fieldName === 'highest_level') {
+            if ($obj->roles->length > 0) {
+                return Role::getHighestLevel($obj->roles);
+            }
+
+            return 0;
         }
 
         return $obj->{$info->fieldName};

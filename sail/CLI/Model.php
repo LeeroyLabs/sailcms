@@ -33,8 +33,8 @@ class Model extends Command
 
         $type = strtolower($input->getArgument('type'));
 
-        $location = ucfirst(Text::camelCase(Text::deburr($input->getArgument('location'))));
-        $name = ucfirst(Text::camelCase(Text::deburr($input->getArgument('name'))));
+        $location = Text::from($input->getArgument('location'))->deburr()->camel()->value();
+        $name = Text::from($input->getArgument('name'))->deburr()->camel()->capitalize(true)->value();
 
         Tools::outputInfo('creating', "Creating model [b]{$name}[/b]");
 

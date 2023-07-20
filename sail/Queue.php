@@ -3,8 +3,10 @@
 namespace SailCMS;
 
 use Exception;
-use JsonException;
+use SailCMS\Errors\DatabaseException;
 use \SailCMS\Models\Queue as QueueModel;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 final class Queue
 {
@@ -36,12 +38,11 @@ final class Queue
      *
      * Note: All = 50 000 items max
      *
+     * @param Collection|null $tasks
      * @return void
-     * @throws Errors\DatabaseException
-     * @throws JsonException
-     *
+     * @throws DatabaseException
      */
-    public function process(): void
+    public function process(Collection $tasks = null): void
     {
         $maxProcess = env('queue_max_process_per_run', 'all');
 
@@ -52,7 +53,9 @@ final class Queue
         }
 
         $model = new QueueModel();
-        $tasks = $model->getList($maxProcess);
+        if (!$tasks) {
+            $tasks = $model->getList($maxProcess);
+        }
 
         $tasks->each(function ($key, $value) use ($model)
         {
@@ -69,30 +72,28 @@ final class Queue
 
             if (!$locked) {
                 $model->setLockStatus($value->_id, true);
-
-                if (class_exists($value->handler)) {
-                    $instance = new $value->handler();
-
-                    if (method_exists($instance, $value->action)) {
+//                    if (method_exists($instance, $value->action)) {
                         try {
-                            $result = $instance->{$value->action}(...$value->settings->unwrap());
+                            $action = explode(' ', $value->action);
 
-                            if (empty($result)) {
-                                $result = 'Executed successfully with no return';
-                            } elseif (!is_string($result) && !is_scalar($result)) {
-                                $result = json_encode($result, JSON_THROW_ON_ERROR);
+                            $result = new Process($action);
+                            $result->start();
+
+                            $pid = $result->getPid();
+                            (new QueueModel)->updatePid($value->_id, $pid);
+
+                            $result->wait();
+
+                            if (!$result->isSuccessful()) {
+                                throw new ProcessFailedException($result);
                             }
-
-                            $model->closeTask($value->_id, $result);
+                            $model->closeTask($value->_id, $result->getOutput());
                         } catch (Exception $e) {
                             $model->closeTask($value->_id, "Execution failed: {$e->getMessage()}.", false, $retry_count);
                         }
-                    } else {
-                        $model->closeTask($value->_id, "Action '{$value->action}' does not exist, please make sure it exists.", false, $retry_count);
-                    }
-                } else {
-                    $model->closeTask($value->_id, "Handler '{$value->handler}' does not exist, please make sure it exists.", false, $retry_count);
-                }
+//                    } else {
+//                        $model->closeTask($value->_id, "Action '{$value->action}' does not exist, please make sure it exists.", false, $retry_count);
+//                    }
             }
         });
     }

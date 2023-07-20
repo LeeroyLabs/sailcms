@@ -10,10 +10,10 @@ include_once __DIR__ . '/mock/db.php';
 /**
  *
  * @property string $test_key
- * @property int $inc1
- * @property int $inc2
- * @property array $list
- * @property array $list2
+ * @property int    $inc1
+ * @property int    $inc2
+ * @property array  $list
+ * @property array  $list2
  *
  */
 class DBTest extends Model
@@ -31,11 +31,13 @@ class DBTest extends Model
     }
 }
 
-beforeAll(function () {
+beforeAll(function ()
+{
     Sail::setupForTests(__DIR__);
 });
 
-test('QuickUpdate using string field and boolean value', function () {
+test('QuickUpdate using string field and boolean value', function ()
+{
     $data = Config::getByName('testconf');
     $config = new Config();
     $config->quickUpdate($data->_id, 'test', false);
@@ -45,7 +47,8 @@ test('QuickUpdate using string field and boolean value', function () {
     $config->quickUpdate($data->_id, 'test', true);
 })->group('db');
 
-test('QuickUpdate using array field and array value', function () {
+test('QuickUpdate using array field and array value', function ()
+{
     $data = Config::getByName('testconf');
     $config = new Config();
     $c = ['test' => true];
@@ -59,7 +62,8 @@ test('QuickUpdate using array field and array value', function () {
     $config->quickUpdate($data->_id, ['test', 'config'], [true, $c]);
 })->group('db');
 
-test('QuickUpdate using array field but boolean value, expect failure', function () {
+test('QuickUpdate using array field but boolean value, expect failure', function ()
+{
     $data = Config::getByName('testconf');
     $config = new Config();
 
@@ -72,14 +76,16 @@ test('QuickUpdate using array field but boolean value, expect failure', function
     }
 })->group('db');
 
-test('Ensure object id for given array using ensureObjectIds', function () {
+test('Ensure object id for given array using ensureObjectIds', function ()
+{
     $config = new Config();
     $ids = $config->ensureObjectIds(['6372a9d21a182a6c5f02a988', '6372a9d21a182a6c5f02a988', '6372a9d21a182a6c5f02a988']);
 
     expect($ids->length)->toBe(3)->and($ids->at(0))->toBeInstanceOf(ObjectId::class);
 })->group('db');
 
-test('ActiveRecord: create a record', function () {
+test('ActiveRecord: create a record', function ()
+{
     $dbtest = new DBTest();
     $dbtest->test_key = 'hello world!';
     $dbtest->inc1 = 0;
@@ -93,7 +99,8 @@ test('ActiveRecord: create a record', function () {
     expect($dbtest->exists())->toBeTrue()->and($dbtest->id)->not->toBe('');
 })->group('db');
 
-test('ActiveRecord: update a record', function () {
+test('ActiveRecord: update a record', function ()
+{
     $dbtest = new DBTest();
     $record = $dbtest->getByText('hello world!');
 
@@ -104,7 +111,8 @@ test('ActiveRecord: update a record', function () {
     expect($record)->not->toBeNull();
 })->group('db');
 
-test('ActiveRecord: increment 2 fields (test multi increments)', function () {
+test('ActiveRecord: increment 2 fields (test multi increments)', function ()
+{
     $dbtest = new DBTest();
     $record = $dbtest->getByText('Hell0 W0rld!');
 
@@ -116,7 +124,8 @@ test('ActiveRecord: increment 2 fields (test multi increments)', function () {
     expect($record->inc1)->toBe(5)->and($record->inc2)->toBe(0);
 })->group('db');
 
-test('ActiveRecord: push into array', function () {
+test('ActiveRecord: push into array', function ()
+{
     $dbtest = new DBTest();
     $record = $dbtest->getByText('Hell0 W0rld!');
 
@@ -127,7 +136,8 @@ test('ActiveRecord: push into array', function () {
     expect(count($record->list))->toBe(3);
 })->group('db');
 
-test('ActiveRecord: pop out of array', function () {
+test('ActiveRecord: pop out of array', function ()
+{
     $dbtest = new DBTest();
     $record = $dbtest->getByText('Hell0 W0rld!');
 
@@ -138,7 +148,8 @@ test('ActiveRecord: pop out of array', function () {
     expect(count($record->list))->toBe(2);
 })->group('db');
 
-test('ActiveRecord: pull all 1 and 2s out of array', function () {
+test('ActiveRecord: pull all 1 and 2s out of array', function ()
+{
     $dbtest = new DBTest();
     $record = $dbtest->getByText('Hell0 W0rld!');
 
@@ -149,24 +160,28 @@ test('ActiveRecord: pull all 1 and 2s out of array', function () {
     expect(count($record->list2))->toBe(4);
 })->group('db');
 
-test('ActiveRecord: get record by id', function () {
+test('ActiveRecord: get record by id', function ()
+{
     $dbtest = new DBTest();
     $list = $dbtest->getAll();
     $test = DBTest::get($list[0]->id);
     expect($test)->not->toBeNull();
 })->group('db');
 
-test('ActiveRecord: get record by field (using ==)', function () {
+test('ActiveRecord: get record by field (using ==)', function ()
+{
     $test = DBTest::getBy('test_key', 'Hell0 W0rld!');
     expect($test)->not->toBeNull();
 })->group('db');
 
-test('ActiveRecord: get record by field and fail (using !=)', function () {
+test('ActiveRecord: get record by field and fail (using !=)', function ()
+{
     $test = DBTest::getBy('test_key', 'Hell0 W0rld!', '!=');
     expect($test)->toBeNull();
 })->group('db');
 
-test('ActiveRecord: delete record', function () {
+test('ActiveRecord: delete record', function ()
+{
     $dbtest = new DBTest();
     $test = $dbtest->getByText('Hell0 W0rld!');
     $test->remove();

@@ -1,28 +1,34 @@
 <?php
 
+use SailCMS\Sail;
 use SailCMS\Text;
 
-test('Deburr', function ()
+beforeAll(function ()
 {
-    expect(Text::deburr('ÀÉÔÊÉ'))->toBe('AEOEE');
+    Sail::setupForTests(__DIR__);
 });
 
-test('kebabCase', function ()
+test('length', function ()
 {
-    expect(Text::kebabCase('Hello World'))->toBe('hello-world');
-});
+    expect(Text::from('Hello')->length)->toBe(5);
+})->group('text');
 
-test('slugify string "Hello world of PHP!$#"', function ()
+test('substring', function ()
 {
-    expect(Text::slugify('Hello world of PHP!$#'))->toBe('hello-world-of-php');
-});
+    expect(Text::from('Hello')->substr(0, 2)->value())->toBe('He');
+})->group('text');
 
-test('camelCase string "Hello world of PHP" to "helloWorldOfPHP"', function ()
+test('uuid v4', function ()
 {
-    expect(Text::camelCase('Hello world of PHP'))->toBe('helloWorldOfPHP');
-});
+    expect(Text::from('')->uuid(4)->length)->toBe(36);
+})->group('text');
 
-test('snakeCase string "Hello world of PHP" to "hello_world_of_php"', function ()
+test('uuid v5', function ()
 {
-    expect(Text::snakeCase('Hello world of PHP'))->toBe('hello_world_of_php');
-});
+    expect(Text::from('')->uuid(5, 'ba36d08b-0d1c-45e6-99d2-e7efe7d51381', 'name')->length)->toBe(36);
+})->group('text');
+
+test('random', function ()
+{
+    expect(Text::from('')->random(10)->length)->toBe(10);
+})->group('text');

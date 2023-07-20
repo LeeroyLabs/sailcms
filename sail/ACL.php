@@ -157,7 +157,7 @@ final class ACL
             return false;
         }
 
-        $role = Text::kebabCase(Text::deburr($role));
+        $role = Text::from($role)->deburr()->kebab()->value();
 
         if (is_string($user)) {
             $userModel = new User();
@@ -279,6 +279,31 @@ final class ACL
 
     /**
      *
+     * Get a complete list that can provide all loaded ACLs
+     *
+     * @return Collection
+     *
+     */
+    public static function getCompleteList(): Collection
+    {
+        $list = Collection::init();
+
+        self::$loadedACL->each(function ($key, $value) use (&$list)
+        {
+            $list->push((object)[
+                'name' => $value->value,
+                'givenName' => $value->givenName,
+                'group' => $value->providedName,
+                'category' => $value->category,
+                'description' => $value->description
+            ]);
+        });
+
+        return $list;
+    }
+
+    /**
+     *
      * Get the amount of loaded ACL
      *
      * @return int
@@ -306,8 +331,8 @@ final class ACL
 
         $entryTypes->each(function ($key, $value) use ($entryACL)
         {
-            $entryACL->push(new ACLObject($value->handle, ACLType::READ));
-            $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE));
+            $entryACL->push(new ACLObject($value->handle, ACLType::READ_WRITE, '', ''));
+            $entryACL->push(new ACLObject($value->handle, ACLType::READ, '', ''));
         });
 
         self::$loadedACL->pushSpread(...$entryACL->unwrap());

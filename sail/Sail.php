@@ -35,7 +35,7 @@ use Whoops\Run;
 
 class Sail
 {
-    public const SAIL_VERSION = '3.0.0-next.25';
+    public const SAIL_VERSION = '3.0.0-next.125';
     public const SAIL_MAJOR_VERSION = 3;
     public const SAIL_MINOR_VERSION = 0;
     public const SAIL_REVISION_VERSION = 0;
@@ -179,6 +179,8 @@ class Sail
             Router::setupEmailPreviewer();
         }
 
+        Router::setupThirdPartyContent();
+
         Router::dispatch();
     }
 
@@ -233,13 +235,13 @@ class Sail
         self::$configDirectory = self::$workingDirectory . '/config';
 
         if (!self::$installMode) {
-            $config = include self::$configDirectory . '/general.php';
+            $config = self::loadCombinedConfigurations();
         } else {
-            $config = include dirname(__DIR__) . '/install/config/general.php';
+            $config = include dirname(__DIR__) . '/install/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
         }
 
         $settings = new Collection($config);
-        self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
+        self::$environmentData->setFor('SETTINGS', $settings);
 
         if (setting('devMode', false)) {
             ini_set('display_errors', true);
@@ -251,9 +253,6 @@ class Sail
 
         // Load cms ACLs
         ACL::loadCmsACL();
-
-        // Load cms Fields
-        Field::init();
 
         // Initialize the logger
         Log::init();
@@ -312,16 +311,16 @@ class Sail
                 self::$workingDirectory . '/.env',
                 file_get_contents(dirname(__DIR__) . '/install/env')
             );
-        }
+        } else {
+            // Load .env file
+            try {
+                $envData = file_get_contents(self::$workingDirectory . '/.env');
+                $env = Dotenv::parse($envData);
 
-        // Load .env file
-        try {
-            $envData = file_get_contents(self::$workingDirectory . '/.env');
-            $env = Dotenv::parse($envData);
-
-            self::$environmentData = new Collection($env);
-        } catch (Exception $e) {
-            throw new FileException('Cannot read/find the .env file');
+                self::$environmentData = new Collection($env);
+            } catch (Exception $e) {
+                throw new FileException('Cannot read/find the .env file');
+            }
         }
 
         // Setup Clockwork for debugging info
@@ -396,9 +395,6 @@ class Sail
 
                     ACL::loadCustom($acls);
 
-                    // load custom fields
-                    Field::loadCustom($instance->fields());
-
                     // Run the command registration
                     $commands = $instance->cli()->unwrap();
 
@@ -460,12 +456,18 @@ class Sail
         }
     }
 
-    private static function ensurePerformance(): void
+    /**
+     *
+     * Run the indexing system for all available models for the cms
+     *
+     * @return void
+     *
+     */
+    public static function ensurePerformance(): void
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value)
-        {
+        $models->each(function ($key, $value) {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -582,6 +584,10 @@ class Sail
      */
     public static function getTemplateDirectory(): string
     {
+        if (str_ends_with(self::$templateDirectory, '/')) {
+            return self::$templateDirectory;
+        }
+
         return self::$templateDirectory . '/';
     }
 
@@ -659,13 +665,13 @@ class Sail
 
             self::setupEnv();
 
-            $config = include dirname(__DIR__) . '/install/config/general.php';
+            $config = include self::$workingDirectory . '/config/general.dev.php';
             $settings = new Collection($config);
 
             if ($env !== '' && isset($config[$env])) {
-                self::$environmentData->setFor('SETTINGS', $settings->get(env('environment', 'dev')));
+                self::$environmentData->setFor('SETTINGS', $settings);
             } else {
-                self::$environmentData->setFor('SETTINGS', $settings->get('dev'));
+                self::$environmentData->setFor('SETTINGS', $settings);
             }
 
             ACL::init();
@@ -743,10 +749,13 @@ class Sail
      * @param  string  $rootDir
      * @param  string  $templatePath
      * @return void
+     * @throws ACLException
      * @throws DatabaseException
-     * @throws FilesystemException
      * @throws FileException
+     * @throws FilesystemException
      * @throws JsonException
+     * @throws PermissionException
+     * @throws Exception
      *
      */
     public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
@@ -764,14 +773,20 @@ class Sail
         Search::registerSystemAdapters();
         Search::init();
 
-        // Load cms Fields
-        Field::init();
-
         // Initialize the logger
         Log::init();
 
         // Initialize the router
         Router::init();
+
+        // Log an admin user for permissions
+        $userEmail = env('TEST_USER_EMAIL');
+        $userPwd = env('TEST_USER_PWD');
+
+        if (!$userEmail || !$userPwd) {
+            throw new Exception('Improperly configured unit tests: TEST_USER_EMAIL and TEST_USER_PWD in your mock .env file should be set');
+        }
+        (new User())->login($userEmail, $userPwd);
 
         self::$environmentData->setFor('SITE_URL', 'http://localhost:8888');
 
@@ -845,21 +860,28 @@ class Sail
         $cors = setting('cors', ['use' => false, 'origins' => '*', 'allowCredentials' => false]);
 
         if (setting('cors.use', false)) {
-            $origins = implode(',', setting('cors.origins', Collection::init())->unwrap());
+            $origin = setting('cors.origin', '*');
             $maxAge = setting('cors.maxAge', 86_400);
 
-            header("Access-Control-Allow-Origin: {$origins}");
+            header("Access-Control-Allow-Origin: {$origin}");
             header("Access-Control-Max-Age: {$maxAge}");
 
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
                 $methods = implode(",", setting('cors.methods', new Collection(['get']))->unwrap());
                 $headers = implode(",", setting('cors.headers', Collection::init())->unwrap());
 
+                // Force these to exist
+                if ($headers !== '') {
+                    $headers .= ',';
+                }
+
+                $headers .= 'Accept,Upgrade-Insecure-Requests,Content-Type,x-requested-with,x-access-token,x-domain-override';
+
                 header("Access-Control-Allow-Methods: {$methods}");
                 header("Access-Control-Allow-Headers: {$headers}");
                 header('Content-Length: 0');
                 header('Content-Type: text/plain');
-                die(); // Options just needs headers, the rest is not required. Stop now!
+                die(''); // Options just needs headers, the rest is not required. Stop now!
             }
         }
     }
@@ -951,6 +973,7 @@ class Sail
      */
     private static function loadAndDetectSites(): void
     {
+        $defaultLocale = "en";
         if (file_exists(self::$workingDirectory . '/config/sites.php')) {
             $sites = include self::$workingDirectory . '/config/sites.php';
 
@@ -963,9 +986,10 @@ class Sail
 
                 if (in_array($host, $config['urls'], true) || in_array('*', $config['urls'], true)) {
                     self::$siteID = $name;
+                    $defaultLocale = $config['defaultLocale'];
                     Locale::setAvailableLocales($config['locales']);
-                    Locale::setCurrent($config['defaultLocale']);
-                    Locale::setDefault($config['defaultLocale']);
+                    Locale::setCurrent($defaultLocale);
+                    Locale::setDefault($defaultLocale);
                     break;
                 }
             }
@@ -978,15 +1002,15 @@ class Sail
                     self::$siteID = $value;
                     Locale::setAvailableLocales($sites[$value]['locales']);
                     Locale::setCurrent($sites[$value]['defaultLocale']);
-                    Locale::setDefault($config['defaultLocale']);
+                    Locale::setDefault($defaultLocale);
                     break;
                 }
             }
         } else {
             self::$siteID = 'default';
-            Locale::setAvailableLocales(['en']);
-            Locale::setCurrent('en');
-            Locale::setDefault('en');
+            Locale::setAvailableLocales([$defaultLocale]);
+            Locale::setCurrent($defaultLocale);
+            Locale::setDefault($defaultLocale);
         }
     }
 
@@ -1042,5 +1066,51 @@ class Sail
             header('WWW-Authenticate: Basic realm="Secure Area"');
             header('HTTP/1.0 401 Unauthorized');
         }
+    }
+
+    /**
+     *
+     * Combine the default configs with the overwriting configs
+     *
+     * @return array
+     *
+     */
+    private static function loadCombinedConfigurations(): array
+    {
+        // Default configuration
+        $defaultConfig = include dirname(__DIR__) . '/config/general.' . env('ENVIRONMENT', 'dev') . '.php';
+
+        // App Configuration
+        $config = include self::$configDirectory . '/general.' . env('ENVIRONMENT', 'dev') . '.php';
+
+        return self::processConfigs($defaultConfig, $config);
+    }
+
+    /**
+     *
+     * Process the configs to see what should be replaced
+     *
+     * @param  array  $default
+     * @param  array  $config
+     * @return array
+     *
+     */
+    private static function processConfigs(array $default, array $config): array
+    {
+        $processed = [];
+
+        foreach ($default as $key => $group) {
+            if (isset($config[$key])) {
+                if (is_scalar($config[$key])) {
+                    $processed[$key] = $config[$key];
+                } else {
+                    $processed[$key] = array_replace($group, $config[$key]);
+                }
+            } else {
+                $processed[$key] = $group;
+            }
+        }
+
+        return $processed;
     }
 }

@@ -11,7 +11,9 @@ use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
 use SailCMS\DI;
 use SailCMS\Email\Controller;
+use SailCMS\Routing\Controller as RoutingController;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FileException;
@@ -26,6 +28,7 @@ use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
+use SailCMS\UI;
 use SodiumException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -200,6 +203,7 @@ class Router
      * @throws RuntimeError
      * @throws SodiumException
      * @throws SyntaxError
+     * @throws CollectionException
      *
      */
     public static function dispatch(bool $isForbidden = false): void
@@ -226,7 +230,7 @@ class Router
             $response = Response::html();
 
             if (!isset($entry->template)) {
-                throw new EntryException(Entry::TEMPLATE_NOT_SET);
+                throw new EntryException(Entry::TEMPLATE_NOT_SET[0], Entry::TEMPLATE_NOT_SET[1]);
             }
 
             Locale::setCurrent($entry->locale);
@@ -432,6 +436,19 @@ class Router
     {
         $instance = new self();
         $instance->get('/email-preview/:any/:any', 'en', Controller::class, 'previewEmail');
+    }
+
+    /**
+     *
+     * Load Application content for the requested party
+     *
+     * @return void
+     *
+     */
+    public static function setupThirdPartyContent(): void
+    {
+        $instance = new self();
+        $instance->get('/extension/:string/:all', 'en', RoutingController::class, 'loadThirdPartyApplication');
     }
 
     // -------------------------------------------------- Private -------------------------------------------------- //

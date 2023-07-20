@@ -29,15 +29,15 @@ TODO before v3.0.0 is complete
 - SEO
     - Robots.txt
     - Sitemap.xml
-    - Social Headers
-    - Meta Tags
-    - Override title
-    - Alternates
+    - ✅ Social Headers
+    - ✅ Meta Tags
+    - ✅ Override title
+    - ✅ Alternates
 
 - Versioning
     - Preview version
-    - Store version on save
-    - List/Restore/Delete versions
+    - ✅ Store version on save
+    - ✅ List/Restore/Delete versions
 
 - Search
     - Algolia adapter (as package)
