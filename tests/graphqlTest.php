@@ -55,365 +55,6 @@ test('Create asset', function () {
     }
 });
 
-test('Create layout, entry type & entry', function () {
-    if (isset($_ENV['test-token'])) {
-        $newEntryLayout = $this->client->run('
-            mutation createLayout {
-                createEntryLayout(
-                    titles: { fr: "Test des champs graphql", en: "Field tests graphql" }
-                    schema: [
-                        {
-                            labels: { en: "Text", fr: "Texte" }
-                            key: "text"
-                            handle: "SailCMS-Models-Entry-TextField"
-                            inputSettings: [
-                                  {
-                                        settings: [
-                                            { name: "required", value: "1", type: boolean }
-                                            { name: "maxLength", value: "10", type: integer }
-                                            { name: "minLength", value: "5", type: integer }
-                                        ]
-                                 }
-                            ]
-                        }
-                        {
-                            labels: { en: "Integer", fr: "Entier" }
-                            key: "integer"
-                            handle: "SailCMS-Models-Entry-NumberField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "min", value: "-1", type: integer }
-                                        { name: "max", value: "11", type: integer }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Float", fr: "Flottant" }
-                            key: "float"
-                            handle: "SailCMS-Models-Entry-NumberField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "true", type: boolean }
-                                        { name: "min", value: "0.03", type: float }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Description", fr: "Description" }
-                            key: "desc"
-                            handle: "SailCMS-Models-Entry-TextField"
-                            inputSettings: []
-                        }
-                        {
-                            labels: { en: "Wysiwyg content", fr: "Contenu Wysiwyg" }
-                            key: "wysiwyg"
-                            handle: "SailCMS-Models-Entry-HTMLField"
-                            inputSettings: []
-                        }
-                        {
-                            labels: { en: "Entry List", fr: "Liste dentrées" }
-                            key: "entryList"
-                            handle: "SailCMS-Models-Entry-EntryListField"
-                            inputSettings: []
-                        }
-                        {
-                            labels: { en: "Email", fr: "Courriel" }
-                            key: "email"
-                            handle: "SailCMS-Models-Entry-EmailField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "true", type: boolean }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Select", fr: "Selection" }
-                            key: "select"
-                            handle: "SailCMS-Models-Entry-SelectField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "false", type: boolean }
-                                        {
-                                            name: "options"
-                                            value: ""
-                                            options: [
-                                                { label: "Big test", value: "test" }
-                                                { label: "The real big test", value: "test2" }
-                                            ]
-                                            type: array
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Select multiple", fr: "Selection multiple" }
-                            key: "select-multiple"
-                            handle: "SailCMS-Models-Entry-MultipleSelectField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "false", type: boolean }
-                                        {
-                                            name: "options"
-                                            value: ""
-                                            options: [
-                                                { label: "Big test", value: "test" }
-                                                { label: "The real big test", value: "test2" }
-                                                { label: "The real big boom of doom test", value: "test3" }
-                                            ]
-                                            type: array
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Image", fr: "Image" }
-                            key: "image"
-                            handle: "SailCMS-Models-Entry-AssetImageField"
-                            repeater: true
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "false", type: boolean }
-                                        { name: "isImage", value: "true", type: boolean }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Date", fr: "Date" }
-                            key: "date"
-                            handle: "SailCMS-Models-Entry-DateField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "false", type: boolean }
-                                        { name: "format", value: "Y-m-d", type: string },
-                                        { name: "min", value: "2020-03-01", type: string }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Hour", fr: "Heure" }
-                            key: "time"
-                            handle: "SailCMS-Models-Entry-TimeField"
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "false", type: boolean }
-                                        { name: "min", value: "10:00", type: string }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Date/Hour", fr: "Date/Heure" }
-                            key: "datetime"
-                            handle: "SailCMS-Models-Entry-DateTimeField"
-                            inputSettings: [
-                                {
-                                    inputKey: "time"
-                                    settings: [
-                                        { name: "required", value: "true", type: boolean }
-                                        { name: "min", value: "10:00", type: string }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Repeater", fr: "Repeteur" }
-                            key: "repeater"
-                            handle: "SailCMS-Models-Entry-TextField"
-                            repeater: true
-                            inputSettings: [
-                                {
-                                    settings: [
-                                        { name: "required", value: "false", type: boolean }
-                                    ]
-                                }
-                            ]
-                        }
-                        {
-                            labels: { en: "Categories", fr: "Catégories" }
-                            key: "categories"
-                            handle: "SailCMS-Models-Entry-CategoryListField"
-                            repeater: true
-                            inputSettings: []
-                        }
-                    ]
-                    ) {
-                    _id
-                }
-            }
-        ', [], $_ENV['test-token']);
-
-        $newEntryType = $this->client->run('
-            mutation {
-                createEntryType(
-                    handle: "tests-graphql"
-                    title: "Tests graphql"
-                    url_prefix: {
-                        en: "graphql-tests"
-                        fr: "tests-graphql"
-                    }
-                    entry_layout_id: "' . $newEntryLayout->data->createEntryLayout->_id . '"
-                ) {
-                    _id
-                    title
-                    handle
-                    url_prefix {
-                        fr
-                        en
-                    }
-                    entry_layout_id
-                }
-            }
-        ', [], $_ENV['test-token']);
-
-        $assets = $this->client->run('
-            {
-                assets(page: 1, limit: 1, search: "graphql-test-webp", site_id: "' . Sail::siteId() . '") {
-                    list {
-                        _id
-                    }
-                }
-            }
-        ', [], $_ENV['test-token']);
-        $assetId = (string)$assets->data->assets->list[0]->_id;
-
-        $categories = $this->client->run('
-            {
-                categoryFullTree(parent_id: "", site_id: "' . Sail::siteId() . '") {
-                     _id
-                }
-            }
-        ', [], $_ENV['test-token']);
-
-        if ($categories->data->categoryFullTree) {
-            $categoryList = "";
-            foreach ($categories->data->categoryFullTree as $i => $category) {
-                $categoryList .= '"' . $category->_id . '"';
-
-                if ($i < count($categories->data->categoryFullTree) - 1) {
-                    $categoryList .= ", ";
-                }
-            }
-        }
-
-        $entry = $this->client->run('
-            {
-                entryByUrl(url: "") {
-                    _id
-                }
-            }
-        ', [], $_ENV['test-token']);
-        $entryId = (string)$entry->data->entryByUrl->_id;
-
-        $newEntry = $this->client->run('
-            mutation {
-                createEntry(
-                    entry_type_handle: "tests-graphql"
-                    locale: "en"
-                    is_homepage: false
-                    title: "It just works"
-                    template: ""
-                    slug: "it-just-works"
-                    content: [
-                        {
-                            key: "float"
-                            content: "1.04"
-                        }
-                        {
-                            key: "text"
-                            content: "Not empty"
-                        }
-                        {
-                            key: "desc"
-                            content: "This text contains line returns and must keep it through all the process"
-                        }
-                        {
-                            key: "wysiwyg"
-                            content: "<p><strong>Test</strong></p>"
-                        }
-                        {
-                            key: "email"
-                            content: "testleeroy@leeroy.ca"
-                        }
-                        {
-                            key: "entryList"
-                            content: ["' . $entryId . '"]
-                        }
-                        {
-                            key: "select"
-                            content: "test"
-                        }
-                        {
-                            key: "select-multiple"
-                            content: ["test", "test2"]
-                        }
-                        {
-                            key: "image"
-                            content: ["' . $assetId . '"]
-                        }
-                        {
-                            key: "date"
-                            content: "2021-03-01"
-                        }
-                        {
-                            key: "time"
-                            content: "10:00"
-                        }
-                        {
-                            key: "datetime"
-                            content: {
-                                date: "2023-03-02"
-                                time: "10:20"
-                            }
-                        }
-                        {
-                            key: "repeater"
-                            content: ["test", "test2", "test3"]
-                        }
-                        {
-                            key: "categories"
-                            content: [' . $categoryList . ']
-                        }
-                    ]
-                ) {
-                    entry {
-                        content {
-                            key
-                            content
-                        }
-                    }
-                    errors {
-                        key
-                        errors
-                    }
-                }
-            }
-        ', [], $_ENV['test-token']);
-
-        try {
-            expect($newEntryLayout->status)->toBe('ok');
-            expect($newEntryType->status)->toBe('ok');
-            expect($newEntry->status)->toBe('ok');
-        } catch (Exception $exception) {
-            expect(true)->toBe(false);
-        }
-    }
-})->group('graphql');
-
 test('Get a page and modify his SEO', function () {
     if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('
@@ -495,6 +136,113 @@ test('Get a page and modify his SEO', function () {
     }
 })->group('graphql');
 
+test('Create field and layout', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryFieldResponse = $this->client->run('
+            mutation {
+                createEntryField(key: "graphql_test", name: "Text", label: {en: "Text", fr: "Texte"}, type: "text", required: true) {
+                    _id
+                    key
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryFieldResponse->status)->toBe('ok');
+
+        $entryLayoutResponse = $this->client->run('
+            mutation {
+                createEntryLayout(title: "GraphQL Test", schema: {label: "First tab", fields: ["' . $entryFieldResponse->data->createEntryField->_id . '"]}, slug: "graphql-test") {
+                    _id
+                    slug
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutResponse->status)->toBe('ok')
+            ->and($entryLayoutResponse->data->createEntryLayout->slug)->toBe('graphql-test');
+    }
+});
+
+test('Delete field and layout', function () {
+    if (isset($_ENV['test-token'])) {
+        $entryLayoutResponse = $this->client->run('
+            {
+                entryLayout(slug: "graphql-test") {
+                    _id
+                    slug
+                    is_trashed
+                    authors {
+                        created_by {
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        updated_by {
+                            email
+                            name {
+                                full
+                            }
+                        }
+                        deleted_by {
+                            email
+                            name {
+                                full
+                            }
+                        }
+                    }
+                    dates {
+                        created
+                        updated
+                        deleted
+                    }
+                    schema {
+                        label
+                        fields {
+                            _id
+                            key
+                            type
+                            name
+                            label {
+                                fr
+                                en
+                            }
+                            placeholder {
+                                fr
+                                en
+                            }
+                            explain {
+                                fr
+                                en
+                            }
+                            validation
+                            repeatable
+                            required
+                            config
+                        }
+                    }
+                }
+            }
+        ', [], $_ENV['test-token']);
+
+        $entryLayoutDeleteResponse = $this->client->run('
+            mutation {
+                deleteEntryLayout(id: "' . $entryLayoutResponse->data->entryLayout->_id . '", soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutDeleteResponse->status)->toBe('ok');
+
+        $entryFieldResponse = $this->client->run('
+            mutation {
+                deleteEntryField(key: "graphql_test")
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryFieldResponse->status)->toBe('ok');
+    }
+});
+
 test('Get a entry', function () {
     if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('
@@ -510,7 +258,6 @@ test('Get a entry', function () {
                             en
                             fr
                         }
-                        entry_layout_id
                     }
                     parent {
                         _id
@@ -572,27 +319,6 @@ test('Get a entry', function () {
                     content {
                         key
                         content
-                        handle
-                        type
-                    }
-                    schema {
-                        key
-                        repeater
-                        fieldConfigs {
-                            labels {
-                                en
-                                fr
-                            }
-                            handle
-                            inputSettings {
-                                inputKey
-                                settings {
-                                    name
-                                    value
-                                    type
-                                }
-                            }
-                        }
                     }
                     seo {
                         _id
@@ -623,60 +349,51 @@ test('Get a entry', function () {
     ', [], $_ENV['test-token']);
         expect($entryResponse->data->entries->list[0])->not()->toBeNull();
     }
-
 })->group('graphql');
 
-test('Delete layout, entry type & entry', function () {
+test('Create and soft/hard delete entry layouts', function () {
     if (isset($_ENV['test-token'])) {
-        $entryType = $this->client->run('
-            {
-                entryType(handle: "tests-graphql") {
-                    _id
-                    handle
-                    entry_layout_id
-                }
-            }
-        ', [], $_ENV['test-token']);
-        $entryType = $entryType->data->entryType;
-
-        $entry = $this->client->run('
-            {
-                entries(
-                    entry_type_handle: "tests-graphql"
-                ) {
-                    list {
+        $entryLayoutIds = "";
+        $titleAndSlugs = ['to-delete-1', 'to-delete-2'];
+        foreach ($titleAndSlugs as $i => $titleAndSlug) {
+            $entryLayoutResponse = $this->client->run('
+                mutation {
+                    createEntryLayout(title: "' . $titleAndSlug . '", schema: [], slug: "' . $titleAndSlug . '") {
                         _id
+                        slug
                     }
                 }
-            }
-        ', [], $_ENV['test-token']);
+            ', [], $_ENV['test-token']);
+            $entryLayoutIds .= '"' . (string)$entryLayoutResponse->data->createEntryLayout->_id . '"';
 
-        $deleteEntry = $this->client->run('
-            mutation {
-                deleteEntry(entry_type_handle: "tests-graphql", id: "' . $entry->data->entries->list[0]->_id . '", soft: false)
+            if ($i < count($titleAndSlugs) - 1) {
+                $entryLayoutIds .= ', ';
             }
-        ', [], $_ENV['test-token']);
-
-        $deleteEntryType = $this->client->run('
-            mutation {
-                deleteEntryType(id: "' . $entryType->_id . '")
-            }
-        ', [], $_ENV['test-token']);
-
-        $deleteEntryLayout = $this->client->run('
-            mutation {
-                deleteEntryLayout(id: "' . $entryType->entry_layout_id . '", soft: false)
-            }
-        ', [], $_ENV['test-token']);
-
-        try {
-            expect($deleteEntry->status)->toBe('ok');
-            expect($deleteEntryLayout->status)->toBe('ok');
-            expect($deleteEntryType->status)->toBe('ok');
-        } catch (Exception $exception) {
-//            print_r($exception);
-            expect(true)->toBe(false);
         }
+
+        $entryLayoutSoftDelete = $this->client->run('
+            mutation {
+                deleteEntryLayouts(ids: [' . $entryLayoutIds . '])
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutSoftDelete->status)->toBe('ok');
+
+        $entryLayoutRestore = $this->client->run('
+            mutation {
+                restoreEntryLayouts(ids: [' . $entryLayoutIds . '])
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutRestore->status)->toBe('ok');
+
+        $entryLayoutHardDelete = $this->client->run('
+            mutation {
+                deleteEntryLayouts(ids: [' . $entryLayoutIds . '], soft: false)
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($entryLayoutHardDelete->status)->toBe('ok');
     }
 })->group('graphql');
 

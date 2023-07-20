@@ -23,7 +23,6 @@ use SailCMS\Log;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Entry as MEntry;
-use SailCMS\Models\Entry\Field as ModelField;
 use SailCMS\Sail;
 use SailCMS\Search as SailSearch;
 use SailCMS\Text;
@@ -31,7 +30,6 @@ use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryAlternate;
 use SailCMS\Types\EntryParent;
-use SailCMS\Types\Fields\Field as InputField;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
 use SailCMS\Types\MiddlewareType;
@@ -39,6 +37,7 @@ use SailCMS\Types\Pagination;
 use SailCMS\Types\PublicationDates;
 use SailCMS\Types\PublicationStatus;
 use SailCMS\Types\QueryOptions;
+use SailCMS\Validator as ContentValidator;
 use SodiumException;
 use stdClass;
 
@@ -83,7 +82,7 @@ class Entry extends Model implements Validator, Castable
 
     /* Errors */
     public const TITLE_MISSING = ['5001: You must set the entry title in your data.', 5001];
-    public const CANNOT_VALIDATE_CONTENT = ['5002: You cannot validate content without setting an entry layout to the type.', 5002];
+    public const CANNOT_VALIDATE_CONTENT = ['5002: Can not validate the content because there is no entry layout assigned to the type.', 5002];
     public const TEMPLATE_NOT_SET = ['5003: Template property of the entry is not set.', 5003];
     public const CONTENT_KEY_ERROR = ['5004: The key "%s" does not exist in the schema of the entry layout.', 5004];
     public const CONTENT_ERROR = ['5005: The content has theses errors :' . PHP_EOL, 5005];
@@ -187,11 +186,13 @@ class Entry extends Model implements Validator, Castable
         }
 
         $castedAlternates = [];
-        $this->alternates->each(function ($key, $alternate) use (&$castedAlternates) {
-            if ($alternate instanceof EntryAlternate) {
-                $castedAlternates[] = $alternate->castFrom();
-            } // Else it's not an Entry Alternate object, so we ignore it
-        });
+        if ($this->alternates) {
+            $this->alternates->each(function ($key, $alternate) use (&$castedAlternates) {
+                if ($alternate instanceof EntryAlternate) {
+                    $castedAlternates[] = $alternate->castFrom();
+                } // Else it's not an Entry Alternate object, so we ignore it
+            });
+        }
 
         return $castedAlternates;
     }
@@ -251,7 +252,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Get parent url
      *
-     * @param  object            $currentHomepage
+     * @param  object|null       $currentHomepage
      * @param  EntryParent|null  $entryParent
      * @return string
      * @throws ACLException
@@ -313,36 +314,32 @@ class Entry extends Model implements Validator, Castable
      * Get content with Model Field data
      *
      * @return Collection
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      *
      */
     public function getContent(): Collection
     {
-        $parsedContent = Collection::init();
+        Collection::init();
 
-        $schema = $this->getSchema(true);
+//        $schema = $this->getSchema(true);
+//
+//        $schema->each(function ($key, $modelField) use (&$parsedContent) {
+//            /**
+//             * @var ModelField $modelField
+//             */
+//            $content = $this->content->get($key);
+//
+//            $parsedFieldContent = $modelField->parse($content);
+//
+//            $parsedContent->pushKeyValue($key, [
+//                'type' => $modelField->storingType(),
+//                'repeater' => $modelField->repeater,
+//                'handle' => $modelField->handle,
+//                'content' => $parsedFieldContent ?? '',
+//                'key' => $key
+//            ]);
+//        });
 
-        $schema->each(function ($key, $modelField) use (&$parsedContent) {
-            /**
-             * @var ModelField $modelField
-             */
-            $content = $this->content->get($key);
-
-            $parsedFieldContent = $modelField->parse($content);
-
-            $parsedContent->pushKeyValue($key, [
-                'type' => $modelField->storingType(),
-                'repeater' => $modelField->repeater,
-                'handle' => $modelField->handle,
-                'content' => $parsedFieldContent ?? '',
-                'key' => $key
-            ]);
-        });
-
-        return $parsedContent;
+        return $this->content;
     }
 
     /**
@@ -351,30 +348,29 @@ class Entry extends Model implements Validator, Castable
      *
      * @param  Collection  $content
      * @return array
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      */
-    private function processContentBeforeSave(Collection $content): array
+    private function processContentBeforeSave(stdClass|Collection $content): array
     {
-        $processedContents = [];
-        $schema = $this->getSchema(true);
+        if ($content instanceof stdClass) {
+            $content = new Collection((array)$content);
+        }
+//        $processedContents = [];
+//        $schema = $this->getSchema(true);
+//
+//        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
+//            $fieldContent = $content->get($key);
+//
+//            if ($fieldContent) {
+//                /**
+//                 * @var ModelField $modelField
+//                 */
+//                $processedFieldContent = $modelField->convert($fieldContent);
+//
+//                $processedContents[$key] = $processedFieldContent;
+//            }
+//        });
 
-        $schema->each(function ($key, $modelField) use (&$processedContents, $content) {
-            $fieldContent = $content->get($key);
-
-            if ($fieldContent) {
-                /**
-                 * @var ModelField $modelField
-                 */
-                $processedFieldContent = $modelField->convert($fieldContent);
-
-                $processedContents[$key] = $processedFieldContent;
-            }
-        });
-
-        return $processedContents;
+        return $content->unwrap();
     }
 
     /**
@@ -464,6 +460,7 @@ class Entry extends Model implements Validator, Castable
             'url' => $this->url,
             'authors' => $this->authors->castFrom(),
             'dates' => $this->dates->castFrom(),
+            'content' => $this->content,
             'categories' => $this->categories->castFrom()
         ];
 
@@ -479,10 +476,6 @@ class Entry extends Model implements Validator, Castable
      * Gather data for search purpose
      *
      * @return array
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
      *
      */
     public function searchData(): array
@@ -490,15 +483,14 @@ class Entry extends Model implements Validator, Castable
         $parsedContents = [
             'entry_type_handle' => $this->entryType->handle
         ];
+
         $schema = $this->getSchema(true);
+
         $this->content->each(function ($key, $content) use (&$parsedContents, $schema) {
             $parsedContent = $content;
 
-            /**
-             * @var ModelField $field
-             */
-            $field = $schema->get($key);
-            $isSearchable = $field::SEARCHABLE && $field;
+            $entryField = EntryLayout::getFieldInSchema($schema, $key);
+            $isSearchable = $entryField->searchable ?? false;
 
             if ($isSearchable) {
                 if (is_object($content)) {
@@ -510,7 +502,6 @@ class Entry extends Model implements Validator, Castable
                 $parsedContents[$key] = $parsedContent;
             }
         });
-
 
         return [
             '_id' => $this->_id,
@@ -530,7 +521,7 @@ class Entry extends Model implements Validator, Castable
      * @param  int     $limit
      * @param  string  $sort
      * @param  int     $direction
-     * @param  bool    $ignoreTrash
+     * @param  bool    $onlyTrash
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException
@@ -538,16 +529,24 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $ignoreTrash = true): Listing
+    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $onlyTrash = false, string $locale = null): Listing
     {
         $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
         $offset = $page * $limit - $limit;
 
-        // Ignore trash entries
         $filters = [];
-        if ($ignoreTrash) {
+
+        // Ignore trash entries
+        if ($onlyTrash) {
+            $filters['trashed'] = true;
+        } else {
             $filters['trashed'] = ['$in' => [false, null]];
+        }
+
+        // Specify locale
+        if ($locale) {
+            $filters['locale'] = $locale;
         }
 
         // Option for pagination
@@ -837,6 +836,18 @@ class Entry extends Model implements Validator, Castable
         return $newSlug;
     }
 
+    public static function processContentForGraphQL(?Collection $content): array
+    {
+        $parsedContent = [];
+        $content->each(function ($key, $value) use (&$parsedContent) {
+            $parsedContent[] = [
+                'key' => $key,
+                'content' => json_encode($value)
+            ];
+        });
+        return $parsedContent;
+    }
+
     /**
      *
      * Process content from graphQL to be able to create/update
@@ -858,7 +869,6 @@ class Entry extends Model implements Validator, Castable
 
             $parsedContent->pushKeyValue($toParse->key, $parsed);
         });
-
         return $parsedContent;
     }
 
@@ -1322,7 +1332,6 @@ class Entry extends Model implements Validator, Castable
      * Get schema from entryLayout
      *
      * @param  bool  $silent
-     * @param  bool  $simplified
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -1330,7 +1339,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public function getSchema(bool $silent = false, bool $simplified = false): Collection
+    public function getSchema(bool $silent = false): Collection
     {
         $entryLayout = $this->getEntryLayout();
 
@@ -1346,10 +1355,6 @@ class Entry extends Model implements Validator, Castable
             if (!$entryLayout) {
                 Log::error($errorMessage, ['entry' => $this]);
             }
-        }
-
-        if ($simplified) {
-            return $entryLayout ? $entryLayout->simplifySchema() : Collection::init();
         }
 
         $result = $entryLayout ? $entryLayout->schema : Collection::init();
@@ -1531,8 +1536,11 @@ class Entry extends Model implements Validator, Castable
         $total = 0;
 
         foreach ($types as $type) {
-            $model = new self('', $type);
-            $total += $model->count(['entry_type_id' => ['$in' => $type->id]]);
+            /**
+             * @var EntryType $type
+             */
+            $model = $type->getEntryModel($type);
+            $total += $model->count([]);
         }
 
         return $total;
@@ -1542,57 +1550,56 @@ class Entry extends Model implements Validator, Castable
      *
      * Validate content from the entry type layout schema
      *
-     * @param  Collection  $content
+     * @param  Collection  $contents
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     *
      */
-    private function validateContent(Collection $content): Collection
+    private function validateContent(Collection $contents): Collection
     {
         $errors = Collection::init();
 
         $schema = null;
         if ($this->entryType->entry_layout_id) {
-            $schema = $this->getSchema();
+            $schema = $this->getSchema(true);
         }
 
-        if ($content->length > 0 && !$schema) {
-            throw new EntryException(self::CANNOT_VALIDATE_CONTENT[0], self::CANNOT_VALIDATE_CONTENT[1]);
-        } else {
-            if (!$schema) {
-                $schema = Collection::init();
-            }
+        if ($contents->length > 0 && !$schema) {
+            Log::error(self::CANNOT_VALIDATE_CONTENT[0], ['entry' => $this]);
+        }
+
+        // Create an empty schema if empty
+        if (!$schema) {
+            $schema = Collection::init();
         }
 
         // Validate content from schema
-        $schema->each(function ($key, $modelField) use ($content, $errors) {
-            /**
-             * @var ModelField $modelField
-             */
-            $modelFieldContent = $content->get($key);
+        $contents->each(function ($key, $content) use ($schema, $errors, $contents) {
+            $entryField = EntryLayout::getFieldInSchema($schema, $key);
+            $contentFieldErrors = Collection::init();
 
-            // Cannot find content, it's not filled at all
-            if ($modelFieldContent === null && $modelField->isRequired()) {
-                $errors->pushKeyValue($key, [[InputField::FIELD_REQUIRED]]);
-                return;
+            if (!$entryField) {
+                // Fail silently to avoid an error on saving
+                Log::warning(sprintf(self::CONTENT_KEY_ERROR[0], $key), ['contents' => $contents, 'schema' => $schema]);
+                return false;
+            }
+
+            if ($entryField->required && !ContentValidator::required($content)) {
+                $contentFieldErrors->push(EntryField::FIELD_REQUIRED);
             } else {
-                if ($modelFieldContent === null) {
-                    return;
+                $failedValidations = ContentValidator::validateContentWithEntryField($content, $entryField, true);
+                if ($failedValidations->length > 0) {
+                    $contentFieldErrors->merge($failedValidations);
                 }
             }
-            $modelFieldErrors = $modelField->validateContent($modelFieldContent);
 
-            if ($modelFieldErrors->length > 0) {
-                $errors->pushKeyValue($key, $modelFieldErrors->unwrap());
+            if ($contentFieldErrors->length > 0) {
+                $errors->pushKeyValue($key, $contentFieldErrors);
             }
-        });
-
-        $content->each(function ($key, $content) use ($schema) {
-            if (!$schema->get($key)) {
-                throw new EntryException(sprintf(self::CONTENT_KEY_ERROR[0], $key), self::CONTENT_KEY_ERROR[1]);
-            }
+            return true;
         });
 
         return $errors;
@@ -1688,7 +1695,7 @@ class Entry extends Model implements Validator, Castable
      *
      * @param  Collection|array  $data
      * @param  bool              $throwErrors
-     * @return array|Entry|Collection|null
+     * @return array|Entry|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException

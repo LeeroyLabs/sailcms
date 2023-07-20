@@ -73,7 +73,9 @@
         "predis/predis": "^2.1",
         "leeroy/php-inflector": "^1.0.1",
         "league/csv": "^9.0",
-        "symfony/process": "^6.3"
+        "symfony/process": "^6.3",
+        "respect/validation": "^2.3.0-RC",
+        "giggsey/libphonenumber-for-php-lite": "^8.13"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.10",

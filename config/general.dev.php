@@ -132,7 +132,8 @@ return [
                 'en' => '',
                 'fr' => ''
             ],
-            'entryLayoutId' => null
+            'entryLayoutId' => null,
+            'useCategories' => false
         ],
         'cacheTtl' => \SailCMS\Cache::TTL_WEEK,
         'seo' => [

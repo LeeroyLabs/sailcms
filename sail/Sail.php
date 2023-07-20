@@ -254,9 +254,6 @@ class Sail
         // Load cms ACLs
         ACL::loadCmsACL();
 
-        // Load cms Fields
-        Field::init();
-
         // Initialize the logger
         Log::init();
 
@@ -395,9 +392,6 @@ class Sail
 
                     ACL::loadCustom($acls);
 
-                    // load custom fields
-                    Field::loadCustom($instance->fields());
-
                     // Run the command registration
                     $commands = $instance->cli()->unwrap();
 
@@ -470,8 +464,7 @@ class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value)
-        {
+        $models->each(function ($key, $value) {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 
@@ -776,9 +769,6 @@ class Sail
         // Register Search Adapters
         Search::registerSystemAdapters();
         Search::init();
-
-        // Load cms Fields
-        Field::init();
 
         // Initialize the logger
         Log::init();

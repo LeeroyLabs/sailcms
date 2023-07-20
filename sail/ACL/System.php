@@ -46,6 +46,8 @@ class System
             new ACL('EntryVersion', ACLType::READ, 'Read access to entry versions', 'Accès lecture aux versions des entrées'),
             new ACL('EntryPublication', ACLType::READ_WRITE, 'Manage entry publications', 'Gestion des publications des entrées'),
             new ACL('EntryPublication', ACLType::READ, 'Read access to entry publications', 'Accès lecture aux publications des entrées'),
+            new ACL('EntryFields', ACLType::READ_WRITE, 'Manage entry fields', 'Gestion des champs'),
+            new ACL('EntryFields', ACLType::READ, 'Read access to entry fields', 'Accès lecture des champs'),
 
             // Assets
             new ACL('Asset', ACLType::READ_WRITE, 'Manage assets', 'Gestion des actifs'),

@@ -51,11 +51,6 @@ class Container extends AppContainer
         // register for events
     }
 
-    public function fields(): Collection
-    {
-        return Collection::init();
-    }
-
     public function cli(): Collection
     {
         return Collection::init();

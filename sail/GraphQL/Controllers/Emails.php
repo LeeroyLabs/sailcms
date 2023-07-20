@@ -3,7 +3,6 @@
 namespace SailCMS\GraphQL\Controllers;
 
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -13,7 +12,6 @@ use SailCMS\GraphQL\Context;
 use SailCMS\Mail;
 use SailCMS\Models\Email;
 use SailCMS\Models\EmailDeprecated;
-use SailCMS\Sail;
 use Twig\Error\LoaderError;
 
 class Emails

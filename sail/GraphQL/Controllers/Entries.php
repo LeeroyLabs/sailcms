@@ -6,18 +6,14 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
-use SailCMS\Errors\FieldException;
 use SailCMS\Errors\PermissionException;
-use SailCMS\Field;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Category;
 use SailCMS\Models\Entry;
-use SailCMS\Models\EntryLayout;
 use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntrySeo;
 use SailCMS\Models\EntryType;
@@ -25,7 +21,6 @@ use SailCMS\Models\EntryVersion;
 use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Types\Listing;
-use SailCMS\Types\LocaleField;
 use SailCMS\Types\SocialMeta;
 use SodiumException;
 
@@ -57,150 +52,6 @@ class Entries
     }
 
     /**
-     * Get all entry types
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return Collection
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws PermissionException
-     *
-     */
-    public function entryTypes(mixed $obj, Collection $args, Context $context): Collection
-    {
-        $result = EntryType::getAll(true);
-
-        $parsedResult = Collection::init();
-        $result->each(function ($key, &$entryType) use ($parsedResult)
-        {
-            /**
-             * @var EntryType $entryType
-             */
-            $parsedResult->push($entryType->simplify());
-        });
-
-        return $parsedResult;
-    }
-
-    /**
-     * Get an entry type by id or by his handle
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return array|null
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function entryType(mixed $obj, Collection $args, Context $context): ?array
-    {
-        $id = $args->get('id');
-        $handle = $args->get('handle');
-
-        $result = null;
-        if (!$handle) {
-            $result = EntryType::getDefaultType();
-        }
-
-        if ($handle) {
-            $result = (new EntryType())->getByHandle($handle);
-        }
-
-        // Valid and clean data before to send it
-        if (!$result) {
-            $msg = $id ? "id = " . $id : $handle;
-            throw new EntryException(sprintf(EntryType::DOES_NOT_EXISTS, $msg));
-        }
-
-        return $result->simplify();
-    }
-
-    /**
-     *
-     * Create entry type
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return array
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws ACLException
-     * @throws PermissionException
-     *
-     */
-    public function createEntryType(mixed $obj, Collection $args, Context $context): array
-    {
-        $handle = $args->get('handle');
-        $title = $args->get('title');
-        $urlPrefix = $args->get('url_prefix');
-        $entryLayoutId = $args->get('entry_layout_id');
-
-        $urlPrefix = new LocaleField($urlPrefix->unwrap());
-
-        $result = (new EntryType())->create($handle, $title, $urlPrefix, $entryLayoutId);
-
-        if (!$result->entry_layout_id) {
-            $result->entry_layout_id = "";
-        }
-
-        return $result->simplify();
-    }
-
-    /**
-     *
-     * Update an entry type by handle
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function updateEntryType(mixed $obj, Collection $args, Context $context): bool
-    {
-        $handle = $args->get('handle');
-        $urlPrefix = $args->get('url_prefix');
-
-        // Override url_prefix to pass a LocaleField instead of a Collection
-        if ($urlPrefix) {
-            $args->pushKeyValue('url_prefix', new LocaleField($urlPrefix->unwrap()));
-        }
-
-        return (new EntryType())->updateByHandle($handle, $args);
-    }
-
-    /**
-     *
-     * Delete an entry type
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function deleteEntryType(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $args->get('id');
-
-        return (new EntryType())->hardDelete($id);
-    }
-
-    /**
      *
      * Get all entries of a given type
      *
@@ -225,18 +76,18 @@ class Entries
         $sort = $args->get('sort', 'title');
         $direction = $args->get('direction', 1);
         $search = $args->get('search', '');
-        $ignoreTrash = $args->get('ignore_trash', true);
+        $onlyTrash = $args->get('only_trash', false);
+        $locale = $args->get('locale');
 
         // Get the result!
-        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $ignoreTrash); // By entry type instead
+        $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $onlyTrash, $locale); // By entry type instead
 
         // Get homepage to set is_homepage on each entry
         $currentSiteHomepages = Entry::getHomepage(Sail::siteId());
 
         // Clean data before returning it.
         $data = Collection::init();
-        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data)
-        {
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data) {
             /**
              * @var Entry $entry
              */
@@ -531,6 +382,70 @@ class Entries
 
     /**
      *
+     * Get entry version by id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return EntryVersion
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryVersion(mixed $obj, Collection $args, Context $context): EntryVersion
+    {
+        $id = $args->get('id');
+
+        return (new EntryVersion())->getById($id);
+    }
+
+    /**
+     *
+     * Get entry versions by entry_id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return array
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryVersions(mixed $obj, Collection $args, Context $context): array
+    {
+        $entryId = $args->get('entry_id');
+
+        return (new EntryVersion())->getVersionsByEntryId($entryId);
+    }
+
+    /**
+     *
+     * Apply entry version with entry version id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function applyVersion(mixed $obj, Collection $args, Context $context): bool
+    {
+        $entry_version_id = $args->get('entry_version_id');
+
+        return (new EntryVersion())->applyVersion($entry_version_id);
+    }
+
+    /**
+     *
      * Resolver for entry model
      *
      * @param  mixed        $obj
@@ -576,11 +491,12 @@ class Entries
 
         // Entry fields to resolve
         if ($info->fieldName === "content") {
-            return $entry->getContent();
+            return Entry::processContentForGraphQL($entry->getContent());
         }
 
         if ($info->fieldName === "schema") {
-            return $entry->getSchema(true, true)->unwrap();
+            return [];
+//            return $entry->getSchema(true, true)->unwrap();
         }
 
         if ($info->fieldName === "seo") {
@@ -686,285 +602,6 @@ class Entries
         }
 
         return $obj->{$info->fieldName};
-    }
-
-    /**
-     *
-     * EntryLayout resolver
-     *
-     * @param  mixed        $obj
-     * @param  Collection   $args
-     * @param  Context      $context
-     * @param  ResolveInfo  $info
-     * @return mixed
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function entryLayoutResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
-    {
-        $obj = (object)$obj;
-
-        if ($info->fieldName === 'used_by') {
-            return EntryType::getCountByLayout($obj->_id);
-        }
-
-        if ($info->fieldName === 'record_count') {
-            $types = EntryType::getTypesUsingLayout($obj->_id);
-            return Entry::countAllThatAre($types);
-        }
-
-        return $obj->{$info->fieldName};
-    }
-
-    /**
-     *
-     * Get entry version by id
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return EntryVersion
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws PermissionException
-     *
-     */
-    public function entryVersion(mixed $obj, Collection $args, Context $context): EntryVersion
-    {
-        $id = $args->get('id');
-
-        return (new EntryVersion())->getById($id);
-    }
-
-    /**
-     *
-     * Get entry versions by entry_id
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return array
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws PermissionException
-     *
-     */
-    public function entryVersions(mixed $obj, Collection $args, Context $context): array
-    {
-        $entryId = $args->get('entry_id');
-
-        return (new EntryVersion())->getVersionsByEntryId($entryId);
-    }
-
-    /**
-     *
-     * Apply entry version with entry version id
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws FilesystemException
-     * @throws JsonException
-     * @throws PermissionException
-     * @throws SodiumException
-     *
-     */
-    public function applyVersion(mixed $obj, Collection $args, Context $context): bool
-    {
-        $entry_version_id = $args->get('entry_version_id');
-
-        return (new EntryVersion())->applyVersion($entry_version_id);
-    }
-
-    /**
-     *
-     * Get an entry layout by id
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return array|null
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws PermissionException
-     *
-     */
-    public function entryLayout(mixed $obj, Collection $args, Context $context): ?array
-    {
-        $entryLayoutId = $args->get('id');
-
-        $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->one([
-            '_id' => $entryLayoutId
-        ]);
-
-        return $entryLayout?->simplify();
-    }
-
-    /**
-     *
-     * Get all entry layouts
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return array|null
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws PermissionException
-     *
-     */
-    public function entryLayouts(mixed $obj, Collection $args, Context $context): ?array
-    {
-        $entryLayouts = Collection::init();
-        $result = (new EntryLayout())->getAll() ?? [];
-
-        (new Collection($result))->each(function ($key, $entryLayout) use ($entryLayouts)
-        {
-            /**
-             * @var EntryLayout $entryLayout
-             */
-            $entryLayouts->push($entryLayout->simplify());
-        });
-
-        return $entryLayouts->unwrap();
-    }
-
-    /**
-     *
-     * Create an entry layout
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return array|null
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     * @throws FieldException
-     *
-     */
-    public function createEntryLayout(mixed $obj, Collection $args, Context $context): ?array
-    {
-        $titles = $args->get('titles');
-        $graphqlSchema = $args->get('schema');
-        $slug = $args->get('slug');
-
-        $titles = new LocaleField($titles->unwrap());
-
-        $schema = EntryLayout::processSchemaFromGraphQL($graphqlSchema);
-        $generatedSchema = EntryLayout::generateLayoutSchema($schema);
-
-        $entryLayoutModel = new EntryLayout();
-        return $entryLayoutModel->create($titles, $generatedSchema, $slug)->simplify();
-    }
-
-    /**
-     *
-     * Update an entry layout
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function updateEntryLayoutSchema(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $args->get('id');
-        $titles = $args->get('titles');
-        $schemaUpdate = $args->get('schema_update');
-
-        $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->one(['_id' => $id]);
-
-        if (!$entryLayout) {
-            throw new EntryException(sprintf(EntryLayout::DOES_NOT_EXISTS, $id));
-        }
-
-        EntryLayout::updateSchemaFromGraphQL($schemaUpdate, $entryLayout);
-
-        return $entryLayoutModel->updateById($id, $titles, $entryLayout->schema);
-    }
-
-    /**
-     *
-     * Update a key in an entry layout schema
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     * @throws JsonException
-     *
-     */
-    public function updateEntryLayoutSchemaKey(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $args->get('id');
-        $key = $args->get('key');
-        $newKey = $args->get('newKey');
-
-        $entryLayoutModel = new EntryLayout();
-        $entryLayout = $entryLayoutModel->one(['_id' => $id]);
-
-        if (!$entryLayout) {
-            throw new EntryException(sprintf(EntryLayout::DOES_NOT_EXISTS, $id));
-        }
-
-        return $entryLayout->updateSchemaKey($key, $newKey);
-    }
-
-    /**
-     *
-     * Delete an entry layout
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return bool
-     * @throws ACLException
-     * @throws DatabaseException
-     * @throws EntryException
-     * @throws PermissionException
-     *
-     */
-    public function deleteEntryLayout(mixed $obj, Collection $args, Context $context): bool
-    {
-        $id = $args->get('id');
-        $soft = $args->get('soft', true);
-
-        return (new EntryLayout())->delete($id, $soft);
-    }
-
-    /**
-     *
-     * Get all fields Info
-     *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
-     * @return Collection
-     *
-     */
-    public function fields(mixed $obj, Collection $args, Context $context): Collection
-    {
-        return Field::getAvailableFields();
     }
 
     /**

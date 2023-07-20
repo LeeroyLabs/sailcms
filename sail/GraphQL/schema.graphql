@@ -36,16 +36,22 @@ type Query {
 
     # Entries
     homepageEntry(locale: String!, site_id: ID!): Entry
-    entryTypes: [EntryType!]
+    entryTypes: [EntryType!]!
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, ignore_trash: Boolean): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, only_trash: Boolean, locale: String): EntryListing
     entryByUrl(url: String!, site_id: String): Entry
     entry(id: ID!, entry_type_handle: String): Entry
-    entryLayout(id: ID!): EntryLayout
-    entryLayouts: [EntryLayout!]
     entryVersion(id: ID!): EntryVersion
-    entryVersions(entry_id: ID!): [EntryVersion!]
-    fields: [FieldInfo]
+    entryVersions(entry_id: ID!): [EntryVersion!]!
+
+    entryField(key: String!): EntryField
+    entryFieldById(id: ID!): EntryField
+    entryFields: [EntryField!]!
+    entryFieldValidateKey(key: String!): Boolean!
+
+    entryLayout(slug: String!): EntryLayout
+    entryLayoutById(id: ID!): EntryLayout
+    entryLayouts(ignoreTrashed: Boolean): [EntryLayout!]!
 
     # Registers
     registeredExtensions: RegisteredExtensions!
@@ -120,9 +126,10 @@ type Mutation {
     createPreviewEmail(name: String!, subject: LocaleFieldInput!, fields: [EmailFieldInput!]!, template: String!, site_id: String!): String!
 
     # Entries
-    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID): EntryType
-    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID): Boolean
+    createEntryType(handle: String!, title: String!, url_prefix: LocaleFieldInput!, entry_layout_id: ID, use_categories: Boolean): EntryType
+    updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID, use_categories: Boolean): Boolean
     deleteEntryType(id: ID!): Boolean
+
     createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
     updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
@@ -130,10 +137,17 @@ type Mutation {
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
     unpublishEntry(id: ID!): Boolean
     deleteEntry(entry_type_handle: String, id: ID!, soft: Boolean): Boolean
-    createEntryLayout(titles: LocaleFieldInput!, schema: [FieldConfigsInput!]!, slug: String): EntryLayout
-    updateEntryLayoutSchema(id: ID!, titles: LocaleFieldInput, schema_update: [SchemaUpdateInput]): Boolean
-    updateEntryLayoutSchemaKey(id: ID!, key: String!, newKey: String!): Boolean
-    deleteEntryLayout(id: ID!, soft: Boolean): Boolean
+
+    createEntryField(key: String!, name: String!, label: LocaleFieldInput!, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String!, validation: String, repeatable: Boolean, searchable: Boolean, required: Boolean!,  config: Json): EntryField
+    updateEntryField(id: ID!, name: String, label: LocaleFieldInput, placeholder: LocaleFieldInput, explain: LocaleFieldInput, type: String, validation: String, repeatable: Boolean, searchable: Boolean, required: Boolean, config: Json): Boolean!
+    deleteEntryField(id: ID, key: String): Boolean!
+    deleteEntryFields(ids: [ID!]!): Int!
+
+    createEntryLayout(title: String!, schema: [EntryLayoutTabInput!]!, slug: String!): EntryLayout
+    updateEntryLayout(id: ID!, title: String!, schema: [EntryLayoutTabInput!]!, slug: String!): Boolean!
+    deleteEntryLayout(id: ID!, soft: Boolean): Boolean!
+    deleteEntryLayouts(ids: [ID!]!, soft: Boolean): Boolean!
+    restoreEntryLayouts(ids: [ID!]!): Boolean!
 
     # Categories
     createCategory(name: LocaleFieldInput!, parent_id: ID!, site_id: String!): Boolean!
@@ -329,7 +343,6 @@ type Entry {
     dates: Dates!
     categories: [Category!]!
     content: [ModelFieldContent!]!
-    schema: [LayoutField]!
     seo: EntrySeo
 }
 
@@ -339,18 +352,19 @@ type EntryType {
     handle: String!
     url_prefix: LocaleField!
     entry_layout_id: ID
+    use_categories: Boolean!
 }
 
 type EntryLayout {
     _id: ID!
-    slug: String # Add a deprecation message to put it required
-    titles: LocaleField!
-    schema: [LayoutField]!
+    slug: String
+    title: String!
     authors: Authors!
     dates: Dates!
     is_trashed: Boolean!
     used_by: Int
     record_count: Int
+    schema: [EntryLayoutTab!]
 }
 
 type EntrySeo {
@@ -388,6 +402,21 @@ type EntryPublication {
     user_email: String!
 }
 
+type EntryField {
+    _id: ID!
+    key: String!
+    name: String!
+    label: LocaleField!
+    placeholder: LocaleField
+    explain: LocaleField
+    validation: String
+    required: Boolean!
+    repeatable: Boolean!
+    searchable: Boolean!
+    type: String!
+    config: Json!
+}
+
 type SocialMeta {
     handle: String!
     content: [SocialMetaContent]
@@ -398,36 +427,9 @@ type SocialMetaContent {
     content: String!
 }
 
-type LayoutField {
-    key: String!
-    repeater: Boolean
-    fieldConfigs: [FieldConfig!]!
-}
-
-type FieldConfig {
-    labels: LocaleField!
-    handle: String!
-    inputSettings: [InputSetting!]!
-}
-
-type InputSetting {
-    inputKey: String!
-    settings: [Setting]!
-}
-
-type Setting {
-    name: String!
-    value: String
-    options: [Options]!
-    explain: Boolean!
-    type: String!
-}
-
 type ModelFieldContent {
     key: String!
     content: Json
-    handle: String!
-    type: Json!
 }
 
 input SocialMetaInput {
@@ -440,59 +442,9 @@ input SocialMetaContentInput {
     content: String!
 }
 
-input FieldConfigsInput {
-    labels: LocaleFieldInput
-    key: String!
-    handle: String!
-    repeater: Boolean
-    inputSettings: [InputSettingsInput]!
-}
-
-input SchemaUpdateInput {
-    key: String!
-    labels: LocaleFieldInput
-    repeater: Boolean
-    inputSettings: [InputSettingsInput]!
-}
-
-input InputSettingsInput {
-    inputKey: String
-    settings: [SettingsInput]
-}
-
-input SettingsInput {
-    name: String!
-    value: String
-    options: [OptionsInput!]
-    type: InputType!
-}
-
-input OptionsInput {
-    value: String!
-    label: String!
-}
-
-type Options {
-    value: String!
-    label: String!
-}
-
 input ModelFieldContentInput {
     key: String!
     content: Json
-}
-
-input FieldContentInput {
-    value: String
-    type: InputType!
-}
-
-enum InputType {
-    integer
-    float
-    string
-    boolean
-    array
 }
 
 type Alternate {
@@ -543,29 +495,14 @@ type EntryListing {
     list: [Entry!]!
 }
 
-type FieldInfo {
-    name: String!
-    fullname: String!
-    handle: String!
-    description: LocaleField!
-    category: String!
-    storingType: String!
-    modes: [FieldMode]!
-    inputs: [FieldInputInfo]!
+type EntryLayoutTab {
+    label: String!
+    fields: [EntryField!]
 }
 
-enum FieldMode {
-    searchable,
-    repeatable,
-    multiple
-}
-
-type FieldInputInfo {
-    name: String!
-    fullname: String!
-    type: String!
-    inputKey: String
-    availableSettings: [Setting!]!
+input EntryLayoutTabInput {
+    label: String!
+    fields: [ID!]!
 }
 
 type LocaleField {
@@ -709,7 +646,7 @@ type Category {
     slug: String!
     order: Int!
     parent_id: String!
-    children: [Category!]!
+    children: [Json!]!
 }
 
 type NavigationItem {
