@@ -537,7 +537,7 @@ class Entry extends Model implements Validator, Castable
 
         $filters = [];
 
-        // Ignore trash entries
+        // Only trash entries
         if ($onlyTrash) {
             $filters['trashed'] = true;
         } else {
