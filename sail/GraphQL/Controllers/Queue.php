@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use SailCMS\CLI;
 use SailCMS\Collection;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\GraphQL\Context;
@@ -119,6 +120,26 @@ class Queue
         $queue = QueueMan::manager();
         $queue->process();
         return true;
+    }
+
+    /**
+     *
+     * Get all CLI command
+     *
+     */
+    public function cliCommand(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return new Collection([
+            'create:module',
+            'create:controller',
+            'create:container',
+            'version',
+            'clear-cache',
+            'create:test',
+            'db:migrate',
+            'create:migration',
+            'test:task-command'
+        ]);
     }
 
     /**

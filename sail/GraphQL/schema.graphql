@@ -80,6 +80,7 @@ type Query {
     taskList(limit: Int): [Task!]!
     taskSearch(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): TasksListing!
     taskRunningTime(pid: ID!): Int!
+    cliCommand: [String!]!
 
     #{CUSTOM_QUERIES}#
 }
