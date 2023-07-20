@@ -32,6 +32,7 @@ use SailCMS\GraphQL\Controllers\EntryTypes;
 use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
+use SailCMS\GraphQL\Controllers\Queue;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -502,6 +503,19 @@ final class GraphQL
         self::addQueryResolver('navigationElements', Misc::class, 'navigationElements');
         self::addQueryResolver('settingsElements', Misc::class, 'settingsElements');
         self::addQueryResolver('handshakeKey', Misc::class, 'handshakeKey');
+
+        // Queue
+        self::addQueryResolver('task', Queue::class, 'getTask');
+        self::addQueryResolver('taskList', Queue::class, 'getList');
+        self::addQueryResolver('taskSearch', Queue::class, 'searchTasks');
+        self::addQueryResolver('taskRunningTime', Queue::class, 'getTaskRunningTime');
+        self::addMutationResolver('createTask', Queue::class, 'createTask');
+        self::addMutationResolver('stopTask', Queue::class, 'stopTask');
+        self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
+        self::addMutationResolver('changeTaskSchedule', Queue::class, 'changeTaskSchedule');
+        self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
+        self::addMutationResolver('retryTask', Queue::class, 'retryTask');
+        self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
