@@ -375,9 +375,9 @@ class EntryType extends Model implements Validator
     {
         $this->hasPermissions();
 
-        if ($handle === self::DEFAULT_HANDLE) {
-            throw new EntryException(self::CANNOT_UPDATE_DEFAULT_TYPE);
-        }
+//        if ($handle === self::DEFAULT_HANDLE) {
+//            throw new EntryException(self::CANNOT_UPDATE_DEFAULT_TYPE);
+//        }
 
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
