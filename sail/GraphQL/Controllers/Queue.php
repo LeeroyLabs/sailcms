@@ -51,10 +51,9 @@ class Queue
      * @param mixed $obj
      * @param Collection $args
      * @param Context $context
-     * @return int
-     *
+     * @return string
      */
-    public function getTaskRunningTime(mixed $obj, Collection $args, Context $context): int
+    public function getTaskRunningTime(mixed $obj, Collection $args, Context $context): string
     {
         return (new QueueModel())->getTaskRunningTime($args->get('pid'));
     }
@@ -102,9 +101,7 @@ class Queue
         $task = new Task(
             $args->get('name'),
             $args->get('retriable'),
-            $args->get('handler'),
             $action,
-            new Collection([$args->get('settings')]),
             $args->get('priority'),
         );
         QueueModel::add($task);

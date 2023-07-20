@@ -167,7 +167,7 @@ type Mutation {
     deleteGroup(id: ID!): Boolean!
 
     # Queue
-    createTask(name: String!, handler: String!, action: String!, settings: Json!, priority: Int!, retriable: Boolean!): Boolean!
+    createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!): Boolean!
     retryTask(id: ID!): Boolean!
     changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
     startAllTasks: Boolean!
