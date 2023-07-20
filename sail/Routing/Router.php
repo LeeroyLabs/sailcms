@@ -19,6 +19,7 @@ use SailCMS\Errors\EntryException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Errors\RouteReturnException;
+use SailCMS\Forms;
 use SailCMS\Http\Response;
 use SailCMS\Locale;
 use SailCMS\Middleware;
@@ -472,7 +473,9 @@ class Router
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $class = $trace[2]['class'];
 
-        if ($trace[2]['function'] !== '{closure}' && !str_contains($class, self::class) && !str_contains($class, 'Tests\routerTest')) {
+        $allowed = [self::class, Forms::class];
+
+        if ($trace[2]['function'] !== '{closure}' && !in_array($class, $allowed, true) && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
                 // Illegal call, this should only be called from the routes method in a container
                 throw new \RuntimeException('Cannot add routes from anything other than an AppContainer using the routes method.', 0403);

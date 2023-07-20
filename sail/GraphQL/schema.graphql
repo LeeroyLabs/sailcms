@@ -175,7 +175,20 @@ type Mutation {
     stopAllTasks: Boolean!
     cancelTask(id: ID!): Boolean!
 
+    # Forms
+    processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
+
     #{CUSTOM_MUTATIONS}#
+}
+
+input FormDataInput {
+    data: Json
+}
+
+type FormProcessingResult {
+    code: Int!
+    message: String!
+    missing: [String!]!
 }
 
 scalar Json

@@ -17,6 +17,18 @@ abstract class Input
      */
     public function get(string $key, mixed $default = null): mixed
     {
+        if ($key === '*') {
+            $out = [];
+
+            foreach ($this->pairs as $_key => $value) {
+                if (is_string($value) || is_array($value)) {
+                    $out[$_key] = $this->filter($value) ?? $default;
+                }
+            }
+
+            return (object)$out;
+        }
+
         if (!empty($this->pairs[$key])) {
             if (is_string($this->pairs[$key]) || is_array($this->pairs[$key])) {
                 return $this->filter($this->pairs[$key]) ?? $default;

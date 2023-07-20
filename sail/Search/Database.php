@@ -3,18 +3,19 @@
 namespace SailCMS\Search;
 
 use SailCMS\Collection;
+use SailCMS\Contracts\SearchAdapter;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Models\Search;
 use SailCMS\Types\SearchResults;
 
-class Database implements Adapter
+class Database implements SearchAdapter
 {
     /**
      *
      * Store or update a document
      *
-     * @param object|array $document
-     * @param string $dataIndex
+     * @param  object|array  $document
+     * @param  string        $dataIndex
      * @throws DatabaseException
      *
      */
@@ -39,8 +40,8 @@ class Database implements Adapter
      *
      * Delete a document by id
      *
-     * @param string $id
-     * @param string $dataIndex
+     * @param  string  $id
+     * @param  string  $dataIndex
      * @return void
      * @throws DatabaseException
      *
@@ -55,9 +56,9 @@ class Database implements Adapter
      *
      * Search for the keywords (in title and content)
      *
-     * @param string $search
-     * @param array $meta
-     * @param string $dataIndex
+     * @param  string  $search
+     * @param  array   $meta
+     * @param  string  $dataIndex
      * @return SearchResults
      * @throws DatabaseException
      *
