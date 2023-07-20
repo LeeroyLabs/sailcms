@@ -194,17 +194,18 @@ class EntryType extends Model implements Validator
 
         if (!$entryType) {
             $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId, $defaultUseCategories);
-        } else {
-            if (!$avoidUpdate
-                && ($entryType->title !== $defaultTitle || $entryType->url_prefix->castFrom() !== $defaultUrlPrefix->castFrom() || $entryType->entry_layout_id !== $defaultEntryLayoutId)) {
-                // Update the settings because it changed.
-                $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId, $defaultUseCategories);
-
-                if ($result) {
-                    $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
-                }
-            }
         }
+//        else {
+//            if (!$avoidUpdate
+//                && ($entryType->title !== $defaultTitle || $entryType->url_prefix->castFrom() !== $defaultUrlPrefix->castFrom() || $entryType->entry_layout_id !== $defaultEntryLayoutId)) {
+//                // Update the settings because it changed.
+//                $result = $instance->updateWithoutPermission($entryType, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId, $defaultUseCategories);
+//
+//                if ($result) {
+//                    $entryType = $instance->findOne(['handle' => $defaultHandle])->exec();
+//                }
+//            }
+//        }
         return $entryType;
     }
 
@@ -374,9 +375,9 @@ class EntryType extends Model implements Validator
     {
         $this->hasPermissions();
 
-        if ($handle === self::DEFAULT_HANDLE) {
-            throw new EntryException(self::CANNOT_UPDATE_DEFAULT_TYPE);
-        }
+//        if ($handle === self::DEFAULT_HANDLE) {
+//            throw new EntryException(self::CANNOT_UPDATE_DEFAULT_TYPE);
+//        }
 
         $entryType = $this->findOne(['handle' => $handle])->exec();
 
