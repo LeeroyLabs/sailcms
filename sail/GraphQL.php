@@ -510,6 +510,7 @@ final class GraphQL
         self::addQueryResolver('taskSearch', Queue::class, 'searchTasks');
         self::addQueryResolver('taskRunningTime', Queue::class, 'getTaskRunningTime');
         self::addQueryResolver('cliCommand', Queue::class, 'cliCommand');
+        self::addQueryResolver('taskLogs', Queue::class, 'getTaskLogs');
         self::addMutationResolver('createTask', Queue::class, 'createTask');
         self::addMutationResolver('stopTask', Queue::class, 'stopTask');
         self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
