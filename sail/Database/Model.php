@@ -74,6 +74,8 @@ abstract class Model implements JsonSerializable
     // The collection object
     private Collection $active_collection;
 
+    private \MongoDB\Database $database;
+
     /**
      *
      * @throws DatabaseException
@@ -98,6 +100,7 @@ abstract class Model implements JsonSerializable
             throw new DatabaseException('Cannot connect to database, please check your DSN.', 0500);
         }
 
+        $this->database = $client->selectDatabase(env('database_db', 'sailcms'));
         $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $this->collection);
         $this->init();
     }
@@ -324,6 +327,16 @@ abstract class Model implements JsonSerializable
         }
 
         return $output;
+    }
+
+    protected function createView(array $pipeline)
+    {
+        $this->database->command([
+            'create' => 'test',
+            'viewOn' => 'entry_publications',
+            'pipeline' => $pipeline,
+            'collation' => $this->currentCollation
+        ]);
     }
 
     /**
