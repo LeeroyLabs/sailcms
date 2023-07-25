@@ -14,6 +14,7 @@ use SailCMS\Database\Traits\Debugging;
 use SailCMS\Database\Traits\QueryObject;
 use SailCMS\Database\Traits\Transforms;
 use SailCMS\Database\Traits\Validation;
+use SailCMS\Database\Traits\View;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
@@ -49,6 +50,9 @@ abstract class Model implements JsonSerializable
 
     // Add debugging tools
     use Debugging;
+
+    // Add the view create feature
+    use View;
 
     // Connection and Collection
     protected int $connection = 0;
@@ -327,16 +331,6 @@ abstract class Model implements JsonSerializable
         }
 
         return $output;
-    }
-
-    protected function createView(array $pipeline)
-    {
-        $this->database->command([
-            'create' => 'test',
-            'viewOn' => 'entry_publications',
-            'pipeline' => $pipeline,
-            'collation' => $this->currentCollation
-        ]);
     }
 
     /**

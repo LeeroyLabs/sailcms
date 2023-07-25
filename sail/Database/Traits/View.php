@@ -1,0 +1,49 @@
+<?php
+
+namespace SailCMS\Database\Traits;
+
+use Exception;
+use SailCMS\Database\Model;
+use SailCMS\Errors\DatabaseException;
+
+trait View
+{
+    const VIEW_SUFFIX = "_view";
+
+    /**
+     *
+     * Create a vue from a Model collection
+     *
+     * @param  string  $viewName
+     * @param  Model   $source
+     * @param  array   $pipeline
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    protected function createView(string $viewName, Model $source, array $pipeline)
+    {
+        try {
+            $this->database->command([
+                'create' => $this->setViewName($viewName),
+                'viewOn' => $source->getCollection(),
+                'pipeline' => $pipeline,
+                'collation' => $this->currentCollation
+            ]);
+        } catch (Exception $e) {
+            throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
+        }
+
+    }
+
+    private function setViewName(string $name):string {
+        return $name . self::VIEW_SUFFIX;
+    }
+
+    protected function updateView() {
+
+    }
+    protected function deleteView() {
+
+    }
+}
