@@ -70,7 +70,11 @@ class System
 
             // Groups
             new ACL('Group', ACLType::READ_WRITE, 'Manage user groups', 'Gestion des groupes utilisateurs'),
-            new ACL('Group', ACLType::READ, 'Read access to user groups', 'Accès lecture aux groupes utilisateurs')
+            new ACL('Group', ACLType::READ, 'Read access to user groups', 'Accès lecture aux groupes utilisateurs'),
+
+            // Tasks
+            new ACL('Task', ACLType::READ_WRITE, 'Manage system tasks', 'Gestion des tâches système'),
+            new ACL('Task', ACLType::READ, 'Read access to system tasks', 'Accès lecture aux tâches système'),
         ]);
     }
 }
