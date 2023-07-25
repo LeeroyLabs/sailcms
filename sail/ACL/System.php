@@ -65,8 +65,12 @@ class System
             new ACL('Register', ACLType::READ, 'Read access to register', 'Accès lecture au registre'),
 
             // Navigation
-            new ACL('Navigation', ACLType::READ_WRITE, 'Manage navigations', 'Gestion des navigations'),
-            new ACL('Navigation', ACLType::READ, 'Read access to navigations', 'Accès lecture aux navigations'),
+            new ACL('Navigation', ACLType::READ_WRITE),
+            new ACL('Navigation', ACLType::READ),
+
+            // Forms
+            new ACL('Form', ACLType::READ_WRITE),
+            new ACL('Form', ACLType::READ),
 
             // Groups
             new ACL('Group', ACLType::READ_WRITE, 'Manage user groups', 'Gestion des groupes utilisateurs'),

@@ -75,6 +75,14 @@ type Query {
     group(id: ID!): Group
     groups: [Group!]!
 
+    # Queue
+    task(id: ID!): Task!
+    taskLogs(id: ID!): [String!]!
+    taskList(limit: Int): [Task!]!
+    taskSearch(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): TasksListing!
+    taskRunningTime(pid: ID!): Int!
+    cliCommand: [String!]!
+
     #{CUSTOM_QUERIES}#
 }
 
@@ -160,10 +168,37 @@ type Mutation {
     updateGroup(id: ID!, name: String!): Boolean!
     deleteGroup(id: ID!): Boolean!
 
+    # Queue
+    createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!): Boolean!
+    retryTask(id: ID!): Boolean!
+    changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
+    startAllTasks: Boolean!
+    stopTask(pid: Int!): Boolean!
+    stopAllTasks: Boolean!
+    cancelTask(id: ID!): Boolean!
+
+    # Forms
+    processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
+
     #{CUSTOM_MUTATIONS}#
 }
 
+input FormDataInput {
+    data: Json
+}
+
+type FormProcessingResult {
+    code: Int!
+    message: String!
+    missing: [String!]!
+}
+
 scalar Json
+
+type TasksListing {
+    pagination: Pagination!
+    list: [Task!]!
+}
 
 input CategorySortItem {
     id: String!
@@ -712,6 +747,22 @@ type EmailFieldConfig {
     type: String!
     key: String!
     label: LocaleField!
+}
+
+type Task {
+    _id: ID!
+    name: String!
+    action: String!
+    priority: Int!
+    log: [String!]
+    retriable: Boolean!
+    retry_count: Int!
+    scheduled_at: Int!
+    locked: Boolean!
+    executed: Boolean!
+    executed_at: Int!
+    execution_result: String!
+    execution_success: Boolean!
 }
 
 #{CUSTOM_TYPES}#

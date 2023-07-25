@@ -2,14 +2,14 @@
 
 namespace SailCMS;
 
+use SailCMS\Contracts\SearchAdapter;
 use SailCMS\Errors\DatabaseException;
-use SailCMS\Search\Adapter;
 use SailCMS\Search\Database;
 use SailCMS\Types\SearchResults;
 
 final class Search
 {
-    private static Adapter $adapter;
+    private static SearchAdapter $adapter;
     private static array $registeredAdapters = [];
 
     public function __construct()
@@ -162,10 +162,10 @@ final class Search
      *
      * Return the adapter for custom requirements
      *
-     * @return Adapter
+     * @return SearchAdapter
      *
      */
-    public static function getAdapter(): Adapter
+    public static function getAdapter(): SearchAdapter
     {
         return self::$adapter;
     }

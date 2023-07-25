@@ -5,6 +5,7 @@ namespace SailCMS;
 use Exception;
 use JsonException;
 use League\Flysystem\FilesystemException;
+use Psr\Log\LoggerInterface;
 use SailCMS\CLI\BasicAuth;
 use SailCMS\CLI\Cache;
 use SailCMS\CLI\Command;
@@ -26,10 +27,29 @@ use SailCMS\CLI\Version;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
+use SailCMS\Types\LogType;
 use Symfony\Component\Console\Application;
+
+trait Logging
+{
+    /**
+     *
+     * Return formatted log message
+     *
+     * @param LogType $type
+     * @param string $msg
+     * @return string
+     */
+    public function log(LogType $type, string $msg): string
+    {
+        return '[' . date('Y-m-d H:i:s') . '] - ' . $type->value . ': ' . $msg;
+    }
+}
 
 final class CLI
 {
+    use Logging;
+
     public const CLI_VERSION = '1.0.0';
     private static string $workingDirectory = '';
     public static Collection $registeredCommands;

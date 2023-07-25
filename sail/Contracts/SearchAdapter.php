@@ -1,10 +1,10 @@
 <?php
 
-namespace SailCMS\Search;
+namespace SailCMS\Contracts;
 
 use SailCMS\Types\SearchResults;
 
-interface Adapter
+interface SearchAdapter
 {
     public function store(array|object $document, string $dataIndex = '');
 

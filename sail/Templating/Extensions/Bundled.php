@@ -35,7 +35,7 @@ class Bundled extends AbstractExtension
             new TwigFunction('jsonEncode', [$this, 'jsonEncode']),
             new TwigFunction('json', [$this, 'jsonEncode']),
             new TwigFunction('json_decode', [$this, 'jsonDecode']),
-            new TwigFunction('jsonDecode', [$this, 'jsonDecode']),
+            new TwigFunction('jsonDecode', [$this, 'jsonDecode'])
         ];
     }
 
