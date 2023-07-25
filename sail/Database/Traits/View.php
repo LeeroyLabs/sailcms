@@ -3,6 +3,7 @@
 namespace SailCMS\Database\Traits;
 
 use Exception;
+use MongoDB\Driver\Cursor;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
 
@@ -21,29 +22,34 @@ trait View
      * @throws DatabaseException
      *
      */
-    protected function createView(string $viewName, Model $source, array $pipeline)
+    public function createView(string $viewName, Model $source, array $pipeline): ?Cursor
     {
         try {
-            $this->database->command([
+            $result = $this->database->command([
                 'create' => $this->setViewName($viewName),
                 'viewOn' => $source->getCollection(),
                 'pipeline' => $pipeline,
-                'collation' => $this->currentCollation
+//                'collation' => $this->currentCollation
             ]);
         } catch (Exception $e) {
             throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
-
+        // Change result
+        return $result;
     }
 
-    private function setViewName(string $name):string {
+    private function setViewName(string $name): string
+    {
         return $name . self::VIEW_SUFFIX;
     }
 
-    protected function updateView() {
+    protected function updateView()
+    {
 
     }
-    protected function deleteView() {
+
+    protected function deleteView()
+    {
 
     }
 }
