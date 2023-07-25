@@ -72,28 +72,24 @@ final class Queue
 
             if (!$locked) {
                 $model->setLockStatus($value->_id, true);
-//                    if (method_exists($instance, $value->action)) {
-                        try {
-                            $action = explode(' ', $value->action);
+                    try {
+                        $action = explode(' ', $value->action);
 
-                            $result = new Process($action);
-                            $result->start();
+                        $result = new Process($action);
+                        $result->start();
 
-                            $pid = $result->getPid();
-                            (new QueueModel)->updatePid($value->_id, $pid);
+                        $pid = $result->getPid();
+                        (new QueueModel)->updatePid($value->_id, $pid);
 
-                            $result->wait();
+                        $result->wait();
 
-                            if (!$result->isSuccessful()) {
-                                throw new ProcessFailedException($result);
-                            }
-                            $model->closeTask($value->_id, $result->getOutput());
-                        } catch (Exception $e) {
-                            $model->closeTask($value->_id, "Execution failed: {$e->getMessage()}.", false, $retry_count);
+                        if (!$result->isSuccessful()) {
+                            throw new ProcessFailedException($result);
                         }
-//                    } else {
-//                        $model->closeTask($value->_id, "Action '{$value->action}' does not exist, please make sure it exists.", false, $retry_count);
-//                    }
+                        $model->closeTask($value->_id, $result->getOutput());
+                    } catch (Exception $e) {
+                        $model->closeTask($value->_id, "Execution failed: {$e->getMessage()}.", false, $retry_count);
+                    }
             }
         });
     }
