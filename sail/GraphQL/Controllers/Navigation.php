@@ -53,7 +53,7 @@ class Navigation
         $sort = $args->get('sort', 'title');
         $direction = strtolower($args->get('direction', 'ASC'));
         $locale = $args->get('locale');
-        $siteId = $args->get('site_id', Sail::siteId());
+        $siteId = $args->get('site_id');
 
         $direction = match ($direction) {
             'desc' => Model::SORT_DESC,
@@ -101,7 +101,7 @@ class Navigation
             $args->get('name'),
             $args->get('structure'),
             $args->get('locale', 'en'),
-            $args->get('site_id', 'default')
+            $args->get('site_id', Sail::siteId())
         );
     }
 

@@ -149,13 +149,15 @@ class Navigation extends Model
      * @throws PermissionException
      *
      */
-    public static function getList(string $sort = 'title', int $direction = Model::SORT_ASC, string $locale = null, string $siteId = ''): ?array
+    public static function getList(string $sort = 'title', int $direction = Model::SORT_ASC, string $locale = null, string $siteId = null): ?array
     {
         self::query()->hasPermissions(true);
 
-        $siteId = $siteId ?: Sail::siteId();
-        $query = ['site_id' => $siteId];
+        $query = [];
 
+        if ($siteId) {
+            $query['site_id'] = $siteId;
+        }
         if ($locale) {
             $query['locale'] = $locale;
         }
