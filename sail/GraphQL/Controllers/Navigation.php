@@ -3,6 +3,7 @@
 namespace SailCMS\GraphQL\Controllers;
 
 use SailCMS\Collection;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -10,6 +11,7 @@ use SailCMS\Errors\NavigationException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Navigation as NavigationModel;
+use SailCMS\Sail;
 
 class Navigation
 {
@@ -34,6 +36,33 @@ class Navigation
 
         return [];
     }
+
+    /**
+     *
+     * Get a list on navigation details
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return array|null
+     * @throws DatabaseException
+     *
+     */
+    public function navigationDetailsList(mixed $obj, Collection $args, Context $context): ?array
+    {
+        $sort = $args->get('sort', 'title');
+        $direction = strtolower($args->get('direction', 'ASC'));
+        $locale = $args->get('locale');
+        $siteId = $args->get('site_id', Sail::siteId());
+
+        $direction = match ($direction) {
+            'desc' => Model::SORT_DESC,
+            default => Model::SORT_ASC
+        };
+
+        return NavigationModel::getList($sort, $direction, $locale, $siteId);
+    }
+
 
     /**
      *

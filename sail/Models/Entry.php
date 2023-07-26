@@ -515,13 +515,14 @@ class Entry extends Model implements Validator, Castable
      *
      * Get all entries by entry type handle
      *
-     * @param  string  $entryTypeHandle
-     * @param  string  $search
-     * @param  int     $page
-     * @param  int     $limit
-     * @param  string  $sort
-     * @param  int     $direction
-     * @param  bool    $onlyTrash
+     * @param  string       $entryTypeHandle
+     * @param  string       $search
+     * @param  int          $page
+     * @param  int          $limit
+     * @param  string       $sort
+     * @param  int          $direction
+     * @param  bool         $onlyTrash
+     * @param  string|null  $locale
      * @return Listing
      * @throws ACLException
      * @throws DatabaseException

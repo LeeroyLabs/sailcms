@@ -9,8 +9,10 @@ use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
 use SailCMS\Errors\NavigationException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Sail;
 use SailCMS\Text;
 use SailCMS\Types\NavigationStructure;
+use SailCMS\Types\QueryOptions;
 
 /**
  *
@@ -45,7 +47,7 @@ class Navigation extends Model
      * @throws PermissionException
      *
      */
-    public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = 'default'): string
+    public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = ''): string
     {
         $this->hasPermissions();
 
@@ -53,6 +55,7 @@ class Navigation extends Model
             $structure = new NavigationStructure($structure);
         }
 
+        $siteId = $siteId ?: Sail::siteId();
         $title = $name;
         $name = Text::from($name)->slug()->value();
         $count = self::query()->count(['name' => $name]);
@@ -130,6 +133,36 @@ class Navigation extends Model
         $this->hasPermissions();
         self::query()->deleteOne(['name' => $name]);
         return true;
+    }
+
+    /**
+     *
+     * Get a list of navigation
+     *
+     * @param  string       $sort
+     * @param  int          $direction
+     * @param  string|null  $locale
+     * @param  string       $siteId
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public static function getList(string $sort = 'title', int $direction = Model::SORT_ASC, string $locale = null, string $siteId = ''): ?array
+    {
+        self::query()->hasPermissions(true);
+
+        $siteId = $siteId ?: Sail::siteId();
+        $query = ['site_id' => $siteId];
+
+        if ($locale) {
+            $query['locale'] = $locale;
+        }
+
+        $opt = QueryOptions::initWithSort([$sort => $direction]);
+
+        return (new Navigation())->find($query, $opt)->exec();
     }
 
     /**
