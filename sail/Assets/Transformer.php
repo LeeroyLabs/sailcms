@@ -47,7 +47,7 @@ class Transformer
             $ctx = $fs->readStream($path);
             $this->image = $manager->make($ctx)->orientate();
         } else {
-            $manager->make($path)->orientate();
+            $this->image = $manager->make($path)->orientate();
         }
     }
 

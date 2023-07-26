@@ -27,7 +27,18 @@ class EntryFields
      */
     public function entryField(mixed $obj, Collection $args, Context $context): ?EntryField
     {
-        return EntryField::getByKey($args->get('key'));
+        $entry = EntryField::getByKey($args->get('key'));
+
+        // Make sure we never send out an array instead of the expected object
+        if ($entry && is_array($entry->config)) {
+            if (empty($entry->config)) {
+                $entry->config = new \stdClass;
+            } else {
+                $entry->config = (object)$entry->config;
+            }
+        }
+
+        return $entry;
     }
 
     /**
