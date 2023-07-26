@@ -64,7 +64,7 @@ type Query {
 
     # Navigation
     navigation(name: String!): [NavigationItem!]!
-    navigationDetailsList(sort: String!, direction: SortingOrder!, locale: String, site_id: String): [Navigation]
+    navigationDetailsList(sort: String!, direction: SortingOrder!, locale: String, site_id: String): [Navigation!]!
     navigationDetails(name: String!): Navigation
 
     # UI Related
@@ -133,8 +133,8 @@ type Mutation {
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID, use_categories: Boolean): Boolean
     deleteEntryType(id: ID!): Boolean
 
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: [ModelFieldContentInput!], parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: Json, parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: Json, parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
@@ -358,7 +358,7 @@ type Entry {
     authors: Authors!
     dates: Dates!
     categories: [Category!]!
-    content: [ModelFieldContent!]!
+    content: Json
     seo: EntrySeo
 }
 
@@ -443,11 +443,6 @@ type SocialMetaContent {
     content: String!
 }
 
-type ModelFieldContent {
-    key: String!
-    content: Json
-}
-
 input SocialMetaInput {
     handle: String!
     content: [SocialMetaContentInput]
@@ -456,11 +451,6 @@ input SocialMetaInput {
 input SocialMetaContentInput {
     name: String!
     content: String!
-}
-
-input ModelFieldContentInput {
-    key: String!
-    content: Json
 }
 
 type Alternate {

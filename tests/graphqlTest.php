@@ -358,10 +358,7 @@ test('Get a entry', function () {
                         }
                         slug
                     }
-                    content {
-                        key
-                        content
-                    }
+                    content
                     seo {
                         _id
                         title
