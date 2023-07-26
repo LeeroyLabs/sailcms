@@ -144,13 +144,23 @@ class Queue
 
     /**
      *
+     * Get logs of a task
+     *
+     * @throws DatabaseException
+     */
+    public function getTaskLogs(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return (new QueueModel())->getLogs($args->get('id'));
+    }
+
+    /**
+     *
      * Change the schedule of a task
      *
      */
     public function changeTaskSchedule(mixed $obj, Collection $args, Context $context): bool
     {
-        (new QueueModel())->changeSchedule($args->get('id'), $args->get('timestamp'));
-        return true;
+        return (new QueueModel())->changeSchedule($args->get('id'), $args->get('timestamp'));
     }
 
     /**

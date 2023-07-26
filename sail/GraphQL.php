@@ -486,6 +486,7 @@ final class GraphQL
 
         // Navigation
         self::addQueryResolver('navigation', Navigation::class, 'navigation');
+        self::addQueryResolver('navigationDetailsList', Navigation::class, 'navigationDetailsList');
         self::addQueryResolver('navigationDetails', Navigation::class, 'navigationDetails');
         self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
         self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
@@ -510,6 +511,7 @@ final class GraphQL
         self::addQueryResolver('taskSearch', Queue::class, 'searchTasks');
         self::addQueryResolver('taskRunningTime', Queue::class, 'getTaskRunningTime');
         self::addQueryResolver('cliCommand', Queue::class, 'cliCommand');
+        self::addQueryResolver('taskLogs', Queue::class, 'getTaskLogs');
         self::addMutationResolver('createTask', Queue::class, 'createTask');
         self::addMutationResolver('stopTask', Queue::class, 'stopTask');
         self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');

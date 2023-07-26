@@ -38,7 +38,7 @@ type Query {
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]!
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: Int, only_trash: Boolean, locale: String): EntryListing
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: SortingOrder, only_trash: Boolean, locale: String): EntryListing
     entryByUrl(url: String!, site_id: String): Entry
     entry(id: ID!, entry_type_handle: String): Entry
     entryVersion(id: ID!): EntryVersion
@@ -64,6 +64,7 @@ type Query {
 
     # Navigation
     navigation(name: String!): [NavigationItem!]!
+    navigationDetailsList(sort: String!, direction: SortingOrder!, locale: String, site_id: String): [Navigation]
     navigationDetails(name: String!): Navigation
 
     # UI Related
@@ -77,6 +78,7 @@ type Query {
 
     # Queue
     task(id: ID!): Task!
+    taskLogs(id: ID!): [String!]!
     taskList(limit: Int): [Task!]!
     taskSearch(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): TasksListing!
     taskRunningTime(pid: ID!): Int!
@@ -751,10 +753,9 @@ type EmailFieldConfig {
 type Task {
     _id: ID!
     name: String!
-    handler: String!
     action: String!
-    settings: Json!
     priority: Int!
+    log: [String!]
     retriable: Boolean!
     retry_count: Int!
     scheduled_at: Int!

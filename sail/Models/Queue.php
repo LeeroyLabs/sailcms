@@ -127,7 +127,7 @@ class Queue extends Model
     {
         try {
             $info = [
-                'schedule_at' => $timestamp,
+                'scheduled_at' => $timestamp,
             ];
 
             $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
@@ -352,14 +352,13 @@ class Queue extends Model
      *
      * Delete a task
      *
-     * @param ObjectId $id
+     * @param ObjectId|string $id
      * @return bool
      * @throws DatabaseException
-     *
      */
-    public function cancelTask(ObjectId $id): bool
+    public function cancelTask(ObjectId|string $id): bool
     {
-        $this->deleteById($id);
+        $this->deleteById($this->ensureObjectId($id));
         return true;
     }
 

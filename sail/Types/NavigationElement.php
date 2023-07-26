@@ -45,7 +45,7 @@ class NavigationElement
                 $child['label'],
                 $child['url'],
                 $child['is_entry'],
-                $child['is_category'],
+                $child['is_category'] ?? false,
                 $child['entry_id'],
                 $child['external'],
                 $child['children']
