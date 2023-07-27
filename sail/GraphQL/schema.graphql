@@ -83,6 +83,9 @@ type Query {
     taskRunningTime(pid: ID!): Int!
     cliCommand: [String!]!
 
+    getSeoDefaultConfig: SeoDefaultConfig!
+    getSeoSettings: SeoSettings!
+
     #{CUSTOM_QUERIES}#
 }
 
@@ -180,7 +183,50 @@ type Mutation {
     # Forms
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
 
+    # Global SEO
+    generateSitemap: Boolean!
+    generateRobot(template: String!): Boolean!
+    setSeoDefaultConfig(config: SeoDefaultConfigInput): Boolean!
+    setSeoSettings(settings: SeoSettingsInput): Boolean!
+
     #{CUSTOM_MUTATIONS}#
+}
+
+type SeoDefaultConfig {
+    title: String!
+    description: String!
+    keywords: String!
+    robots: Boolean!
+    sitemap: Boolean!
+    default_image: String!
+    social_metas: SocialMeta
+}
+
+input SeoDefaultConfigInput {
+    title: String!
+    description: String!
+    keywords: String!
+    robots: Boolean!
+    sitemap: Boolean!
+    default_image: String!
+    social_metas: SocialMetaInput
+}
+
+type SeoSettings {
+    separator_character: String!
+    sitename: String!
+    sitename_position: SitenamePosition!
+}
+
+input SeoSettingsInput {
+    separator_character: String!
+    sitename: String!
+    sitename_position: SitenamePosition!
+}
+
+enum SitenamePosition {
+    BEFORE
+    AFTER
 }
 
 input FormDataInput {

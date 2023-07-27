@@ -352,6 +352,10 @@ final class GraphQL
     private static function initSystem(): void
     {
         // General
+        self::addQueryResolver('getSeoDefaultConfig', Basics::class, 'getSeoDefaultConfig');
+        self::addQueryResolver('getSeoSettings', Basics::class, 'getSeoSettings');
+        self::addMutationResolver('setSeoDefaultConfig', Basics::class, 'setSeoDefaultConfig');
+        self::addMutationResolver('setSeoSettings', Basics::class, 'setSeoSettings');
         self::addQueryResolver('version', Basics::class, 'version');
 
         // User
