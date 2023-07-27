@@ -567,7 +567,7 @@ class Entry extends Model implements Validator, Castable
         // Actual query
         $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters) . '_' . $offset . '_' . $sort . '_' . $direction;
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
-        $results = $entryModel->find($filters, $options)->exec($cacheKey, $cacheTtl);
+        $results = $entryModel->useView('tesdsst')->find($filters, $options)->exec($cacheKey, $cacheTtl);
 
         // Data for pagination
         $count = $entryModel->count($filters);

@@ -5,7 +5,7 @@ use SailCMS\Models\EntryPublication;
 use SailCMS\Sail;
 
 beforeAll(function () {
-    Sail::setupFogtirTests(__DIR__);
+    Sail::setupForTests(__DIR__);
 });
 
 test('Create a view for entry and entry publication', function () {
@@ -13,7 +13,7 @@ test('Create a view for entry and entry publication', function () {
     $modelPublication = new EntryPublication();
 
     try {
-        $result = $model->createView('test', $model, [[
+        $result = $model->createView('test', [[
             '$lookup' => [
                 'from' => $modelPublication->getCollection(),
                 'let' => ['entryId' => '$_id'],
@@ -33,9 +33,8 @@ test('Create a view for entry and entry publication', function () {
                 'as' => 'entry_entry_publication'
             ]
         ]]);
-        \SailCMS\Debug::ray($result);
+        expect($result)->toBeTrue();
     } catch (Exception $e) {
-        \SailCMS\Debug::ray($e);
         expect(false)->toBeTrue();
     }
 })->group('model-view');
@@ -44,8 +43,8 @@ test('Delete a view for entry and entry publication', function () {
     $model = new Entry();
 
     try {
-        $result = $model->deleteView('test');
-        \SailCMS\Debug::ray($result);
+        $result = $model->deleteTestView();
+        expect($result)->toBeTrue();
     } catch (Exception $e) {
         \SailCMS\Debug::ray($e);
         expect(false)->toBeTrue();

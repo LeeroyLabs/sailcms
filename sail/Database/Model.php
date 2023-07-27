@@ -6,6 +6,7 @@ use Exception;
 use JsonException;
 use JsonSerializable;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Client;
 use MongoDB\Collection;
 use SailCMS\ACL;
 use SailCMS\Cache;
@@ -78,7 +79,7 @@ abstract class Model implements JsonSerializable
     // The collection object
     private Collection $active_collection;
 
-    private \MongoDB\Database $database;
+    private Client $client;
 
     /**
      *
@@ -98,14 +99,13 @@ abstract class Model implements JsonSerializable
         }
 
         // Connection to use
-        $client = Database::instance($this->connection);
+        $this->client = Database::instance($this->connection);
 
-        if (!$client) {
+        if (!$this->client) {
             throw new DatabaseException('Cannot connect to database, please check your DSN.', 0500);
         }
 
-        $this->database = $client->selectDatabase(env('database_db', 'sailcms'));
-        $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $this->collection);
+        $this->active_collection = $this->client->selectCollection(env('database_db', 'sailcms'), $this->collection);
         $this->init();
     }
 

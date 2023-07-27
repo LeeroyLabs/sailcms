@@ -155,6 +155,8 @@ class Install extends Command
             // Already created
         }
 
+        // TODO create entry + publication view
+
         // Done for user
         Tools::outputInfo('created', "User {$email} and the password is [b]{$password}[/b]", 'bg-green-500');
 

@@ -3,15 +3,38 @@
 namespace SailCMS\Database\Traits;
 
 use Exception;
-use SailCMS\Database\Model;
-use SailCMS\Debug;
+use MongoDB\Collection;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Log;
 use SailCMS\Sail;
 
 trait View
 {
-    // TODO permissions
-    // TODO switch CRUD method to protected ?
+    protected Collection $active_view;
+    protected bool $use_view = false;
+
+    /**
+     *
+     * Use a view to make a query
+     *
+     * @param  string  $viewName
+     * @return $this
+     *
+     */
+    public function useView(string $viewName):static {
+        if ($this->viewExists($viewName)) {
+            $view = $this->client->selectCollection(env('database_db', 'sailcms'), $this->setViewName($viewName));
+
+            $this->active_view = $view;
+            $this->use_view = true;
+        } else {
+            // LOG errors when fail silently
+            Log::warning("View '$viewName' does not exists.", ['fullViewName' => $this->setViewName($viewName)]);
+        }
+
+        return $this;
+    }
+
 
     /**
      *
@@ -23,7 +46,8 @@ trait View
      */
     public function viewExists(string $viewName): bool
     {
-        $list = $this->database->listCollectionNames();
+        $database = $this->client->selectDatabase(env('database_db', 'sailcms'));
+        $list = $database->listCollectionNames();
         foreach ($list as $collection) {
             if ($this->setViewName($viewName) === $collection) {
                 return true;
@@ -34,15 +58,14 @@ trait View
 
     /**
      *
-     * Create a vue from a Model collection
+     * Create a view for the current Model if not exists
      *
      * @param  string  $viewName
-     * @param  Model   $source
      * @param  array   $pipeline
      * @return bool
      * @throws DatabaseException
      */
-    public function createView(string $viewName, Model $source, array $pipeline): bool
+    public function createView(string $viewName, array $pipeline): bool
     {
         $collation = null;
         if ($this->currentCollation !== '') {
@@ -57,13 +80,13 @@ trait View
         }
 
         try {
-            $result = $this->database->command([
+            $database = $this->client->selectDatabase(env('database_db', 'sailcms'));
+            $database->command([
                 'create' => $this->setViewName($viewName),
-                'viewOn' => $source->getCollection(),
+                'viewOn' => $this->getCollection(),
                 'pipeline' => $pipeline,
                 'collation' => $collation
             ]);
-            Debug::ray($result->toArray());
         } catch (Exception $e) {
             throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
@@ -71,20 +94,25 @@ trait View
         return true;
     }
 
-    public function updateView()
+    /**
+     *
+     * Delete the test view if exists
+     *  uses only in unit tests
+     *
+     * @return bool
+     * @throws DatabaseException
+     */
+    public function deleteTestView(): bool
     {
-
-    }
-
-    public function deleteView(string $viewName): bool
-    {
-        // TODO ***Protect*** (with setViewName ?) to delete only view
+        if (!$this->viewExists('test')) {
+            return false;
+        }
 
         try {
-            $result = $this->database->command([
-                'drop' => $this->setViewName($viewName)
+            $database = $this->client->selectDatabase(env('database_db', 'sailcms'));
+            $database->command([
+                'drop' => $this->setViewName('test')
             ]);
-            Debug::ray($result->toArray());
         } catch (Exception $e) {
             throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
