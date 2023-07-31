@@ -124,17 +124,13 @@ class Navigation
      */
     public function updateNavigation(mixed $obj, Collection $args, Context $context): bool
     {
-        if ($args->get('slug')) {
-            return (new NavigationModel())->update(
-                $args->get('id'),
-                $args->get('title'),
-                $args->get('slug'),
-                $args->get('structure'),
-                $args->get('locale', 'en')
-            );
-        }
-
-        throw new RuntimeException('Please enter a slug');
+        return (new NavigationModel())->update(
+            $args->get('id'),
+            $args->get('title'),
+            $args->get('slug'),
+            $args->get('structure'),
+            $args->get('locale', 'en')
+        );
     }
 
     /**
