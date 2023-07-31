@@ -63,9 +63,9 @@ type Query {
     categoryEntries(slug: String, id: ID, site_id: String): [Entry!]
 
     # Navigation
-    navigation(name: String!): [NavigationItem!]!
+    navigation(slug: String!): [NavigationItem!]!
     navigationDetailsList(sort: String!, direction: SortingOrder!, locale: String, site_id: String): [Navigation!]!
-    navigationDetails(name: String!): Navigation
+    navigationDetails(slug: String!): Navigation
 
     # UI Related
     navigationElements: NavigationElements!
@@ -160,8 +160,8 @@ type Mutation {
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
     # Navigation
-    createNavigation(name: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
-    updateNavigation(id: ID!, title: String!, name: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
+    createNavigation(title: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
+    updateNavigation(id: ID!, title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
     deleteNavigation(id: ID!): Boolean!
 
     # Groups
@@ -678,7 +678,7 @@ input NavigationItemInput {
 type Navigation {
     _id: ID!
     title: String!
-    name: String!
+    slug: String!
     structure: [NavigationItem!]!
     locale: String!
 }
