@@ -160,7 +160,7 @@ type Mutation {
     deleteCategoryBySlug(slug: String!, site_id: String!): Boolean!
 
     # Navigation
-    createNavigation(title: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
+    createNavigation(title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
     updateNavigation(id: ID!, title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
     deleteNavigation(id: ID!): Boolean!
 

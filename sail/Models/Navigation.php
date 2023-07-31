@@ -47,7 +47,7 @@ class Navigation extends Model
      * @throws NavigationException
      * @throws PermissionException
      */
-    public function create(string $title, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = ''): string
+    public function create(string $title, string $slug, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = ''): string
     {
         $this->hasPermissions();
 
@@ -56,7 +56,10 @@ class Navigation extends Model
         }
 
         $siteId = $siteId ?: Sail::siteId();
-        $slug = Text::from($title)->slug()->value();
+        if (!$slug) {
+            $slug = $title;
+        }
+        $slug = Text::from($slug)->slug()->value();
         $count = self::query()->count(['slug' => $slug]);
 
         // Set a number next to the name to make it unique
@@ -99,6 +102,9 @@ class Navigation extends Model
             $structure = new NavigationStructure($structure);
         }
 
+        if (!$slug) {
+            $slug = $title;
+        }
         $slug = Text::from($slug)->slug()->value();
         $count = self::query()->count(['slug' => $slug]);
 

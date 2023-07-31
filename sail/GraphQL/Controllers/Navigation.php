@@ -100,6 +100,7 @@ class Navigation
     {
         return (new NavigationModel())->create(
             $args->get('title'),
+            $args->get('slug'),
             $args->get('structure'),
             $args->get('locale', 'en'),
             $args->get('site_id', Sail::siteId())
