@@ -124,6 +124,7 @@ class Navigation
     {
         return (new NavigationModel())->update(
             $args->get('id'),
+            $args->get('title'),
             $args->get('name'),
             $args->get('structure'),
             $args->get('locale', 'en')

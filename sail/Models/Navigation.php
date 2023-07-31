@@ -80,19 +80,19 @@ class Navigation extends Model
      *
      * Update existing navigation with given information and structure
      *
-     * @param  string                                $id
-     * @param  string                                $name
-     * @param  array|Collection|NavigationStructure  $structure
-     * @param  string                                $locale
+     * @param string $id
+     * @param string $title
+     * @param string $name
+     * @param array|Collection|NavigationStructure $structure
+     * @param string $locale
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws NavigationException
      * @throws PermissionException
-     *
      */
-    public function update(string $id, string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
+    public function update(string $id, string $title, string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
     {
         $this->hasPermissions();
 
@@ -102,7 +102,8 @@ class Navigation extends Model
 
         $this->updateOne(['_id' => $this->ensureObjectId($id)], [
             '$set' => [
-                'title' => $name,
+                'title' => $title,
+                'name' => $name,
                 'structure' => $structure,
                 'locale' => $locale
             ]
