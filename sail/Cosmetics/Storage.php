@@ -4,8 +4,10 @@ namespace SailCMS\Cosmetics;
 
 use League\Flysystem\FilesystemException;
 use League\Flysystem\MountManager;
+use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use SailCMS\Errors\StorageException;
 use SailCMS\Filesystem;
+use SailCMS\Types\FileSize;
 use SailCMS\Types\StorageType;
 
 class Storage
@@ -106,14 +108,140 @@ class Storage
         return $this->fs->publicUrl($this->buildFileString($filename));
     }
 
-    // read,
-    // delete,
+    /**
+     *
+     * Read a file
+     *
+     * @param  string  $filename
+     * @return mixed
+     * @throws FilesystemException
+     *
+     */
+    public function read(string $filename = ''): mixed
+    {
+        if (empty($filename) && !empty($this->filename)) {
+            // Assume file that was just uploaded
+            return $this->fs->read($this->buildFileString($this->filename));
+        }
+
+        return $this->fs->read($this->buildFileString($filename));
+    }
+
+    /**
+     *
+     * Delete file or directory
+     *
+     * @param  string  $filename
+     * @param  bool    $isDirectory
+     * @return bool
+     *
+     */
+    public function delete(string $filename, bool $isDirectory = false): bool
+    {
+        try {
+            if ($isDirectory) {
+                $this->fs->deleteDirectory($this->buildFileString($filename));
+            } else {
+                $this->fs->delete($this->buildFileString($filename));
+            }
+
+            return true;
+        } catch (FilesystemException $e) {
+            return false;
+        }
+    }
+
+    /**
+     *
+     * Get mime-type for given file
+     *
+     * @param  string  $filename
+     * @return string
+     * @throws FilesystemException
+     *
+     */
+    public function mimetype(string $filename = ''): string
+    {
+        try {
+            return (new FinfoMimeTypeDetector())->detectMimeType($this->buildFileString($filename), 'string contents');
+        } catch (FilesystemException $e) {
+            return 'unknown';
+        }
+    }
+
+    /**
+     *
+     * Get filesize information for file
+     *
+     * @param  string  $filename
+     * @return FileSize
+     * @throws FilesystemException
+     *
+     */
+    public function size(string $filename = ''): FileSize
+    {
+        return new FileSize($this->fs->fileSize($this->buildFileString($filename)));
+    }
+
+    /**
+     *
+     * Create a directory
+     *
+     * @param  string  $directoryName
+     * @param  string  $permission
+     * @return bool
+     *
+     */
+    public function createDirectory(string $directoryName, string $permission = 'private'): bool
+    {
+        try {
+            $this->fs->createDirectory($this->buildFileString($directoryName), ['visibility' => $permission]);
+            return true;
+        } catch (FilesystemException $e) {
+            return false;
+        }
+    }
+
+    /**
+     *
+     * Alias for delete
+     *
+     * @param  string  $directoryName
+     * @return bool
+     *
+     */
+    public function deleteDirectory(string $directoryName): bool
+    {
+        return $this->delete($directoryName, true);
+    }
+
+    /**
+     *
+     * Check if file or directory exists
+     *
+     * @param  string  $name
+     * @param  bool    $isDirectory
+     * @return bool
+     *
+     */
+    public function exists(string $name, bool $isDirectory = false): bool
+    {
+        try {
+            if ($isDirectory) {
+                $this->fs->directoryExists($this->buildFileString($name));
+                return true;
+            }
+
+            $this->fs->fileExists($this->buildFileString($name));
+            return true;
+        } catch (FilesystemException $e) {
+        }
+    }
+
     // getFilesIn,
-    // mimetype,
-    // exists,
-    // create directory,
-    // delete directory,
     // setPermissions
+    // move
+    // copy
 
     private function buildFileString(string $filename): string
     {
