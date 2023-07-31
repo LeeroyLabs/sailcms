@@ -54,6 +54,7 @@ class Install extends Command
             'storage/fs/uploads',
             'storage/fs/logs',
             'storage/fs/vault',
+            'storage/fs/app',
             'storage/cache/',
             'config',
             'modules',
