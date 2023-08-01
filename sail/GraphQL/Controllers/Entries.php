@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -74,10 +75,15 @@ class Entries
         $page = $args->get('page', 1);
         $limit = $args->get('limit', 50);
         $sort = $args->get('sort', 'title');
-        $direction = $args->get('direction', 1);
+        $direction = strtolower($args->get('direction', 'ASC'));
         $search = $args->get('search', '');
         $onlyTrash = $args->get('only_trash', false);
         $locale = $args->get('locale');
+
+        $direction = match ($direction) {
+            'desc' => Model::SORT_DESC,
+            default => Model::SORT_ASC
+        };
 
         // Get the result!
         $result = Entry::getList($entryTypeHandle, $search, $page, $limit, $sort, $direction, $onlyTrash, $locale); // By entry type instead

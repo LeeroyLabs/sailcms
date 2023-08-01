@@ -55,6 +55,48 @@ test('Create asset', function () {
     }
 });
 
+test('CRUD navigation', function () {
+    if (isset($_ENV['test-token'])) {
+        $createResponse = $this->client->run('
+            mutation {
+                createNavigation(name: "navigation-gql-test", structure: [], locale: "fr", site_id: "graphql-tests")
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($createResponse->data->createNavigation)->toBe("navigation-gql-test");
+
+        $getResponse = $this->client->run('
+            {
+                navigationDetails(name: "navigation-gql-test") {
+                    _id
+                }    
+            }
+        ', [], $_ENV['test-token']);
+
+        $id = $getResponse->data?->navigationDetails?->_id ?? null;
+
+        expect($id)->not->toBeNull();
+
+        $getAllResponse = $this->client->run('
+            {
+                navigationDetailsList(sort: "title", direction: ASC, site_id: "graphql-tests") {
+                    _id
+                }    
+            }
+        ', [], $_ENV['test-token']);
+
+        expect(count($getAllResponse->data->navigationDetailsList))->toBe(1);
+
+        $deleteResponse = $this->client->run('
+            mutation {
+                deleteNavigation(id: "' . $id . '")
+            }
+        ', [], $_ENV['test-token']);
+
+        expect($deleteResponse->data->deleteNavigation)->toBeTrue();
+    }
+});
+
 test('Get a page and modify his SEO', function () {
     if (isset($_ENV['test-token'])) {
         $entryResponse = $this->client->run('
@@ -316,10 +358,7 @@ test('Get a entry', function () {
                         }
                         slug
                     }
-                    content {
-                        key
-                        content
-                    }
+                    content
                     seo {
                         _id
                         title

@@ -112,6 +112,15 @@ test('Update navigation called "sidebar"', function () {
     expect($nav)->not->toBeNull()->and($nav->locale)->toBe('fr');
 })->group('navigation');
 
+test('Get all navigations', function () {
+    $navigations = Navigation::getList('title', -1);
+    expect(count($navigations))->toBe(2)
+        ->and($navigations[0]->name)->toBe('sidebar2');
+
+    $navigations = Navigation::getList('title', 1, 'fr');
+    expect(count($navigations))->toBe(1);
+});
+
 test('Delete navigation by name', function () {
     $navigation = new Navigation();
     $navigation->deleteByName('sidebar');

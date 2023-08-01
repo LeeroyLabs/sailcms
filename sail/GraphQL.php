@@ -491,6 +491,7 @@ final class GraphQL
 
         // Navigation
         self::addQueryResolver('navigation', Navigation::class, 'navigation');
+        self::addQueryResolver('navigationDetailsList', Navigation::class, 'navigationDetailsList');
         self::addQueryResolver('navigationDetails', Navigation::class, 'navigationDetails');
         self::addMutationResolver('createNavigation', Navigation::class, 'createNavigation');
         self::addMutationResolver('updateNavigation', Navigation::class, 'updateNavigation');
