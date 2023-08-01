@@ -37,6 +37,7 @@ class Navigation extends Model
      * Create a navigation
      *
      * @param string $title
+     * @param string $slug
      * @param array|Collection|NavigationStructure $structure
      * @param string $locale
      * @param string $siteId
@@ -105,12 +106,17 @@ class Navigation extends Model
         if (!$slug) {
             $slug = $title;
         }
-        $slug = Text::from($slug)->slug()->value();
-        $count = self::query()->count(['slug' => $slug]);
 
-        // Set a number next to the name to make it unique
-        if ($count > 0) {
-            $slug .= '-' . Text::init()->random(4, false);
+        $ifExist = self::getBySlug($slug);
+
+        if ($ifExist && $ifExist->_id !== $id) {
+            $slug = Text::from($slug)->slug()->value();
+            $count = self::query()->count(['slug' => $slug]);
+
+            // Set a number next to the name to make it unique
+            if ($count > 0) {
+                $slug .= '-' . Text::init()->random(4, false);
+            }
         }
 
         $this->updateOne(['_id' => $this->ensureObjectId($id)], [
