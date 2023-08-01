@@ -77,4 +77,16 @@ class Basics
         ])));
         return true;
     }
+
+    /**
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws SodiumException
+     * @throws JsonException
+     */
+    public function generateRobot(mixed $obj, Collection $args, Context $context): ?bool
+    {
+        (new GlobalSeo())->generateRobot($args->get('template'));
+        return true;
+    }
 }

@@ -12,6 +12,7 @@ use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
 use SailCMS\CLI\Controller;
 use SailCMS\CLI\Entry;
+use SailCMS\CLI\GenerateSitemap;
 use SailCMS\CLI\Install;
 use SailCMS\CLI\InstallOfficial;
 use SailCMS\CLI\Migrate;
@@ -104,6 +105,7 @@ final class CLI
         $application->add(new Schema());
         $application->add(new Migrate());
         $application->add(new Migrations());
+        $application->add(new GenerateSitemap());
         $application->add(new Test());
         $application->add(new BasicAuth());
         $application->add(new InstallOfficial());

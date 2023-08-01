@@ -356,6 +356,7 @@ final class GraphQL
         self::addQueryResolver('getSeoSettings', Basics::class, 'getSeoSettings');
         self::addMutationResolver('setSeoDefaultConfig', Basics::class, 'setSeoDefaultConfig');
         self::addMutationResolver('setSeoSettings', Basics::class, 'setSeoSettings');
+        self::addMutationResolver('generateRobot', Basics::class, 'generateRobot');
         self::addQueryResolver('version', Basics::class, 'version');
 
         // User

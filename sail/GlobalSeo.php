@@ -4,8 +4,14 @@ namespace SailCMS;
 
 use JsonException;
 use League\Flysystem\FilesystemException;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Models\Config;
+use SailCMS\Models\Entry;
+use SailCMS\Models\EntrySeo;
+use SailCMS\Models\EntryType;
 use SailCMS\Templating\Engine;
 use SailCMS\Types\SeoDefaultConfig;
 use SailCMS\Types\SeoSettings;
@@ -95,8 +101,39 @@ final class GlobalSeo
         }
     }
 
+    /**
+     *
+     * Generate all sitemaps
+     *
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     * @throws EntryException
+     */
     public function generateSitemap():void
     {
+        $entryTypes = EntryType::getAll();
 
+        $file = '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">';
+        $entryTypes->each(static function($key, $value) use (&$file) {
+            $entries = Entry::getList($value->handle);
+
+            $sitemapName = "sitemap_sections_" . $value->handle . ".xml";
+            $file .= '<sitemap><loc>' . env('SITE_URL') . '/' . $sitemapName . '</loc><lastmod>' . date("Y-m-d") . "T" . date("H:m:sO") . '</lastmod></sitemap>';
+
+            $sitemap = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+            foreach ($entries->list as $entry) {
+                $entrySeo = (new EntrySeo())->getByEntryId($entry->_id)->sitemap;
+                if ($entrySeo) {
+                    $url = env('SITE_URL') . '/' . $entry->locale . '/' . $entry->slug;
+                    $sitemap .= '<url><loc>' . $url . '</loc></url>';
+                }
+            }
+
+            $sitemap .= '</urlset>';
+            file_put_contents($sitemapName, $sitemap);
+        });
+        $file .= '</sitemapindex>';
+        file_put_contents('sitemap.xml', $file);
     }
 }
