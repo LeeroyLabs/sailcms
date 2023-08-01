@@ -183,7 +183,7 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Find one user with filters
+     * Find one layout with filters
      * # TODO this method is a mess
      *
      * @param  array  $filters
