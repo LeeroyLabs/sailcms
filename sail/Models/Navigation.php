@@ -109,7 +109,7 @@ class Navigation extends Model
 
         $ifExist = self::getBySlug($slug);
 
-        if ($ifExist && $ifExist->_id != $id) {
+        if ($ifExist && (string)$ifExist->_id !== $id) {
             $slug = Text::from($slug)->slug()->value();
             $count = self::query()->count(['slug' => $slug]);
 
