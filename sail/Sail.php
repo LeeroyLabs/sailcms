@@ -18,6 +18,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\User;
@@ -467,7 +468,8 @@ class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value) {
+        $models->each(function ($key, $value)
+        {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 

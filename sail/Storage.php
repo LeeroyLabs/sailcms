@@ -1,12 +1,12 @@
 <?php
 
-namespace SailCMS\Cosmetics;
+namespace SailCMS;
 
 use League\Flysystem\FilesystemException;
 use League\Flysystem\MountManager;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use SailCMS\Errors\StorageException;
-use SailCMS\Filesystem;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Types\FileSize;
 use SailCMS\Types\StorageType;
 
@@ -21,16 +21,6 @@ class Storage
     {
         $this->fs = Filesystem::manager();
     }
-
-    /**
-     *
-     *
-     * Storage::on('s3')->url('xxxx.jpg');
-     * Storage::on('locale')->setPermissions('xxxx')->store('xxxx', 'xxxx');
-     *
-     * Storage::on('s3')->store('xxx', 'xxxx')->url();
-     *
-     */
 
     /**
      *
@@ -86,7 +76,7 @@ class Storage
 
             return $this;
         } catch (FilesystemException $e) {
-            throw new StorageException('Could not store file: ' . $e->getMessage(), '500');
+            throw new StorageException('Could not store file ' . $filename . ': ' . $e->getMessage(), 500);
         }
     }
 
@@ -114,7 +104,6 @@ class Storage
      *
      * @param  string  $filename
      * @return mixed
-     * @throws FilesystemException
      *
      */
     public function read(string $filename = ''): mixed
@@ -134,6 +123,7 @@ class Storage
      * @param  string  $filename
      * @param  bool    $isDirectory
      * @return bool
+     * @throws StorageException
      *
      */
     public function delete(string $filename, bool $isDirectory = false): bool
@@ -147,7 +137,7 @@ class Storage
 
             return true;
         } catch (FilesystemException $e) {
-            return false;
+            throw new StorageException('Cannot delete file or directory ' . $filename . ': ' . $e->getMessage(), 500);
         }
     }
 
@@ -157,7 +147,6 @@ class Storage
      *
      * @param  string  $filename
      * @return string
-     * @throws FilesystemException
      *
      */
     public function mimetype(string $filename = ''): string
@@ -189,16 +178,16 @@ class Storage
      *
      * @param  string  $directoryName
      * @param  string  $permission
-     * @return bool
+     * @return void
+     * @throws StorageException
      *
      */
-    public function createDirectory(string $directoryName, string $permission = 'private'): bool
+    public function createDirectory(string $directoryName, string $permission = 'private'): void
     {
         try {
             $this->fs->createDirectory($this->buildFileString($directoryName), ['visibility' => $permission]);
-            return true;
         } catch (FilesystemException $e) {
-            return false;
+            throw new StorageException('Cannot create directory ' . $directoryName . ': ' . $e->getMessage(), 500);
         }
     }
 
@@ -207,12 +196,13 @@ class Storage
      * Alias for delete
      *
      * @param  string  $directoryName
-     * @return bool
+     * @return void
+     * @throws StorageException
      *
      */
-    public function deleteDirectory(string $directoryName): bool
+    public function deleteDirectory(string $directoryName): void
     {
-        return $this->delete($directoryName, true);
+        $this->delete($directoryName, true);
     }
 
     /**
@@ -235,13 +225,74 @@ class Storage
             $this->fs->fileExists($this->buildFileString($name));
             return true;
         } catch (FilesystemException $e) {
+            return false;
         }
     }
 
-    // getFilesIn,
-    // setPermissions
-    // move
-    // copy
+    /**
+     *
+     * Move a file to another location
+     *
+     * @param  string  $originalLocation
+     * @param  string  $newLocation
+     * @param  string  $permission
+     * @return bool
+     *
+     */
+    public function move(string $originalLocation, string $newLocation, string $permission = 'private'): bool
+    {
+        $path1 = $this->buildFileString($originalLocation);
+        $path2 = $this->buildFileString($newLocation);
+
+        try {
+            $this->fs->move($path1, $path2, ['visibility' => $permission]);
+            return true;
+        } catch (FilesystemException $e) {
+            return false;
+        }
+    }
+
+    /**
+     *
+     * Copy a file to another location
+     *
+     * @param  string  $originalLocation
+     * @param  string  $newLocation
+     * @param  string  $permission
+     * @return bool
+     *
+     */
+    public function copy(string $originalLocation, string $newLocation, string $permission = 'private'): bool
+    {
+        $path1 = $this->buildFileString($originalLocation);
+        $path2 = $this->buildFileString($newLocation);
+
+        try {
+            $this->fs->copy($path1, $path2, ['visibility' => $permission]);
+            return true;
+        } catch (FilesystemException $e) {
+            return false;
+        }
+    }
+
+    /**
+     *
+     * Set permission for given file
+     *
+     * @param  string  $filename
+     * @param  string  $permission
+     * @return bool
+     *
+     */
+    public function setPermissions(string $filename, string $permission): bool
+    {
+        try {
+            $this->fs->setVisibility($this->buildFileString($filename), $permission);
+            return true;
+        } catch (FilesystemException $e) {
+            return false;
+        }
+    }
 
     private function buildFileString(string $filename): string
     {

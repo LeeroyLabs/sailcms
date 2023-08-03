@@ -1,11 +1,13 @@
 <?php
 
-namespace SailCMS;
+namespace SailCMS\Internal;
 
-use \League\Flysystem\FilesystemAdapter;
-use \League\Flysystem\Local\LocalFilesystemAdapter;
-use \League\Flysystem\MountManager;
-use \League\Flysystem\Filesystem as FS;
+use League\Flysystem\Filesystem as FS;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\Local\LocalFilesystemAdapter;
+use League\Flysystem\MountManager;
+use SailCMS\Sail;
+use SailCMS\Text;
 
 final class Filesystem
 {
@@ -46,8 +48,6 @@ final class Filesystem
         if ($forcedPath === '') {
             $path = $wd;
         }
-
-        Debug::ray($wd . '/storage/fs');
 
         self::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
         self::$adapters['app'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/app'), ['public_url' => '/fs']);

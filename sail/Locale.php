@@ -3,6 +3,7 @@
 namespace SailCMS;
 
 use League\Flysystem\FilesystemException;
+use SailCMS\Internal\Filesystem;
 use Symfony\Component\Yaml\Yaml;
 
 class Locale
