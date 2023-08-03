@@ -1,11 +1,13 @@
 <?php
 
-namespace SailCMS;
+namespace SailCMS\Internal;
 
-use \League\Flysystem\FilesystemAdapter;
-use \League\Flysystem\Local\LocalFilesystemAdapter;
-use \League\Flysystem\MountManager;
-use \League\Flysystem\Filesystem as FS;
+use League\Flysystem\Filesystem as FS;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\Local\LocalFilesystemAdapter;
+use League\Flysystem\MountManager;
+use SailCMS\Sail;
+use SailCMS\Text;
 
 final class Filesystem
 {
@@ -48,6 +50,7 @@ final class Filesystem
         }
 
         self::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
+        self::$adapters['app'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/app'), ['public_url' => '/fs']);
         self::$adapters['vault'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/vault/'));
         self::$adapters['cache'] = new FS(new LocalFilesystemAdapter($wd . '/storage/cache/'));
         self::$adapters['debug'] = new FS(new LocalFilesystemAdapter($wd . '/storage/debug/'));
