@@ -14,34 +14,28 @@ use SailCMS\Types\QueryOptions;
 /**
  *
  * @property string $url
- * @property string $redirect_url
- * @property string $redirect_type
  * @property int $hit_count
  * @property int $last_attempt
  */
-class Redirection extends Model
+class BrokenLink extends Model
 {
-    protected string $collection = 'redirection';
+    protected string $collection = 'broken_link';
 
     /**
      *
-     * Add a redirection
+     * Add a broken link
      *
      * @param string $url
-     * @param string $redirect_url
-     * @param string $redirect_type
      * @return bool
      * @throws DatabaseException
      */
-    public static function add(string $url, string $redirect_url, string $redirect_type): bool
+    public static function add(string $url): bool
     {
         try {
             $result = self::query()->insert([
                 'url' => $url,
-                'redirect_url' => $redirect_url,
-                'redirect_type' => $redirect_type,
-                'hit_count' => 0,
-                'last_attempt' => 0
+                'hit_count' => 1,
+                'last_attempt' => time()
             ]);
         }catch (DateException $exception) {
             return false;
@@ -52,43 +46,13 @@ class Redirection extends Model
 
     /**
      *
-     * Update a redirection
-     *
-     * @param string $id
-     * @param string $url
-     * @param string $redirect_url
-     * @param string $redirect_type
-     * @return bool
-     * @throws DatabaseException
-     */
-    public function update(string $id, string $url, string $redirect_url, string $redirect_type): bool
-    {
-        $info = [
-            'url' => $url,
-            'redirect_url' => $redirect_url,
-            'redirect_type' => $redirect_type
-        ];
-
-        try {
-            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
-                '$set' => $info
-            ]);
-        }catch (DateException $exception) {
-            return false;
-        }
-
-        return $result === 1;
-    }
-
-    /**
-     *
-     * Update redirection hit count
+     * Update broken link hit count
      *
      * @param string $id
      * @return bool
      * @throws DatabaseException
      */
-    public function updateHitCount(string $id): bool
+    public function update(string $id): bool
     {
         $info = [
             'hit_count' => $this->getHitCount($id) + 1,
@@ -108,21 +72,7 @@ class Redirection extends Model
 
     /**
      *
-     * Get task by id
-     *
-     * @param string $id
-     * @return Redirection|null
-     * @throws DatabaseException
-     *
-     */
-    public function getById(string $id): ?Redirection
-    {
-        return $this->findById($id)->exec();
-    }
-
-    /**
-     *
-     * Get redirection hit count
+     * Get broken link hit count
      *
      * @param string $id
      * @return int
@@ -135,7 +85,7 @@ class Redirection extends Model
 
     /**
      *
-     * Get a list of redirections
+     * Get a list of broken links
      *
      * @param int $page
      * @param int $limit
@@ -178,7 +128,7 @@ class Redirection extends Model
 
     /**
      *
-     * Delete a redirection
+     * Delete a broken link
      *
      * @param string $id
      * @return bool

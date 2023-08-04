@@ -92,6 +92,9 @@ type Query {
     getRedirection(id: ID!): Redirection
     getRedirections(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): RedirectionListing!
 
+    # Broken Link
+    getBrokenLinks(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): BrokenLinkListing!
+
     #{CUSTOM_QUERIES}#
 }
 
@@ -823,6 +826,17 @@ type Redirection {
 type RedirectionListing {
     pagination: Pagination!
     list: [Redirection!]!
+}
+
+type BrokenLink {
+    url: String!
+    hit_count: Int!
+    last_attempt: Int!
+}
+
+type BrokenLinkListing {
+    pagination: Pagination!
+    list: [BrokenLink!]!
 }
 
 enum RedirectType {
