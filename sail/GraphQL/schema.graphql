@@ -84,8 +84,13 @@ type Query {
     taskRunningTime(pid: ID!): Int!
     cliCommand: [String!]!
 
+    # Global SEO
     getSeoDefaultConfig: SeoDefaultConfig!
     getSeoSettings: SeoSettings!
+
+    # Redirection
+    getRedirection(id: ID!): Redirection
+    getRedirections(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): RedirectionListing!
 
     #{CUSTOM_QUERIES}#
 }
@@ -189,6 +194,11 @@ type Mutation {
     generateRobot(template: String!): Boolean!
     setSeoDefaultConfig(config: SeoDefaultConfigInput): Boolean!
     setSeoSettings(settings: SeoSettingsInput): Boolean!
+
+    # Redirection
+    createRedirection(url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
+    updateRedirection(id: ID!, url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
+    deleteRedirection(id: ID!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
@@ -800,6 +810,24 @@ type Task {
     executed_at: Int!
     execution_result: String!
     execution_success: Boolean!
+}
+
+type Redirection {
+    url: String!
+    redirect_url: String!
+    redirect_type: String!
+    hit_count: Int!
+    last_attempt: Int!
+}
+
+type RedirectionListing {
+    pagination: Pagination!
+    list: [Redirection!]!
+}
+
+enum RedirectType {
+    PERMANENT
+    TEMPORARY
 }
 
 #{CUSTOM_TYPES}#

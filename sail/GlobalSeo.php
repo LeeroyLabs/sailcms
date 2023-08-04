@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use JsonException;
 use League\Flysystem\FilesystemException;
+use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -113,10 +114,11 @@ final class GlobalSeo
     public function generateSitemap():void
     {
         $entryTypes = EntryType::getAll();
+        $defaultLocale = Locale::default();
 
         $file = '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">';
-        $entryTypes->each(static function($key, $value) use (&$file) {
-            $entries = Entry::getList($value->handle);
+        $entryTypes->each(static function($key, $value) use (&$file, $defaultLocale) {
+            $entries = Entry::getList($value->handle, $search = '', $page = 1, $limit = 100, $sort = 'title', $direction = Model::SORT_ASC, $onlyTrash = false, $locale = $defaultLocale);
 
             $sitemapName = "sitemap_sections_" . $value->handle . ".xml";
             $file .= '<sitemap><loc>' . env('SITE_URL') . '/' . $sitemapName . '</loc><lastmod>' . date("Y-m-d") . "T" . date("H:m:sO") . '</lastmod></sitemap>';
@@ -125,8 +127,35 @@ final class GlobalSeo
             foreach ($entries->list as $entry) {
                 $entrySeo = (new EntrySeo())->getByEntryId($entry->_id)->sitemap;
                 if ($entrySeo) {
-                    $url = env('SITE_URL') . '/' . $entry->locale . '/' . $entry->slug;
-                    $sitemap .= '<url><loc>' . $url . '</loc></url>';
+                    $locale = '/' . $entry->locale;
+                    if ($entry->locale === $defaultLocale) {
+                        $locale = "";
+                    }
+                    $hreflang = "";
+                    if ($entry->locale === "fr") {
+                        $hreflang = "fr-ca";
+                    }else if($entry->locale === "en"){
+                        $hreflang = "en-us";
+                    }
+
+                    $url = env('SITE_URL') . $locale . '/' . $entry->slug;
+                    $sitemap .= '<url><loc>' . $url . '</loc><lastmod>'. date("Y-m-d", $entry->dates->updated) . 'T' . date("H:m:sO", $entry->dates->updated) .'</lastmod>';
+                    $sitemap .= '<xhtml:link rel="alternate" hreflang="x-default" href="'. $url .'"/>';
+                    $sitemap .= '<xhtml:link rel="alternate" hreflang="'. $hreflang .'" href="'. $url .'"/>';
+                    if ($entry->alternates) {
+                        foreach ($entry->alternates as $alternate) {
+                            $alternateEntry = (new Entry())->getById($alternate->entry_id);
+                            $url = env('SITE_URL') . '/' . $alternate->locale . '/' . $alternateEntry->slug;
+                            $hreflang = "";
+                            if ($alternate->locale === "fr") {
+                                $hreflang = "fr-ca";
+                            }else if($alternate->locale === "en"){
+                                $hreflang = "en-us";
+                            }
+                            $sitemap .= '<xhtml:link rel="alternate" hreflang="'. $hreflang .'" href="'. $url .'"/>';
+                        }
+                    }
+                    $sitemap .= '</url>';
                 }
             }
 

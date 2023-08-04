@@ -33,6 +33,7 @@ use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Queue;
+use SailCMS\GraphQL\Controllers\Redirection;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -524,6 +525,13 @@ final class GraphQL
         self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
         self::addMutationResolver('retryTask', Queue::class, 'retryTask');
         self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
+
+        // Redirection
+        self::addMutationResolver('getRedirection', Redirection::class, 'getRedirection');
+        self::addMutationResolver('getRedirections', Redirection::class, 'getRedirections');
+        self::addMutationResolver('createRedirection', Redirection::class, 'createRedirection');
+        self::addMutationResolver('updateRedirection', Redirection::class, 'updateRedirection');
+        self::addMutationResolver('deleteRedirection', Redirection::class, 'deleteRedirection');
 
         // Misc calls
         // TODO: GET LOGS (from file or db)
