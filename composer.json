@@ -97,7 +97,8 @@
         "release:major": "conventional-changelog --major --commit",
         "test": "./vendor/bin/pest",
         "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
-        "testall": "composer test; composer analyze"
+        "testall": "composer test; composer analyze",
+        "format": "sh format"
     },
     "sailcms": {
         "containers": [],
