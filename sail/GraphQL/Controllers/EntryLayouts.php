@@ -194,6 +194,7 @@ class EntryLayouts
         return (new EntryLayout())->deleteManyByIds($ids, $soft);
     }
 
+    // TODO: DOCBLOCK THIS
     public function restoreEntryLayouts(mixed $obj, Collection $args, Context $context): bool
     {
         $ids = $args->get('ids');

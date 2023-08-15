@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use RuntimeException;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\ACLException;
@@ -17,7 +18,7 @@ use SailCMS\Types\QueryOptions;
 /**
  *
  * @property string              $title
- * @property string              $name
+ * @property string              $slug
  * @property NavigationStructure $structure
  * @property string              $locale
  * @property string              $site_id
@@ -35,19 +36,19 @@ class Navigation extends Model
      *
      * Create a navigation
      *
-     * @param  string                                $name
-     * @param  array|Collection|NavigationStructure  $structure
-     * @param  string                                $locale
-     * @param  string                                $siteId
+     * @param string $title
+     * @param string $slug
+     * @param array|Collection|NavigationStructure $structure
+     * @param string $locale
+     * @param string $siteId
      * @return string
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws NavigationException
      * @throws PermissionException
-     *
      */
-    public function create(string $name, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = ''): string
+    public function create(string $title, string $slug, array|Collection|NavigationStructure $structure, string $locale = 'en', string $siteId = ''): string
     {
         $this->hasPermissions();
 
@@ -56,43 +57,45 @@ class Navigation extends Model
         }
 
         $siteId = $siteId ?: Sail::siteId();
-        $title = $name;
-        $name = Text::from($name)->slug()->value();
-        $count = self::query()->count(['name' => $name]);
+        if (!$slug) {
+            $slug = $title;
+        }
+        $slug = Text::from($slug)->slug()->value();
+        $count = self::query()->count(['slug' => $slug]);
 
         // Set a number next to the name to make it unique
         if ($count > 0) {
-            $name .= '-' . Text::init()->random(4, false);
+            $slug .= '-' . Text::init()->random(4, false);
         }
 
-        $id = $this->insert([
+        $this->insert([
             'title' => $title,
-            'name' => $name,
+            'slug' => $slug,
             'structure' => $structure,
             'locale' => $locale,
             'site_id' => $siteId
         ]);
 
-        return $name;
+        return $slug;
     }
 
     /**
      *
      * Update existing navigation with given information and structure
      *
-     * @param  string                                $id
-     * @param  string                                $name
-     * @param  array|Collection|NavigationStructure  $structure
-     * @param  string                                $locale
+     * @param string $id
+     * @param string $title
+     * @param string $slug
+     * @param array|Collection|NavigationStructure $structure
+     * @param string $locale
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws NavigationException
      * @throws PermissionException
-     *
      */
-    public function update(string $id, string $name, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
+    public function update(string $id, string $title, string $slug, array|Collection|NavigationStructure $structure, string $locale = 'en'): bool
     {
         $this->hasPermissions();
 
@@ -100,9 +103,26 @@ class Navigation extends Model
             $structure = new NavigationStructure($structure);
         }
 
+        if (!$slug) {
+            $slug = $title;
+        }
+
+        $ifExist = self::getBySlug($slug);
+
+        if ($ifExist && (string)$ifExist->_id !== $id) {
+            $slug = Text::from($slug)->slug()->value();
+            $count = self::query()->count(['slug' => $slug]);
+
+            // Set a number next to the name to make it unique
+            if ($count > 0) {
+                $slug .= '-' . Text::init()->random(4, false);
+            }
+        }
+
         $this->updateOne(['_id' => $this->ensureObjectId($id)], [
             '$set' => [
-                'title' => $name,
+                'title' => $title,
+                'slug' => $slug,
                 'structure' => $structure,
                 'locale' => $locale
             ]
@@ -111,6 +131,12 @@ class Navigation extends Model
         return true;
     }
 
+    /**
+     *
+     * Delete a navigation by ID
+     *
+     * @throws DatabaseException
+     */
     public function delete(string $id): bool
     {
         self::query()->deleteById($id);
@@ -121,17 +147,16 @@ class Navigation extends Model
      *
      * Delete a navigation by name
      *
-     * @param  string  $name
+     * @param string $slug
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
-     *
      */
-    public function deleteByName(string $name): bool
+    public function deleteByName(string $slug): bool
     {
         $this->hasPermissions();
-        self::query()->deleteOne(['name' => $name]);
+        self::query()->deleteOne(['slug' => $slug]);
         return true;
     }
 
@@ -139,15 +164,14 @@ class Navigation extends Model
      *
      * Get a list of navigation
      *
-     * @param  string       $sort
-     * @param  int          $direction
-     * @param  string|null  $locale
-     * @param  string       $siteId
+     * @param string $sort
+     * @param int $direction
+     * @param string|null $locale
+     * @param string|null $siteId
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
-     *
      */
     public static function getList(string $sort = 'title', int $direction = Model::SORT_ASC, string $locale = null, string $siteId = null): ?array
     {
@@ -188,13 +212,13 @@ class Navigation extends Model
      *
      * Get a navigation by its name
      *
-     * @param  string  $name
+     * @param  string  $slug
      * @return Navigation|null
      * @throws DatabaseException
      *
      */
-    public static function getByName(string $name): ?Navigation
+    public static function getBySlug(string $slug): ?Navigation
     {
-        return self::getBy('name', $name);
+        return self::getBy('slug', $slug);
     }
 }

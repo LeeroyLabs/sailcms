@@ -2,13 +2,10 @@
 
 namespace SailCMS\CLI;
 
-use SailCMS\CLI;
-use SailCMS\Filesystem;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Sail;
-use SailCMS\Text;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Migrations extends Command

@@ -6,7 +6,7 @@ use ImagickException;
 use Intervention\Image\Image;
 use Intervention\Image\ImageManager;
 use League\Flysystem\FilesystemException;
-use SailCMS\Filesystem;
+use SailCMS\Internal\Filesystem;
 
 class Transformer
 {

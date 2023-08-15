@@ -183,7 +183,7 @@ class EntryLayout extends Model implements Castable
 
     /**
      *
-     * Find one user with filters
+     * Find one layout with filters
      * # TODO this method is a mess
      *
      * @param  array  $filters
@@ -394,11 +394,13 @@ class EntryLayout extends Model implements Castable
         $ids = self::ensureObjectIds($ids, true);
 
         try {
-            $count = $this->updateMany(['_id' => ['$in' => $ids]], ['$set' => [
-                'authors.deleted_by' => '',
-                'dates.deleted' => 0,
-                'is_trashed' => false
-            ]]);
+            $count = $this->updateMany(['_id' => ['$in' => $ids]], [
+                '$set' => [
+                    'authors.deleted_by' => '',
+                    'dates.deleted' => 0,
+                    'is_trashed' => false
+                ]
+            ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating an') . PHP_EOL . $exception->getMessage());
         }
@@ -417,7 +419,8 @@ class EntryLayout extends Model implements Castable
      */
     private static function validateSchema(Collection $schema): void
     {
-        $schema->each(function ($i, $tabFields) {
+        $schema->each(function ($i, $tabFields)
+        {
             if (!$tabFields instanceof EntryLayoutTab) {
                 throw new EntryException(sprintf(self::SCHEMA_INVALID_TAB_VALUE, $i + 1));
             }
@@ -446,7 +449,8 @@ class EntryLayout extends Model implements Castable
         }
 
         // All ids must be string
-        $entryLayoutIds = array_map(function ($value) {
+        $entryLayoutIds = array_map(function ($value)
+        {
             return (string)$value;
         }, $entryLayoutIds);
 
@@ -502,7 +506,8 @@ class EntryLayout extends Model implements Castable
     {
         $fieldIds = [];
 
-        $entryLayouts->each(function ($k, $entryLayout) use (&$fieldIds) {
+        $entryLayouts->each(function ($k, $entryLayout) use (&$fieldIds)
+        {
             foreach ($entryLayout->schema as $fieldTab) {
                 if (isset($fieldTab->fields)) {
                     foreach ($fieldTab->fields as $fieldId) {
@@ -533,18 +538,24 @@ class EntryLayout extends Model implements Castable
     {
         $fields = (new EntryField)->getList(['_id' => ['$in' => $fieldIds]]);
         $fieldsById = [];
-        $fields->each(function ($k, $field) use (&$fieldsById) {
+        $fields->each(function ($k, $field) use (&$fieldsById)
+        {
             /**
              * @var EntryField $field
              */
             $fieldsById[(string)$field->_id] = $field;
         });
 
-        $entryLayouts->each(function ($k, $entryLayout) use ($fieldsById) {
+        $entryLayouts->each(function ($k, $entryLayout) use ($fieldsById)
+        {
             foreach ($entryLayout->schema as $tab) {
                 if ($tab->fields) {
                     foreach ($tab->fields as &$fieldId) {
-                        $fieldId = $fieldsById[$fieldId] ?? null;
+                        // Make sure it exists, otherwise drop it
+                        // (field deleted without removing it from layout first)
+                        if (!empty($fieldsById[$fieldId])) {
+                            $fieldId = $fieldsById[$fieldId];
+                        }
                     }
                 }
             }
@@ -701,11 +712,13 @@ class EntryLayout extends Model implements Castable
         $now = time();
 
         try {
-            $count = $this->updateMany(['_id' => ['$in' => $ids]], ['$set' => [
-                'authors.deleted_by' => $author->_id,
-                'dates.deleted' => $now,
-                'is_trashed' => true
-            ]]);
+            $count = $this->updateMany(['_id' => ['$in' => $ids]], [
+                '$set' => [
+                    'authors.deleted_by' => $author->_id,
+                    'dates.deleted' => $now,
+                    'is_trashed' => true
+                ]
+            ]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting a batch of') . PHP_EOL . $exception->getMessage());
         }
