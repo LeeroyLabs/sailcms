@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class View extends Command
 {
     protected static $defaultDescription = 'Create views for entries';
-    protected static $defaultName = 'generate:view';
+    protected static $defaultName = 'generate:views';
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
