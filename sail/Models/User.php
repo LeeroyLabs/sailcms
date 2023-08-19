@@ -34,7 +34,9 @@ use SailCMS\Types\UserMeta;
 use SailCMS\Types\Username;
 use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
+use SensitiveParameter;
 use stdClass;
+use Twig\Error\LoaderError;
 
 /**
  *
@@ -217,11 +219,11 @@ class User extends Model
         $skip = $page * $limit - $limit;
         $list = new Collection(
             $this->find($query)
-                ->skip($skip)
-                ->limit($limit)
-                ->collation($collation)
-                ->sort([$sort => $order])
-                ->exec()
+                 ->skip($skip)
+                 ->limit($limit)
+                 ->collation($collation)
+                 ->sort([$sort => $order])
+                 ->exec()
         );
 
         $total = $this->count($query);
@@ -241,6 +243,7 @@ class User extends Model
      * @param  string            $avatar
      * @param  UserMeta|null     $meta
      * @param  Collection|array  $roles
+     * @param  string            $group
      * @param  bool              $createWithSetPassword
      * @param  string            $emailTemplate
      * @return string
@@ -248,18 +251,17 @@ class User extends Model
      *
      */
     public function createRegularUser(
-        Username         $name,
-        string           $email,
-        string           $password,
-        string           $locale = 'en',
-        string           $avatar = '',
-        ?UserMeta        $meta = null,
+        Username $name,
+        string $email,
+        #[SensitiveParameter] string $password,
+        string $locale = 'en',
+        string $avatar = '',
+        ?UserMeta $meta = null,
         Collection|array $roles = ['general-user'],
-        string           $group = '',
-        bool             $createWithSetPassword = false,
-        string           $emailTemplate = ''
-    ): string
-    {
+        string $group = '',
+        bool $createWithSetPassword = false,
+        string $emailTemplate = ''
+    ): string {
         // Make sure full is assigned
         if (trim($name->full) === '') {
             $name = new Username($name->first, $name->last);
@@ -330,34 +332,34 @@ class User extends Model
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account_by_proxy';
 
                     $mail->to($email)
-                        ->useEmail(
-                            2,
-                            $emailName, $locale, [
-                            'replacements' => [
-                                'name' => $name->first,
-                                'who' => $who
-                            ],
-                            'verification_code' => $code,
-                            'reset_pass_code' => $passCode,
-                            'user_email' => $email,
-                            'name' => $name->first,
-                            'who' => $who
-                        ])
-                        ->send();
+                         ->useEmail(
+                             2,
+                             $emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'verification_code' => $code,
+                             'reset_pass_code' => $passCode,
+                             'user_email' => $email,
+                             'name' => $name->first,
+                             'who' => $who
+                         ])
+                         ->send();
                 } else {
                     $emailName = ($emailTemplate !== '') ? $emailTemplate : 'new_account';
                     $mail->to($email)
-                        ->useEmail($emailName, $locale, [
-                            'replacements' => [
-                                'name' => $name->first,
-                                'who' => $who
-                            ],
-                            'user_email' => $email,
-                            'reset_pass_code' => $passCode,
-                            'verification_code' => $code,
-                            'who' => $who
-                        ])
-                        ->send();
+                         ->useEmail(2, $emailName, $locale, [
+                             'replacements' => [
+                                 'name' => $name->first,
+                                 'who' => $who
+                             ],
+                             'user_email' => $email,
+                             'reset_pass_code' => $passCode,
+                             'verification_code' => $code,
+                             'who' => $who
+                         ])
+                         ->send();
                 }
 
                 Event::dispatch(self::EVENT_CREATE, ['id' => (string)$id, 'email' => $email, 'name' => $name]);
@@ -398,7 +400,7 @@ class User extends Model
         if ($user) {
             try {
                 $mail = new Mail();
-                $mail->to($email)->useEmail('new_account', $user->locale, ['verification_code' => $user->validation_code])->send();
+                $mail->to($email)->useEmail(2, 'new_account', $user->locale, ['verification_code' => $user->validation_code])->send();
                 return true;
             } catch (Exception) {
                 return false;
@@ -426,7 +428,7 @@ class User extends Model
      * @throws PermissionException
      *
      */
-    public function create(Username $name, string $email, string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null, bool $preActivated = false): string
+    public function create(Username $name, string $email, #[SensitiveParameter] string $password, Collection|array $roles, string $locale = 'en', string $avatar = '', ?UserMeta $meta = null, bool $preActivated = false): string
     {
         $this->hasPermissions();
 
@@ -561,15 +563,14 @@ class User extends Model
      */
     public function update(
         string|ObjectId $id,
-        ?Username       $name = null,
-        ?string         $email = null,
-        ?string         $password = null,
-        ?Collection     $roles = null,
-        ?string         $avatar = '',
-        ?UserMeta       $meta = null,
-        string          $locale = ''
-    ): bool
-    {
+        ?Username $name = null,
+        ?string $email = null,
+        #[SensitiveParameter] ?string $password = null,
+        ?Collection $roles = null,
+        ?string $avatar = '',
+        ?UserMeta $meta = null,
+        string $locale = ''
+    ): bool {
         $this->hasPermissions(false, true, $id);
 
         $update = [];
@@ -641,17 +642,16 @@ class User extends Model
      *
      */
     public function getList(
-        int                 $page = 0,
-        int                 $limit = 25,
-        string              $search = '',
-        UserSorting         $sorting = null,
+        int $page = 0,
+        int $limit = 25,
+        string $search = '',
+        UserSorting $sorting = null,
         UserTypeSearch|null $typeSearch = null,
-        MetaSearch|null     $metaSearch = null,
-        bool|null           $status = null,
-        bool|null           $validated = null,
-        string              $groupId = ''
-    ): Listing
-    {
+        MetaSearch|null $metaSearch = null,
+        bool|null $status = null,
+        bool|null $validated = null,
+        string $groupId = ''
+    ): Listing {
         $this->hasPermissions(true);
 
         if (!isset($sorting)) {
@@ -961,7 +961,8 @@ class User extends Model
 
         // Remove anonymous from array of ids
         if (in_array($anonymous, $ids, true)) {
-            array_filter($ids, function ($id) use ($anonymous) {
+            array_filter($ids, function ($id) use ($anonymous)
+            {
                 return ($id !== $anonymous);
             });
         }
@@ -1192,6 +1193,33 @@ class User extends Model
 
     /**
      *
+     * Check if user has the requested permission by name or object
+     *
+     * @param  string|\SailCMS\Types\ACL  $permission
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function hasPermission(string|\SailCMS\Types\ACL $permission): bool
+    {
+        if (is_string($permission)) {
+            [$type, $name] = explode('_', $permission);
+
+            $acl = match ($type) {
+                'read' => ACL::read($name),
+                'readwrite' => ACL::readwrite($name)
+            };
+        } else {
+            $acl = $permission;
+        }
+
+        return ACL::hasPermission(self::$currentUser, $acl);
+    }
+
+    /**
+     *
      * Set a flag in the user's metadata
      *
      * @param  string  $key
@@ -1341,6 +1369,7 @@ class User extends Model
      * @throws DatabaseException
      * @throws FileException
      * @throws EmailException
+     * @throws LoaderError
      *
      */
     public static function forgotPassword(string $email): bool
@@ -1358,6 +1387,7 @@ class User extends Model
 
                 $mail = new Mail();
                 $mail->to($email)->useEmail(
+                    2,
                     'reset_password',
                     $record->locale,
                     [
@@ -1390,7 +1420,7 @@ class User extends Model
      * @throws DatabaseException
      *
      */
-    public static function changePassword(string $code, string $password): PasswordChangeResult
+    public static function changePassword(string $code, #[SensitiveParameter] string $password): PasswordChangeResult
     {
         $instance = new static();
 
