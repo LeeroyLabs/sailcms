@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use ArrayAccess;
 use GraphQL\Error\DebugFlag;
+use GraphQL\Error\Error;
 use GraphQL\Error\InvariantViolation;
 use GraphQL\Error\SyntaxError;
 use GraphQL\GraphQL as GQL;
@@ -36,6 +37,7 @@ use SailCMS\GraphQL\Controllers\Queue;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
+use SailCMS\Internal\Attributes;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\GraphQL as MGQL;
 use SailCMS\Types\MiddlewareType;
@@ -69,7 +71,7 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a query from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -94,7 +96,7 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a mutation from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -119,7 +121,7 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a resolver from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -127,17 +129,27 @@ final class GraphQL
         self::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
+    /**
+     *
+     * Add a custom type resolver (most often used for union types)
+     *
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
+     * @return void
+     * @throws GraphqlException
+     *
+     */
     public static function addCustomTypeResolver(string $type, string $className, string $method): void
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a type resolver from anything other than the graphql method in an AppContainer.', 0403);
         }
 
-        //Register::registerGraphQLResolver($type, $className, $method, $class);
         self::$typeResolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
@@ -185,15 +197,17 @@ final class GraphQL
      * Initialize and run queries
      *
      * @return mixed
+     * @throws GraphqlException
      * @throws JsonException
      * @throws SyntaxError
-     * @throws FilesystemException
+     * @throws Error
+     * @throws \ReflectionException
      *
      */
     public static function init(): mixed
     {
         if (!setting('graphql.hideCMS', false)) {
-            self::initSystem();
+            //self::initSystem();
         }
 
         try {
@@ -352,12 +366,12 @@ final class GraphQL
     private static function initSystem(): void
     {
         // General
-        self::addQueryResolver('version', Basics::class, 'version');
+        //self::addQueryResolver('version', Basics::class, 'version');
 
         // User
-        self::addQueryResolver('user', Users::class, 'user');
-        self::addQueryResolver('users', Users::class, 'users');
-        self::addQueryResolver('resendValidationEmail', Users::class, 'resendValidationEmail');
+        //self::addQueryResolver('user', Users::class, 'user');
+        //self::addQueryResolver('users', Users::class, 'users');
+        //self::addQueryResolver('resendValidationEmail', Users::class, 'resendValidationEmail');
         self::addMutationResolver('createUser', Users::class, 'createUser');
         self::addMutationResolver('createUserGetId', Users::class, 'createUserGetId');
         self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
@@ -368,11 +382,11 @@ final class GraphQL
         self::addMutationResolver('changeUserStatus', Users::class, 'changeUserStatus');
 
         // Authentication
-        self::addQueryResolver('authenticate', Users::class, 'authenticate');
-        self::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
-        self::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
-        self::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
-        self::addQueryResolver('userWithToken', Users::class, 'userWithToken');
+        //self::addQueryResolver('authenticate', Users::class, 'authenticate');
+        //self::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
+        //self::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+        //self::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
+        //self::addQueryResolver('userWithToken', Users::class, 'userWithToken');
         self::addMutationResolver('changePassword', Users::class, 'changePassword');
 
         // Roles & ACL
@@ -580,6 +594,8 @@ final class GraphQL
             return $property;
         }
 
+        Debug::ray('-------------', self::$queries, '-------------');
+
         if ($type === 'Query') {
             foreach (self::$queries as $name => $query) {
                 if ($fieldName === $name) {
@@ -630,7 +646,8 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver)
+        {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

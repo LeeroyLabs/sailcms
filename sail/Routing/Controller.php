@@ -2,6 +2,7 @@
 
 namespace SailCMS\Routing;
 
+use SailCMS\Attributes\Routing\Get;
 use SailCMS\Contracts\AppController;
 use SailCMS\Sail;
 use SailCMS\Templating\Engine;
@@ -23,6 +24,7 @@ class Controller extends AppController
      * @throws SyntaxError
      *
      */
+    #[Get(['en' => '/extension/:string/:all'], 'load_3rd_party_app')]
     public function loadThirdPartyApplication(string $name, string $path): void
     {
         if ($path === '') {

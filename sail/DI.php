@@ -20,7 +20,8 @@ class DI
     {
         try {
             $class = new ReflectionClass($className);
-        } catch (ReflectionException) {
+        } catch (ReflectionException $e) {
+            Debug::ray($e->getMessage());
             throw new RuntimeException("Cannot use Dependency Injection on {$className}", 0400);
         }
 

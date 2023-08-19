@@ -410,17 +410,6 @@ class Router
         $instance->get('/email-preview/:any/:any', 'en', Controller::class, 'previewEmail');
     }
 
-    /**
-     * Load Application content for the requested party
-     *
-     * @return void
-     */
-    public static function setupThirdPartyContent(): void
-    {
-        $instance = new self();
-        $instance->get('/extension/:string/:all', 'en', RoutingController::class, 'loadThirdPartyApplication');
-    }
-
     // -------------------------------------------------- Private -------------------------------------------------- //
 
     /**
@@ -439,9 +428,9 @@ class Router
     {
         // Trace the registerer of the route
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
-        $class = $trace[2]['class'];
+        $class = $trace[2]['class'] ?? 'Attributes::class';
 
-        $allowed = [self::class, Forms::class];
+        $allowed = [self::class, Forms::class, 'Attributes::class'];
 
         if ($trace[2]['function'] !== '{closure}' && !in_array($class, $allowed, true) && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
