@@ -80,7 +80,8 @@
     "require-dev": {
         "phpstan/phpstan": "^1.10",
         "pestphp/pest": "^v2.2.2",
-        "marcocesarato/php-conventional-changelog": "^1.17"
+        "marcocesarato/php-conventional-changelog": "^1.17",
+        "friendsofphp/php-cs-fixer": "^3.22"
     },
     "config": {
         "allow-plugins": {
@@ -96,7 +97,8 @@
         "release:major": "conventional-changelog --major --commit",
         "test": "./vendor/bin/pest",
         "analyze": "./vendor/bin/phpstan analyze -c phpstan.neon --memory-limit 2G",
-        "testall": "composer test; composer analyze"
+        "testall": "composer test; composer analyze",
+        "format": "sh format"
     },
     "sailcms": {
         "containers": [],

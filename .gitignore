@@ -8,3 +8,4 @@ cms_html
 *.cache
 composer.lock
 tests/email2Test.php
+format.cache
