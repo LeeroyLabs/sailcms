@@ -4,10 +4,8 @@ namespace SailCMS\GraphQL\Controllers;
 
 use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
-use SailCMS\Attributes\GraphQL\Query;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -47,7 +45,6 @@ class Users
      * @throws PermissionException
      *
      */
-    #[Query('user')]
     public function user(mixed $obj, Collection $args, Context $context): ?User
     {
         $user = (new User())->getById($args->get('id'));
@@ -69,7 +66,6 @@ class Users
      * @return User|null
      *
      */
-    #[Query('userWithToken')]
     public function userWithToken(mixed $obj, Collection $args, Context $context): ?User
     {
         $user = User::$currentUser ?? null;
@@ -92,7 +88,6 @@ class Users
      * @throws DatabaseException
      *
      */
-    #[Query('resendValidationEmail')]
     public function resendValidationEmail(mixed $obj, Collection $args, Context $context): bool
     {
         return (new User())->resendValidationEmail($args->get('email'));
@@ -111,7 +106,6 @@ class Users
      * @throws PermissionException
      *
      */
-    #[Query('users')]
     public function users(mixed $obj, Collection $args, Context $context): Listing
     {
         $order = Model::SORT_ASC;
@@ -169,7 +163,6 @@ class Users
      * @throws DatabaseException
      *
      */
-    #[Query('authenticate')]
     public function authenticate(mixed $obj, Collection $args, Context $context): LoginResult
     {
         return (new User())->verifyUserPass($args->get('email'), $args->get('password'));
@@ -186,7 +179,6 @@ class Users
      * @throws DatabaseException
      *
      */
-    #[Query('verifyAuthenticationToken')]
     public function verifyAuthenticationToken(mixed $obj, Collection $args, Context $context): ?User
     {
         $user = (new User())->verifyTemporaryToken($args->get('token'));
@@ -211,7 +203,6 @@ class Users
      * @throws SodiumException
      *
      */
-    #[Query('verifyTFA')]
     public function verifyTFA(mixed $obj, Collection $args, Context $context): ?User
     {
         $model = new Tfa();
@@ -418,7 +409,6 @@ class Users
      * @throws LoaderError
      *
      */
-    #[Query('forgotPassword')]
     public function forgotPassword(mixed $obj, Collection $args, Context $context): bool
     {
         return User::forgotPassword($args->get('email', ''));

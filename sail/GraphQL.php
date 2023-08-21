@@ -207,7 +207,7 @@ final class GraphQL
     public static function init(): mixed
     {
         if (!setting('graphql.hideCMS', false)) {
-            //self::initSystem();
+            self::initSystem();
         }
 
         try {
@@ -366,12 +366,12 @@ final class GraphQL
     private static function initSystem(): void
     {
         // General
-        //self::addQueryResolver('version', Basics::class, 'version');
+        self::addQueryResolver('version', Basics::class, 'version');
 
         // User
-        //self::addQueryResolver('user', Users::class, 'user');
-        //self::addQueryResolver('users', Users::class, 'users');
-        //self::addQueryResolver('resendValidationEmail', Users::class, 'resendValidationEmail');
+        self::addQueryResolver('user', Users::class, 'user');
+        self::addQueryResolver('users', Users::class, 'users');
+        self::addQueryResolver('resendValidationEmail', Users::class, 'resendValidationEmail');
         self::addMutationResolver('createUser', Users::class, 'createUser');
         self::addMutationResolver('createUserGetId', Users::class, 'createUserGetId');
         self::addMutationResolver('createAdminUser', Users::class, 'createAdminUser');
@@ -382,11 +382,11 @@ final class GraphQL
         self::addMutationResolver('changeUserStatus', Users::class, 'changeUserStatus');
 
         // Authentication
-        //self::addQueryResolver('authenticate', Users::class, 'authenticate');
-        //self::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
-        //self::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
-        //self::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
-        //self::addQueryResolver('userWithToken', Users::class, 'userWithToken');
+        self::addQueryResolver('authenticate', Users::class, 'authenticate');
+        self::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
+        self::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+        self::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
+        self::addQueryResolver('userWithToken', Users::class, 'userWithToken');
         self::addMutationResolver('changePassword', Users::class, 'changePassword');
 
         // Roles & ACL
