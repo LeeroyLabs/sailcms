@@ -2,10 +2,11 @@
 
 namespace SailCMS\Routing;
 
-use SailCMS\Attributes\Routing\Get;
+use SailCMS\Attributes\Routing\Route;
 use SailCMS\Contracts\AppController;
 use SailCMS\Sail;
 use SailCMS\Templating\Engine;
+use SailCMS\Types\Http;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -24,7 +25,7 @@ class Controller extends AppController
      * @throws SyntaxError
      *
      */
-    #[Get(['en' => '/extension/:string/:all'], 'load_3rd_party_app')]
+    #[Route('/extension/:string/:all', Http::GET, 'en', 'load_3rd_party_app')]
     public function loadThirdPartyApplication(string $name, string $path): void
     {
         if ($path === '') {

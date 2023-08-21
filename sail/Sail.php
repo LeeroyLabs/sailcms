@@ -295,9 +295,6 @@ class Sail
         // Authenticate user
         User::authenticate();
 
-        // Setup Form Handling
-        Forms::init();
-
         // Ensure peak performance from the database
         self::ensurePerformance();
     }

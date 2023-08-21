@@ -8,4 +8,7 @@ enum Http: string
     case POST = 'post';
     case PUT = 'put';
     case DELETE = 'delete';
+    case ANY = 'any';
+    case PATCH = 'patch';
+    case OPTIONS = 'options';
 }

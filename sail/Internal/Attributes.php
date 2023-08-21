@@ -7,8 +7,10 @@ use SailCMS\Attributes\GraphQL\CustomResolver;
 use SailCMS\Attributes\GraphQL\Mutation;
 use SailCMS\Attributes\GraphQL\Query;
 use SailCMS\Attributes\GraphQL\Resolver;
-use SailCMS\Attributes\Routing\HttpMethod;
+use SailCMS\Attributes\Routing\Prefix;
+use SailCMS\Attributes\Routing\Route;
 use SailCMS\Attributes\Routing\Secure;
+use SailCMS\Debug;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\Errors\StorageException;
 use SailCMS\GraphQL;
@@ -32,9 +34,6 @@ class Attributes
     public static function parseAttributes(): void
     {
         self::$router = new Router();
-
-        // Mutation
-        // Resolver
 
         $basePath = Sail::getWorkingDirectory() . '/containers';
         $containers = Storage::on('local')->read('composer.json')->decode()->sailcms->containers;
@@ -60,7 +59,22 @@ class Attributes
 
         foreach ($list as $controller) {
             $reflectionClass = new ReflectionClass($controller);
+            $prefix = '';
 
+            // Class level attributes
+            foreach ($reflectionClass->getAttributes() as $attribute) {
+                if ($attribute->getName() === Prefix::class) {
+                    $prefixInstance = $attribute->newInstance();
+                    $prefix = $prefixInstance->prefix;
+
+                    // Add missing / in prefix
+                    if (!str_starts_with($prefix, '/')) {
+                        $prefix = '/' . $prefix;
+                    }
+                }
+            }
+
+            // Method level attributes
             foreach ($reflectionClass->getMethods() as $method) {
                 $attributes = $method->getAttributes();
                 $isSecure = false;
@@ -74,11 +88,13 @@ class Attributes
                 foreach ($attributes as $attribute) {
                     $item = $attribute->newInstance();
 
-                    if ($item instanceof HttpMethod) {
-                        self::addRoute($controller, $method->getName(), $item, $isSecure);
+                    // Route Parsing
+                    if ($item instanceof Route) {
+                        self::addRoute($controller, $method->getName(), $item, $isSecure, $prefix);
                         continue;
                     }
 
+                    // GraphQL Parsing
                     if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === $gqlTrigger && $gqlActive) {
                         if ($item instanceof Query) {
                             try {
@@ -128,21 +144,9 @@ class Attributes
         return $output;
     }
 
-    private static function addRoute(string $controller, string $method, HttpMethod $routeObj, bool $isSecure = false): void
+    private static function addRoute(string $controller, string $method, Route $route, bool $isSecure = false, string $prefix = ''): void
     {
-        foreach ($routeObj->routes as $locale => $route) {
-            call_user_func(
-                [
-                    self::$router,
-                    $routeObj->method
-                ],
-                $route,
-                $locale,
-                $controller,
-                $method,
-                $routeObj->name,
-                $isSecure
-            );
-        }
+        $routeURL = str_replace('//', '/', $prefix . '/' . $route->route);
+        call_user_func([self::$router, $route->http->value], $routeURL, $route->locale, $controller, $method, $route->name, $isSecure);
     }
 }

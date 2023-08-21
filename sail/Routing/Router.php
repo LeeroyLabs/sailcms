@@ -26,7 +26,6 @@ use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
-use SailCMS\Routing\Controller as RoutingController;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
 use Twig\Error\LoaderError;
@@ -47,6 +46,8 @@ class Router
             'put' => Collection::init(),
             'delete' => Collection::init(),
             'any' => Collection::init(),
+            'options' => Collection::init(),
+            'patch' => Collection::init()
         ]);
 
         self::$redirects = Collection::init();
@@ -140,7 +141,7 @@ class Router
     }
 
     /**
-     * Add a Any route
+     * Add an Any route
      *
      * @param  string                $url
      * @param  string                $locale
@@ -153,6 +154,42 @@ class Router
     public function any(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
         $this->addRoute('any', $url, $locale, $controller, $method, $name, $secure);
+    }
+
+    /**
+     *
+     * Add an Options route
+     *
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     *
+     */
+    public function options(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    {
+        $this->addRoute('options', $url, $locale, $controller, $method, $name, $secure);
+    }
+
+    /**
+     *
+     * Add a Patch route
+     *
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     *
+     */
+    public function patch(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    {
+        $this->addRoute('patch', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
