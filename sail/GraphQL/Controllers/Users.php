@@ -6,7 +6,6 @@ use GraphQL\Type\Definition\ResolveInfo;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
@@ -29,6 +28,7 @@ use SailCMS\Types\UserSorting;
 use SailCMS\Types\UserTypeSearch;
 use SodiumException;
 use stdClass;
+use Twig\Error\LoaderError;
 
 class Users
 {
@@ -406,6 +406,8 @@ class Users
      * @throws DatabaseException
      * @throws EmailException
      * @throws FileException
+     * @throws LoaderError
+     *
      */
     public function forgotPassword(mixed $obj, Collection $args, Context $context): bool
     {

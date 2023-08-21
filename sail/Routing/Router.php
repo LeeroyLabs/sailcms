@@ -26,7 +26,6 @@ use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
-use SailCMS\Routing\Controller as RoutingController;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
 use Twig\Error\LoaderError;
@@ -47,6 +46,8 @@ class Router
             'put' => Collection::init(),
             'delete' => Collection::init(),
             'any' => Collection::init(),
+            'options' => Collection::init(),
+            'patch' => Collection::init()
         ]);
 
         self::$redirects = Collection::init();
@@ -140,7 +141,7 @@ class Router
     }
 
     /**
-     * Add a Any route
+     * Add an Any route
      *
      * @param  string                $url
      * @param  string                $locale
@@ -153,6 +154,42 @@ class Router
     public function any(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
         $this->addRoute('any', $url, $locale, $controller, $method, $name, $secure);
+    }
+
+    /**
+     *
+     * Add an Options route
+     *
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     *
+     */
+    public function options(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    {
+        $this->addRoute('options', $url, $locale, $controller, $method, $name, $secure);
+    }
+
+    /**
+     *
+     * Add a Patch route
+     *
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     *
+     */
+    public function patch(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    {
+        $this->addRoute('patch', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
@@ -410,17 +447,6 @@ class Router
         $instance->get('/email-preview/:any/:any', 'en', Controller::class, 'previewEmail');
     }
 
-    /**
-     * Load Application content for the requested party
-     *
-     * @return void
-     */
-    public static function setupThirdPartyContent(): void
-    {
-        $instance = new self();
-        $instance->get('/extension/:string/:all', 'en', RoutingController::class, 'loadThirdPartyApplication');
-    }
-
     // -------------------------------------------------- Private -------------------------------------------------- //
 
     /**
@@ -439,9 +465,9 @@ class Router
     {
         // Trace the registerer of the route
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
-        $class = $trace[2]['class'];
+        $class = $trace[2]['class'] ?? 'Attributes::class';
 
-        $allowed = [self::class, Forms::class];
+        $allowed = [self::class, Forms::class, 'Attributes::class'];
 
         if ($trace[2]['function'] !== '{closure}' && !in_array($class, $allowed, true) && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {
