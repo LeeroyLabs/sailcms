@@ -170,7 +170,7 @@ class Entry extends Model implements Validator, Castable
     {
         $entryTypes = EntryType::getAll();
 
-        $entryTypes->each(function ($entryType) {
+        $entryTypes->each(function ($k, $entryType) {
             /**
              * @var EntryType $entryType
              */
@@ -595,8 +595,7 @@ class Entry extends Model implements Validator, Castable
         // Actual query
         $cacheKey = self::generateCacheKeyFromFilters($entryTypeHandle, $filters) . '_' . $offset . '_' . $sort . '_' . $direction;
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
-        $results = $entryModel->useView('entry_entry_publication')->find($filters, $options)->exec($cacheKey, $cacheTtl);
-
+        $results = $entryModel->useView($entryModel->entryType->handle . '_entry_publication')->find($filters, $options)->exec($cacheKey, $cacheTtl);
         // Data for pagination
         $count = $entryModel->count($filters);
         $total = (integer)ceil($count / $limit);
