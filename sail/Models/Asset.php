@@ -17,9 +17,11 @@ use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\Internal\Filesystem;
 use SailCMS\Locale;
+use SailCMS\Middleware;
 use SailCMS\Text;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
+use SailCMS\Types\MiddlewareType;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
 
@@ -190,6 +192,11 @@ class Asset extends Model
             throw new FileException("Asset is too big, maximum upload size is {$maxSize}mb", 0403);
         }
 
+        // On Upload Middleware
+        $mwData = new Middleware\Data(Middleware\Asset::OnUpload, ['data' => $data]);
+        $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
+        $data = $mwResult->data['data'];
+
         $basePath = $adapter . '://';
         $path = $adapter . '://';
 
@@ -220,12 +227,18 @@ class Asset extends Model
             default => false
         };
 
+        // Before Process Middleware
+        $mwData = new Middleware\Data(Middleware\Asset::BeforeProcess, ['data' => $data, 'filename' => $filename]);
+        $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
+
         if ($processableImage) {
             // Optimize to webp format
             if ($optimize) {
-                $data = Optimizer::process($data, $quality);
+                $data = Optimizer::process($mwResult->data['data'], $quality);
                 $filename = str_replace($ext, 'webp', $filename);
                 $the_name = str_replace($ext, 'webp', $the_name);
+            } else {
+                $data = $mwResult->data['data'];
             }
 
             // Size of the file (width/height)
@@ -235,8 +248,12 @@ class Asset extends Model
             $size = new Size(0, 0);
         }
 
+        // After Process Middleware
+        $mwData = new Middleware\Data(Middleware\Asset::AfterProcess, ['data' => $data, 'filename' => $path]);
+        $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
+
         // Store asset
-        $fs->write($path . $timePath . $filename, $data, ['visibility' => 'public']);
+        $fs->write($timePath . $mwResult->data['filename'], $mwResult->data['data'], ['visibility' => 'public']);
 
         // Determine user that uploaded it, if possible
         $uploader_id = '';
@@ -260,7 +277,7 @@ class Asset extends Model
 
         // Create entry
         $id = $this->insert([
-            'filename' => $path . $timePath . $filename,
+            'filename' => $mwResult->data['filename'],
             'name' => $the_name,
             'title' => $titles,
             'url' => $fs->publicUrl($basePath . $timePath . $filename),
