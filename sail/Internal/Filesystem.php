@@ -56,7 +56,7 @@ final class Filesystem
         self::$adapters['debug'] = new FS(new LocalFilesystemAdapter($wd . '/storage/debug/'));
         self::$adapters['logs'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/logs/'));
         self::$adapters['root'] = new FS(new LocalFilesystemAdapter($wd . '/'));
-        self::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/install/'));
+        self::$adapters['install'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__, 2) . '/install/'));
         self::$adapters['cms'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/cms/'));
         self::$adapters['cms_root'] = new FS(new LocalFilesystemAdapter(dirname(__DIR__) . '/'));
     }
