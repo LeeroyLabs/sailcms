@@ -26,6 +26,18 @@ abstract class AppController
 
     /**
      *
+     * Get current locale
+     *
+     * @return string
+     *
+     */
+    protected function currentLocale(): string
+    {
+        return Locale::current();
+    }
+
+    /**
+     *
      * Get the response for output rendering
      *
      * @return Response
@@ -36,6 +48,14 @@ abstract class AppController
         return $this->response;
     }
 
+    /**
+     *
+     * Set the current route
+     *
+     * @param  Route  $route
+     * @return void
+     *
+     */
     public function setRoute(Route $route): void
     {
         $this->route = $route;

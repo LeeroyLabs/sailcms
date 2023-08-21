@@ -16,6 +16,7 @@ class Storage
     private string $disk = 'local';
     private string $permission = 'private';
     private string $filename = '';
+    private mixed $content = null;
 
     public function __construct()
     {
@@ -103,17 +104,24 @@ class Storage
      * Read a file
      *
      * @param  string  $filename
-     * @return mixed
+     * @return $this
+     * @throws StorageException
      *
      */
-    public function read(string $filename = ''): mixed
+    public function read(string $filename = ''): self
     {
-        if (empty($filename) && !empty($this->filename)) {
-            // Assume file that was just uploaded
-            return $this->fs->read($this->buildFileString($this->filename));
-        }
+        try {
+            if (empty($filename) && !empty($this->filename)) {
+                // Assume file that was just uploaded
+                $this->content = $this->fs->read($this->buildFileString($this->filename));
+                return $this;
+            }
 
-        return $this->fs->read($this->buildFileString($filename));
+            $this->content = $this->fs->read($this->buildFileString($filename));
+            return $this;
+        } catch (FilesystemException $e) {
+            throw new StorageException('Could not load file ' . $filename . ': ' . $e->getMessage(), 500);
+        }
     }
 
     /**
@@ -292,6 +300,47 @@ class Storage
         } catch (FilesystemException $e) {
             return false;
         }
+    }
+
+    /**
+     *
+     * Decode the read file data (json, base64 or unserialize)
+     *
+     * @param  string  $type
+     * @return mixed
+     *
+     */
+    public function decode(string $type = 'json'): mixed
+    {
+        if ($this->content === null) {
+            return '';
+        }
+
+        if ($type === 'base64') {
+            return base64_decode($this->content);
+        }
+
+        if ($type === 'unserialize') {
+            return unserialize($this->content, ['allowed_classes' => true]);
+        }
+
+        try {
+            return json_decode($this->content, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return '';
+        }
+    }
+
+    /**
+     *
+     * Return the raw data that was read from file
+     *
+     * @return mixed
+     *
+     */
+    public function raw(): mixed
+    {
+        return $this->content;
     }
 
     private function buildFileString(string $filename): string

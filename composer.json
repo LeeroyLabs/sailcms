@@ -2,7 +2,7 @@
     "name": "leeroy/sailcms",
     "description": "Powerful CMS focusing on performance, DX and extensibility",
     "type": "library",
-    "license": "MIT",
+    "license": "GPL-3.0-or-later",
     "autoload": {
         "psr-4": {
             "SailCMS\\": "sail/"
