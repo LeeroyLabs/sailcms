@@ -8,4 +8,5 @@ enum MiddlewareType: string
     case GRAPHQL = 'graphql';
     case LOGIN = 'login';
     case ENTRY = 'entry';
+    case ASSET = 'asset';
 }
