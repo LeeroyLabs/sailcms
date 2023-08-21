@@ -230,15 +230,14 @@ class Asset extends Model
         // Before Process Middleware
         $mwData = new Middleware\Data(Middleware\Asset::BeforeProcess, ['data' => $data, 'filename' => $filename]);
         $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
+        $data = $mwResult->data['data'];
 
         if ($processableImage) {
             // Optimize to webp format
             if ($optimize) {
-                $data = Optimizer::process($mwResult->data['data'], $quality);
+                $data = Optimizer::process($data, $quality);
                 $filename = str_replace($ext, 'webp', $filename);
                 $the_name = str_replace($ext, 'webp', $the_name);
-            } else {
-                $data = $mwResult->data['data'];
             }
 
             // Size of the file (width/height)
@@ -251,9 +250,15 @@ class Asset extends Model
         // After Process Middleware
         $mwData = new Middleware\Data(Middleware\Asset::AfterProcess, ['data' => $data, 'filename' => $path]);
         $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
+        $data = $mwResult->data['data'];
+
+        // Recalculate once all middlewares are done
+        if ($processableImage) {
+            $size = Transformer::getImageSizeFromSource($data);
+        }
 
         // Store asset
-        $fs->write($timePath . $mwResult->data['filename'], $mwResult->data['data'], ['visibility' => 'public']);
+        $fs->write($timePath . $mwResult->data['filename'], $data, ['visibility' => 'public']);
 
         // Determine user that uploaded it, if possible
         $uploader_id = '';
@@ -274,6 +279,9 @@ class Asset extends Model
         }
 
         $titles = new LocaleField($title);
+
+        // Recalculate filesize (in case it was changed)
+        $sizeBytes = strlen(bin2hex($data));
 
         // Create entry
         $id = $this->insert([
