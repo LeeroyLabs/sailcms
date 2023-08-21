@@ -17,7 +17,6 @@ use GraphQL\Validator\DocumentValidator;
 use GraphQL\Validator\Rules\DisableIntrospection;
 use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
-use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
 use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
@@ -593,8 +592,6 @@ final class GraphQL
 
             return $property;
         }
-
-        Debug::ray('-------------', self::$queries, '-------------');
 
         if ($type === 'Query') {
             foreach (self::$queries as $name => $query) {
