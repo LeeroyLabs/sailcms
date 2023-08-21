@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -526,7 +527,18 @@ class EntryType extends Model implements Validator
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'creating') . PHP_EOL . $exception->getMessage());
         }
 
-        return $this->findById($entryTypeId)->exec();
+        $entryType = $this->findById($entryTypeId)->exec();
+
+        try {
+            $entryType->getEntryModel()->generatePublicationView();
+        } catch (\Exception $exception) {
+            Debug::warn('Error when generating entry publication relation view', [
+                'entry_type' => $entryType,
+                'exception' => $exception,
+            ]);
+        }
+
+        return $entryType;
     }
 
     /**

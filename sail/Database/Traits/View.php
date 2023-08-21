@@ -21,7 +21,8 @@ trait View
      * @return $this
      *
      */
-    public function useView(string $viewName):static {
+    public function useView(string $viewName): static
+    {
         if ($this->viewExists($viewName)) {
             $view = $this->client->selectCollection(env('database_db', 'sailcms'), $this->setViewName($viewName));
 
