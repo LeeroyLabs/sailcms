@@ -10,7 +10,6 @@ use SailCMS\Attributes\GraphQL\Resolver;
 use SailCMS\Attributes\Routing\Prefix;
 use SailCMS\Attributes\Routing\Route;
 use SailCMS\Attributes\Routing\Secure;
-use SailCMS\Debug;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\Errors\StorageException;
 use SailCMS\GraphQL;
