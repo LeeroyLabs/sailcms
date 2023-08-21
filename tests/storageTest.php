@@ -19,7 +19,7 @@ test('Store a file on local disk', function ()
 
 test('Read file', function ()
 {
-    $text = Storage::on('app')->read('test.txt');
+    $text = Storage::on('app')->read('test.txt')->raw();
     expect($text)->toBe('hello world of cosmetics :)');
 })->group('storage');
 

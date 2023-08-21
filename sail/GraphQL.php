@@ -4,6 +4,7 @@ namespace SailCMS;
 
 use ArrayAccess;
 use GraphQL\Error\DebugFlag;
+use GraphQL\Error\Error;
 use GraphQL\Error\InvariantViolation;
 use GraphQL\Error\SyntaxError;
 use GraphQL\GraphQL as GQL;
@@ -16,7 +17,6 @@ use GraphQL\Validator\DocumentValidator;
 use GraphQL\Validator\Rules\DisableIntrospection;
 use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
-use League\Flysystem\FilesystemException;
 use SailCMS\Contracts\AppContainer;
 use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
@@ -36,6 +36,7 @@ use SailCMS\GraphQL\Controllers\Queue;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
+use SailCMS\Internal\Attributes;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\GraphQL as MGQL;
 use SailCMS\Types\MiddlewareType;
@@ -69,7 +70,7 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a query from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -94,7 +95,7 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a mutation from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -119,7 +120,7 @@ final class GraphQL
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a resolver from anything other than the graphql method in an AppContainer.', 0403);
         }
 
@@ -127,17 +128,27 @@ final class GraphQL
         self::$resolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
+    /**
+     *
+     * Add a custom type resolver (most often used for union types)
+     *
+     * @param  string  $type
+     * @param  string  $className
+     * @param  string  $method
+     * @return void
+     * @throws GraphqlException
+     *
+     */
     public static function addCustomTypeResolver(string $type, string $className, string $method): void
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
         $class = $trace[1]['class'];
         $func = $trace[1]['function'];
 
-        if ($func !== 'initSystem' && $class !== self::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
+        if ($func !== 'initSystem' && $class !== self::class && $class !== Attributes::class && $func !== 'graphql' && !is_subclass_of($class, AppContainer::class)) {
             throw new GraphqlException('Cannot add a type resolver from anything other than the graphql method in an AppContainer.', 0403);
         }
 
-        //Register::registerGraphQLResolver($type, $className, $method, $class);
         self::$typeResolvers[$type] = (object)['class' => $className, 'method' => $method];
     }
 
@@ -185,9 +196,11 @@ final class GraphQL
      * Initialize and run queries
      *
      * @return mixed
+     * @throws GraphqlException
      * @throws JsonException
      * @throws SyntaxError
-     * @throws FilesystemException
+     * @throws Error
+     * @throws \ReflectionException
      *
      */
     public static function init(): mixed
@@ -630,7 +643,8 @@ final class GraphQL
             return $typeConfig;
         }
 
-        $typeConfig['resolveType'] = function ($obj) use ($resolver) {
+        $typeConfig['resolveType'] = function ($obj) use ($resolver)
+        {
             return call_user_func([$resolver->class, $resolver->method], $obj);
         };
 

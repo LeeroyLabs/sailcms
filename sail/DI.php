@@ -20,7 +20,7 @@ class DI
     {
         try {
             $class = new ReflectionClass($className);
-        } catch (ReflectionException) {
+        } catch (ReflectionException $e) {
             throw new RuntimeException("Cannot use Dependency Injection on {$className}", 0400);
         }
 
