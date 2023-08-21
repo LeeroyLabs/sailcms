@@ -66,7 +66,8 @@ class Queue extends Model
             'executed' => false,
             'executed_at' => 0,
             'execution_result' => '',
-            'execution_success' => false
+            'execution_success' => false,
+            'log' => new Collection([])
         ]);
     }
 

@@ -102,7 +102,9 @@ class Queue
         $task = new Task(
             $args->get('name'),
             $args->get('retriable'),
+            '',
             $action,
+            new Collection([]),
             $args->get('priority'),
         );
         QueueModel::add($task);
