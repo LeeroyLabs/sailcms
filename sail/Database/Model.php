@@ -6,6 +6,7 @@ use Exception;
 use JsonException;
 use JsonSerializable;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Client;
 use MongoDB\Collection;
 use SailCMS\ACL;
 use SailCMS\Cache;
@@ -14,6 +15,7 @@ use SailCMS\Database\Traits\Debugging;
 use SailCMS\Database\Traits\QueryObject;
 use SailCMS\Database\Traits\Transforms;
 use SailCMS\Database\Traits\Validation;
+use SailCMS\Database\Traits\View;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
@@ -50,6 +52,9 @@ abstract class Model implements JsonSerializable
     // Add debugging tools
     use Debugging;
 
+    // Add the view create feature
+    use View;
+
     // Connection and Collection
     protected int $connection = 0;
     protected string $collection = '';
@@ -74,6 +79,8 @@ abstract class Model implements JsonSerializable
     // The collection object
     private Collection $active_collection;
 
+    private Client $client;
+
     /**
      *
      * @throws DatabaseException
@@ -92,13 +99,13 @@ abstract class Model implements JsonSerializable
         }
 
         // Connection to use
-        $client = Database::instance($this->connection);
+        $this->client = Database::instance($this->connection);
 
-        if (!$client) {
+        if (!$this->client) {
             throw new DatabaseException('Cannot connect to database, please check your DSN.', 0500);
         }
 
-        $this->active_collection = $client->selectCollection(env('database_db', 'sailcms'), $this->collection);
+        $this->active_collection = $this->client->selectCollection(env('database_db', 'sailcms'), $this->collection);
         $this->init();
     }
 
