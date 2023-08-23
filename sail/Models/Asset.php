@@ -248,7 +248,7 @@ class Asset extends Model
         }
 
         // After Process Middleware
-        $mwData = new Middleware\Data(Middleware\Asset::AfterProcess, ['data' => $data, 'filename' => $path]);
+        $mwData = new Middleware\Data(Middleware\Asset::AfterProcess, ['data' => $data, 'filename' => $filename]);
         $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
         $data = $mwResult->data['data'];
 
@@ -258,7 +258,7 @@ class Asset extends Model
         }
 
         // Store asset
-        $fs->write($timePath . $mwResult->data['filename'], $data, ['visibility' => 'public']);
+        $fs->write($path . $timePath . $mwResult->data['filename'], $data, ['visibility' => 'public']);
 
         // Determine user that uploaded it, if possible
         $uploader_id = '';
