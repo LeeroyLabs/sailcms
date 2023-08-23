@@ -427,7 +427,7 @@ class EntryLayout extends Model implements Castable
 
             foreach ($tabFields->fields as $fieldId) {
                 try {
-                    (new EntryLayout())->ensureObjectId($fieldId);
+                    (new EntryLayout())->ensureObjectId($fieldId['id']);
                 } catch (\Throwable $exception) {
                     throw new EntryException(sprintf(self::SCHEMA_INVALID_TAB_FIELD_ID, $i + 1));
                 }
@@ -512,7 +512,7 @@ class EntryLayout extends Model implements Castable
                 if (isset($fieldTab->fields)) {
                     foreach ($fieldTab->fields as $fieldId) {
                         if (!in_array($fieldId, $fieldIds)) {
-                            $fieldIds[] = $fieldId;
+                            $fieldIds[] = $fieldId->id;
                         }
                     }
                 }
@@ -553,8 +553,10 @@ class EntryLayout extends Model implements Castable
                     foreach ($tab->fields as &$fieldId) {
                         // Make sure it exists, otherwise drop it
                         // (field deleted without removing it from layout first)
-                        if (!empty($fieldsById[$fieldId])) {
-                            $fieldId = $fieldsById[$fieldId];
+                        if (!empty($fieldsById[$fieldId->id])) {
+                            $width = $fieldId->width;
+                            $fieldId = $fieldsById[$fieldId->id];
+                            $fieldId->width = $width;
                         }
                     }
                 }

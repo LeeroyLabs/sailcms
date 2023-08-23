@@ -431,6 +431,7 @@ type EntryField {
     searchable: Boolean!
     type: String!
     config: Json!
+    width: String
 }
 
 type SocialMeta {
@@ -508,7 +509,17 @@ type EntryLayoutTab {
 
 input EntryLayoutTabInput {
     label: String!
-    fields: [ID!]!
+    fields: [FieldObjectInput!]!
+}
+
+input FieldObject {
+    id: ID!
+    width: String!
+}
+
+input FieldObjectInput {
+    id: ID!
+    width: String!
 }
 
 type LocaleField {
