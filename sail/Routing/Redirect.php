@@ -3,6 +3,8 @@
 namespace SailCMS\Routing;
 
 use SailCMS\Blueprints\AppController;
+use SailCMS\Errors\DatabaseException;
+use SailCMS\Models\Redirection;
 
 class Redirect
 {
@@ -27,9 +29,10 @@ class Redirect
      *
      * Match URL to a redirect route and execute it
      *
-     * @param  string  $url
+     * @param string $url
      * @return void
      *
+     * @throws DatabaseException
      */
     public function matchAndExecute(string $url): void
     {
@@ -45,6 +48,10 @@ class Redirect
             $route = str_replace($searches, $replaces, $this->from);
 
             if (preg_match('#^' . $route . '$#', $url, $matched)) {
+                $redirection = (new Redirection())->getByUrl($url);
+                if($redirection) {
+                    (new Redirection())->updateHitCount($redirection->_id);
+                }
                 unset($matched[0]);
                 $matches = array_values($matched);
                 $this->exec($matches);

@@ -122,6 +122,20 @@ class Redirection extends Model
 
     /**
      *
+     * Get task by url
+     *
+     * @param string $url
+     * @return Redirection|null
+     * @throws DatabaseException
+     *
+     */
+    public function getByUrl(string $url): ?Redirection
+    {
+        return $this->findOne(['url' => $url])->exec();
+    }
+
+    /**
+     *
      * Get redirection hit count
      *
      * @param string $id

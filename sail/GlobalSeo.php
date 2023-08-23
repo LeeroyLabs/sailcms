@@ -165,4 +165,24 @@ final class GlobalSeo
         $file .= '</sitemapindex>';
         file_put_contents('sitemap.xml', $file);
     }
+
+    /**
+     *
+     * Return Google Tag Manager script
+     *
+     * @param string $tag_id
+     * @return string
+     *
+     */
+    public function gtag(string $tag_id): string
+    {
+        return "<!-- Google tag (gtag.js) -->
+            <script async src=\"https://www.googletagmanager.com/gtag/js?id=$tag_id\"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '$tag_id');
+            </script>";
+    }
 }
