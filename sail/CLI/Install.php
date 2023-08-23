@@ -7,7 +7,9 @@ use RuntimeException;
 use SailCMS\CLI;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\EntryException;
 use SailCMS\Errors\PermissionException;
+use SailCMS\Models\Entry as EntryModel;
 use SailCMS\Models\Role;
 use SailCMS\Models\User;
 use SailCMS\Sail;
@@ -31,6 +33,7 @@ class Install extends Command
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     * @throws EntryException
      *
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -54,6 +57,7 @@ class Install extends Command
             'storage/fs/uploads',
             'storage/fs/logs',
             'storage/fs/vault',
+            'storage/fs/app',
             'storage/cache/',
             'config',
             'modules',
@@ -157,6 +161,10 @@ class Install extends Command
 
         // Done for user
         Tools::outputInfo('created', "User {$email} and the password is [b]{$password}[/b]", 'bg-green-500');
+
+        // Create entry + publication view for all entry type
+        EntryModel::generateAllViews();
+        Tools::outputInfo('generated', 'Generated entry publication relation views', 'bg-green-500');
 
         Tools::outputInfo('optimizing', 'Making sure everything is optimized in the database', 'bg-sky-400');
         Sail::ensurePerformance();

@@ -4,6 +4,7 @@ namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
+use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
 use SailCMS\Errors\DatabaseException;
@@ -11,6 +12,7 @@ use SailCMS\Queue\Task;
 use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
+use stdClass;
 
 /**
  *
@@ -21,9 +23,11 @@ use SailCMS\Types\QueryOptions;
  * @property string                $execution_result
  * @property bool                  $execution_success
  * @property bool                  $locked
+ * @property string                $handler
  * @property string                $action
  * @property bool                  $retriable
  * @property int                   $retry_count
+ * @property BSONDocument|stdClass $settings
  * @property int                   $priority
  * @property int                   $pid
  * @property ?Collection           $logs
@@ -50,7 +54,9 @@ class Queue extends Model
     {
         self::query()->insert([
             'name' => $task->name,
+            'handler' => $task->handler,
             'action' => $task->action,
+            'settings' => $task->settings,
             'priority' => $task->priority,
             'retriable' => $task->retriable,
             'pid' => 0,
@@ -60,7 +66,8 @@ class Queue extends Model
             'executed' => false,
             'executed_at' => 0,
             'execution_result' => '',
-            'execution_success' => false
+            'execution_success' => false,
+            'log' => new Collection([])
         ]);
     }
 

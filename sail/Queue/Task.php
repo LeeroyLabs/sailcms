@@ -14,7 +14,9 @@ class Task
     public function __construct(
         public readonly string $name,
         public readonly bool $retriable,
+        public readonly string $handler,
         public readonly string $action,
+        public readonly Collection $settings,
         public readonly int $priority = Task::PRIORITY_NORMAL
     ) {
     }

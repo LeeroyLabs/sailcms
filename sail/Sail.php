@@ -18,6 +18,8 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Errors\SiteException;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
+use SailCMS\Internal\Attributes;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\User;
@@ -91,6 +93,7 @@ class Sail
      * @throws Errors\EntryException
      * @throws PermissionException
      * @throws GraphqlException
+     * @throws Errors\CollectionException
      *
      */
     public static function init(string $execPath): void
@@ -178,8 +181,6 @@ class Sail
         if (setting('emails.usePreviewer', false)) {
             Router::setupEmailPreviewer();
         }
-
-        Router::setupThirdPartyContent();
 
         Router::dispatch();
     }
@@ -280,6 +281,12 @@ class Sail
             Debug::eventEnd('Initialize Containers');
         }
 
+        // Run Attribute parser
+        try {
+            Attributes::parseAttributes();
+        } catch (\ReflectionException|Errors\StorageException) {
+        }
+
         // Load all site's modules
         Debug::eventStart('Initialize Modules', 'purple');
         self::loadModulesFromComposer(self::$workingDirectory);
@@ -287,9 +294,6 @@ class Sail
 
         // Authenticate user
         User::authenticate();
-
-        // Setup Form Handling
-        Forms::init();
 
         // Ensure peak performance from the database
         self::ensurePerformance();
@@ -467,7 +471,8 @@ class Sail
     {
         $models = new Collection(glob(__DIR__ . '/Models/*.php'));
 
-        $models->each(function ($key, $value) {
+        $models->each(function ($key, $value)
+        {
             $name = substr(basename($value), 0, -4);
             $class = 'SailCMS\\Models\\' . $name;
 

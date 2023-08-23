@@ -5,7 +5,7 @@ namespace SailCMS\Logging;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
-use SailCMS\Filesystem;
+use SailCMS\Internal\Filesystem;
 
 class Local extends AbstractProcessingHandler
 {

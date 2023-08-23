@@ -87,9 +87,11 @@ trait QueryObject
             ];
         }
 
+        $activeCollectionOrView = $this->use_view ? $this->active_view : $this->active_collection;
+
         // Single query
         if ($this->isSingle) {
-            $result = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
+            $result = call_user_func([$activeCollectionOrView, $this->currentOp], $this->currentQuery, $options);
             if ($result) {
                 $doc = $this->transformDocToModel($result);
 
@@ -131,10 +133,10 @@ trait QueryObject
 
         try {
             if ($this->currentOp === 'distinct') {
-                $results = $this->active_collection->distinct($this->currentField, $this->currentQuery, $options);
+                $results = $activeCollectionOrView->distinct($this->currentField, $this->currentQuery, $options);
                 return $results;
             } else {
-                $results = call_user_func([$this->active_collection, $this->currentOp], $this->currentQuery, $options);
+                $results = call_user_func([$activeCollectionOrView, $this->currentOp], $this->currentQuery, $options);
             }
         } catch (Exception $e) {
             throw new DatabaseException('0500: ' . $e->getMessage(), 0500);

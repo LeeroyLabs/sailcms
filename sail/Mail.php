@@ -7,6 +7,7 @@ use League\Flysystem\FilesystemException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
 use SailCMS\Http\Request;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Models\Email;
 use SailCMS\Models\EmailDeprecated;
 use SailCMS\Templating\Engine;

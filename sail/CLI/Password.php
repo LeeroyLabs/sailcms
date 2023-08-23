@@ -3,9 +3,6 @@
 namespace SailCMS\CLI;
 
 use League\Flysystem\FilesystemException;
-use SailCMS\CLI;
-use SailCMS\Filesystem;
-use SailCMS\Sail;
 use SailCMS\Security;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

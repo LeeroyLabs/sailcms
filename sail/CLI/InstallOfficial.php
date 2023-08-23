@@ -2,7 +2,7 @@
 
 namespace SailCMS\CLI;
 
-use SailCMS\Filesystem;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Sail;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

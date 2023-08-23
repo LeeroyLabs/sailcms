@@ -5,7 +5,6 @@ namespace SailCMS;
 use Exception;
 use JsonException;
 use League\Flysystem\FilesystemException;
-use Psr\Log\LoggerInterface;
 use SailCMS\CLI\BasicAuth;
 use SailCMS\CLI\Cache;
 use SailCMS\CLI\Command;
@@ -25,6 +24,7 @@ use SailCMS\CLI\ResetAdminPass;
 use SailCMS\CLI\Schema;
 use SailCMS\CLI\Test;
 use SailCMS\CLI\Version;
+use SailCMS\CLI\View;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\SiteException;
@@ -37,8 +37,8 @@ trait Logging
      *
      * Return formatted log message
      *
-     * @param LogType $type
-     * @param string $msg
+     * @param  LogType  $type
+     * @param  string   $msg
      * @return string
      */
     public function log(LogType $type, string $msg): string
@@ -99,6 +99,7 @@ final class CLI
         $application->add(new Install());
         $application->add(new Command());
         $application->add(new Model());
+        $application->add(new View());
         $application->add(new Entry());
         $application->add(new Queue());
         $application->add(new Cache());

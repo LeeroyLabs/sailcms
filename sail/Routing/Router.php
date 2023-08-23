@@ -11,7 +11,6 @@ use SailCMS\Debug;
 use SailCMS\Debug\DebugController;
 use SailCMS\DI;
 use SailCMS\Email\Controller;
-use SailCMS\Routing\Controller as RoutingController;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -28,7 +27,6 @@ use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
-use SailCMS\UI;
 use SodiumException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -47,19 +45,19 @@ class Router
             'post' => Collection::init(),
             'put' => Collection::init(),
             'delete' => Collection::init(),
-            'any' => Collection::init()
+            'any' => Collection::init(),
+            'options' => Collection::init(),
+            'patch' => Collection::init()
         ]);
 
         self::$redirects = Collection::init();
     }
 
     /**
-     *
      * Get all routes of the given method
      *
      * @param  string  $method
      * @return Collection
-     *
      */
     public static function getAll(string $method): Collection
     {
@@ -67,12 +65,10 @@ class Router
     }
 
     /**
-     *
      * Stop everything and redirect to given url
      *
      * @param  string  $url
      * @return void
-     *
      */
     public function go(string $url): void
     {
@@ -81,7 +77,6 @@ class Router
     }
 
     /**
-     *
      * Add a GET route
      *
      * @param  string                $url
@@ -91,7 +86,6 @@ class Router
      * @param  string                $name
      * @param  bool                  $secure
      * @return void
-     *
      */
     public function get(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
@@ -99,7 +93,6 @@ class Router
     }
 
     /**
-     *
      * Add a POST route
      *
      * @param  string                $url
@@ -109,7 +102,6 @@ class Router
      * @param  string                $name
      * @param  bool                  $secure
      * @return void
-     *
      */
     public function post(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
@@ -117,7 +109,6 @@ class Router
     }
 
     /**
-     *
      * Add a DELETE route
      *
      * @param  string                $url
@@ -127,7 +118,6 @@ class Router
      * @param  string                $name
      * @param  bool                  $secure
      * @return void
-     *
      */
     public function delete(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
@@ -135,7 +125,6 @@ class Router
     }
 
     /**
-     *
      * Add a PUT route
      *
      * @param  string                $url
@@ -145,7 +134,6 @@ class Router
      * @param  string                $name
      * @param  bool                  $secure
      * @return void
-     *
      */
     public function put(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
@@ -153,8 +141,24 @@ class Router
     }
 
     /**
+     * Add an Any route
      *
-     * Add a Any route
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     */
+    public function any(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    {
+        $this->addRoute('any', $url, $locale, $controller, $method, $name, $secure);
+    }
+
+    /**
+     *
+     * Add an Options route
      *
      * @param  string                $url
      * @param  string                $locale
@@ -165,32 +169,49 @@ class Router
      * @return void
      *
      */
-    public function any(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    public function options(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
     {
-        $this->addRoute('any', $url, $locale, $controller, $method, $name, $secure);
+        $this->addRoute('options', $url, $locale, $controller, $method, $name, $secure);
     }
 
     /**
      *
+     * Add a Patch route
+     *
+     * @param  string                $url
+     * @param  string                $locale
+     * @param  AppController|string  $controller
+     * @param  string                $method
+     * @param  string                $name
+     * @param  bool                  $secure
+     * @return void
+     *
+     */
+    public function patch(string $url, string $locale, AppController|string $controller, string $method, string $name = '', bool $secure = false): void
+    {
+        $this->addRoute('patch', $url, $locale, $controller, $method, $name, $secure);
+    }
+
+    /**
      * Add a redirected route
      *
      * @param  string  $from
      * @param  string  $to
+     * @param  bool    $permanent
      * @return void
-     *
      */
-    public function redirect(string $from, string $to): void
+    public function redirect(string $from, string $to, bool $permanent = true): void
     {
-        $redirect = new Redirect($from, $to);
+        $redirect = new Redirect($from, $to, $permanent);
         self::$redirects->push($redirect);
     }
 
     /**
-     *
      * Dispatch the route detection and execute and render matching route
      *
      * @param  bool  $isForbidden
      * @return void
+     *
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
@@ -204,7 +225,6 @@ class Router
      * @throws SodiumException
      * @throws SyntaxError
      * @throws CollectionException
-     *
      */
     public static function dispatch(bool $isForbidden = false): void
     {
@@ -238,7 +258,7 @@ class Router
             $response->template = $entry->template;
             $response->set('entry', $entry);
             $response->render();
-            die();
+            exit();
         }
 
         // Not found, check if we have something defined
@@ -252,7 +272,7 @@ class Router
                 if ($response instanceof Response) {
                     $response->render();
                     Middleware::execute(MiddlewareType::HTTP, new Data(Http::AfterRender, data: null));
-                    die();
+                    exit();
                 }
 
                 throw new RouteReturnException('Route does not return a Response object. Cannot continue.', 0400);
@@ -267,7 +287,7 @@ class Router
                 if ($response instanceof Response) {
                     $response->render();
                     Middleware::execute(MiddlewareType::HTTP, new Data(Http::AfterRender, data: null));
-                    die();
+                    exit();
                 }
 
                 throw new RouteReturnException('Route does not return a Response object. Cannot continue.', 0400);
@@ -289,17 +309,16 @@ class Router
             // If we are here, the cms did not pick up on the homepage, show built in homepage
             $response->template = 'welcome_default';
             $response->render();
-            die();
+            exit();
         }
 
         Debug::route('GET', '/', 'system:not_found', '404');
         $response->template = '404';
         $response->render();
-        die();
+        exit();
     }
 
     /**
-     *
      * Find the alternate routes for the given name
      *
      * @param  Route  $route
@@ -321,7 +340,6 @@ class Router
     }
 
     /**
-     *
      * Get a route by name, method and locale, optionally process arguments to replace dynamic placeholders
      *
      * @param  string            $name
@@ -329,9 +347,8 @@ class Router
      * @param  string            $locale
      * @param  Collection|array  $arguments
      * @return string|null
-     *
      */
-    public static function getBy(string $name, string $method, string $locale = 'en', Collection|array $arguments = []): ?string
+    public static function retrieve(string $name, string $method, string $locale = 'en', Collection|array $arguments = []): ?string
     {
         $route = null;
         self::$routes->get($method)->each(static function ($key, $value) use (&$route, $name, $locale)
@@ -349,16 +366,14 @@ class Router
     }
 
     /**
-     *
      * Get all routes that match name and method, optionally process all dynamics placeholders
      *
      * @param  string            $name
      * @param  string            $method
      * @param  Collection|array  $arguments
      * @return Collection
-     *
      */
-    public static function getAllBy(string $name, string $method, Collection|array $arguments = []): Collection
+    public static function retrieveAll(string $name, string $method, Collection|array $arguments = []): Collection
     {
         $routes = Collection::init();
         self::$routes->get($method)->each(static function ($key, $value) use (&$routes, $name)
@@ -382,14 +397,12 @@ class Router
     }
 
     /**
-     *
      * Get all routes with the given name
      *
      * @param  string  $name
      * @return Collection
-     *
      */
-    public function routesByName(string $name): Collection
+    public function retrieveAllByName(string $name): Collection
     {
         $routes = Collection::init();
         $methods = ['get', 'post', 'delete', 'put', 'any'];
@@ -407,11 +420,9 @@ class Router
     }
 
     /**
-     *
      * Register a route for the clockwork debug tool
      *
      * @return void
-     *
      */
     public static function addClockworkSupport(): void
     {
@@ -426,11 +437,9 @@ class Router
     }
 
     /**
-     *
      * Add the email previewer route to the system
      *
      * @return void
-     *
      */
     public static function setupEmailPreviewer(): void
     {
@@ -438,23 +447,9 @@ class Router
         $instance->get('/email-preview/:any/:any', 'en', Controller::class, 'previewEmail');
     }
 
-    /**
-     *
-     * Load Application content for the requested party
-     *
-     * @return void
-     *
-     */
-    public static function setupThirdPartyContent(): void
-    {
-        $instance = new self();
-        $instance->get('/extension/:string/:all', 'en', RoutingController::class, 'loadThirdPartyApplication');
-    }
-
     // -------------------------------------------------- Private -------------------------------------------------- //
 
     /**
-     *
      * Add a route
      *
      * @param  string                $method
@@ -465,15 +460,14 @@ class Router
      * @param  string                $name
      * @param  bool                  $secure
      * @return void
-     *
      */
     private function addRoute(string $method, string $url, string $locale, AppController|string $controller, string $callback, string $name = '', bool $secure = false): void
     {
         // Trace the registerer of the route
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
-        $class = $trace[2]['class'];
+        $class = $trace[2]['class'] ?? 'Attributes::class';
 
-        $allowed = [self::class, Forms::class];
+        $allowed = [self::class, Forms::class, 'Attributes::class'];
 
         if ($trace[2]['function'] !== '{closure}' && !in_array($class, $allowed, true) && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {

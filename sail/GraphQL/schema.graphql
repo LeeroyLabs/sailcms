@@ -490,6 +490,7 @@ type EntryField {
     searchable: Boolean!
     type: String!
     config: Json!
+    width: String
 }
 
 type SocialMeta {
@@ -567,7 +568,17 @@ type EntryLayoutTab {
 
 input EntryLayoutTabInput {
     label: String!
-    fields: [ID!]!
+    fields: [FieldObjectInput!]!
+}
+
+input FieldObject {
+    id: ID!
+    width: String!
+}
+
+input FieldObjectInput {
+    id: ID!
+    width: String!
 }
 
 type LocaleField {
@@ -804,7 +815,7 @@ type Task {
     name: String!
     action: String!
     priority: Int!
-    log: [String!]
+    logs: [String!]
     retriable: Boolean!
     retry_count: Int!
     scheduled_at: Int!

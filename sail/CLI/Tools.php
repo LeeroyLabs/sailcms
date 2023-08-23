@@ -2,9 +2,8 @@
 
 namespace SailCMS\CLI;
 
-use Exception;
 use League\Flysystem\FilesystemException;
-use SailCMS\Filesystem;
+use SailCMS\Internal\Filesystem;
 use SailCMS\Sail;
 
 use function Termwind\render;
