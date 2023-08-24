@@ -223,7 +223,7 @@ class Queue
         }
 
         $queue = QueueMan::manager();
-        $queue->process(new Collection([$tasks]));
+        $queue->process(new Collection($tasks));
         return true;
     }
 
