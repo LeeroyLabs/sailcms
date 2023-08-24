@@ -216,10 +216,14 @@ class Queue
      */
     public function retryTask(mixed $obj, Collection $args, Context $context): bool
     {
-        $task = new Collection([(new QueueModel())->getById($args->get('id'))]);
+        $tasks = [];
+
+        foreach ($args->get('ids') as $id) {
+            $tasks[] = (new QueueModel())->getById($id);
+        }
 
         $queue = QueueMan::manager();
-        $queue->process($task);
+        $queue->process(new Collection([$tasks]));
         return true;
     }
 
@@ -234,7 +238,10 @@ class Queue
      */
     public function stopTask(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new QueueModel())->stopTask($args->get('pid'));
+        foreach ($args->get('pids') as $pid) {
+            (new QueueModel())->stopTask($pid);
+        }
+        return true;
     }
 
     /**
@@ -272,6 +279,9 @@ class Queue
      */
     public function cancelTask(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new QueueModel())->cancelTask($args->get('id'));
+        foreach ($args->get('ids') as $id) {
+            (new QueueModel())->cancelTask($id);
+        }
+        return true;
     }
 }
