@@ -131,28 +131,16 @@ final class GlobalSeo
                     if ($entry->locale === $defaultLocale) {
                         $locale = "";
                     }
-                    $hreflang = "";
-                    if ($entry->locale === "fr") {
-                        $hreflang = "fr-ca";
-                    }else if($entry->locale === "en"){
-                        $hreflang = "en-us";
-                    }
 
                     $url = env('SITE_URL') . $locale . '/' . $entry->slug;
                     $sitemap .= '<url><loc>' . $url . '</loc><lastmod>'. date("Y-m-d", $entry->dates->updated) . 'T' . date("H:m:sO", $entry->dates->updated) .'</lastmod>';
                     $sitemap .= '<xhtml:link rel="alternate" hreflang="x-default" href="'. $url .'"/>';
-                    $sitemap .= '<xhtml:link rel="alternate" hreflang="'. $hreflang .'" href="'. $url .'"/>';
+                    $sitemap .= '<xhtml:link rel="alternate" hreflang="'. $entry->locale .'" href="'. $url .'"/>';
                     if ($entry->alternates) {
                         foreach ($entry->alternates as $alternate) {
                             $alternateEntry = (new Entry())->getById($alternate->entry_id);
                             $url = env('SITE_URL') . '/' . $alternate->locale . '/' . $alternateEntry->slug;
-                            $hreflang = "";
-                            if ($alternate->locale === "fr") {
-                                $hreflang = "fr-ca";
-                            }else if($alternate->locale === "en"){
-                                $hreflang = "en-us";
-                            }
-                            $sitemap .= '<xhtml:link rel="alternate" hreflang="'. $hreflang .'" href="'. $url .'"/>';
+                            $sitemap .= '<xhtml:link rel="alternate" hreflang="'. $alternate->locale .'" href="'. $url .'"/>';
                         }
                     }
                     $sitemap .= '</url>';
