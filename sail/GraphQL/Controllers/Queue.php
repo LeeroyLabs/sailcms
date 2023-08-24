@@ -110,7 +110,7 @@ class Queue
             $args->get('priority'),
             $args->get('timestamp', time())
         );
-        
+
         QueueModel::add($task);
         return true;
     }
@@ -168,17 +168,7 @@ class Queue
      */
     public function cliCommand(mixed $obj, Collection $args, Context $context): Collection
     {
-        return new Collection([
-            'create:module',
-            'create:controller',
-            'create:container',
-            'version',
-            'clear-cache',
-            'create:test',
-            'db:migrate',
-            'create:migration',
-            'test:task-command'
-        ]);
+        return CLI::$registeredCommands;
     }
 
     /**
