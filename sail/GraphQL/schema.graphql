@@ -173,6 +173,7 @@ type Mutation {
     createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!): Boolean!
     retryTask(id: ID!): Boolean!
     changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
+    startTasks(ids: [ID!]!): Boolean!
     startAllTasks: Boolean!
     stopTask(pid: Int!): Boolean!
     stopAllTasks: Boolean!

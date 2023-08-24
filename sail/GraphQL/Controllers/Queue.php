@@ -126,6 +126,25 @@ class Queue
 
     /**
      *
+     * Start tasks
+     *
+     * @throws DatabaseException
+     */
+    public function startTasks(mixed $obj, Collection $args, Context $context): bool
+    {
+        $tasks = [];
+
+        foreach ($args->get('ids') as $id) {
+            $tasks[] = (new QueueModel())->getById($id);
+        }
+
+        $queue = QueueMan::manager();
+        $queue->process(new Collection($tasks));
+        return true;
+    }
+
+    /**
+     *
      * Get all CLI command
      *
      */
