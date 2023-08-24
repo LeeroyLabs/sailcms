@@ -16,8 +16,9 @@ class Task
         public readonly bool $retriable,
         public readonly string $handler,
         public readonly string $action,
-        public readonly Collection $settings,
-        public readonly int $priority = Task::PRIORITY_NORMAL
+        public readonly array|object $settings,
+        public readonly int $priority = Task::PRIORITY_NORMAL,
+        public readonly int $timestamp = 0
     ) {
     }
 }

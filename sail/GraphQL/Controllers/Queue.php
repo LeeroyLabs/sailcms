@@ -17,9 +17,9 @@ class Queue
      *
      * Get a tasks
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return QueueModel
      * @throws DatabaseException
      *
@@ -33,9 +33,9 @@ class Queue
      *
      * Get all tasks
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Collection|null
      * @throws DatabaseException
      *
@@ -49,9 +49,9 @@ class Queue
      *
      * Return current process time of a task
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return string
      */
     public function getTaskRunningTime(mixed $obj, Collection $args, Context $context): string
@@ -63,9 +63,9 @@ class Queue
      *
      * Get all tasks
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Listing
      * @throws DatabaseException
      *
@@ -83,13 +83,15 @@ class Queue
 
     /**
      *
-     * Create a tasks
+     * Create a task
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws DatabaseException
+     * @throws \JsonException
+     *
      */
     public function createTask(mixed $obj, Collection $args, Context $context): bool
     {
@@ -104,10 +106,45 @@ class Queue
             $args->get('retriable'),
             '',
             $action,
-            new Collection([]),
+            json_decode($args->get('settings', '{}'), false, 512, JSON_THROW_ON_ERROR),
             $args->get('priority'),
+            $args->get('timestamp', time())
         );
+
         QueueModel::add($task);
+        return true;
+    }
+
+    /**
+     *
+     * Update a task
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     * @throws \JsonException
+     *
+     */
+    public function updateTask(mixed $obj, Collection $args, Context $context): bool
+    {
+        $action = $args->get('action');
+
+        if (!str_contains($action, 'php sail')) {
+            $action = 'php sail ' . $action;
+        }
+
+        $task = new Task(
+            $args->get('name'),
+            $args->get('retriable'),
+            '',
+            $action,
+            json_decode($args->get('settings', '{}'), false, 512, JSON_THROW_ON_ERROR),
+            $args->get('priority'),
+            $args->get('timestamp', time())
+        );
+
+        QueueModel::update($args->get('id'), $task);
         return true;
     }
 
@@ -150,17 +187,7 @@ class Queue
      */
     public function cliCommand(mixed $obj, Collection $args, Context $context): Collection
     {
-        return new Collection([
-            'create:module',
-            'create:controller',
-            'create:container',
-            'version',
-            'clear-cache',
-            'create:test',
-            'db:migrate',
-            'create:migration',
-            'test:task-command'
-        ]);
+        return CLI::$registeredCommands;
     }
 
     /**
@@ -200,9 +227,9 @@ class Queue
      *
      * Stop a tasks
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      */
     public function stopTask(mixed $obj, Collection $args, Context $context): bool
@@ -214,9 +241,9 @@ class Queue
      *
      * Stop a tasks
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws DatabaseException
      */
@@ -225,7 +252,7 @@ class Queue
         $tasks = (new QueueModel())->getList();
 
         foreach ($tasks as $task) {
-            if($task->pid) {
+            if ($task->pid) {
                 (new QueueModel())->stopTask($task->pid);
             }
         }
@@ -237,9 +264,9 @@ class Queue
      *
      * Cancel a tasks
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
      * @throws DatabaseException
      */
