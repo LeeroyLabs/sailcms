@@ -10,9 +10,10 @@ beforeAll(function () {
     // Ensure default type exists
     EntryType::getDefaultType();
 
-    $this->entryId = "";
+    $_ENV['entryId'] = "";
 
     // TODO create entry type
+
 });
 
 afterAll(function () {
@@ -21,18 +22,19 @@ afterAll(function () {
 
 test('Test a page creation', function () {
     // Locale, title, template, site_id, isHomepage
-    Entry::from()->create();
-});
+    $qs = Entry::from()->create('en', 'Home', true);
+
+    $_ENV['entryId'] = $qs->value()->_id;
+
+    expect((string)$_ENV['entryId'])->toBeString();
+})->group('expressive-entry');
 
 test('Test to create a page publication', function () {
     // Publication date, expiration date
-    Entry::from()->create()->publish();
-});
+    $qs = Entry::from()->byId($_ENV['entryId']);
 
-test('Test isPublished method', function () {
-    $entryPublished = Entry::from()->byId($this->entryId)->isPublished();
-
-    expect($entryPublished)->toBeTrue();
+    expect($qs->isPublished())->toBeFalse()
+        ->and($qs->publish(time())->isPublished())->toBeTrue();
 })->group('expressive-entry');
 
 //test('Test withId with parent method', function () {
@@ -40,7 +42,14 @@ test('Test isPublished method', function () {
 //
 //    expect($entryParent)->toBeInstanceOf(\SailCMS\Models\Entry::class);
 //})->group('expressive-entry');
+
 //
 //test('Test withId with alternate method', function () {
 //    $entryAlternate = Entry::from()->byId($this->entryDraftId)->alternate();
 //})->group('expressive-entry');
+
+test('Test delete with byId', function() {
+    $result = Entry::from()->byId($_ENV['entryId'])->delete();
+
+    expect($result)->toBeTrue();
+})->group('expressive-entry');

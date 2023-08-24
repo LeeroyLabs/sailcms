@@ -20,6 +20,12 @@ class Entry
     private ?EntryPublication $entryPublication = null;
     private string $entryTypeHandle;
 
+    /**
+     * Hide visibility of the constructor to force user to use static method that return an instance instead
+     */
+    private function __construct()
+    {
+    }
 
     /**
      *
@@ -61,28 +67,28 @@ class Entry
      *
      * Create an entry
      *
-     * @param  string       $locale
-     * @param  string       $title
-     * @param  string       $template
-     * @param  bool         $isHomepage
-     * @param  string|null  $siteId
+     * @param string $locale
+     * @param string $title
+     * @param bool $isHomepage
+     * @param string|null $template
+     * @param string|null $siteId
      * @return self
-     * @throws DatabaseException
      * @throws ACLException
+     * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException
-     * @throws JsonException
      * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
      * @throws SodiumException
      *
      */
-    public function create(string $locale, string $title, string $template = '', bool $isHomepage = false, ?string $siteId = null): self
+    public function create(string $locale, string $title, bool $isHomepage = false, ?string $template = null, ?string $siteId = null): self
     {
         if (!$template) {
             $template = "default/" . $this->entryTypeHandle;
         }
 
-        $this->entry = $this->model->create($isHomepage, $locale, $title, $template);
+        $this->entry = $this->model->create($isHomepage, $locale, $title, $template, null, ['site_id' => $siteId]);
 
         return $this;
     }
@@ -114,6 +120,26 @@ class Entry
 
     /**
      *
+     * Delete the current entry with default as hard delete
+     *
+     * @param bool $soft
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws PermissionException
+     * @throws SodiumException
+     *
+     */
+    public function delete(bool $soft = false): bool
+    {
+        return $this->model->delete($this->entry->_id, $soft);
+    }
+
+    /**
+     *
      * Check if the current entry is published
      *
      * @return bool
@@ -130,7 +156,18 @@ class Entry
             return true;
         }
 
-        $publication = (new EntryPublication())->getPublicationByEntryId($this->model->_id, false, false);
+        $publication = (new EntryPublication())->getPublicationByEntryId($this->entry->_id, false, false);
         return isset($publication);
+    }
+
+    /**
+     *
+     * Return the entry object
+     *
+     * @return EntryModel
+     */
+    public function value(): EntryModel
+    {
+        return $this->entry;
     }
 }
