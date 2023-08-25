@@ -31,7 +31,7 @@ test('Test a page creation', function () {
 
 test('Test to create a page publication', function () {
     // Publication date, expiration date
-    $qs = Entry::from()->byId($_ENV['entryId']);
+    $qs = Entry::from()->get($_ENV['entryId']);
 
     expect($qs->isPublished())->toBeFalse()
         ->and($qs->publish(time())->isPublished())->toBeTrue();
@@ -49,7 +49,7 @@ test('Test to create a page publication', function () {
 //})->group('expressive-entry');
 
 test('Test delete with byId', function() {
-    $result = Entry::from()->byId($_ENV['entryId'])->delete();
+    $result = Entry::from()->get($_ENV['entryId'])->delete();
 
     expect($result)->toBeTrue();
 })->group('expressive-entry');

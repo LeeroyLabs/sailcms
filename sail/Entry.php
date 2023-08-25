@@ -56,7 +56,7 @@ class Entry
      * @throws DatabaseException
      *
      */
-    public function byId(string $id): self
+    public function get(string $id): self
     {
         $this->entry = $this->model->getById($id);
 
