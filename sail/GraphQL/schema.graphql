@@ -767,6 +767,7 @@ type Task {
     executed_at: Int!
     execution_result: String!
     execution_success: Boolean!
+    pid: String!
 }
 
 #{CUSTOM_TYPES}#
