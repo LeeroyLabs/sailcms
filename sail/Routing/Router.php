@@ -25,6 +25,7 @@ use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\Entry;
+use SailCMS\Models\Redirection;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
@@ -243,6 +244,13 @@ class Router
                 // Remove the root directory from uri, remove only the first occurrence
                 $uri = substr_replace($uri, '', strpos($uri, self::$root), strlen(self::$root));
             }
+        }
+
+        // Redirection
+        $redirection_list = (new Redirection())->getList();
+        if (in_array($uri, array_column($redirection_list->list->unwrap(), 'url'), true)) {
+            $redirection = array_search($uri, array_column($redirection_list->list->unwrap(), 'url'), true);
+            (new self)->redirect($uri, $redirection_list->list->unwrap()[$redirection]->redirect_url);
         }
 
         $entry = Entry::findByURL($uri);

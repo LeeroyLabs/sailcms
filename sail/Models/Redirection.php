@@ -35,19 +35,23 @@ class Redirection extends Model
      */
     public static function add(string $url, string $redirect_url, string $redirect_type): bool
     {
-        try {
-            $result = self::query()->insert([
-                'url' => $url,
-                'redirect_url' => $redirect_url,
-                'redirect_type' => $redirect_type,
-                'hit_count' => 0,
-                'last_attempt' => 0
-            ]);
-        }catch (DateException $exception) {
-            return false;
+        if (!(new self)->getByUrl($url)) {
+            try {
+                $result = self::query()->insert([
+                    'url' => $url,
+                    'redirect_url' => $redirect_url,
+                    'redirect_type' => $redirect_type,
+                    'hit_count' => 0,
+                    'last_attempt' => 0
+                ]);
+            }catch (DateException $exception) {
+                return false;
+            }
+
+            return true;
         }
 
-        return $result === 1;
+        return false;
     }
 
     /**

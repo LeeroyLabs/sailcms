@@ -542,8 +542,8 @@ final class GraphQL
         self::addMutationResolver('startTasks', Queue::class, 'startTasks');
 
         // Redirection
-        self::addMutationResolver('getRedirection', Redirection::class, 'getRedirection');
-        self::addMutationResolver('getRedirections', Redirection::class, 'getRedirections');
+        self::addQueryResolver('getRedirection', Redirection::class, 'getRedirection');
+        self::addQueryResolver('getRedirections', Redirection::class, 'getRedirections');
         self::addMutationResolver('createRedirection', Redirection::class, 'createRedirection');
         self::addMutationResolver('updateRedirection', Redirection::class, 'updateRedirection');
         self::addMutationResolver('deleteRedirection', Redirection::class, 'deleteRedirection');
