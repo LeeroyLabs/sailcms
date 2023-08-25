@@ -52,6 +52,12 @@ class Queue extends Model
      */
     public static function add(Task $task): void
     {
+        $stamp = $task->timestamp;
+
+        if ($task->timestamp === 0) {
+            $stamp = time();
+        }
+
         self::query()->insert([
             'name' => $task->name,
             'handler' => $task->handler,
@@ -61,7 +67,7 @@ class Queue extends Model
             'retriable' => $task->retriable,
             'pid' => 0,
             'retry_count' => 0,
-            'scheduled_at' => time(),
+            'scheduled_at' => $stamp,
             'locked' => false,
             'executed' => false,
             'executed_at' => 0,
@@ -71,16 +77,37 @@ class Queue extends Model
         ]);
     }
 
+    public static function update(string|ObjectId $id, Task $task): void
+    {
+        $stamp = $task->timestamp;
+
+        if ($task->timestamp === 0) {
+            $stamp = time();
+        }
+        
+        $id = self::query()->ensureObjectId($id);
+
+        self::query()->updateOne(['_id' => $id], [
+            'name' => $task->name,
+            'handler' => $task->handler,
+            'action' => $task->action,
+            'settings' => $task->settings,
+            'priority' => $task->priority,
+            'retriable' => $task->retriable,
+            'scheduled_at' => $stamp,
+        ]);
+    }
+
     /**
      *
      * Update the process ID of a task
      *
-     * @param string $id
-     * @param int $pid
+     * @param  string  $id
+     * @param  int     $pid
      * @return bool
      *
      */
-    public function updatePid(string $id, int $pid):bool
+    public function updatePid(string $id, int $pid): bool
     {
         try {
             $info = [
@@ -101,11 +128,11 @@ class Queue extends Model
      *
      * Update the logs of a task
      *
-     * @param string $id
-     * @param Collection $logs
+     * @param  string      $id
+     * @param  Collection  $logs
      * @return bool
      */
-    public function updateLogs(string $id, Collection $logs):bool
+    public function updateLogs(string $id, Collection $logs): bool
     {
         try {
             $info = [
@@ -126,11 +153,11 @@ class Queue extends Model
      *
      * Change the schedule of a task
      *
-     * @param string $id
-     * @param int $timestamp
+     * @param  string  $id
+     * @param  int     $timestamp
      * @return bool
      */
-    public function changeSchedule(string $id, int $timestamp):bool
+    public function changeSchedule(string $id, int $timestamp): bool
     {
         try {
             $info = [
@@ -151,11 +178,11 @@ class Queue extends Model
      *
      * Return task process ID
      *
-     * @param string $id
+     * @param  string  $id
      * @return int
      * @throws DatabaseException
      */
-    public function getProcessId(string $id):int
+    public function getProcessId(string $id): int
     {
         return $this->findById($id)->exec()->pid;
     }
@@ -164,11 +191,11 @@ class Queue extends Model
      *
      * Return task logs
      *
-     * @param string $id
+     * @param  string  $id
      * @return Collection
      * @throws DatabaseException
      */
-    public function getLogs(string $id):Collection
+    public function getLogs(string $id): Collection
     {
         return $this->findById($id)->exec()->logs;
     }
@@ -177,10 +204,10 @@ class Queue extends Model
      *
      * Return current execution time of task
      *
-     * @param int $pid
+     * @param  int  $pid
      * @return string
      */
-    public function getTaskRunningTime(int $pid):string
+    public function getTaskRunningTime(int $pid): string
     {
         return exec('ps -o etimes= -p ' . $pid, $out, $code);
     }
@@ -189,7 +216,7 @@ class Queue extends Model
      *
      * Get task by id
      *
-     * @param string $id
+     * @param  string  $id
      * @return Queue|null
      * @throws DatabaseException
      *
@@ -221,11 +248,11 @@ class Queue extends Model
      *
      * Get a list of tasks to perform
      *
-     * @param int $page
-     * @param int $limit
-     * @param string $search
-     * @param string $sort
-     * @param int $direction
+     * @param  int     $page
+     * @param  int     $limit
+     * @param  string  $search
+     * @param  string  $sort
+     * @param  int     $direction
      * @return Listing
      * @throws DatabaseException
      */
@@ -235,8 +262,7 @@ class Queue extends Model
         string $search = '',
         string $sort = 'name',
         int $direction = Model::SORT_ASC
-    ): Listing
-    {
+    ): Listing {
         $offset = $page * $limit - $limit;
 
         $options = QueryOptions::initWithSort([$sort => $direction]);
@@ -359,7 +385,7 @@ class Queue extends Model
      *
      * Delete a task
      *
-     * @param ObjectId|string $id
+     * @param  ObjectId|string  $id
      * @return bool
      * @throws DatabaseException
      */
@@ -373,12 +399,12 @@ class Queue extends Model
      *
      * Stop the process of a task
      *
-     * @param int $pid
+     * @param  int  $pid
      * @return bool
      */
     public function stopTask(int $pid): bool
     {
-        exec("kill -9 " . $pid,  $out, $code);
+        exec("kill -9 " . $pid, $out, $code);
         return true;
     }
 }

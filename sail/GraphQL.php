@@ -532,12 +532,14 @@ final class GraphQL
         self::addQueryResolver('cliCommand', Queue::class, 'cliCommand');
         self::addQueryResolver('taskLogs', Queue::class, 'getTaskLogs');
         self::addMutationResolver('createTask', Queue::class, 'createTask');
+        self::addMutationResolver('updateTask', Queue::class, 'updateTask');
         self::addMutationResolver('stopTask', Queue::class, 'stopTask');
         self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
         self::addMutationResolver('changeTaskSchedule', Queue::class, 'changeTaskSchedule');
         self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
         self::addMutationResolver('retryTask', Queue::class, 'retryTask');
         self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
+        self::addMutationResolver('startTasks', Queue::class, 'startTasks');
 
         // Redirection
         self::addMutationResolver('getRedirection', Redirection::class, 'getRedirection');

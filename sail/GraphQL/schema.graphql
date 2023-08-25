@@ -181,13 +181,15 @@ type Mutation {
     deleteGroup(id: ID!): Boolean!
 
     # Queue
-    createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!): Boolean!
-    retryTask(id: ID!): Boolean!
+    createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!, timestamp: Int!, settings: String!): Boolean!
+    updateTask(id: ID!, name: String!, action: String!, priority: Int!, retriable: Boolean!, timestamp: Int!, settings: String!): Boolean!
+    retryTask(ids: [ID!]!): Boolean!
     changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
+    startTasks(ids: [ID!]!): Boolean!
     startAllTasks: Boolean!
-    stopTask(pid: Int!): Boolean!
+    stopTask(pids: [Int!]!): Boolean!
     stopAllTasks: Boolean!
-    cancelTask(id: ID!): Boolean!
+    cancelTask(ids: [ID!]!): Boolean!
 
     # Forms
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
