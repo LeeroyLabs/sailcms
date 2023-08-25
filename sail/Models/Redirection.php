@@ -126,7 +126,7 @@ class Redirection extends Model
 
     /**
      *
-     * Get task by url
+     * Get redirection by url
      *
      * @param string $url
      * @return Redirection|null

@@ -10,6 +10,7 @@ class Redirect
 {
     private string $from = '';
     private string $to = '';
+    private bool $permanent;
 
     private static array $patterns = [
         ':any' => '([a-zA-Z0-9\-]+)',
@@ -19,10 +20,11 @@ class Redirect
         ':all' => '(.*)'
     ];
 
-    public function __construct(string $from, string $to)
+    public function __construct(string $from, string $to, $permanent)
     {
         $this->from = $from;
         $this->to = $to;
+        $this->permanent = $permanent;
     }
 
     /**
@@ -72,7 +74,12 @@ class Redirect
 
         $to = str_replace($spots, $matches, $to);
 
-        header("HTTP/1.1 301 Moved Permanently");
+        if ($this->permanent) {
+            header("HTTP/1.1 301 Moved Permanently");
+        }else{
+            header("HTTP/1.1 302 Found");
+        }
+
         header("Location: " . $to);
         die();
     }

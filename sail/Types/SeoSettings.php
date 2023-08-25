@@ -10,7 +10,7 @@ class SeoSettings implements Castable
     public string $separator_character;
     public string $sitename;
     public TitlePosition $sitename_position;
-
+    public bool $gtag;
 
     public function __construct(array $values)
     {
@@ -21,6 +21,7 @@ class SeoSettings implements Castable
         }
 
         $this->separator_character = $values['separator_character'];
+        $this->gtag = $values['gtag'];
         $this->sitename = $values['sitename'];
     }
 
@@ -29,7 +30,8 @@ class SeoSettings implements Castable
         return [
             'separator_character' => $this->separator_character,
             'sitename' => $this->sitename,
-            'sitename_position' => $this->sitename_position
+            'sitename_position' => $this->sitename_position,
+            'gtag' => $this->gtag
         ];
     }
 

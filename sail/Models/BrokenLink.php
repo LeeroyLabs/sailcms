@@ -48,19 +48,21 @@ class BrokenLink extends Model
      *
      * Update broken link hit count
      *
-     * @param string $id
+     * @param string $url
      * @return bool
      * @throws DatabaseException
      */
-    public function update(string $id): bool
+    public function update(string $url): bool
     {
+        $broken_link = $this->getByUrl($url);
+
         $info = [
-            'hit_count' => $this->getHitCount($id) + 1,
+            'hit_count' => $this->getHitCount($broken_link->id) + 1,
             'last_attempt' => time()
         ];
 
         try {
-            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
+            $result = $this->updateOne(['_id' => $this->ensureObjectId($broken_link->_id)], [
                 '$set' => $info
             ]);
         }catch (DateException $exception) {
@@ -68,6 +70,20 @@ class BrokenLink extends Model
         }
 
         return $result === 1;
+    }
+
+    /**
+     *
+     * Get broken link by url
+     *
+     * @param string $url
+     * @return Redirection|null
+     * @throws DatabaseException
+     *
+     */
+    public function getByUrl(string $url): ?BrokenLink
+    {
+        return $this->findOne(['url' => $url])->exec();
     }
 
     /**
