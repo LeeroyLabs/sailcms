@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use SailCMS\CLI;
 use SailCMS\Collection;
 use SailCMS\Errors\DatabaseException;
@@ -283,5 +284,20 @@ class Queue
             (new QueueModel())->cancelTask($id);
         }
         return true;
+    }
+
+    /**
+     * @throws \JsonException
+     */
+    public function resolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === 'settings') {
+            if (!$obj->{$info->fieldName}){
+                return "";
+            }
+            return json_encode($obj->{$info->fieldName}, JSON_THROW_ON_ERROR);
+        }
+
+        return $obj->{$info->fieldName};
     }
 }
