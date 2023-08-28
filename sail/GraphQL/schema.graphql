@@ -759,6 +759,7 @@ type Task {
     action: String!
     priority: Int!
     logs: [String!]
+    settings: String!
     retriable: Boolean!
     retry_count: Int!
     scheduled_at: Int!
