@@ -139,6 +139,7 @@ class Queue
             $args->get('retriable'),
             '',
             $action,
+            json_decode($args->get('settings', '{}'), false, 512, JSON_THROW_ON_ERROR),
             $args->get('priority'),
             $args->get('timestamp', time())
         );
