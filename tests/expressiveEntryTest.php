@@ -33,9 +33,16 @@ test('Test to create a page publication', function () {
     // Publication date, expiration date
     $qs = Entry::from()->get($_ENV['entryId']);
 
-    expect($qs->isPublished())->toBeFalse()
-        ->and($qs->publish(time())->isPublished())->toBeTrue();
+    expect($qs->published())->toBeFalse()
+        ->and($qs->publish(time())->published())->toBeTrue();
 })->group('expressive-entry');
+
+test('Test to update an entry', function () {
+    $qs = Entry::from()->get($_ENV['entryId'])->update(['title' => 'Home - english']);
+
+    expect($qs->updated())->toBeTrue()
+        ->and($qs->value()->title)->toBe('Home - english');
+});
 
 //test('Test withId with parent method', function () {
 //    $entryParent = Entry::from()->byId($this->entryDraftId)->parent();

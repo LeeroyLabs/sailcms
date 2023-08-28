@@ -19,6 +19,7 @@ class Entry
     private ?EntryModel $entry = null;
     private ?EntryPublication $entryPublication = null;
     private string $entryTypeHandle;
+    private bool $isUpdated = false;
 
     /**
      * Hide visibility of the constructor to force user to use static method that return an instance instead
@@ -93,6 +94,15 @@ class Entry
         return $this;
     }
 
+    public function update(array $data): self
+    {
+        $errors = $this->model->updateById($this->entry->_id, $data);
+        $this->isUpdated = $errors->length == 0;
+        $this->entry = $this->model->getById($this->entry->_id);
+
+        return $this;
+    }
+
     /**
      *
      * Publish the current entry
@@ -148,7 +158,7 @@ class Entry
      * @throws PermissionException
      *
      */
-    public function isPublished(): bool
+    public function published(): bool
     {
         // TODO handle bad usage
 
@@ -158,6 +168,17 @@ class Entry
 
         $publication = (new EntryPublication())->getPublicationByEntryId($this->entry->_id, false, false);
         return isset($publication);
+    }
+
+    /**
+     *
+     * Return the updated boolean to valid if the entry has been updated
+     *
+     * @return bool
+     */
+    public function updated(): bool
+    {
+        return $this->isUpdated;
     }
 
     /**
