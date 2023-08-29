@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use SailCMS\CLI;
 use SailCMS\Collection;
 use SailCMS\Errors\DatabaseException;
@@ -163,6 +164,25 @@ class Queue
 
     /**
      *
+     * Start tasks
+     *
+     * @throws DatabaseException
+     */
+    public function startTasks(mixed $obj, Collection $args, Context $context): bool
+    {
+        $tasks = [];
+
+        foreach ($args->get('ids') as $id) {
+            $tasks[] = (new QueueModel())->getById($id);
+        }
+
+        $queue = QueueMan::manager();
+        $queue->process(new Collection($tasks));
+        return true;
+    }
+
+    /**
+     *
      * Get all CLI command
      *
      */
@@ -197,10 +217,14 @@ class Queue
      */
     public function retryTask(mixed $obj, Collection $args, Context $context): bool
     {
-        $task = new Collection([(new QueueModel())->getById($args->get('id'))]);
+        $tasks = [];
+
+        foreach ($args->get('ids') as $id) {
+            $tasks[] = (new QueueModel())->getById($id);
+        }
 
         $queue = QueueMan::manager();
-        $queue->process($task);
+        $queue->process(new Collection($tasks));
         return true;
     }
 
@@ -215,7 +239,10 @@ class Queue
      */
     public function stopTask(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new QueueModel())->stopTask($args->get('pid'));
+        foreach ($args->get('pids') as $pid) {
+            (new QueueModel())->stopTask($pid);
+        }
+        return true;
     }
 
     /**
@@ -253,6 +280,24 @@ class Queue
      */
     public function cancelTask(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new QueueModel())->cancelTask($args->get('id'));
+        foreach ($args->get('ids') as $id) {
+            (new QueueModel())->cancelTask($id);
+        }
+        return true;
+    }
+
+    /**
+     * @throws \JsonException
+     */
+    public function resolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === 'settings') {
+            if (!$obj->{$info->fieldName}){
+                return "";
+            }
+            return json_encode($obj->{$info->fieldName}, JSON_THROW_ON_ERROR);
+        }
+
+        return $obj->{$info->fieldName};
     }
 }

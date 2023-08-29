@@ -174,12 +174,13 @@ type Mutation {
     # Queue
     createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!, timestamp: Int!, settings: String!): Boolean!
     updateTask(id: ID!, name: String!, action: String!, priority: Int!, retriable: Boolean!, timestamp: Int!, settings: String!): Boolean!
-    retryTask(id: ID!): Boolean!
+    retryTask(ids: [ID!]!): Boolean!
     changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
+    startTasks(ids: [ID!]!): Boolean!
     startAllTasks: Boolean!
-    stopTask(pid: Int!): Boolean!
+    stopTask(pids: [Int!]!): Boolean!
     stopAllTasks: Boolean!
-    cancelTask(id: ID!): Boolean!
+    cancelTask(ids: [ID!]!): Boolean!
 
     # Forms
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
@@ -760,6 +761,7 @@ type Task {
     action: String!
     priority: Int!
     logs: [String!]
+    settings: String!
     retriable: Boolean!
     retry_count: Int!
     scheduled_at: Int!
@@ -768,6 +770,7 @@ type Task {
     executed_at: Int!
     execution_result: String!
     execution_success: Boolean!
+    pid: String
 }
 
 #{CUSTOM_TYPES}#
