@@ -11,6 +11,7 @@ use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Contracts\Validator;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\CollectionException;
 use SailCMS\Errors\DatabaseException;
@@ -920,15 +921,17 @@ class Entry extends Model implements Validator, Castable
     {
         $parsedContent = Collection::init();
 
-        $content?->each(function ($i, $toParse) use (&$parsedContent)
+        $content?->each(function ($key, $toParse) use (&$parsedContent)
         {
-            if (is_array($toParse->content) || $toParse->content instanceof stdClass) {
+            if (is_string($toParse)) {
+                $parsed = $toParse;
+            } elseif (is_array($toParse) || $toParse->content instanceof stdClass) {
                 $parsed = new Collection((array)$toParse->content);
             } else {
                 $parsed = $toParse->content;
             }
 
-            $parsedContent->pushKeyValue($toParse->key, $parsed);
+            $parsedContent->pushKeyValue($key, $parsed);
         });
         return $parsedContent;
     }

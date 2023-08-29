@@ -539,6 +539,8 @@ final class GraphQL
         self::addResolver('Task', Queue::class, 'resolver');
 
         // Misc calls
+        self::addQueryResolver('availableTemplates', Misc::class, 'availableTemplates');
+
         // TODO: GET LOGS (from file or db)
 
         // Types and Resolvers

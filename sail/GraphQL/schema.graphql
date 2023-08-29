@@ -86,6 +86,9 @@ type Query {
     taskRunningTime(pid: ID!): Int!
     cliCommand: [String!]!
 
+    # Misc
+    availableTemplates: [Template!]!
+
     #{CUSTOM_QUERIES}#
 }
 
@@ -771,6 +774,11 @@ type Task {
     execution_result: String!
     execution_success: Boolean!
     pid: String
+}
+
+type Template {
+    name: String!
+    filename: String!
 }
 
 #{CUSTOM_TYPES}#
