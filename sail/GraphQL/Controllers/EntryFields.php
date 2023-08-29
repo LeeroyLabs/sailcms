@@ -97,6 +97,24 @@ class EntryFields
 
     /**
      *
+     * Get field configurations for given Matrix id
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function entryFieldsForMatrix(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return (new EntryField())->getFieldsForMatrix($args->get('id'));
+    }
+
+    /**
+     *
      * Create an entry field
      *
      * @param  mixed       $obj

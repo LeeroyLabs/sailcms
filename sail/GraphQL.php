@@ -446,6 +446,7 @@ final class GraphQL
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
         self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
+        self::addQueryResolver('entriesForListing', Entries::class, 'entriesForListing');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
@@ -467,6 +468,7 @@ final class GraphQL
         self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
         self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
         self::addQueryResolver('entryFieldValidateKey', EntryFields::class, 'entryFieldValidateKey');
+        self::addQueryResolver('entryFieldsForMatrix', EntryFields::class, 'entryFieldsForMatrix');
         self::addMutationResolver('createEntryField', EntryFields::class, 'createEntryField');
         self::addMutationResolver('updateEntryField', EntryFields::class, 'updateEntryField');
         self::addMutationResolver('deleteEntryField', EntryFields::class, 'deleteEntryField');
