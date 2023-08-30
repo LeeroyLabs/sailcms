@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -163,7 +164,8 @@ class EntryField extends Model implements Castable
         $this->hasPermissions();
 
         $toCreate = Collection::init();
-        $args->each(function ($key, $value) use (&$toCreate) {
+        $args->each(function ($key, $value) use (&$toCreate)
+        {
             if (in_array($key, self::availableProperties())) {
                 $toCreate->setFor($key, $value);
             }
@@ -221,19 +223,18 @@ class EntryField extends Model implements Castable
         $toUpdate = [];
 
 
-        $args->each(function ($key, $value) use (&$toUpdate) {
-            if (in_array($key, self::availableProperties())) {
+        $args->each(function ($key, $value) use (&$toUpdate)
+        {
+            if (in_array($key, self::availableProperties(), true)) {
                 $toUpdate[$key] = $value;
             }
         });
 
         if (count($toUpdate) > 0) {
-            $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
-                '$set' => $toUpdate
-            ]);
+            $this->updateOne(['_id' => $this->ensureObjectId($id)], ['$set' => $toUpdate]);
         }
 
-        return (bool)$result;
+        return true;
     }
 
     /**
@@ -294,9 +295,37 @@ class EntryField extends Model implements Castable
         if ($ids instanceof Collection) {
             $ids = $ids->unwrap();
         }
-        $ids = $this->ensureObjectIds($ids, true);
 
+        $ids = $this->ensureObjectIds($ids, true);
         return $this->deleteMany(['_id' => ['$in' => $ids]]);
+    }
+
+    /**
+     *
+     * Get field configurations for given matrix
+     *
+     * @param  string|ObjectId  $id
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    public function getFieldsForMatrix(string|ObjectId $id): Collection
+    {
+        $this->hasPermissions(true);
+        $matrix = $this->findById($id)->exec();
+
+        if (!$matrix) {
+            return Collection::init();
+        }
+
+        $list = [];
+        foreach ($matrix->config->fields as $fieldKey) {
+            $list[] = $this->findOne(['key' => $fieldKey])->exec();
+        }
+
+        return new Collection($list);
     }
 
     /**

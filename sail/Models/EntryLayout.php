@@ -201,8 +201,8 @@ class EntryLayout extends Model implements Castable
         if (isset($filters['_id'])) {
             if (!$cache) {
                 $entryLayout = $this->findById($filters['_id'])->exec();
-                $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
-                EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+                $fieldIds = self::getEntryFieldIds(new Collection([$entryLayout]));
+                self::fetchFields($fieldIds, new Collection([$entryLayout]));
                 return $entryLayout;
             }
 
@@ -218,8 +218,8 @@ class EntryLayout extends Model implements Castable
             return null;
         }
 
-        $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
-        EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+        $fieldIds = self::getEntryFieldIds(new Collection([$entryLayout]));
+        self::fetchFields($fieldIds, new Collection([$entryLayout]));
 
         return $entryLayout;
     }
@@ -232,7 +232,7 @@ class EntryLayout extends Model implements Castable
      * @return int
      *
      */
-    public static function countUsedEntryField(string $entryFieldId)
+    public static function countUsedEntryField(string $entryFieldId): int
     {
         return (new static())->count(['schema.fields' => ['$in' => [$entryFieldId]]]);
     }
@@ -367,7 +367,7 @@ class EntryLayout extends Model implements Castable
         }
 
         // All ids must be ObjectId
-        $ids = self::ensureObjectIds($ids, true);
+        $ids = $this->ensureObjectIds($ids, true);
 
         if ($soft) {
             return $this->softDeleteMany($ids);
@@ -391,7 +391,7 @@ class EntryLayout extends Model implements Castable
     {
         $this->hasPermissions();
 
-        $ids = self::ensureObjectIds($ids, true);
+        $ids = $this->ensureObjectIds($ids, true);
 
         try {
             $count = $this->updateMany(['_id' => ['$in' => $ids]], [

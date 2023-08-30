@@ -452,6 +452,7 @@ final class GraphQL
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
         self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
+        self::addQueryResolver('entriesForListing', Entries::class, 'entriesForListing');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
@@ -473,6 +474,7 @@ final class GraphQL
         self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
         self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
         self::addQueryResolver('entryFieldValidateKey', EntryFields::class, 'entryFieldValidateKey');
+        self::addQueryResolver('entryFieldsForMatrix', EntryFields::class, 'entryFieldsForMatrix');
         self::addMutationResolver('createEntryField', EntryFields::class, 'createEntryField');
         self::addMutationResolver('updateEntryField', EntryFields::class, 'updateEntryField');
         self::addMutationResolver('deleteEntryField', EntryFields::class, 'deleteEntryField');
@@ -540,6 +542,7 @@ final class GraphQL
         self::addMutationResolver('retryTask', Queue::class, 'retryTask');
         self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
         self::addMutationResolver('startTasks', Queue::class, 'startTasks');
+        self::addResolver('Task', Queue::class, 'resolver');
 
         // Redirection
         self::addQueryResolver('getRedirection', Redirection::class, 'getRedirection');
@@ -549,6 +552,8 @@ final class GraphQL
         self::addMutationResolver('deleteRedirection', Redirection::class, 'deleteRedirection');
 
         // Misc calls
+        self::addQueryResolver('availableTemplates', Misc::class, 'availableTemplates');
+
         // TODO: GET LOGS (from file or db)
 
         // Types and Resolvers

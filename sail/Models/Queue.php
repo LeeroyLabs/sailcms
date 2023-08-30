@@ -77,6 +77,12 @@ class Queue extends Model
         ]);
     }
 
+    /**
+     *
+     * Update task
+     *
+     * @throws DatabaseException
+     */
     public static function update(string|ObjectId $id, Task $task): void
     {
         $stamp = $task->timestamp;
@@ -88,13 +94,15 @@ class Queue extends Model
         $id = self::query()->ensureObjectId($id);
 
         self::query()->updateOne(['_id' => $id], [
-            'name' => $task->name,
-            'handler' => $task->handler,
-            'action' => $task->action,
-            'settings' => $task->settings,
-            'priority' => $task->priority,
-            'retriable' => $task->retriable,
-            'scheduled_at' => $stamp,
+            '$set' => [
+                'name' => $task->name,
+                'handler' => $task->handler,
+                'action' => $task->action,
+                'settings' => $task->settings,
+                'priority' => $task->priority,
+                'retriable' => $task->retriable,
+                'scheduled_at' => $stamp
+            ]
         ]);
     }
 

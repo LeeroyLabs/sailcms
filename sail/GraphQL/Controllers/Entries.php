@@ -93,7 +93,8 @@ class Entries
 
         // Clean data before returning it.
         $data = Collection::init();
-        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data) {
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data)
+        {
             /**
              * @var Entry $entry
              */
@@ -131,8 +132,11 @@ class Entries
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
         $entry = $entryModel->one(['_id' => $id]);
 
-        $homepage = Entry::getHomepage($siteId, $entry->locale);
+        if (!$entry) {
+            return null;
+        }
 
+        $homepage = Entry::getHomepage($siteId, $entry->locale);
         return $this->parseEntry($entry->simplify($homepage));
     }
 
@@ -165,7 +169,27 @@ class Entries
             $homepage = Entry::getHomepage($siteId, $entry->locale);
             return $this->parseEntry($entry->simplify($homepage));
         }
+
         return null;
+    }
+
+    /**
+     *
+     * Get list of entries for given locale and type
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function entriesForListing(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return Entry::entriesForListing($args->get('locale'), $args->get('type'), $args->get('search', ''));
     }
 
     /**
@@ -383,6 +407,10 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
+        if (!$entryModel) {
+            return false;
+        }
+
         return $entryModel->delete($id, $soft);
     }
 
@@ -519,6 +547,11 @@ class Entries
             }
 
             $parent = $entry->getParent();
+
+            if (!$parent) {
+                return null;
+            }
+
             $parentHomepage = Entry::getHomepage($parent->site_id, $parent->locale);
             return $parent->simplify($parentHomepage);
         }
