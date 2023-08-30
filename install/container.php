@@ -9,6 +9,11 @@ use SailCMS\Contracts\AppContainer;
 
 class Container extends AppContainer
 {
+    public function init(): void
+    {
+        // Your init code
+    }
+
     public function info(): ContainerInformation
     {
         return new ContainerInformation(
