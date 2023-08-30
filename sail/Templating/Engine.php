@@ -2,7 +2,9 @@
 
 namespace SailCMS\Templating;
 
+use SailCMS\Contracts\Renderer;
 use SailCMS\Debug;
+use SailCMS\Errors\EngineException;
 use SailCMS\Sail;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -23,6 +25,7 @@ class Engine
     private static array $functions = [];
     private static array $extensions = [];
     private static FilesystemLoader $loader;
+    private static array $renderers = [];
 
     public function __construct()
     {
@@ -78,11 +81,14 @@ class Engine
      *
      * @param  string  $file
      * @param  object  $data
+     * @param  string  $renderer
      * @return string
-     * @throws LoaderError|RuntimeError|SyntaxError
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
      *
      */
-    public function render(string $file, object $data): string
+    public function render(string $file, object $data, string $renderer = 'twig'): string
     {
         $st = microtime(true);
 
@@ -157,6 +163,56 @@ class Engine
             'filters' => self::$filters,
             'functions' => self::$functions
         ];
+    }
+
+    /**
+     *
+     * Add a custom renderer to the engine
+     *
+     * @param  string  $renderer
+     * @return void
+     * @throws EngineException
+     *
+     */
+    public static function addRenderer(string $renderer): void
+    {
+        $instance = new $renderer();
+
+        if (!is_a($instance, Renderer::class)) {
+            throw new EngineException('Class ' . $renderer . ' does implement the Renderer contract.', 0400);
+        }
+
+        self::$renderers[$instance->identifier()] = $instance;
+    }
+
+    /**
+     *
+     * Check if renderer exists and is loaded
+     *
+     * @param  string  $name
+     * @return bool
+     *
+     */
+    public static function rendererCheck(string $name): bool
+    {
+        return (!empty(self::$renderers[$name]));
+    }
+
+    /**
+     *
+     * Return the renderer class for use
+     *
+     * @param  string  $name
+     * @return Renderer|null
+     *
+     */
+    public static function getRenderer(string $name): ?Renderer
+    {
+        if ($name === 'twig') {
+            return null;
+        }
+
+        return self::$renderers[$name];
     }
 
     // -------------------------------------------------- Private -------------------------------------------------- //
