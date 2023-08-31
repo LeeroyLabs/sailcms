@@ -11,6 +11,7 @@ use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
@@ -285,7 +286,7 @@ class Asset extends Model
 
         // Create entry
         $id = $this->insert([
-            'filename' => $mwResult->data['filename'],
+            'filename' => $path . $timePath . $mwResult->data['filename'],
             'name' => $the_name,
             'title' => $titles,
             'url' => $fs->publicUrl($basePath . $timePath . $filename),
@@ -306,6 +307,7 @@ class Asset extends Model
 
             foreach ($transforms->unwrap() as $name => $transform) {
                 $transform = new Collection($transform);
+                $image->filename = $path . $timePath . $mwResult->data['filename'];
                 $image->transform($name, $transform->get('width', null), $transform->get('height', null), $transform->get('crop', ''));
             }
         }
@@ -407,7 +409,7 @@ class Asset extends Model
 
     /**
      *
-     * Transform an asset using it's id and settings
+     * Transform an asset using its id and settings
      *
      * @param  string|ObjectId  $id
      * @param  string           $name

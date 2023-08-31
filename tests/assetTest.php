@@ -1,5 +1,6 @@
 <?php
 
+use League\Flysystem\FilesystemException;
 use SailCMS\Models\Asset;
 use SailCMS\Sail;
 
@@ -19,7 +20,7 @@ test('Upload a jpg image and optimize to webp', function ()
     try {
         $result = $asset->upload($data, 'unit_test.jpg');
         expect($result)->not->toBeEmpty();
-    } catch (Exception $e) {
+    } catch (Exception|FilesystemException $e) {
         expect($result)->not->toBeEmpty();
     }
 })->group('assets');
