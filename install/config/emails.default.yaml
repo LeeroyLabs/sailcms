@@ -19,3 +19,25 @@ new_account:
     label:
       fr: Titre Bouton
       en: Button Title
+
+monitoring:
+  - type: text
+    key: title
+    label:
+      fr: Titre
+      en: Title
+  - type: text
+    key: subtitle
+    label:
+      fr: Sous-titre
+      en: Subtitle
+  - type: content
+    key: content
+    label:
+      fr: Contenu
+      en: Content
+  - type: cta_title
+    key: cta_title
+    label:
+      fr: Titre Bouton
+      en: Button Title

@@ -8,6 +8,10 @@ return [
     'adminTrigger' => 'admin',
     'timezone' => 'America/New_York',
     'useBasicAuthentication' => false,
+    'monitoring' => [
+        'problematic_sample_count_notify' => 5,
+        'warning_email_address' => 'you@email.com'
+    ],
     'cache' => [
         'use' => (bool)env('cache_use', 'false'),
         'host' => env('cache_host', 'localhost'),
