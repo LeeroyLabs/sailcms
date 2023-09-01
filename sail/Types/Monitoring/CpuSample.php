@@ -7,7 +7,7 @@ use stdClass;
 
 readonly class CpuSample implements Castable
 {
-    public function __construct(public float $percent, public int $cores)
+    public function __construct(public float $percent = 0, public int $cores = 0)
     {
     }
 

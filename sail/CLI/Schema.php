@@ -60,7 +60,7 @@ class Schema extends Command
             $localeString .= "{$locale}: String\n";
         }
 
-        if ($hidecms !== null) {
+        if ($hidecms === null || $hidecms === 'no') {
             $schemaContent = file_get_contents(dirname(__DIR__) . '/GraphQL/schema.graphql');
             $schemaContent = str_replace(
                 [
@@ -102,6 +102,7 @@ class Schema extends Command
         }
 
         // Parse schema
+        echo $schemaContent;
         $document = Parser::parse($schemaContent);
 
         // Save AST format
@@ -113,7 +114,7 @@ class Schema extends Command
 
     protected function configure(): void
     {
-        $this->addOption('hidecms', null, InputOption::VALUE_OPTIONAL, 'HideCMS in AST', false);
+        $this->addOption('hidecms', null, InputOption::VALUE_OPTIONAL, 'HideCMS in AST', 'no');
         $this->setHelp("Build an optimized AST version of the GraphQL Schema for production");
     }
 }

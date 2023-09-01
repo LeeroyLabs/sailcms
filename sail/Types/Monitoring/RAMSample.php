@@ -7,7 +7,7 @@ use stdClass;
 
 readonly class RAMSample implements Castable
 {
-    public function __construct(public int $total, public int $available, public int $used, public float $percent)
+    public function __construct(public int $total = 0, public int $available = 0, public int $used = 0, public float $percent = 0)
     {
     }
     

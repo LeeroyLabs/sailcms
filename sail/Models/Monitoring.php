@@ -24,6 +24,7 @@ use Twig\Error\LoaderError;
  * @property PHPVersionInformation $php
  * @property bool                  $warning
  * @property int                   $timestamp
+ * @property bool                  $php_tested
  *
  */
 class Monitoring extends Model
@@ -52,6 +53,11 @@ class Monitoring extends Model
         return new Collection(
             self::query()->find(['timestamp' => ['$gte' => $start, '$lte' => $end]])->sort(['timestamp' => 1])->exec()
         );
+    }
+
+    public static function getLatestPHPReport(): ?PHPVersionInformation
+    {
+        // TODO: FETCH LATEST SAMPLE WITH PHP
     }
 
     /**

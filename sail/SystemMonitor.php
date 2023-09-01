@@ -14,12 +14,14 @@ class SystemMonitor
      *
      * Take a sample of system resources for monitoring
      *
+     * @param  bool  $testPHP
      * @throws DatabaseException
      * @throws \JsonException
      *
      */
-    public static function sample(): void
+    public static function sample(bool $testPHP = false): void
     {
+        // Let's use our python script to fetch everything using psutil
         exec('python3 ' . dirname(__DIR__) . '/scripts/system.py', $result);
 
         $ram = [
@@ -50,7 +52,11 @@ class SystemMonitor
             'uptime' => $diff
         ];
 
-        $php = self::checkPHPVersion();
+        $php = null;
+
+        if ($testPHP) {
+            $php = self::checkPHPVersion();
+        }
         $sample = new Monitoring();
         $warning = false;
 
@@ -66,6 +72,7 @@ class SystemMonitor
         $sample->php = $php;
         $sample->warning = $warning;
         $sample->timestamp = Carbon::now('America/New_York')->getTimestamp();
+        $sample->php_tested = $testPHP;
         $sample->save();
 
         // Notification system will check if the last X records have warnings

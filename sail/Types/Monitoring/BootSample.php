@@ -7,7 +7,7 @@ use stdClass;
 
 readonly class BootSample implements Castable
 {
-    public function __construct(public int $boot_time = 0, public int $uptime = 0)
+    public function __construct(public int $boot_time = 0, public string $uptime = '')
     {
     }
 

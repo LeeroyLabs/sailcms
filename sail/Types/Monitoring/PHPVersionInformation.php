@@ -8,7 +8,15 @@ use Stringable;
 
 readonly class PHPVersionInformation implements Stringable, Castable
 {
-    public function __construct(public string $installed, public string $current, public bool $latest, public bool $secure, public bool $supported) { }
+    public function __construct(
+        public string $installed = '',
+        public string $current = '',
+        public bool $latest = false,
+        public bool $secure = false,
+        public bool $supported = false
+    )
+    {
+    }
 
     /**
      * @throws \JsonException
