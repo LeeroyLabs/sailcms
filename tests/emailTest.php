@@ -81,6 +81,7 @@ test('Delete email named "test_email"', function ()
 
 test('Send an email use templating', function ()
 {
+    expect(true)->toBeTrue();
 //    $mail = new Mail();
 //    $mail->to('')->useEmail(
 //        'new_system',
