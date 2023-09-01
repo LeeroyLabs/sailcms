@@ -133,7 +133,7 @@ class Attributes
         $output = [];
 
         if (file_exists($path . '/' . $container)) {
-            $controllers = glob($path . '/' . $container . '/controllers/*.php');
+            $controllers = glob($path . '/' . $container . '/Controllers/*.php');
 
             foreach ($controllers as $controller) {
                 $output[] = str_replace('.php', '', $container . '\\Controllers\\' . basename($controller));
