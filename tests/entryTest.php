@@ -1,6 +1,7 @@
 <?php
 
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\EntryException;
 use SailCMS\Models\Entry;
 use SailCMS\Models\EntryField;
@@ -69,8 +70,8 @@ test('Create an entry layout', function () {
     $testField = EntryField::getByKey('test');
 
     $schema = new Collection();
-    $schema->push(new EntryLayoutTab('Test', [(string)$testField->_id]));
-    $schema->push(new EntryLayoutTab('Test 2', [(string)$testField->_id, (string)EntryField::getByKey('test_2')->_id]));
+    $schema->push(new EntryLayoutTab('Test', [['id' => (string)$testField->_id, 'width' => 'full']]));
+    $schema->push(new EntryLayoutTab('Test 2', [['id' => (string)$testField->_id, 'width' => 'half'], ['id' => (string)EntryField::getByKey('test_2')->_id, 'width' => 'half']]));
 
     try {
         $entryLayout = $model->create('Layout Test', $schema);
@@ -83,7 +84,7 @@ test('Create an entry layout', function () {
 test('Fail to create an entry layout', function () {
     $model = new EntryLayout();
     $schema = new Collection();
-    $schema->push(new EntryLayoutTab('Test', ['bugs!']));
+    $schema->push(new EntryLayoutTab('Test', [['id' => 'bugs!', 'width' => 'sds']]));
 
     try {
         $model->create('Error', $schema);
@@ -243,7 +244,6 @@ test('Create an entry with an entry type', function () {
         expect($entry->locale)->toBe('fr');
         expect($entry->url)->toBe('pages-de-test/test');
     } catch (Exception $exception) {
-        \SailCMS\Debug::ray($exception);
         expect(true)->toBe(false);
     }
 })->group('entry');
@@ -571,8 +571,8 @@ test('Update an entry layout', function () {
     $entryLayout = $model->bySlug('layout-test');
 
     $schema = Collection::init();
-    $schema->push(new EntryLayoutTab('Test', [(string)EntryField::getByKey('test')->_id]));
-    $schema->push(new EntryLayoutTab('Test 2', [(string)EntryField::getByKey('test_2')->_id]));
+    $schema->push(new EntryLayoutTab('Test', [['id' => (string)EntryField::getByKey('test')->_id, 'width' => 'full']]));
+    $schema->push(new EntryLayoutTab('Test 2', [['id' => (string)EntryField::getByKey('test_2')->_id, 'width' => 'full']]));
 
     try {
         $entryLayout->updateById($entryLayout->_id, 'Layout to delete', $schema, null);

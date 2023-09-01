@@ -46,7 +46,6 @@ test('Delete a view for entry and entry publication', function () {
         $result = $model->deleteTestView();
         expect($result)->toBeTrue();
     } catch (Exception $e) {
-        \SailCMS\Debug::ray($e);
         expect(false)->toBeTrue();
     }
 })->group('model-view');
