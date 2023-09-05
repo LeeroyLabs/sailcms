@@ -89,4 +89,16 @@ class Basics
         (new GlobalSeo())->generateRobot($args->get('template'));
         return true;
     }
+
+    /**
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws SodiumException
+     * @throws JsonException
+     */
+    public function generateSitemap(mixed $obj, Collection $args, Context $context): ?bool
+    {
+        (new GlobalSeo())->GenerateSitemap($args->get('template'));
+        return true;
+    }
 }

@@ -200,7 +200,7 @@ type Mutation {
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
 
     # Global SEO
-    generateSitemap: Boolean!
+    generateSitemap(template: String!): Boolean!
     generateRobot(template: String!): Boolean!
     setSeoDefaultConfig(config: SeoDefaultConfigInput): Boolean!
     setSeoSettings(settings: SeoSettingsInput): Boolean!
