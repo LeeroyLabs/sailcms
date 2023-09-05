@@ -32,6 +32,7 @@ class Redirection extends Model
      * @param string $redirect_type
      * @return bool
      * @throws DatabaseException
+     *
      */
     public static function add(string $url, string $redirect_url, string $redirect_type): bool
     {
@@ -44,7 +45,7 @@ class Redirection extends Model
                     'hit_count' => 0,
                     'last_attempt' => 0
                 ]);
-            }catch (DateException $exception) {
+            }catch (DateException $exception){
                 return false;
             }
 
@@ -64,6 +65,7 @@ class Redirection extends Model
      * @param string $redirect_type
      * @return bool
      * @throws DatabaseException
+     *
      */
     public function update(string $id, string $url, string $redirect_url, string $redirect_type): bool
     {
@@ -77,7 +79,7 @@ class Redirection extends Model
             $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
                 '$set' => $info
             ]);
-        }catch (DateException $exception) {
+        }catch (DateException $exception){
             return false;
         }
 
@@ -91,6 +93,7 @@ class Redirection extends Model
      * @param string $id
      * @return bool
      * @throws DatabaseException
+     *
      */
     public function updateHitCount(string $id): bool
     {
@@ -103,7 +106,7 @@ class Redirection extends Model
             $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
                 '$set' => $info
             ]);
-        }catch (DateException $exception) {
+        }catch (DateException $exception){
             return false;
         }
 
@@ -145,6 +148,7 @@ class Redirection extends Model
      * @param string $id
      * @return int
      * @throws DatabaseException
+     *
      */
     public function getHitCount(string $id):int
     {
@@ -162,6 +166,7 @@ class Redirection extends Model
      * @param int $direction
      * @return Listing
      * @throws DatabaseException
+     *
      */
     public function getList(
         int $page = 0,
@@ -201,6 +206,7 @@ class Redirection extends Model
      * @param string $id
      * @return bool
      * @throws DatabaseException
+     *
      */
     public function delete(string $id): bool
     {
