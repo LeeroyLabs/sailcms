@@ -99,6 +99,9 @@ type Query {
 
     # Misc
     availableTemplates: [Template!]!
+    dumpDatabase(databaseName: String, download: Boolean): Boolean!
+    getSailLogs(page: Int!, limit: Int!, date_search: Int): LogListing!
+    getPHPLogs: String!
 
     #{CUSTOM_QUERIES}#
 }
@@ -249,6 +252,17 @@ input SeoSettingsInput {
 enum SitenamePosition {
     BEFORE
     AFTER
+}
+
+type LogListing {
+    pagination: Pagination!
+    list: [Log!]!
+}
+
+type Log {
+    _id: String
+    message: String!
+    date: Int!
 }
 
 input FormDataInput {

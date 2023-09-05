@@ -52,8 +52,8 @@ test('Create a navigation called "sidebar" with 100% array', function () {
         ]
     ];
 
-    $navigation->create('sidebar', $structure, 'en');
-    $nav = Navigation::getByName('sidebar');
+    $navigation->create('sidebar', 'sidebar', $structure, 'en');
+    $nav = Navigation::getBySlug('sidebar');
 
     expect($nav)->not->toBe(null)->and(count($nav->structure->get()))->toBe(3);
 })->group('navigation');
@@ -92,22 +92,22 @@ test('Create a navigation called "sidebar2" with some elements already Navigatio
         ]
     ];
 
-    $navigation->create('sidebar2', $structure, 'en');
-    $nav = Navigation::getByName('sidebar2');
+    $navigation->create('sidebar2', 'sidebar2', $structure, 'en');
+    $nav = Navigation::getBySlug('sidebar2');
     expect($nav)->not->toBe(null)->and(count($nav->structure->get()))->toBe(3);
 })->group('navigation');
 
 test('Fetch navigation called "sidebar"', function () {
-    $nav = Navigation::getByName('sidebar');
+    $nav = Navigation::getBySlug('sidebar');
     expect($nav)->not->toBeNull()->and($nav->structure->get())->toBeArray()->and(count($nav->structure->get()))->toBe(3);
 })->group('navigation');
 
 test('Update navigation called "sidebar"', function () {
-    $nav = Navigation::getByName('sidebar');
+    $nav = Navigation::getBySlug('sidebar');
 
     $navigation = new Navigation();
-    $navigation->update($nav->id, 'sidebar', $nav->structure->get(), 'fr');
-    $nav = Navigation::getByName('sidebar');
+    $navigation->update($nav->id, 'sidebar', $nav->slug, $nav->structure->get(), 'fr');
+    $nav = Navigation::getBySlug('sidebar');
 
     expect($nav)->not->toBeNull()->and($nav->locale)->toBe('fr');
 })->group('navigation');
@@ -115,7 +115,7 @@ test('Update navigation called "sidebar"', function () {
 test('Get all navigations', function () {
     $navigations = Navigation::getList('title', -1);
     expect(count($navigations))->toBe(2)
-        ->and($navigations[0]->name)->toBe('sidebar2');
+        ->and($navigations[0]->slug)->toBe('sidebar2');
 
     $navigations = Navigation::getList('title', 1, 'fr');
     expect(count($navigations))->toBe(1);
@@ -126,7 +126,7 @@ test('Delete navigation by name', function () {
     $navigation->deleteByName('sidebar');
     $navigation->deleteByName('sidebar2');
 
-    $nav = Navigation::getByName('sidebar');
+    $nav = Navigation::getBySlug('sidebar');
 
     expect($nav)->toBeNull();
 })->group('navigation');

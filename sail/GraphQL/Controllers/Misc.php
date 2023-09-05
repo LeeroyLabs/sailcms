@@ -3,12 +3,15 @@
 namespace SailCMS\GraphQL\Controllers;
 
 use SailCMS\Collection;
+use SailCMS\Database\Database;
 use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\GraphQL\Context;
+use SailCMS\Models\Log;
 use SailCMS\Models\Role;
 use SailCMS\Models\User;
 use SailCMS\Sail;
+use SailCMS\Types\Listing;
 use SailCMS\UI;
 
 class Misc
@@ -105,5 +108,55 @@ class Misc
         }
 
         return new Collection($list);
+    }
+
+    /**
+     *
+     * Dump database
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     */
+    public function dumpDatabase(mixed $obj, Collection $args, Context $context): bool
+    {
+        $dbName = getenv('DATABASE_DB');
+        if ($args->get('databaseName')) {
+            $dbName = $args->get('databaseName');
+        }
+        return (new Database())->databaseDump($dbName);
+    }
+
+    /**
+     *
+     * Get sail logs
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return Listing
+     */
+    public function getSailLogs(mixed $obj, Collection $args, Context $context): Listing
+    {
+        return (new Log())->getList(
+            $args->get('page'),
+            $args->get('limit'),
+            $args->get('date_search', 0),
+        );
+    }
+
+    /**
+     *
+     * Get php logs
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return string
+     */
+    public function getPHPLogs(mixed $obj, Collection $args, Context $context): string
+    {
+        return (new Log())->phpLogs();
     }
 }

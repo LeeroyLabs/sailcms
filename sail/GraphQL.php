@@ -553,6 +553,9 @@ final class GraphQL
 
         // Misc calls
         self::addQueryResolver('availableTemplates', Misc::class, 'availableTemplates');
+        self::addQueryResolver('dumpDatabase', Misc::class, 'dumpDatabase');
+        self::addQueryResolver('getSailLogs', Misc::class, 'getSailLogs');
+        self::addQueryResolver('getPHPLogs', Misc::class, 'getPHPLogs');
 
         // TODO: GET LOGS (from file or db)
 
