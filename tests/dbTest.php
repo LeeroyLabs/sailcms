@@ -1,6 +1,7 @@
 <?php
 
 use MongoDB\BSON\ObjectId;
+use SailCMS\Database\Database;
 use SailCMS\Database\Model;
 use SailCMS\Models\Config;
 use SailCMS\Sail;
@@ -188,4 +189,10 @@ test('ActiveRecord: delete record', function ()
 
     $test = $dbtest->getByText('Hell0 W0rld!');
     expect($test)->toBeNull();
+})->group('db');
+
+test('Dump database', function ()
+{
+    $dumpReturn = (new Database())->databaseDump('sailcms');
+    expect($dumpReturn)->toBeTrue();
 })->group('db');

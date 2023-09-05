@@ -3,9 +3,11 @@
 namespace SailCMS\Database;
 
 use MongoDB\Driver\ServerApi;
+use MongoDB\Operation\DatabaseCommand;
 use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use MongoDB\Client;
+use ZipArchive;
 
 class Database
 {
@@ -61,5 +63,26 @@ class Database
         }
 
         return self::$clients[$dbIndex];
+    }
+
+    /**
+     *
+     * Dump the db
+     *
+     * @param string $databaseName
+     * @param bool $download
+     * @return string
+     */
+    public function databaseDump(string $databaseName, bool $download = false): string
+    {
+        putenv('PATH=/usr/local/bin');
+        shell_exec('mongodump --db=' . $databaseName);
+        $directoryName = $databaseName . '_' . date('c');
+
+        rename("./dump/" . $databaseName, "./dump/" . $directoryName);
+        shell_exec('zip -r ./dump/'. $directoryName .'.zip ./dump/');
+        shell_exec('rm -rf ./dump/'. $directoryName);
+
+        return true;
     }
 }

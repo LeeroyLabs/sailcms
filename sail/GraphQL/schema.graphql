@@ -88,6 +88,9 @@ type Query {
 
     # Misc
     availableTemplates: [Template!]!
+    dumpDatabase(databaseName: String, download: Boolean): Boolean!
+    getSailLogs(page: Int!, limit: Int!, date_search: Int): LogListing!
+    getPHPLogs: String!
 
     #{CUSTOM_QUERIES}#
 }
@@ -189,6 +192,17 @@ type Mutation {
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
 
     #{CUSTOM_MUTATIONS}#
+}
+
+type LogListing {
+    pagination: Pagination!
+    list: [Log!]!
+}
+
+type Log {
+    _id: String
+    message: String!
+    date: Int!
 }
 
 input FormDataInput {
