@@ -18,7 +18,12 @@ class Post extends Input
             $input = file_get_contents('php://input');
 
             if (!empty($input)) {
-                $this->pairs = json_decode($input, true, 512, JSON_THROW_ON_ERROR);
+                try {
+                    $this->pairs = json_decode($input, true, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException $e) {
+                    // Did not receive JSON data
+                    $this->pairs = ['data' => $input];
+                }
             }
 
             return;

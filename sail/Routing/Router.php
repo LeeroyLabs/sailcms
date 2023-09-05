@@ -333,6 +333,7 @@ class Router
         }else{
             (new BrokenLink())->update($uri);
         }
+        $response->set('url', $uri);
         $response->render();
         exit();
     }
