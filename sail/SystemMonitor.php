@@ -73,6 +73,7 @@ class SystemMonitor
         $sample->warning = $warning;
         $sample->timestamp = Carbon::now('America/New_York')->getTimestamp();
         $sample->php_tested = $testPHP;
+        $sample->identifier = gethostname();
         $sample->save();
 
         // Notification system will check if the last X records have warnings

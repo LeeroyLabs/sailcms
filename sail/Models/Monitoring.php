@@ -2,12 +2,16 @@
 
 namespace SailCMS\Models;
 
+use SailCMS\CLI\Monitor;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EmailException;
 use SailCMS\Errors\FileException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Mail;
+use SailCMS\SystemMonitor;
 use SailCMS\Types\Monitoring\BootSample;
 use SailCMS\Types\Monitoring\CpuSample;
 use SailCMS\Types\Monitoring\DiskSample;
@@ -25,6 +29,7 @@ use Twig\Error\LoaderError;
  * @property bool                  $warning
  * @property int                   $timestamp
  * @property bool                  $php_tested
+ * @property string                $identifier
  *
  */
 class Monitoring extends Model
@@ -45,19 +50,39 @@ class Monitoring extends Model
      * @param  int  $start
      * @param  int  $end
      * @return Collection
+     * @throws ACLException
      * @throws DatabaseException
+     * @throws PermissionException
      *
      */
     public static function getSampleBySize(int $start, int $end): Collection
     {
+        $instance = new self();
+        $instance->hasPermissions(true);
+
         return new Collection(
             self::query()->find(['timestamp' => ['$gte' => $start, '$lte' => $end]])->sort(['timestamp' => 1])->exec()
         );
     }
 
-    public static function getLatestPHPReport(): ?PHPVersionInformation
+    /**
+     *
+     * Get a live sample
+     *
+     * @return array|Monitoring
+     * @throws DatabaseException
+     * @throws \JsonException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public static function getLiveSample(): array|Monitoring
     {
-        // TODO: FETCH LATEST SAMPLE WITH PHP
+        $instance = new self();
+        $instance->hasPermissions(true);
+
+        SystemMonitor::sample(true);
+        return self::query()->findOne([])->sort(['timestamp' => -1])->exec();
     }
 
     /**

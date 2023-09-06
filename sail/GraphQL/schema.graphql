@@ -88,6 +88,8 @@ type Query {
 
     # Misc
     availableTemplates: [Template!]!
+    monitoringSample: MonitoringSample!
+    getRangeSample(start: Int!, end: Int!): [MonitoringSample!]!
 
     #{CUSTOM_QUERIES}#
 }
@@ -779,6 +781,49 @@ type Task {
 type Template {
     name: String!
     filename: String!
+}
+
+type MonitoringSample {
+    warning: Boolean!
+    timestamp: Int!
+    php_tested: Boolean!
+    ram: RAMSample!
+    disk: DiskSample!
+    cpu: CpuSample!
+    php: PHPVersion!
+    boot: BootSample!
+}
+
+type RAMSample {
+    total: Int!
+    available: Int!
+    used: Int!
+    percent: Float!
+}
+
+type DiskSample {
+    total: Int!
+    available: Int!
+    used: Int!
+    percent: Float!
+}
+
+type CpuSample {
+    cores: Int!
+    percent: Float!
+}
+
+type BootSample {
+    boot_time: Int!
+    uptime: String!
+}
+
+type PHPVersion {
+    installed: String!
+    current: String!
+    latest: Boolean!
+    secure: Boolean!
+    supported: Boolean!
 }
 
 #{CUSTOM_TYPES}#
