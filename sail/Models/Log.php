@@ -51,8 +51,6 @@ class Log extends Model
     public function getList(int $page = 1, int $limit = 25, int|null $date_search = null): Listing
     {
         $offset = $page * $limit - $limit;
-        $options = QueryOptions::initWithPagination($offset, $limit);
-
         $query = [];
 
         if ($date_search && $date_search > 10000) {
@@ -66,7 +64,7 @@ class Log extends Model
         $pages = ceil($total / $limit);
         $pagination = new Pagination($page, $pages, $total);
 
-        $list = $this->find($query, $options)->exec();
+        $list = $this->find($query, $options)->sort(['date' => -1])->skip($offset)->limit($limit)->exec();
 
         return new Listing($pagination, new Collection($list));
     }
