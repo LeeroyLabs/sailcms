@@ -57,7 +57,7 @@ class Log extends Model
 
         if ($date_search && $date_search > 10000) {
             $date = Carbon::createFromTimestamp($date_search);
-            $first_hour = strtotime("{$date->year}-{$date->month}-{$date->day} 0:0:0");
+            $first_hour = strtotime("{$date->year}-{$date->month}-{$date->day} 00:00:00");
             $last_hour = strtotime("{$date->year}-{$date->month}-{$date->day} 23:59:59");
             $query['date'] = ['$gte' => $first_hour, '$lte' => $last_hour];
         }
