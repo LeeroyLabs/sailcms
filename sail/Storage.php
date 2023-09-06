@@ -58,13 +58,19 @@ class Storage
      *
      * @param  string  $filename
      * @param  mixed   $data
+     * @param  string  $permissions
      * @return self
      * @throws StorageException
      *
      */
-    public function store(string $filename, mixed $data): self
+    public function store(string $filename, mixed $data, string $permissions = ''): self
     {
         $permission = ['visibility' => $this->permission];
+
+        if ($permissions !== '') {
+            $permission = ['visibility' => $permissions];
+        }
+
         $path = $this->buildFileString($filename);
         $this->filename = $filename;
 
