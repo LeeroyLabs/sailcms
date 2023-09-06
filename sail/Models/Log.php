@@ -41,29 +41,21 @@ class Log extends Model
      *
      * Get list of loans
      *
-     * @param int $page
-     * @param int $limit
-     * @param int|null $date_search
+     * @param  int       $page
+     * @param  int       $limit
+     * @param  int|null  $date_search
      * @return Listing
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
+     *
      */
-    public function getList(
-        int $page = 1,
-        int $limit = 25,
-        int|null $date_search = null,
-    ): Listing {
-        $this->hasPermissions();
-
+    public function getList(int $page = 1, int $limit = 25, int|null $date_search = null): Listing
+    {
         $offset = $page * $limit - $limit;
-        $options = QueryOptions::initWithPagination($offset, $limit);
-
         $query = [];
 
         if ($date_search && $date_search > 10000) {
             $date = Carbon::createFromTimestamp($date_search);
-            $first_hour = strtotime("{$date->year}-{$date->month}-{$date->day} 0:0:0");
+            $first_hour = strtotime("{$date->year}-{$date->month}-{$date->day} 00:00:00");
             $last_hour = strtotime("{$date->year}-{$date->month}-{$date->day} 23:59:59");
             $query['date'] = ['$gte' => $first_hour, '$lte' => $last_hour];
         }
@@ -72,7 +64,7 @@ class Log extends Model
         $pages = ceil($total / $limit);
         $pagination = new Pagination($page, $pages, $total);
 
-        $list = $this->find($query, $options)->exec();
+        $list = $this->find($query)->sort(['date' => -1])->skip($offset)->limit($limit)->exec();
 
         return new Listing($pagination, new Collection($list));
     }
@@ -82,16 +74,25 @@ class Log extends Model
      * Display php error logs
      *
      * @return string
+     *
      */
-    public function phpLogs():string
+    public function phpLogs(): string
     {
-        $this->hasPermissions();
+        $paths = [
+            '/var/log/apache2/error.log',
+            '/var/log/httpd/error.log',
+            '/var/log/nginx/error.log',
+            '/Applications/MAMP/logs/php_error.log'
+        ];
 
-        $serverSoftware = "nginx";
-        if (str_contains($_SERVER["SERVER_SOFTWARE"], 'Apache')) {
-            $serverSoftware = "apache2";
+        $output = '';
+
+        foreach ($paths as $path) {
+            if ($output === '' && file_exists($path)) {
+                $output = shell_exec('cat ' . $path);
+            }
         }
 
-        return shell_exec('cat /var/log/' . $serverSoftware . '/error.log');
+        return $output;
     }
 }

@@ -5,7 +5,9 @@ namespace SailCMS\GraphQL\Controllers;
 use SailCMS\Collection;
 use SailCMS\Database\Database;
 use SailCMS\Debug;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Log;
 use SailCMS\Models\Role;
@@ -114,17 +116,20 @@ class Misc
      *
      * Dump database
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return bool
+     *
      */
     public function dumpDatabase(mixed $obj, Collection $args, Context $context): bool
     {
         $dbName = getenv('DATABASE_DB');
+
         if ($args->get('databaseName')) {
             $dbName = $args->get('databaseName');
         }
+
         return (new Database())->databaseDump($dbName);
     }
 
@@ -132,10 +137,14 @@ class Misc
      *
      * Get sail logs
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return Listing
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     *
      */
     public function getSailLogs(mixed $obj, Collection $args, Context $context): Listing
     {
@@ -150,10 +159,11 @@ class Misc
      *
      * Get php logs
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return string
+     *
      */
     public function getPHPLogs(mixed $obj, Collection $args, Context $context): string
     {
