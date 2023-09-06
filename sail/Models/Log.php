@@ -3,16 +3,11 @@
 namespace SailCMS\Models;
 
 use Carbon\Carbon;
-use Types\DateSearch;
-use MongoDB\BSON\Regex;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
-use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
-use SailCMS\Errors\PermissionException;
 use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
-use SailCMS\Types\QueryOptions;
 
 /**
  *
@@ -93,6 +88,11 @@ class Log extends Model
             }
         }
 
-        return $output;
+        if (!$output) {
+            $output = 'file is empty';
+        }
+
+        $lines = array_reverse(explode("\n", $output));
+        return implode("\n", $lines);
     }
 }
