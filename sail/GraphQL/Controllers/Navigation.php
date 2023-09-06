@@ -146,6 +146,6 @@ class Navigation
      */
     public function deleteNavigation(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new NavigationModel())->delete($args->get('id'));
+        return (new NavigationModel())->delete($args->get('ids')->unwrap());
     }
 }

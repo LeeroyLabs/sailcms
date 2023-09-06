@@ -170,7 +170,7 @@ type Mutation {
     # Navigation
     createNavigation(title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
     updateNavigation(id: ID!, title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
-    deleteNavigation(id: ID!): Boolean!
+    deleteNavigation(ids: [ID!]!): Boolean!
 
     # Groups
     createGroup(name: String!): String!

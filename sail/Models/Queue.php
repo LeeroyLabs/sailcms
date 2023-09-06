@@ -393,13 +393,14 @@ class Queue extends Model
      *
      * Delete a task
      *
-     * @param  ObjectId|string  $id
+     * @param array $ids
      * @return bool
      * @throws DatabaseException
      */
-    public function cancelTask(ObjectId|string $id): bool
+    public function cancelTask(array $ids): bool
     {
-        $this->deleteById($this->ensureObjectId($id));
+        $ids = $this->ensureObjectIds($ids, true);
+        $this->deleteMany(['_id' => ['$in' => $ids]]);
         return true;
     }
 

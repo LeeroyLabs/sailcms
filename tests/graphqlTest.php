@@ -89,7 +89,7 @@ test('CRUD navigation', function () {
 
         $deleteResponse = $this->client->run('
             mutation {
-                deleteNavigation(id: "' . $id . '")
+                deleteNavigation(ids: ["' . $id . '"])
             }
         ', [], $_ENV['test-token']);
 
