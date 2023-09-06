@@ -80,11 +80,21 @@ class Log extends Model
      */
     public function phpLogs(): string
     {
-        $serverSoftware = "nginx";
-        if (str_contains($_SERVER["SERVER_SOFTWARE"], 'Apache')) {
-            $serverSoftware = "apache2";
+        $paths = [
+            '/var/log/apache2/error.log',
+            '/var/log/httpd/error.log',
+            '/var/log/nginx/error.log',
+            '/Applications/MAMP/logs/php_error.log'
+        ];
+
+        $output = '';
+
+        foreach ($paths as $path) {
+            if ($output === '' && file_exists($path)) {
+                $output = shell_exec('cat ' . $path);
+            }
         }
 
-        return shell_exec('cat /var/log/' . $serverSoftware . '/error.log');
+        return $output;
     }
 }
