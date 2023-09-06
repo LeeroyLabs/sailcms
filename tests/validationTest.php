@@ -358,6 +358,18 @@ test("Uuid validation with an entry field", function () {
         ->and(Validator::validateContentWithEntryField('eb3115e5-bd16-4939-ab12-2b95745a30f3', $entryField)->length)->toBe(1);
 })->group('validation');
 
+test("HTML validation with an entry field", function () {
+    $entryField = EntryField::getByKey('validationtest');
+    (new EntryField())->update($entryField->_id, new Collection([
+        'validation' => 'html',
+        'config' => null
+    ]));
+    $entryField = EntryField::getByKey('validationtest');
+
+    expect(Validator::validateContentWithEntryField('<h1>Test</h1>', $entryField)->length)->toBe(0)
+        ->and(Validator::validateContentWithEntryField('<script>bad_stuff</script><h1>Test</h1>', $entryField)->length)->toBe(1);
+})->group('validation');
+
 test("Multiple validation with an entry field", function () {
     $entryField = EntryField::getByKey('validationtest');
     (new EntryField())->update($entryField->_id, new Collection([

@@ -347,6 +347,8 @@ class Entry extends Model implements Validator, Castable
     {
         Collection::init();
 
+        // Replace id an asset or an entry for their object
+
 //        $schema = $this->getSchema(true);
 //
 //        $schema->each(function ($key, $modelField) use (&$parsedContent) {
