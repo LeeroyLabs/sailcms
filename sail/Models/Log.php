@@ -64,7 +64,7 @@ class Log extends Model
         $pages = ceil($total / $limit);
         $pagination = new Pagination($page, $pages, $total);
 
-        $list = $this->find($query, $options)->sort(['date' => -1])->skip($offset)->limit($limit)->exec();
+        $list = $this->find($query)->sort(['date' => -1])->skip($offset)->limit($limit)->exec();
 
         return new Listing($pagination, new Collection($list));
     }
