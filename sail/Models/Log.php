@@ -41,21 +41,15 @@ class Log extends Model
      *
      * Get list of loans
      *
-     * @param int $page
-     * @param int $limit
-     * @param int|null $date_search
+     * @param  int       $page
+     * @param  int       $limit
+     * @param  int|null  $date_search
      * @return Listing
-     * @throws ACLException
      * @throws DatabaseException
-     * @throws PermissionException
+     *
      */
-    public function getList(
-        int $page = 1,
-        int $limit = 25,
-        int|null $date_search = null,
-    ): Listing {
-        $this->hasPermissions();
-
+    public function getList(int $page = 1, int $limit = 25, int|null $date_search = null): Listing
+    {
         $offset = $page * $limit - $limit;
         $options = QueryOptions::initWithPagination($offset, $limit);
 
@@ -82,11 +76,10 @@ class Log extends Model
      * Display php error logs
      *
      * @return string
+     *
      */
-    public function phpLogs():string
+    public function phpLogs(): string
     {
-        $this->hasPermissions();
-
         $serverSoftware = "nginx";
         if (str_contains($_SERVER["SERVER_SOFTWARE"], 'Apache')) {
             $serverSoftware = "apache2";
