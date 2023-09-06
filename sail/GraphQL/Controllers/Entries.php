@@ -220,7 +220,7 @@ class Entries
         $template = $args->get('template');
         $slug = $args->get('slug');
         $categories = $args->get('categories');
-        $content = Entry::processContentFromGraphQL($args->get('content'));
+        $content = $args->get('content');
         $siteId = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
@@ -276,9 +276,7 @@ class Entries
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         if ($content) {
-            // Process the content to be able to save it
-            $processedContent = Entry::processContentFromGraphQL($content);
-            $newContent = $entryModel->updateContentForGraphQL($id, $processedContent);
+            $newContent = $entryModel->updateContentForGraphQL($id, $content);
             $args->pushKeyValue('content', $newContent);
         }
 
