@@ -6,6 +6,7 @@ use MongoDB\Driver\ServerApi;
 use MongoDB\Operation\DatabaseCommand;
 use SailCMS\ACL;
 use SailCMS\Debug;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use MongoDB\Client;
 use SailCMS\Errors\PermissionException;
@@ -75,6 +76,10 @@ class Database
      * @param  string  $databaseName
      * @param  bool    $download
      * @return string
+     * @throws DatabaseException
+     * @throws PermissionException
+     * @throws ACLException
+     *
      */
     public function databaseDump(string $databaseName, bool $download = false): string
     {
