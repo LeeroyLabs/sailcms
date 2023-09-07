@@ -790,7 +790,7 @@ type MonitoringSample {
     ram: RAMSample!
     disk: DiskSample!
     cpu: CpuSample!
-    php: PHPVersion!
+    php: PHPVersion
     boot: BootSample!
 }
 
