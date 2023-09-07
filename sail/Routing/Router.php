@@ -314,6 +314,7 @@ class Router
 
         Debug::route('GET', '/', 'system:not_found', '404');
         $response->template = '404';
+        $response->set('url', $uri);
         $response->render();
         exit();
     }

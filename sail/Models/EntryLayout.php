@@ -7,6 +7,7 @@ use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -174,7 +175,7 @@ class EntryLayout extends Model implements Castable
         // Cache Time To Live value from setting or default
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
         $cacheKey = self::ENTRY_LAYOUT_BY_SLUG . $slug;
-        $entryLayout = $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
+        $entryLayout = $this->findOne(['slug' => $slug])->exec();
 
         $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
         EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
@@ -510,9 +511,9 @@ class EntryLayout extends Model implements Castable
         {
             foreach ($entryLayout->schema as $fieldTab) {
                 if (isset($fieldTab->fields)) {
-                    foreach ($fieldTab->fields as $fieldId) {
-                        if (!in_array($fieldId, $fieldIds)) {
-                            $fieldIds[] = $fieldId->id;
+                    foreach ($fieldTab->fields as $data) {
+                        if (!in_array($data['id'], $fieldIds)) {
+                            $fieldIds[] = $data['id'];
                         }
                     }
                 }

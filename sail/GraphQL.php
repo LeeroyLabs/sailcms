@@ -540,6 +540,9 @@ final class GraphQL
 
         // Misc calls
         self::addQueryResolver('availableTemplates', Misc::class, 'availableTemplates');
+        self::addQueryResolver('dumpDatabase', Misc::class, 'dumpDatabase');
+        self::addQueryResolver('getSailLogs', Misc::class, 'getSailLogs');
+        self::addQueryResolver('getPHPLogs', Misc::class, 'getPHPLogs');
         self::addQueryResolver('monitoringSample', Misc::class, 'monitoringSample');
         self::addQueryResolver('getRangeSample', Misc::class, 'getRangeSample');
 

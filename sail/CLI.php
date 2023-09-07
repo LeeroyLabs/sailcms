@@ -11,6 +11,7 @@ use SailCMS\CLI\Command;
 use SailCMS\CLI\Container;
 use SailCMS\CLI\Controller;
 use SailCMS\CLI\Entry;
+use SailCMS\CLI\Format;
 use SailCMS\CLI\Install;
 use SailCMS\CLI\InstallOfficial;
 use SailCMS\CLI\Migrate;
@@ -110,6 +111,7 @@ final class CLI
         $application->add(new BasicAuth());
         $application->add(new InstallOfficial());
         $application->add(new Password());
+        $application->add(new Format());
         $application->add(new ResetAdminPass());
         $application->add(new Monitor());
 
