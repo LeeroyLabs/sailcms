@@ -23,7 +23,7 @@ class SystemMonitor
     {
         // Let's use our python script to fetch everything using psutil
         exec('which python3', $path);
-        $result = shell_exec($path[0] . ' ' . dirname(__DIR__) . '/scripts/system.py');
+        exec($path[0] . ' ' . dirname(__DIR__) . '/scripts/system.py', $result);
 
         $ram = [
             'total' => (int)$result[0],

@@ -809,16 +809,16 @@ type MonitoringSample {
 }
 
 type RAMSample {
-    total: Int!
-    available: Int!
-    used: Int!
+    total: Float!
+    available: Float!
+    used: Float!
     percent: Float!
 }
 
 type DiskSample {
-    total: Int!
-    available: Int!
-    used: Int!
+    total: Float!
+    available: Float!
+    used: Float!
     percent: Float!
 }
 
