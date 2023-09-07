@@ -4,9 +4,12 @@ namespace SailCMS\Database;
 
 use MongoDB\Driver\ServerApi;
 use MongoDB\Operation\DatabaseCommand;
+use SailCMS\ACL;
 use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use MongoDB\Client;
+use SailCMS\Errors\PermissionException;
+use SailCMS\Models\User;
 use ZipArchive;
 
 class Database
@@ -69,19 +72,27 @@ class Database
      *
      * Dump the db
      *
-     * @param string $databaseName
-     * @param bool $download
+     * @param  string  $databaseName
+     * @param  bool    $download
      * @return string
      */
     public function databaseDump(string $databaseName, bool $download = false): string
     {
+        if (!User::$currentUser) {
+            throw new PermissionException('0403: Permission Denied', 0403);
+        }
+
+        if (!ACL::hasPermission(User::$currentUser, ACL::write('Admin'))) {
+            throw new PermissionException('0403: Permission Denied', 0403);
+        }
+
         putenv('PATH=/usr/local/bin');
         shell_exec('mongodump --db=' . $databaseName);
         $directoryName = $databaseName . '_' . date('c');
 
         rename("./dump/" . $databaseName, "./dump/" . $directoryName);
-        shell_exec('zip -r ./dump/'. $directoryName .'.zip ./dump/');
-        shell_exec('rm -rf ./dump/'. $directoryName);
+        shell_exec('zip -r ./dump/' . $directoryName . '.zip ./dump/');
+        shell_exec('rm -rf ./dump/' . $directoryName);
 
         return true;
     }
