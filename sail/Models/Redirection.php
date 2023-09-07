@@ -45,7 +45,7 @@ class Redirection extends Model
                     'hit_count' => 0,
                     'last_attempt' => 0
                 ]);
-            }catch (DateException $exception){
+            } catch (DateException $exception) {
                 return false;
             }
 
@@ -79,7 +79,7 @@ class Redirection extends Model
             $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
                 '$set' => $info
             ]);
-        }catch (DateException $exception){
+        } catch (DateException $exception) {
             return false;
         }
 
@@ -106,7 +106,7 @@ class Redirection extends Model
             $result = $this->updateOne(['_id' => $this->ensureObjectId($id)], [
                 '$set' => $info
             ]);
-        }catch (DateException $exception){
+        } catch (DateException $exception) {
             return false;
         }
 

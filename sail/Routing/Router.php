@@ -253,7 +253,7 @@ class Router
             $redirection = array_search($uri, array_column($redirection_list->list->unwrap(), 'url'), true);
             $permanent = true;
 
-            if($redirection_list->list->unwrap()[$redirection]->redirect_type === "302") {
+            if($redirection_list->list->unwrap()[$redirection]->redirect_type === "302"){
                 $permanent = false;
             }
             (new self)->redirect($uri, $redirection_list->list->unwrap()[$redirection]->redirect_url, $permanent);
@@ -331,7 +331,7 @@ class Router
 
         if (!(new BrokenLink())->getByUrl($uri)) {
             (new BrokenLink())::add($uri);
-        }else{
+        } else {
             (new BrokenLink())->update($uri);
         }
         $response->set('url', $uri);

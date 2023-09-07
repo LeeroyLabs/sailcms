@@ -37,7 +37,7 @@ class BrokenLink extends Model
                 'hit_count' => 1,
                 'last_attempt' => time()
             ]);
-        }catch (DateException $exception){
+        } catch (DateException $exception) {
             return false;
         }
 
@@ -65,7 +65,7 @@ class BrokenLink extends Model
             $result = $this->updateOne(['_id' => $this->ensureObjectId($broken_link->_id)], [
                 '$set' => $info
             ]);
-        }catch (DateException $exception){
+        } catch (DateException $exception) {
             return false;
         }
 
