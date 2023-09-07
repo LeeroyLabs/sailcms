@@ -43,6 +43,8 @@ class Monitoring extends Model
         'php' => PHPVersionInformation::class
     ];
 
+    protected string $permissionGroup = 'admin';
+
     /**
      *
      * Get sample data for the given start/end period

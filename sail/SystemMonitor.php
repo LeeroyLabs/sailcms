@@ -22,7 +22,8 @@ class SystemMonitor
     public static function sample(bool $testPHP = false): void
     {
         // Let's use our python script to fetch everything using psutil
-        exec('python3 ' . dirname(__DIR__) . '/scripts/system.py', $result);
+        exec('which python3', $path);
+        $result = shell_exec($path[0] . ' ' . dirname(__DIR__) . '/scripts/system.py');
 
         $ram = [
             'total' => (int)$result[0],
