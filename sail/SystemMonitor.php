@@ -15,11 +15,12 @@ class SystemMonitor
      * Take a sample of system resources for monitoring
      *
      * @param  bool  $testPHP
+     * @param  bool  $save
      * @throws DatabaseException
      * @throws \JsonException
      *
      */
-    public static function sample(bool $testPHP = false): void
+    public static function sample(bool $testPHP = false, bool $save = true): void
     {
         // Let's use our python script to fetch everything using psutil
         exec('which python3', $path);
@@ -66,16 +67,18 @@ class SystemMonitor
             $warning = true;
         }
 
-        $sample->ram = $ram;
-        $sample->disk = $disk;
-        $sample->cpu = $cpu;
-        $sample->boot = $boot;
-        $sample->php = $php;
-        $sample->warning = $warning;
-        $sample->timestamp = Carbon::now('America/New_York')->getTimestamp();
-        $sample->php_tested = $testPHP;
-        $sample->identifier = gethostname();
-        $sample->save();
+        if ($save) {
+            $sample->ram = $ram;
+            $sample->disk = $disk;
+            $sample->cpu = $cpu;
+            $sample->boot = $boot;
+            $sample->php = $php;
+            $sample->warning = $warning;
+            $sample->timestamp = Carbon::now('America/New_York')->getTimestamp();
+            $sample->php_tested = $testPHP;
+            $sample->identifier = gethostname();
+            $sample->save();
+        }
 
         // Notification system will check if the last X records have warnings
         try {

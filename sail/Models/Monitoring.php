@@ -83,7 +83,7 @@ class Monitoring extends Model
         $instance = new self();
         $instance->hasPermissions(true);
 
-        SystemMonitor::sample(true);
+        SystemMonitor::sample(true, false);
         return self::query()->findOne([])->sort(['timestamp' => -1])->exec();
     }
 
