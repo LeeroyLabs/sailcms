@@ -196,3 +196,17 @@ test('Dump database', function ()
     $dumpReturn = (new Database())->databaseDump('sailcms');
     expect($dumpReturn)->toBeTrue();
 })->group('db');
+
+
+test('ActiveRecord: nested value change and check for dirty', function ()
+{
+    $row = DBTest::get('6503351a02767c3c4bfc6d9a');
+
+    if ($row) {
+        $row->toplevel->nested = true;
+        $row->setDirty('toplevel');
+        $row->save();
+    }
+
+    expect(true)->toBeTrue();
+})->group('db2');

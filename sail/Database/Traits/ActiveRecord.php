@@ -35,6 +35,12 @@ trait ActiveRecord
         return $this->isDirty;
     }
 
+    public function setDirty(string $field): void
+    {
+        $this->isDirty = true;
+        $this->dirtyFields[] = $field;
+    }
+
     /**
      *
      * Does this document exist in the database
@@ -219,6 +225,10 @@ trait ActiveRecord
 
                 if (count($this->currentPullAlls) > 0) {
                     $call['$pullAll'] = $this->currentPullAlls;
+                }
+
+                if (empty($call)) {
+                    return false;
                 }
 
                 $saved = $this->updateOne(['_id' => $this->_id], $call);
