@@ -8,6 +8,9 @@ return [
     'adminTrigger' => 'admin',
     'timezone' => 'America/New_York',
     'useBasicAuthentication' => false,
+    'database' => [
+        'activerecord_save_whole_object' => false
+    ],
     'cache' => [
         'use' => (bool)env('cache_use', 'false'),
         'host' => env('cache_host', 'localhost'),
@@ -90,7 +93,8 @@ return [
     ],
     'templating' => [
         'cache' => false,
-        'vueCompat' => false
+        'vueCompat' => false,
+        'renderer' => 'twig'
     ],
     'tfa' => [
         'issuer' => 'SailCMS',

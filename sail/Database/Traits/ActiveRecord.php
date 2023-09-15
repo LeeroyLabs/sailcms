@@ -181,6 +181,19 @@ trait ActiveRecord
      */
     public function save(): bool
     {
+        $saveWhole = setting('database.activerecord_save_whole_object', false);
+
+        // Automatically dirty and everything in it
+        if ($saveWhole) {
+            $this->isDirty = true;
+
+            foreach ($this->properties as $key => $value) {
+                if ($key !== '_id') {
+                    $set[$key] = $value;
+                }
+            }
+        }
+
         if ($this->isDirty) {
             $set = [];
 
