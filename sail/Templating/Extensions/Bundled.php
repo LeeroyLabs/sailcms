@@ -28,6 +28,8 @@ class Bundled extends AbstractExtension
             new TwigFunction('locale', [$this, 'getLocale']),
             new TwigFunction('defaultLocale', [$this, 'defaultLocale']),
             new TwigFunction('__', [$this, 'translate']),
+            new TwigFunction('_', [$this, 'translate']),
+            new TwigFunction('t', [$this, 'translate']),
             new TwigFunction('twoFactor', [$this, 'twoFactor']),
             new TwigFunction('csrf', [$this, 'csrf']),
             new TwigFunction('transform', [$this, 'transform']),
