@@ -119,6 +119,7 @@ return [
         'bubble' => true
     ],
     'assets' => [
+        'shared' => true,
         'adapter' => 'local',
         'optimizeOnUpload' => true,
         'transformOutputFormat' => 'webp',
