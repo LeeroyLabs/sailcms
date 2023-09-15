@@ -18,6 +18,7 @@ use SailCMS\CLI\Migrate;
 use SailCMS\CLI\Migrations;
 use SailCMS\CLI\Model;
 use SailCMS\CLI\Module;
+use SailCMS\CLI\Monitor;
 use SailCMS\CLI\Password;
 use SailCMS\CLI\Queue;
 use SailCMS\CLI\ResetAdminPass;
@@ -112,6 +113,7 @@ final class CLI
         $application->add(new Password());
         $application->add(new Format());
         $application->add(new ResetAdminPass());
+        $application->add(new Monitor());
 
         // Custom commands
         if (!isset(self::$registeredCommands)) {

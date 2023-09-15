@@ -390,9 +390,7 @@ class Mail
                 $context = new Collection($context);
             }
 
-            $fields = [
-                'subject' => $template->subject->{$locale}
-            ];
+            $fields = ['subject' => $template->subject->{$locale}];
 
             foreach ($template->fields as $field) {
                 $fields[$field->key] = $field->value->{$locale};
