@@ -433,6 +433,7 @@ class Sail
 
                 if (class_exists($className)) {
                     $instance = new $className();
+                    $instance->init();
                     $info = $instance->info();
 
                     // Register only if the site should load it
