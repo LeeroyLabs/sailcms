@@ -8,6 +8,9 @@ return [
     'adminTrigger' => 'admin',
     'timezone' => 'America/New_York',
     'useBasicAuthentication' => false,
+    'database' => [
+        'activerecord_save_whole_object' => false
+    ],
     'monitoring' => [
         'problematic_sample_count_notify' => 5,
         'warning_email_address' => 'you@email.com'
@@ -94,7 +97,8 @@ return [
     ],
     'templating' => [
         'cache' => false,
-        'vueCompat' => false
+        'vueCompat' => false,
+        'renderer' => 'twig'
     ],
     'tfa' => [
         'issuer' => 'SailCMS',
@@ -119,6 +123,7 @@ return [
         'bubble' => true
     ],
     'assets' => [
+        'shared' => true,
         'adapter' => 'local',
         'optimizeOnUpload' => true,
         'transformOutputFormat' => 'webp',

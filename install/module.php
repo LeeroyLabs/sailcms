@@ -8,6 +8,11 @@ use \SailCMS\Types\ModuleInformation;
 
 class Module implements AppModule
 {
+    public function init(): void
+    {
+
+    }
+
     public function info(): ModuleInformation
     {
         return new ModuleInformation(

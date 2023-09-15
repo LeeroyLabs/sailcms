@@ -5,7 +5,6 @@ namespace SailCMS\Database;
 use Exception;
 use JsonException;
 use JsonSerializable;
-use MongoDB;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Client;
 use MongoDB\Collection;

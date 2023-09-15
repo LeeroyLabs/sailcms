@@ -7,6 +7,8 @@ use SailCMS\Types\ModuleInformation;
 
 interface AppModule
 {
+    public function init(): void;
+    
     public function info(): ModuleInformation;
 
     public function middleware(): void;

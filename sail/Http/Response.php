@@ -29,6 +29,7 @@ class Response
     public bool $compress = false;
     public bool $secure = false;
     public string $renderer = 'twig';
+    private bool $rendererSet = false;
 
     private array $validTypes = ['text/html', 'application/json', 'text/csv', 'text/plain'];
 
@@ -81,6 +82,7 @@ class Response
     {
         if (Engine::rendererCheck($renderer)) {
             $this->renderer = $renderer;
+            $this->rendererSet = true;
         }
     }
 
@@ -199,7 +201,13 @@ class Response
      */
     public function render(bool $executeMiddleware = true): void
     {
-        $renderer = Engine::getRenderer($this->renderer);
+        if (!$this->rendererSet) {
+            // Twig by default, if nothing was requested, check config and use that.
+            $masterValue = strtolower(setting('templating.renderer', 'twig'));
+            $renderer = Engine::getRenderer($masterValue);
+        } else {
+            $renderer = Engine::getRenderer($this->renderer);
+        }
 
         // Custom renderer's content type
         if ($renderer !== null) {
