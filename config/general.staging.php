@@ -11,6 +11,10 @@ return [
     'database' => [
         'activerecord_save_whole_object' => false
     ],
+    'monitoring' => [
+        'problematic_sample_count_notify' => 5,
+        'warning_email_address' => 'you@email.com'
+    ],
     'cache' => [
         'use' => (bool)env('cache_use', 'false'),
         'host' => env('cache_host', 'localhost'),

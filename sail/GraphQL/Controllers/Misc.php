@@ -4,12 +4,12 @@ namespace SailCMS\GraphQL\Controllers;
 
 use SailCMS\Collection;
 use SailCMS\Database\Database;
-use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Models\Log;
+use SailCMS\Models\Monitoring;
 use SailCMS\Models\Role;
 use SailCMS\Models\User;
 use SailCMS\Sail;
@@ -168,5 +168,42 @@ class Misc
     public function getPHPLogs(mixed $obj, Collection $args, Context $context): string
     {
         return (new Log())->phpLogs();
+    }
+
+    /**
+     *
+     * Get a live sample from the server
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Monitoring
+     * @throws DatabaseException
+     * @throws \JsonException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public function monitoringSample(mixed $obj, Collection $args, Context $context): Monitoring
+    {
+        return Monitoring::getLiveSample();
+    }
+
+    /**
+     *
+     * Get a ranged sample (from date X to Y)
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public function getRangeSample(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $start = strtotime('14 days ago');
+        $now = time();
+        return Monitoring::getSampleBySize($args->get('start', $start), $args->get('end', $now));
     }
 }
