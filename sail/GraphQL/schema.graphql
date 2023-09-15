@@ -102,6 +102,8 @@ type Query {
     dumpDatabase(databaseName: String, download: Boolean): Boolean!
     getSailLogs(page: Int!, limit: Int!, date_search: Int): LogListing!
     getPHPLogs: String!
+    monitoringSample: MonitoringSample!
+    getRangeSample(start: Int!, end: Int!): [MonitoringSample!]!
 
     #{CUSTOM_QUERIES}#
 }
@@ -181,7 +183,7 @@ type Mutation {
     # Navigation
     createNavigation(title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
     updateNavigation(id: ID!, title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
-    deleteNavigation(id: ID!): Boolean!
+    deleteNavigation(ids: [ID!]!): Boolean!
 
     # Groups
     createGroup(name: String!): String!
@@ -882,6 +884,49 @@ type BrokenLinkListing {
 enum RedirectType {
     PERMANENT
     TEMPORARY
+}
+
+type MonitoringSample {
+    warning: Boolean!
+    timestamp: Int!
+    php_tested: Boolean!
+    ram: RAMSample!
+    disk: DiskSample!
+    cpu: CpuSample!
+    php: PHPVersion
+    boot: BootSample!
+}
+
+type RAMSample {
+    total: Float!
+    available: Float!
+    used: Float!
+    percent: Float!
+}
+
+type DiskSample {
+    total: Float!
+    available: Float!
+    used: Float!
+    percent: Float!
+}
+
+type CpuSample {
+    cores: Int!
+    percent: Float!
+}
+
+type BootSample {
+    boot_time: Int!
+    uptime: String!
+}
+
+type PHPVersion {
+    installed: String!
+    current: String!
+    latest: Boolean!
+    secure: Boolean!
+    supported: Boolean!
 }
 
 #{CUSTOM_TYPES}#

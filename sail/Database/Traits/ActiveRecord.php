@@ -35,6 +35,12 @@ trait ActiveRecord
         return $this->isDirty;
     }
 
+    public function setDirty(string $field): void
+    {
+        $this->isDirty = true;
+        $this->dirtyFields[] = $field;
+    }
+
     /**
      *
      * Does this document exist in the database
@@ -175,6 +181,19 @@ trait ActiveRecord
      */
     public function save(): bool
     {
+        $saveWhole = setting('database.activerecord_save_whole_object', false);
+
+        // Automatically dirty and everything in it
+        if ($saveWhole) {
+            $this->isDirty = true;
+
+            foreach ($this->properties as $key => $value) {
+                if ($key !== '_id') {
+                    $set[$key] = $value;
+                }
+            }
+        }
+
         if ($this->isDirty) {
             $set = [];
 
@@ -219,6 +238,10 @@ trait ActiveRecord
 
                 if (count($this->currentPullAlls) > 0) {
                     $call['$pullAll'] = $this->currentPullAlls;
+                }
+
+                if (empty($call)) {
+                    return false;
                 }
 
                 $saved = $this->updateOne(['_id' => $this->_id], $call);

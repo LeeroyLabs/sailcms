@@ -131,6 +131,7 @@ class Asset extends Model
     public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = Model::SORT_ASC, string $siteId = 'default'): Listing
     {
         $this->hasPermissions(true);
+        $siteId = self::getSiteId($siteId);
 
         $offset = $page * $limit - $limit;
         $query = ['site_id' => $siteId, 'folder' => $folder];
@@ -175,6 +176,7 @@ class Asset extends Model
     public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = '', string $siteId = 'default'): self
     {
         $fs = Filesystem::manager();
+        $siteId = self::getSiteId($siteId);
 
         $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
 
@@ -639,7 +641,20 @@ class Asset extends Model
      */
     public function moveAllFiles(string $folder, string $moveTo, string $siteId = 'default'): void
     {
+        $siteId = self::getSiteId($siteId);
+        
         $this->hasPermissions();
         $this->updateMany(['folder' => $folder, 'site_id' => $siteId], ['$set' => ['folder' => $moveTo]]);
+    }
+
+    private static function getSiteId(string $siteId): string
+    {
+        $shared = setting('assets.shared', false);
+
+        if ($shared) {
+            return '_any_';
+        }
+
+        return $siteId;
     }
 }

@@ -280,9 +280,7 @@ class Queue
      */
     public function cancelTask(mixed $obj, Collection $args, Context $context): bool
     {
-        foreach ($args->get('ids') as $id) {
-            (new QueueModel())->cancelTask($id);
-        }
+        (new QueueModel())->cancelTask($args->get('ids')->unwrap());
         return true;
     }
 
