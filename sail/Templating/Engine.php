@@ -208,7 +208,7 @@ class Engine
      */
     public static function getRenderer(string $name): ?Renderer
     {
-        if ($name === 'twig') {
+        if (strtolower($name) === 'twig') {
             return null;
         }
 
