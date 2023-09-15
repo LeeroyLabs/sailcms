@@ -102,7 +102,6 @@ class Schema extends Command
         }
 
         // Parse schema
-        echo $schemaContent;
         $document = Parser::parse($schemaContent);
 
         // Save AST format
