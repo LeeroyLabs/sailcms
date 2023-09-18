@@ -65,28 +65,30 @@ class Convert
      * @param  array|Collection|null  $heading
      * @param  array|Collection       $data
      * @return string
-     * @throws Exception
-     * @throws CannotInsertRecord
      *
      */
     public static function toCSV(array|Collection|null $heading, array|Collection $data = []): string
     {
-        if (is_object($data)) {
-            $data = $data->unwrap();
+        try {
+            if (is_object($data)) {
+                $data = $data->unwrap();
+            }
+
+            if ($heading && is_object($heading)) {
+                $heading = $heading->unwrap();
+            }
+
+            $writer = Writer::createFromString();
+
+            if ($heading) {
+                $writer->insertOne($heading);
+            }
+
+            $writer->insertAll($data);
+            return $writer->toString();
+        } catch (CannotInsertRecord|\Exception $e) {
+            return '';
         }
-
-        if ($heading && is_object($heading)) {
-            $heading = $heading->unwrap();
-        }
-
-        $writer = Writer::createFromString();
-
-        if ($heading) {
-            $writer->insertOne($heading);
-        }
-
-        $writer->insertAll($data);
-        return $writer->toString();
     }
 
     /**
