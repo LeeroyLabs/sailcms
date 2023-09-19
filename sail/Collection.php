@@ -220,13 +220,18 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
     /**
      *
      * Alias of unwrap
-     * Alias of unwrap
      *
+     * @param  bool  $deep
      * @return array
+     * @throws JsonException
      *
      */
-    public function toArray(): array
+    public function toArray(bool $deep = false): array
     {
+        if ($deep) {
+            return json_decode($this->toJSON(), true, 512, JSON_THROW_ON_ERROR);
+        }
+
         return $this->unwrap();
     }
 
