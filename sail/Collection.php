@@ -187,8 +187,12 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * @return array
      *
      */
-    public function unwrap(): array
+    public function unwrap(bool $deep = false): array
     {
+        if ($deep) {
+            return $this->toArray(true);
+        }
+        
         // Unwrap the static back to raw array recursively
         $arr = [];
 
