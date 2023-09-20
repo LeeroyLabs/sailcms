@@ -474,10 +474,15 @@ class Entry extends Model implements Validator, Castable
      */
     public function simplify(object|null $currentHomepageEntry, bool $sendCurrent = true): array
     {
+        $isHomepage = false;
+        if (isset($currentHomepageEntry) && isset($currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY})
+            && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY}) {
+            $isHomepage = true;
+        }
         $simplified = [
             '_id' => $this->_id,
             'entry_type' => $this->entryType->simplify(),
-            'is_homepage' => isset($currentHomepageEntry) && (string)$this->_id === $currentHomepageEntry->{self::HOMEPAGE_CONFIG_ENTRY_KEY},
+            'is_homepage' => $isHomepage,
             'parent' => $this->parent ? $this->parent->castFrom() : EntryParent::init(),
             'site_id' => $this->site_id,
             'locale' => $this->locale,
