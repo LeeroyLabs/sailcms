@@ -91,6 +91,7 @@ class EntryPublication extends Model
         if ($entryIds instanceof Collection) {
             $entryIds = $entryIds->unwrap();
         }
+        ray($entryIds);
 
         $qs = $this->find(['entry_id' => ['$in' => $entryIds]]);
 
