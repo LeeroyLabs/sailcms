@@ -345,6 +345,7 @@ class Entry extends Model implements Validator, Castable
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function getContent(): Collection
@@ -375,7 +376,7 @@ class Entry extends Model implements Validator, Castable
 
         $contentParsed->each(function($key, &$content) use (&$contentParsed, $entryToFetch, $entries, $assetToFetch, $assets) {
             if (array_key_exists($key, $entryToFetch)) {
-                $entry = $entries->find(fn($k, $c) => (string)$c->_id === $content);
+                $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $content);
                 $contentParsed->setFor($key, $entry ?? $content);
             } else if (array_key_exists($key, $assetToFetch)) {
                 $asset = $assets->find(fn($k, $c) => (string)$c->_id === $content);
