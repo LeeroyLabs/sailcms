@@ -355,6 +355,7 @@ class Entry extends Model implements Validator, Castable
         // Replace id an asset or an entry for their object
         $schema = $this->getSchema(true);
 
+        // Get id to fetch
         $assetToFetch = [];
         $entryToFetch = [];
         $schema->each(function ($index, $fieldTab) use ($contentParsed, &$assetToFetch, &$entryToFetch) {
@@ -363,24 +364,48 @@ class Entry extends Model implements Validator, Castable
                  * @var EntryField $entryField
                  */
                 if ($entryField->type === "entry" && $contentParsed->get($entryField->key)) {
-                    $entryToFetch[$entryField->key] = $contentParsed->get($entryField->key);
-                } else if ($entryField->type === "asset" && $contentParsed->get($entryField->key)) {
+                    $fieldContent = $contentParsed->get($entryField->key);
+                    if ($entryField->repeatable) {
+                        foreach($fieldContent as $index => $element) {
+                            $entryToFetch[$entryField->key . "_" . $index] = $element;
+                        }
+                    } else {
+                        $entryToFetch[$entryField->key] = $fieldContent;
+                    }
+                } else if (in_array($entryField->type, ["asset_image", "asset_file"]) && $contentParsed->get($entryField->key)) {
                     $assetToFetch[$entryField->key] = $contentParsed->get($entryField->key);
                 }
+                // TODO handle matrix fields !
             }
         });
 
-        // Fetch data in batch
+        // Fetch data in batches
         $assets = new Collection(Asset::getByIds($assetToFetch, false));
         $entries = new Collection((new EntryPublication())->getPublicationsByEntryIds(array_values($entryToFetch), true, false));
 
+        // Parse content with fetched elements
         $contentParsed->each(function($key, &$content) use (&$contentParsed, $entryToFetch, $entries, $assetToFetch, $assets) {
-            if (array_key_exists($key, $entryToFetch)) {
-                $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $content);
-                $contentParsed->setFor($key, $entry ?? $content);
-            } else if (array_key_exists($key, $assetToFetch)) {
-                $asset = $assets->find(fn($k, $c) => (string)$c->_id === $content);
-                $contentParsed->setFor($key, $asset ?? $content);
+            // For repeatable fields
+            if (is_array($content)) {
+                $arrayContent = $content;
+                foreach($content as $index => $element) {
+                    if (array_key_exists($key . "_" . $index, $entryToFetch)) {
+                        $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $element);
+                        $arrayContent[$index] = $entry ?? $element;
+                    } else if (array_key_exists($key . "_" . $index, $assetToFetch)) {
+                        $asset = $assets->find(fn($k, $c) => (string)$c->_id === $element);
+                        $arrayContent[$index] = $asset ?? $element;
+                    }
+                }
+                $contentParsed->setFor($key, $arrayContent);
+            } else {
+                if (array_key_exists($key, $entryToFetch)) {
+                    $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $content);
+                    $contentParsed->setFor($key, $entry ?? $content);
+                } else if (array_key_exists($key, $assetToFetch)) {
+                    $asset = $assets->find(fn($k, $c) => (string)$c->_id === $content);
+                    $contentParsed->setFor($key, $asset ?? $content);
+                }
             }
         });
 
