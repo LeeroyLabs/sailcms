@@ -523,9 +523,10 @@ class Entries
 
         // Entry fields to resolve
         if ($info->fieldName === "content") {
-            return Entry::processContentForGraphQL($entry->getContent());
+            return $entry->getContent();
         }
 
+        // TODO add schema to entry data
         if ($info->fieldName === "schema") {
             return [];
 //            return $entry->getSchema(true, true)->unwrap();

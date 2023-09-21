@@ -338,37 +338,53 @@ class Entry extends Model implements Validator, Castable
 
     /**
      *
-     * Get content with Model Field data
+     * Parse content according to EntryField type
      *
      * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function getContent(): Collection
     {
-        Collection::init();
+        $contentParsed = $this->content;
 
         // Replace id an asset or an entry for their object
+        $schema = $this->getSchema(true);
 
-//        $schema = $this->getSchema(true);
-//
-//        $schema->each(function ($key, $modelField) use (&$parsedContent) {
-//            /**
-//             * @var ModelField $modelField
-//             */
-//            $content = $this->content->get($key);
-//
-//            $parsedFieldContent = $modelField->parse($content);
-//
-//            $parsedContent->pushKeyValue($key, [
-//                'type' => $modelField->storingType(),
-//                'repeater' => $modelField->repeater,
-//                'handle' => $modelField->handle,
-//                'content' => $parsedFieldContent ?? '',
-//                'key' => $key
-//            ]);
-//        });
+        $assetToFetch = [];
+        $entryToFetch = [];
+        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$assetToFetch, &$entryToFetch) {
+            foreach($fieldTab->fields as $entryField) {
+                /**
+                 * @var EntryField $entryField
+                 */
+                if ($entryField->type === "entry" && $contentParsed->get($entryField->key)) {
+                    $entryToFetch[$entryField->key] = $contentParsed->get($entryField->key);
+                } else if ($entryField->type === "asset" && $contentParsed->get($entryField->key)) {
+                    $assetToFetch[$entryField->key] = $contentParsed->get($entryField->key);
+                }
+            }
+        });
 
-        return $this->content;
+        // Fetch data in batch
+        $assets = new Collection(Asset::getByIds($assetToFetch, false));
+        $entries = new Collection((new EntryPublication())->getPublicationsByEntryIds(array_values($entryToFetch), true, false));
+
+        $contentParsed->each(function($key, &$content) use (&$contentParsed, $entryToFetch, $entries, $assetToFetch, $assets) {
+            if (array_key_exists($key, $entryToFetch)) {
+                $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $content);
+                $contentParsed->setFor($key, $entry ?? $content);
+            } else if (array_key_exists($key, $assetToFetch)) {
+                $asset = $assets->find(fn($k, $c) => (string)$c->_id === $content);
+                $contentParsed->setFor($key, $asset ?? $content);
+            }
+        });
+
+        return $contentParsed;
     }
 
     /**
@@ -901,46 +917,6 @@ class Entry extends Model implements Validator, Castable
         }
 
         return $newSlug;
-    }
-
-    public static function processContentForGraphQL(?Collection $content): array
-    {
-        $parsedContent = [];
-        $content->each(function ($key, $value) use (&$parsedContent)
-        {
-            $parsedContent[] = [
-                'key' => $key,
-                'content' => json_encode($value)
-            ];
-        });
-        return $parsedContent;
-    }
-
-    /**
-     *
-     * Process content from graphQL to be able to create/update
-     *
-     * @param  Collection|null  $content
-     * @return Collection
-     *
-     */
-    public static function processContentFromGraphQL(?Collection $content): Collection
-    {
-        $parsedContent = Collection::init();
-
-        $content?->each(function ($key, $toParse) use (&$parsedContent)
-        {
-            if (is_string($toParse)) {
-                $parsed = $toParse;
-            } elseif (is_array($toParse) || $toParse->content instanceof stdClass) {
-                $parsed = new Collection((array)$toParse->content);
-            } else {
-                $parsed = $toParse->content;
-            }
-
-            $parsedContent->pushKeyValue($key, $parsed);
-        });
-        return $parsedContent;
     }
 
     /**
