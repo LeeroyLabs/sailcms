@@ -374,6 +374,8 @@ class Entry extends Model implements Validator, Castable
                     }
                 } else if (in_array($entryField->type, ["asset_image", "asset_file"]) && $contentParsed->get($entryField->key)) {
                     $assetToFetch[$entryField->key] = $contentParsed->get($entryField->key);
+                } else if ($entryField->type === "matrix") {
+                    ray($entryField);
                 }
                 // TODO handle matrix fields !
             }
