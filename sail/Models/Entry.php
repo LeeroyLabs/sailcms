@@ -359,26 +359,8 @@ class Entry extends Model implements Validator, Castable
         $assetToFetch = [];
         $entryToFetch = [];
         $schema->each(function ($index, $fieldTab) use ($contentParsed, &$assetToFetch, &$entryToFetch) {
-            foreach($fieldTab->fields as $entryField) {
-                /**
-                 * @var EntryField $entryField
-                 */
-                if ($entryField->type === "entry" && $contentParsed->get($entryField->key)) {
-                    $fieldContent = $contentParsed->get($entryField->key);
-                    if ($entryField->repeatable) {
-                        foreach($fieldContent as $index => $element) {
-                            $entryToFetch[$entryField->key . "_" . $index] = $element;
-                        }
-                    } else {
-                        $entryToFetch[$entryField->key] = $fieldContent;
-                    }
-                } else if (in_array($entryField->type, ["asset_image", "asset_file"]) && $contentParsed->get($entryField->key)) {
-                    $assetToFetch[$entryField->key] = $contentParsed->get($entryField->key);
-                } else if ($entryField->type === "matrix") {
-                    ray($entryField);
-                }
-                // TODO handle matrix fields !
-            }
+            $fields =  new Collection((array)$fieldTab->fields) ?? Collection::init();
+            $this->getIdToFetchFromContent($fields, $assetToFetch,$entryToFetch, $contentParsed);
         });
 
         // Fetch data in batches
@@ -412,6 +394,45 @@ class Entry extends Model implements Validator, Castable
         });
 
         return $contentParsed;
+    }
+
+    /**
+     *
+     * Recursively get id to fetch from content and a list of fields
+     *
+     * @param Collection $fields
+     * @param array $assetToFetch
+     * @param array $entryToFetch
+     * @param Collection $content
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    private function getIdToFetchFromContent(Collection $fields, array &$assetToFetch, array &$entryToFetch, Collection $content)
+    {
+        foreach($fields as $entryField) {
+            /**
+             * @var EntryField $entryField
+             */
+            if ($entryField->type === "entry" && $content->get($entryField->key)) {
+                $fieldContent = $content->get($entryField->key);
+                if ($entryField->repeatable) {
+                    foreach($fieldContent as $index => $element) {
+                        $entryToFetch[$entryField->key . "_" . $index] = $element;
+                    }
+                } else {
+                    $entryToFetch[$entryField->key] = $fieldContent;
+                }
+            } else if (in_array($entryField->type, ["asset_image", "asset_file"]) && $content->get($entryField->key)) {
+                $assetToFetch[$entryField->key] = $content->get($entryField->key);
+            } else if ($entryField->type === "matrix") {
+                $subFields = (new EntryField)->getFieldsForMatrix($entryField->_id);
+                ray($subFields);
+                $this->getIdToFetchFromContent($subFields, $assetToFetch, $entryToFetch, $content);
+            }
+        }
     }
 
     /**
