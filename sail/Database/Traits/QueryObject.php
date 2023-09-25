@@ -237,12 +237,13 @@ trait QueryObject
      *
      * Get a document count of current collection
      *
+     * @param  array  $query
      * @return int
      *
      */
-    public static function documentCount(): int
+    public static function documentCount(array $query = []): int
     {
-        return self::query()->count([]);
+        return self::query($query)->count([]);
     }
 
     /**
