@@ -192,7 +192,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
         if ($deep) {
             return $this->toArray(true);
         }
-        
+
         // Unwrap the static back to raw array recursively
         $arr = [];
 
@@ -630,9 +630,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * @return int
      *
      */
-    public function reduce(callable $callback, mixed $initial): int
+    public function reduce(callable $callback, mixed $initial = null): int
     {
-        return array_reduce($this->_internal, $callback);
+        return array_reduce($this->_internal, $callback, $initial);
     }
 
     /**
