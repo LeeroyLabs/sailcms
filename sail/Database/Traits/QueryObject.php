@@ -243,7 +243,7 @@ trait QueryObject
      */
     public static function documentCount(array $query = []): int
     {
-        return self::query($query)->count([]);
+        return self::query()->count($query);
     }
 
     /**
