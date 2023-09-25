@@ -235,6 +235,18 @@ trait QueryObject
 
     /**
      *
+     * Get a document count of current collection
+     *
+     * @return int
+     *
+     */
+    public static function documentCount(): int
+    {
+        return self::query()->count([]);
+    }
+
+    /**
+     *
      * Get Last record added to collection
      *
      * @return static|null
