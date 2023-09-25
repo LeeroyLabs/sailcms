@@ -40,6 +40,7 @@ class EntryPublication extends Model
     public const DATABASE_ERROR = ['5300: Exception when "%s" an entry publication.', 5300];
     public const EXPIRATION_DATE_ERROR = ['5301: The expiration date must be higher than the publication date', 5301];
     public const FIND_BY_URL_CACHE = 'find_by_url_entry_';   // Add url at the end
+    public const FIND_BY_ID_CACHE = 'find_by_id_'; // Add ids at the end
 
     /**
      *
@@ -66,7 +67,8 @@ class EntryPublication extends Model
             $qs->populate('entry_version_id', 'version', EntryVersion::class);
         }
 
-        return $qs->exec();
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+        return $qs->exec(self::FIND_BY_ID_CACHE . $entryId, $cacheTtl);
     }
 
     /**
@@ -93,12 +95,14 @@ class EntryPublication extends Model
         }
 
         $qs = $this->find(['entry_id' => ['$in' => $entryIds]]);
+        $idsForCache = implode('_', $entryIds);
 
         if ($getVersion) {
             $qs->populate('entry_version_id', 'version', EntryVersion::class);
         }
 
-        return $qs->exec();
+        $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
+        return $qs->exec(self::FIND_BY_ID_CACHE . $idsForCache, $cacheTtl);
     }
 
     /**
