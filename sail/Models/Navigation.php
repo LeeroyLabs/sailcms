@@ -141,6 +141,7 @@ class Navigation extends Model
      */
     public function delete(array $ids): bool
     {
+        $this->hasPermissions();
         $ids = $this->ensureObjectIds($ids, true);
         self::query()->deleteMany(['_id' => ['$in' => $ids]]);
         return true;
