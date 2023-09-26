@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use ImagickException;
+use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
@@ -11,6 +12,7 @@ use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Database\Traits\QueryObject;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -109,6 +111,35 @@ class Asset extends Model
         }
 
         return '';
+    }
+
+    /**
+     *
+     * Get assets by a list of ids
+     *
+     * @param Collection|array $ids
+     * @param bool $api
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     * @throws JsonException
+     *
+     */
+    public static function getByIds(Collection|array $ids, bool $api = true): array|null
+    {
+        $model = new self;
+
+        if ($api) {
+            $model->hasPermissions(true);
+        }
+
+        $objectIds = $model->ensureObjectIds($ids);
+        $idsForCache = implode('_', $ids);
+
+        return $model->find(['_id' => ['$in' => $objectIds->toArray()]])
+            ->populate('uploader_id', 'uploader', User::class)
+            ->exec('by_ids_' . $idsForCache);
     }
 
     /**
