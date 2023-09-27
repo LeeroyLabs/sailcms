@@ -381,7 +381,7 @@ class Entry extends Model implements Validator, Castable
             $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
             $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed);
         });
-        ray($toFetch);
+
         // Fetch data in batches
         $fetched = [];
         if (isset($toFetch[EntryFetchOption::ASSET->value])) {

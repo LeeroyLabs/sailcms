@@ -79,6 +79,7 @@ class Entries
         $search = $args->get('search', '');
         $onlyTrash = $args->get('only_trash', false);
         $locale = $args->get('locale');
+        $options = $args->get('options');
 
         $direction = match ($direction) {
             'desc' => Model::SORT_DESC,
@@ -93,13 +94,13 @@ class Entries
 
         // Clean data before returning it.
         $data = Collection::init();
-        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data)
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data, $options)
         {
             /**
              * @var Entry $entry
              */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $this->parseEntry($entry->simplify($homepage));
+            $entryArray = $this->parseEntry($entry->simplify($homepage), $options);
             $data->push($entryArray);
         });
 
@@ -127,7 +128,7 @@ class Entries
     {
         $entryTypeHandle = $args->get('entry_type_handle');
         $id = $args->get('id');
-        $siteId = $args->get("site_id", Sail::siteId());
+        $siteId = $args->get('site_id', Sail::siteId());
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
         $entry = $entryModel->one(['_id' => $id]);
@@ -137,7 +138,7 @@ class Entries
         }
 
         $homepage = Entry::getHomepage($siteId, $entry->locale);
-        return $this->parseEntry($entry->simplify($homepage));
+        return $this->parseEntry($entry->simplify($homepage), $args->get('options'));
     }
 
     /**
@@ -167,7 +168,7 @@ class Entries
 
         if ($entry) {
             $homepage = Entry::getHomepage($siteId, $entry->locale);
-            return $this->parseEntry($entry->simplify($homepage));
+            return $this->parseEntry($entry->simplify($homepage), $args->get('options'));
         }
 
         return null;
@@ -523,7 +524,8 @@ class Entries
 
         // Entry fields to resolve
         if ($info->fieldName === "content") {
-            return $entry->getContent();
+            $options = $obj["options"] ?? [];
+            return $entry->getContent($options);
         }
 
         // TODO add schema to entry data
@@ -673,7 +675,7 @@ class Entries
      * @param  array  $simplifiedEntry
      * @return array
      */
-    private function parseEntry(array $simplifiedEntry): array
+    private function parseEntry(array $simplifiedEntry, Collection $options = null): array
     {
         // Override SEO social metas
         if (isset($simplifiedEntry['seo']) && isset($simplifiedEntry['seo']['social_metas'])) {
@@ -693,6 +695,7 @@ class Entries
             }
             $simplifiedEntry['seo']['social_metas'] = $socialMetas;
         }
+        $simplifiedEntry['options'] = $options ? $options->toArray() : [];
 
         return $simplifiedEntry;
     }
