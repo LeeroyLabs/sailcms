@@ -370,7 +370,6 @@ class Entry extends Model implements Validator, Castable
                 $toFetch[$option] = [];
             }
         }
-        ray($toFetch);
 
         // There is nothing to fetch
         if (empty($toFetch)) {
@@ -382,7 +381,7 @@ class Entry extends Model implements Validator, Castable
             $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
             $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed);
         });
-
+        ray($toFetch);
         // Fetch data in batches
         $fetched = [];
         if (isset($toFetch[EntryFetchOption::ASSET->value])) {
@@ -392,6 +391,10 @@ class Entry extends Model implements Validator, Castable
         if (isset($toFetch[EntryFetchOption::ENTRY->value])) {
             $result = (new EntryPublication())->getPublicationsByEntryIds(array_values($toFetch[EntryFetchOption::ENTRY->value]), true, false);
             $fetched[EntryFetchOption::ENTRY->value] = new Collection($result);
+        }
+        if (isset($toFetch[EntryFetchOption::CATEGORY->value])) {
+            $result = Category::getByIds($toFetch[EntryFetchOption::CATEGORY->value]);
+            $fetched[EntryFetchOption::CATEGORY->value] = new Collection($result);
         }
 
         // Parse content with fetched elements
@@ -435,28 +438,32 @@ class Entry extends Model implements Validator, Castable
             /**
              * @var EntryField $entryField
              */
-            if (isset($toFetch[EntryFetchOption::ENTRY->value]) && $entryField->type === "entry" && $content->get($entryField->key)) {
-                $fieldContent = $content->get($entryField->key);
-                if ($entryField->repeatable) {
-                    foreach($fieldContent as $index => $element) {
-                        $toFetch[EntryFetchOption::ENTRY->value][$elementBaseKey . "_" . $index] = $element;
-                    }
-                } else {
-                    $toFetch[EntryFetchOption::ENTRY->value][$elementBaseKey] = $fieldContent;
-                }
-            } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && in_array($entryField->type, ["asset_image", "asset_file"]) && $content->get($entryField->key)) {
-                if ($entryField->repeatable) {
-                    $fieldContent = $content->get($entryField->key);
-                    foreach($fieldContent as $index => $element) {
-                        $toFetch[EntryFetchOption::ASSET->value][$elementBaseKey . "_" . $index] = $element;
-                    }
-                } else {
-                    $toFetch[EntryFetchOption::ASSET->value][$elementBaseKey] = $content->get($entryField->key);
-                }
-            } else if ($entryField->type === "matrix") {
+            switch ($entryField->type) {
+                case "entry":
+                    $fetchKey = EntryFetchOption::ENTRY->value;
+                    break;
+                case "asset_image":
+                case "asset_file":
+                    $fetchKey = EntryFetchOption::ASSET->value;
+                    break;
+                case "matrix":
+                    $fetchKey = EntryFetchOption::CATEGORY->value;
+                    break;
+            }
+
+            if ($entryField->type === "matrix") {
                 $subFields = (new EntryField)->getFieldsForMatrix($entryField->_id);
                 $matrixContent = new Collection((array)$content->get($entryField->key));
                 $this->getIdToFetchFromContent($subFields, $toFetch, $matrixContent, $elementBaseKey . "_");
+            } else if (isset($fetchKey) && isset($toFetch[$fetchKey]) && $content->get($entryField->key)) {
+                $fieldContent = $content->get($entryField->key);
+                if ($entryField->repeatable) {
+                    foreach($fieldContent as $index => $element) {
+                        $toFetch[$fetchKey][$elementBaseKey . "_" . $index] = $element;
+                    }
+                } else {
+                    $toFetch[$fetchKey][$elementBaseKey] = $fieldContent;
+                }
             }
         }
     }
