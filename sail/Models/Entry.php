@@ -355,31 +355,34 @@ class Entry extends Model implements Validator, Castable
         // Replace id an asset or an entry for their object
         $schema = $this->getSchema(true);
 
-        // Get id to fetch
-        $assetToFetch = [];
-        $entryToFetch = [];
-        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$assetToFetch, &$entryToFetch) {
+        // Get ids to fetch
+        $toFetch = [
+            'assets' => [],
+            'entries' => []
+        ];
+        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch) {
             $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
-            $this->getIdToFetchFromContent($fields, $assetToFetch,$entryToFetch, $contentParsed);
+            $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed);
         });
 
         // Fetch data in batches
-        $assets = new Collection(Asset::getByIds($assetToFetch, false));
-        $entries = new Collection((new EntryPublication())->getPublicationsByEntryIds(array_values($entryToFetch), true, false));
+        $fetched = [];
+        $fetched['assets'] = new Collection(Asset::getByIds($toFetch['assets'], false));
+        $fetched['entries'] = new Collection((new EntryPublication())->getPublicationsByEntryIds(array_values($toFetch['entries']), true, false));
 
         // Parse content with fetched elements
-        $contentParsed->each(function($key, &$content) use (&$contentParsed, $entryToFetch, $entries, $assetToFetch, $assets) {
+        $contentParsed->each(function($key, &$content) use (&$contentParsed, $toFetch, $fetched) {
             if (is_object($content) && !$content instanceof Collection) {
                 // It's not a collection, so it's a matrix content ~~~ todo be more precise - check in schema ?
                 $matrixContent = Collection::init();
                 foreach ($content as $matrixKey => $element) {
-                    $contentFetched = $this->searchInFetchArray($key . "_" . $matrixKey, $element, $assetToFetch, $assets, $entryToFetch, $entries);
+                    $contentFetched = $this->searchInFetchArray($key . "_" . $matrixKey, $element, $toFetch, $fetched);
                     $matrixContent->setFor($matrixKey, $contentFetched);
                 }
                 $contentParsed->setFor($key, $matrixContent);
             } else {
                 // Any other type of content
-                $contentFetched = $this->searchInFetchArray($key, $content, $assetToFetch, $assets, $entryToFetch, $entries);
+                $contentFetched = $this->searchInFetchArray($key, $content, $toFetch, $fetched);
                 $contentParsed->setFor($key, $contentFetched);
             }
         });
@@ -392,8 +395,7 @@ class Entry extends Model implements Validator, Castable
      * Recursively get id to fetch from content and a list of fields
      *
      * @param Collection $fields
-     * @param array $assetToFetch
-     * @param array $entryToFetch
+     * @param array $toFetch
      * @param Collection $content
      * @param string $keyPrefix for matrix
      * @return void
@@ -402,7 +404,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function getIdToFetchFromContent(Collection $fields, array &$assetToFetch, array &$entryToFetch, Collection $content, string $keyPrefix = ""): void
+    private function getIdToFetchFromContent(Collection $fields, array &$toFetch, Collection $content, string $keyPrefix = ""): void
     {
         foreach($fields as $entryField) {
             $elementBaseKey = $keyPrefix . $entryField->key;
@@ -413,24 +415,24 @@ class Entry extends Model implements Validator, Castable
                 $fieldContent = $content->get($entryField->key);
                 if ($entryField->repeatable) {
                     foreach($fieldContent as $index => $element) {
-                        $entryToFetch[$elementBaseKey . "_" . $index] = $element;
+                        $toFetch['entries'][$elementBaseKey . "_" . $index] = $element;
                     }
                 } else {
-                    $entryToFetch[$elementBaseKey] = $fieldContent;
+                    $toFetch['entries'][$elementBaseKey] = $fieldContent;
                 }
             } else if (in_array($entryField->type, ["asset_image", "asset_file"]) && $content->get($entryField->key)) {
                 if ($entryField->repeatable) {
                     $fieldContent = $content->get($entryField->key);
                     foreach($fieldContent as $index => $element) {
-                        $assetToFetch[$elementBaseKey . "_" . $index] = $element;
+                        $toFetch['assets'][$elementBaseKey . "_" . $index] = $element;
                     }
                 } else {
-                    $assetToFetch[$elementBaseKey] = $content->get($entryField->key);
+                    $toFetch['assets'][$elementBaseKey] = $content->get($entryField->key);
                 }
             } else if ($entryField->type === "matrix") {
                 $subFields = (new EntryField)->getFieldsForMatrix($entryField->_id);
                 $matrixContent = new Collection((array)$content->get($entryField->key));
-                $this->getIdToFetchFromContent($subFields, $assetToFetch, $entryToFetch, $matrixContent, $elementBaseKey . "_");
+                $this->getIdToFetchFromContent($subFields, $toFetch, $matrixContent, $elementBaseKey . "_");
             }
         }
     }
@@ -441,34 +443,31 @@ class Entry extends Model implements Validator, Castable
      *
      * @param string $key
      * @param mixed $content
-     * @param array $assetToFetch
-     * @param Collection $assets
-     * @param array $entryToFetch
-     * @param Collection $entries
+     * @param array $toFetch
+     * @param array $fetched
      * @return mixed
-     *
      */
-    private function searchInFetchArray(string $key, mixed $content, array $assetToFetch, Collection $assets, array $entryToFetch, Collection $entries): mixed
+    private function searchInFetchArray(string $key, mixed $content, array $toFetch, array $fetched): mixed
     {
         $contentFetched = $content;
         if (is_array($content) || $content instanceof Collection) {
             $arrayContent = $content;
             foreach ($content as $index => $element) {
-                if (array_key_exists($key . "_" . $index, $entryToFetch)) {
-                    $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $element);
+                if (array_key_exists($key . "_" . $index, $toFetch['entries'])) {
+                    $entry = $fetched['entries']->find(fn($k, $c) => (string)$c->entry_id == $element);
                     $arrayContent[$index] = $entry ?? $element;
-                } else if (array_key_exists($key . "_" . $index, $assetToFetch)) {
-                    $asset = $assets->find(fn($k, $c) => (string)$c->_id === $element);
+                } else if (array_key_exists($key . "_" . $index, $toFetch['assets'])) {
+                    $asset = $fetched['assets']->find(fn($k, $c) => (string)$c->_id === $element);
                     $arrayContent[$index] = $asset ?? $element;
                 }
             }
             $contentFetched = $arrayContent;
         } else {
-            if (array_key_exists($key, $entryToFetch)) {
-                $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $content);
+            if (array_key_exists($key, $toFetch['entries'])) {
+                $entry = $fetched['entries']->find(fn($k, $c) => (string)$c->entry_id == $content);
                 $contentFetched = $entry ?? $content;
-            } else if (array_key_exists($key, $assetToFetch)) {
-                $asset = $assets->find(fn($k, $c) => (string)$c->_id === $content);
+            } else if (array_key_exists($key, $toFetch['assets'])) {
+                $asset = $fetched['assets']->find(fn($k, $c) => (string)$c->_id === $content);
                 $contentFetched = $asset ?? $content;
             }
         }
