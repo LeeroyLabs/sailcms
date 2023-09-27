@@ -36,7 +36,7 @@ use stdClass;
 class Queue extends Model
 {
     protected string $collection = 'queue';
-
+    protected string $permissionGroup = 'task';
     protected array $casting = [
         'logs' => Collection::class
     ];
