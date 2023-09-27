@@ -446,7 +446,7 @@ class Entry extends Model implements Validator, Castable
                 case "asset_file":
                     $fetchKey = EntryFetchOption::ASSET->value;
                     break;
-                case "matrix":
+                case "category":
                     $fetchKey = EntryFetchOption::CATEGORY->value;
                     break;
             }
@@ -484,12 +484,16 @@ class Entry extends Model implements Validator, Castable
         if (is_array($content) || $content instanceof Collection) {
             $arrayContent = $content;
             foreach ($content as $index => $element) {
+                // TODO dynamize that... ?
                 if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ENTRY->value])) {
                     $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $element);
                     $arrayContent[$index] = $entry ?? $element;
                 } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ASSET->value])) {
                     $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $element);
                     $arrayContent[$index] = $asset ?? $element;
+                } else if (isset($toFetch[EntryFetchOption::CATEGORY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::CATEGORY->value])) {
+                    $category = $fetched[EntryFetchOption::CATEGORY->value]->find(fn($k, $c) => (string)$c->_id === $element);
+                    $arrayContent[$index] = $category ?? $element;
                 }
             }
             $contentFetched = $arrayContent;
@@ -500,6 +504,9 @@ class Entry extends Model implements Validator, Castable
             } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ASSET->value])) {
                 $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $content);
                 $contentFetched = $asset ?? $content;
+            } else if (isset($toFetch[EntryFetchOption::CATEGORY->value]) && array_key_exists($key, $toFetch[EntryFetchOption::CATEGORY->value])) {
+                $category = $fetched[EntryFetchOption::CATEGORY->value]->find(fn($k, $c) => (string)$c->_id === $content);
+                $contentFetched = $category ?? $content;
             }
         }
         return $contentFetched;
