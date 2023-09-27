@@ -52,8 +52,6 @@ class Queue extends Model
      */
     public static function add(Task $task): void
     {
-        (new static())->hasPermissions();
-
         $stamp = $task->timestamp;
 
         if ($task->timestamp === 0) {
@@ -87,8 +85,6 @@ class Queue extends Model
      */
     public static function update(string|ObjectId $id, Task $task): void
     {
-        (new static())->hasPermissions();
-
         $stamp = $task->timestamp;
 
         if ($task->timestamp === 0) {
@@ -196,8 +192,6 @@ class Queue extends Model
      */
     public function getProcessId(string $id): int
     {
-        $this->hasPermissions(true);
-
         return $this->findById($id)->exec()->pid;
     }
 
@@ -211,8 +205,6 @@ class Queue extends Model
      */
     public function getLogs(string $id): Collection
     {
-        $this->hasPermissions(true);
-
         return $this->findById($id)->exec()->logs;
     }
 
@@ -239,8 +231,6 @@ class Queue extends Model
      */
     public function getById(string $id): ?Queue
     {
-        $this->hasPermissions(true);
-
         return $this->findById($id)->exec();
     }
 
@@ -255,8 +245,6 @@ class Queue extends Model
      */
     public function getList(int $limit = 0): Collection
     {
-        $this->hasPermissions(true);
-
         $options = new QueryOptions();
         $options->limit = $limit;
         $options->sort = ['priority' => 1];
@@ -283,8 +271,6 @@ class Queue extends Model
         string $sort = 'name',
         int $direction = Model::SORT_ASC
     ): Listing {
-        $this->hasPermissions(true);
-
         $offset = $page * $limit - $limit;
 
         $options = QueryOptions::initWithSort([$sort => $direction]);
@@ -352,8 +338,6 @@ class Queue extends Model
      */
     public function closeTask(ObjectId $id, string $message, bool $successful = true, int $retryCount = -1): void
     {
-        $this->hasPermissions();
-
         $update = [
             '$set' => [
                 'locked' => false,
@@ -415,8 +399,6 @@ class Queue extends Model
      */
     public function cancelTask(array $ids): bool
     {
-        $this->hasPermissions();
-
         $ids = $this->ensureObjectIds($ids, true);
         $this->deleteMany(['_id' => ['$in' => $ids]]);
         return true;
