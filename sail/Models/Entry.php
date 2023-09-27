@@ -30,6 +30,7 @@ use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryAlternate;
+use SailCMS\Types\EntryFetchOption;
 use SailCMS\Types\EntryParent;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -340,26 +341,43 @@ class Entry extends Model implements Validator, Castable
      *
      * Parse content according to EntryField type
      *
+     * @param array $options
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException
      * @throws JsonException
-     *
+     * @throws PermissionException
      */
-    public function getContent(): Collection
+    public function getContent(array $options = [EntryFetchOption::ALL->value]): Collection
     {
         $contentParsed = $this->content;
 
         // Replace id an asset or an entry for their object
         $schema = $this->getSchema(true);
 
+        // Set element to fetch according to fetch options
+        if (in_array(EntryFetchOption::ALL->value, $options)) {
+            // Get ids to fetch
+            $toFetch = [
+                'assets' => [],
+                'entries' => [],
+                'categories' => []
+            ];
+        } else {
+            $toFetch = [];
+            foreach($options as $option) {
+                $toFetch[$option] = [];
+            }
+        }
+        ray($toFetch);
+
+        // There is nothing to fetch
+        if (empty($toFetch)) {
+            return $contentParsed;
+        }
+
         // Get ids to fetch
-        $toFetch = [
-            'assets' => [],
-            'entries' => []
-        ];
         $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch) {
             $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
             $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed);
@@ -367,8 +385,14 @@ class Entry extends Model implements Validator, Castable
 
         // Fetch data in batches
         $fetched = [];
-        $fetched['assets'] = new Collection(Asset::getByIds($toFetch['assets'], false));
-        $fetched['entries'] = new Collection((new EntryPublication())->getPublicationsByEntryIds(array_values($toFetch['entries']), true, false));
+        if (isset($toFetch[EntryFetchOption::ASSET->value])) {
+            $result = Asset::getByIds($toFetch[EntryFetchOption::ASSET->value], false);
+            $fetched[EntryFetchOption::ASSET->value] = new Collection($result);
+        }
+        if (isset($toFetch[EntryFetchOption::ENTRY->value])) {
+            $result = (new EntryPublication())->getPublicationsByEntryIds(array_values($toFetch[EntryFetchOption::ENTRY->value]), true, false);
+            $fetched[EntryFetchOption::ENTRY->value] = new Collection($result);
+        }
 
         // Parse content with fetched elements
         $contentParsed->each(function($key, &$content) use (&$contentParsed, $toFetch, $fetched) {
@@ -411,23 +435,23 @@ class Entry extends Model implements Validator, Castable
             /**
              * @var EntryField $entryField
              */
-            if ($entryField->type === "entry" && $content->get($entryField->key)) {
+            if (isset($toFetch[EntryFetchOption::ENTRY->value]) && $entryField->type === "entry" && $content->get($entryField->key)) {
                 $fieldContent = $content->get($entryField->key);
                 if ($entryField->repeatable) {
                     foreach($fieldContent as $index => $element) {
-                        $toFetch['entries'][$elementBaseKey . "_" . $index] = $element;
+                        $toFetch[EntryFetchOption::ENTRY->value][$elementBaseKey . "_" . $index] = $element;
                     }
                 } else {
-                    $toFetch['entries'][$elementBaseKey] = $fieldContent;
+                    $toFetch[EntryFetchOption::ENTRY->value][$elementBaseKey] = $fieldContent;
                 }
-            } else if (in_array($entryField->type, ["asset_image", "asset_file"]) && $content->get($entryField->key)) {
+            } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && in_array($entryField->type, ["asset_image", "asset_file"]) && $content->get($entryField->key)) {
                 if ($entryField->repeatable) {
                     $fieldContent = $content->get($entryField->key);
                     foreach($fieldContent as $index => $element) {
-                        $toFetch['assets'][$elementBaseKey . "_" . $index] = $element;
+                        $toFetch[EntryFetchOption::ASSET->value][$elementBaseKey . "_" . $index] = $element;
                     }
                 } else {
-                    $toFetch['assets'][$elementBaseKey] = $content->get($entryField->key);
+                    $toFetch[EntryFetchOption::ASSET->value][$elementBaseKey] = $content->get($entryField->key);
                 }
             } else if ($entryField->type === "matrix") {
                 $subFields = (new EntryField)->getFieldsForMatrix($entryField->_id);
@@ -453,21 +477,21 @@ class Entry extends Model implements Validator, Castable
         if (is_array($content) || $content instanceof Collection) {
             $arrayContent = $content;
             foreach ($content as $index => $element) {
-                if (array_key_exists($key . "_" . $index, $toFetch['entries'])) {
-                    $entry = $fetched['entries']->find(fn($k, $c) => (string)$c->entry_id == $element);
+                if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ENTRY->value])) {
+                    $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $element);
                     $arrayContent[$index] = $entry ?? $element;
-                } else if (array_key_exists($key . "_" . $index, $toFetch['assets'])) {
-                    $asset = $fetched['assets']->find(fn($k, $c) => (string)$c->_id === $element);
+                } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ASSET->value])) {
+                    $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $element);
                     $arrayContent[$index] = $asset ?? $element;
                 }
             }
             $contentFetched = $arrayContent;
         } else {
-            if (array_key_exists($key, $toFetch['entries'])) {
-                $entry = $fetched['entries']->find(fn($k, $c) => (string)$c->entry_id == $content);
+            if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ENTRY->value])) {
+                $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $content);
                 $contentFetched = $entry ?? $content;
-            } else if (array_key_exists($key, $toFetch['assets'])) {
-                $asset = $fetched['assets']->find(fn($k, $c) => (string)$c->_id === $content);
+            } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ASSET->value])) {
+                $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $content);
                 $contentFetched = $asset ?? $content;
             }
         }
