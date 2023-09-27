@@ -190,7 +190,7 @@ trait ActiveRecord
 
             foreach ($this->properties as $key => $value) {
                 if ($key !== '_id') {
-                    $this->dirtyFields[$key] = true;
+                    $this->dirtyFields[] = true;
                 }
             }
         }
