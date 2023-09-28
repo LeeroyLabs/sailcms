@@ -6,7 +6,9 @@ use ImagickException;
 use Intervention\Image\Image;
 use Intervention\Image\ImageManager;
 use League\Flysystem\FilesystemException;
+use SailCMS\Errors\AssetException;
 use SailCMS\Internal\Filesystem;
+use SailCMS\Sail;
 
 class Transformer
 {
@@ -252,5 +254,72 @@ class Transformer
         $img->readImageBlob($source);
 
         return new Size($img->getImageWidth(), $img->getImageHeight());
+    }
+
+    /**
+     *
+     * Convert HEIC file to requested format and quality
+     *
+     * @param  string  $filepath
+     * @param  int     $quality
+     * @param  string  $convertTarget
+     * @return string
+     * @throws AssetException
+     *
+     */
+    public static function convertHEIC(string $filepath, int $quality = 92, string $convertTarget = Transformer::OUTPUT_WEBP): string
+    {
+        exec('convert --version', $execCheck);
+
+        if (!$execCheck) {
+            throw new AssetException('ImageMagick is not installed on this machine. Cannot convert.', 0500);
+        }
+
+        if ($quality > 100) {
+            $quality = 100;
+        }
+
+        $tmpPath = Sail::getFSDirectory() . '/uploads/' . uniqid('convert_', false) . '.' . $convertTarget;
+        exec("convert -quality {$quality} {$filepath} {$tmpPath}", $result);
+
+        if ($result) {
+            throw new AssetException('Could not convert HEIC file: ' . implode("\n", $result), 0500);
+        }
+
+        // Read the result, destroy the file
+        $data = file_get_contents($tmpPath);
+        unlink($tmpPath);
+
+        return $data;
+    }
+
+    public static function convertHEICFromBuffer(string $buffer, int $quality = 92, string $convertTarget = Transformer::OUTPUT_WEBP): string
+    {
+        exec('convert --version', $execCheck);
+
+        if (!$execCheck) {
+            throw new AssetException('ImageMagick is not installed on this machine. Cannot convert.', 0500);
+        }
+
+        if ($quality > 100) {
+            $quality = 100;
+        }
+
+        // Temporary source file
+        $sourceFile = Sail::getFSDirectory() . '/uploads/' . uniqid('tmp_src_', false) . '.heic';
+        file_put_contents($sourceFile . $sourceFile, $buffer);
+
+        $tmpPath = Sail::getFSDirectory() . '/uploads/' . uniqid('convert_', false) . '.' . $convertTarget;
+        exec("convert -quality {$quality} {$sourceFile} {$tmpPath}", $result);
+
+        if ($result) {
+            throw new AssetException('Could not convert HEIC file: ' . implode("\n", $result), 0500);
+        }
+
+        // Read the result, destroy the file
+        $data = file_get_contents($tmpPath);
+        unlink($tmpPath);
+
+        return $data;
     }
 }
