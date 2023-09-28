@@ -512,6 +512,7 @@ class Entries
                     $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
                 }
                 $entryModel->content = new Collection((array)$obj['content']);
+                // TODO - GEt the options from the entryversion fetch
                 return $entryModel->getContent();
             }
             return $obj[$info->fieldName];
