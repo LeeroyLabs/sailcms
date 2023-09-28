@@ -24,7 +24,9 @@ use SailCMS\Locale;
 use SailCMS\Middleware;
 use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
+use SailCMS\Models\BrokenLink;
 use SailCMS\Models\Entry;
+use SailCMS\Models\Redirection;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
 use SodiumException;
@@ -245,6 +247,18 @@ class Router
             }
         }
 
+        // Redirection
+        $redirection_list = (new Redirection())->getList();
+        if (in_array($uri, array_column($redirection_list->list->unwrap(), 'url'), true)) {
+            $redirection = array_search($uri, array_column($redirection_list->list->unwrap(), 'url'), true);
+            $permanent = true;
+
+            if($redirection_list->list->unwrap()[$redirection]->redirect_type === "302"){
+                $permanent = false;
+            }
+            (new self)->redirect($uri, $redirection_list->list->unwrap()[$redirection]->redirect_url, $permanent);
+        }
+
         $entry = Entry::findByURL($uri);
         if ($entry) {
             $response = Response::html();
@@ -314,6 +328,12 @@ class Router
 
         Debug::route('GET', '/', 'system:not_found', '404');
         $response->template = '404';
+
+        if (!(new BrokenLink())->getByUrl($uri)) {
+            (new BrokenLink())::add($uri);
+        } else {
+            (new BrokenLink())->update($uri);
+        }
         $response->set('url', $uri);
         $response->render();
         exit();
