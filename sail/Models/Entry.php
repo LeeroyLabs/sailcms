@@ -30,6 +30,7 @@ use SailCMS\Text;
 use SailCMS\Types\Authors;
 use SailCMS\Types\Dates;
 use SailCMS\Types\EntryAlternate;
+use SailCMS\Types\EntryFetchOption;
 use SailCMS\Types\EntryParent;
 use SailCMS\Types\Listing;
 use SailCMS\Types\LocaleField;
@@ -340,51 +341,175 @@ class Entry extends Model implements Validator, Castable
      *
      * Parse content according to EntryField type
      *
+     * @param array $options
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
-     * @throws PermissionException
      * @throws JsonException
-     *
+     * @throws PermissionException
      */
-    public function getContent(): Collection
+    public function getContent(array $options = [EntryFetchOption::ALL->value]): Collection
     {
         $contentParsed = $this->content;
 
         // Replace id an asset or an entry for their object
         $schema = $this->getSchema(true);
 
-        $assetToFetch = [];
-        $entryToFetch = [];
-        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$assetToFetch, &$entryToFetch) {
-            foreach($fieldTab->fields as $entryField) {
-                /**
-                 * @var EntryField $entryField
-                 */
-                if ($entryField->type === "entry" && $contentParsed->get($entryField->key)) {
-                    $entryToFetch[$entryField->key] = $contentParsed->get($entryField->key);
-                } else if ($entryField->type === "asset" && $contentParsed->get($entryField->key)) {
-                    $assetToFetch[$entryField->key] = $contentParsed->get($entryField->key);
-                }
+        // Set element to fetch according to fetch options
+        if (in_array(EntryFetchOption::ALL->value, $options)) {
+            // Get ids to fetch
+            $toFetch = [
+                'assets' => [],
+                'entries' => [],
+                'categories' => []
+            ];
+        } else {
+            $toFetch = [];
+            foreach($options as $option) {
+                $toFetch[$option] = [];
             }
+        }
+
+        // There is nothing to fetch
+        if (empty($toFetch)) {
+            return $contentParsed;
+        }
+
+        // Get ids to fetch
+        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch) {
+            $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
+            $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed);
         });
 
-        // Fetch data in batch
-        $assets = new Collection(Asset::getByIds($assetToFetch, false));
-        $entries = new Collection((new EntryPublication())->getPublicationsByEntryIds(array_values($entryToFetch), true, false));
+        // Fetch data in batches
+        $fetched = [];
+        if (isset($toFetch[EntryFetchOption::ASSET->value])) {
+            $result = Asset::getByIds($toFetch[EntryFetchOption::ASSET->value], false);
+            $fetched[EntryFetchOption::ASSET->value] = new Collection($result);
+        }
+        if (isset($toFetch[EntryFetchOption::ENTRY->value])) {
+            $result = (new EntryPublication())->getPublicationsByEntryIds(array_values($toFetch[EntryFetchOption::ENTRY->value]), true, false);
+            $fetched[EntryFetchOption::ENTRY->value] = new Collection($result);
+        }
+        if (isset($toFetch[EntryFetchOption::CATEGORY->value])) {
+            $result = Category::getByIds($toFetch[EntryFetchOption::CATEGORY->value]);
+            $fetched[EntryFetchOption::CATEGORY->value] = new Collection($result);
+        }
 
-        $contentParsed->each(function($key, &$content) use (&$contentParsed, $entryToFetch, $entries, $assetToFetch, $assets) {
-            if (array_key_exists($key, $entryToFetch)) {
-                $entry = $entries->find(fn($k, $c) => (string)$c->entry_id == $content);
-                $contentParsed->setFor($key, $entry ?? $content);
-            } else if (array_key_exists($key, $assetToFetch)) {
-                $asset = $assets->find(fn($k, $c) => (string)$c->_id === $content);
-                $contentParsed->setFor($key, $asset ?? $content);
+        // Parse content with fetched elements
+        $contentParsed->each(function($key, &$content) use (&$contentParsed, $toFetch, $fetched) {
+            if (is_object($content) && !$content instanceof Collection) {
+                // It's not a collection, so it's a matrix content ~~~ todo be more precise - check in schema ?
+                $matrixContent = Collection::init();
+                foreach ($content as $matrixKey => $element) {
+                    $contentFetched = $this->searchInFetchArray($key . "_" . $matrixKey, $element, $toFetch, $fetched);
+                    $matrixContent->setFor($matrixKey, $contentFetched);
+                }
+                $contentParsed->setFor($key, $matrixContent);
+            } else {
+                // Any other type of content
+                $contentFetched = $this->searchInFetchArray($key, $content, $toFetch, $fetched);
+                $contentParsed->setFor($key, $contentFetched);
             }
         });
 
         return $contentParsed;
+    }
+
+    /**
+     *
+     * Recursively get id to fetch from content and a list of fields
+     *
+     * @param Collection $fields
+     * @param array $toFetch
+     * @param Collection $content
+     * @param string $keyPrefix for matrix
+     * @return void
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     *
+     */
+    private function getIdToFetchFromContent(Collection $fields, array &$toFetch, Collection $content, string $keyPrefix = ""): void
+    {
+        foreach($fields as $entryField) {
+            $elementBaseKey = $keyPrefix . $entryField->key;
+            /**
+             * @var EntryField $entryField
+             */
+            switch ($entryField->type) {
+                case "entry":
+                    $fetchKey = EntryFetchOption::ENTRY->value;
+                    break;
+                case "asset_image":
+                case "asset_file":
+                    $fetchKey = EntryFetchOption::ASSET->value;
+                    break;
+                case "category":
+                    $fetchKey = EntryFetchOption::CATEGORY->value;
+                    break;
+            }
+
+            if ($entryField->type === "matrix") {
+                $subFields = (new EntryField)->getFieldsForMatrix($entryField->_id);
+                $matrixContent = new Collection((array)$content->get($entryField->key));
+                $this->getIdToFetchFromContent($subFields, $toFetch, $matrixContent, $elementBaseKey . "_");
+            } else if (isset($fetchKey) && isset($toFetch[$fetchKey]) && $content->get($entryField->key)) {
+                $fieldContent = $content->get($entryField->key);
+                if ($entryField->repeatable) {
+                    foreach($fieldContent as $index => $element) {
+                        $toFetch[$fetchKey][$elementBaseKey . "_" . $index] = $element;
+                    }
+                } else {
+                    $toFetch[$fetchKey][$elementBaseKey] = $fieldContent;
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * Search for Asset or Entry in fetched elements
+     *
+     * @param string $key
+     * @param mixed $content
+     * @param array $toFetch
+     * @param array $fetched
+     * @return mixed
+     */
+    private function searchInFetchArray(string $key, mixed $content, array $toFetch, array $fetched): mixed
+    {
+        $contentFetched = $content;
+        if (is_array($content) || $content instanceof Collection) {
+            $arrayContent = $content;
+            foreach ($content as $index => $element) {
+                // TODO dynamize that... ?
+                if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ENTRY->value])) {
+                    $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $element);
+                    $arrayContent[$index] = $entry ?? $element;
+                } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ASSET->value])) {
+                    $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $element);
+                    $arrayContent[$index] = $asset ?? $element;
+                } else if (isset($toFetch[EntryFetchOption::CATEGORY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::CATEGORY->value])) {
+                    $category = $fetched[EntryFetchOption::CATEGORY->value]->find(fn($k, $c) => (string)$c->_id === $element);
+                    $arrayContent[$index] = $category ?? $element;
+                }
+            }
+            $contentFetched = $arrayContent;
+        } else {
+            if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ENTRY->value])) {
+                $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $content);
+                $contentFetched = $entry ?? $content;
+            } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ASSET->value])) {
+                $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $content);
+                $contentFetched = $asset ?? $content;
+            } else if (isset($toFetch[EntryFetchOption::CATEGORY->value]) && array_key_exists($key, $toFetch[EntryFetchOption::CATEGORY->value])) {
+                $category = $fetched[EntryFetchOption::CATEGORY->value]->find(fn($k, $c) => (string)$c->_id === $content);
+                $contentFetched = $category ?? $content;
+            }
+        }
+        return $contentFetched;
     }
 
     /**

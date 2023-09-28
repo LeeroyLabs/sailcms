@@ -3,11 +3,14 @@
 namespace SailCMS\Routing;
 
 use SailCMS\Blueprints\AppController;
+use SailCMS\Errors\DatabaseException;
+use SailCMS\Models\Redirection;
 
 class Redirect
 {
     private string $from = '';
     private string $to = '';
+    private bool $permanent;
 
     private static array $patterns = [
         ':any' => '([a-zA-Z0-9\-]+)',
@@ -17,19 +20,21 @@ class Redirect
         ':all' => '(.*)'
     ];
 
-    public function __construct(string $from, string $to)
+    public function __construct(string $from, string $to, $permanent)
     {
         $this->from = $from;
         $this->to = $to;
+        $this->permanent = $permanent;
     }
 
     /**
      *
      * Match URL to a redirect route and execute it
      *
-     * @param  string  $url
+     * @param string $url
      * @return void
      *
+     * @throws DatabaseException
      */
     public function matchAndExecute(string $url): void
     {
@@ -45,6 +50,10 @@ class Redirect
             $route = str_replace($searches, $replaces, $this->from);
 
             if (preg_match('#^' . $route . '$#', $url, $matched)) {
+                $redirection = (new Redirection())->getByUrl($url);
+                if($redirection) {
+                    (new Redirection())->updateHitCount($redirection->_id);
+                }
                 unset($matched[0]);
                 $matches = array_values($matched);
                 $this->exec($matches);
@@ -65,7 +74,12 @@ class Redirect
 
         $to = str_replace($spots, $matches, $to);
 
-        header("HTTP/1.1 301 Moved Permanently");
+        if ($this->permanent) {
+            header("HTTP/1.1 301 Moved Permanently");
+        }else{
+            header("HTTP/1.1 302 Found");
+        }
+
         header("Location: " . $to);
         die();
     }

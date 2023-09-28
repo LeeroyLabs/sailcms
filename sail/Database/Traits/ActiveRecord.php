@@ -177,6 +177,7 @@ trait ActiveRecord
      *
      * @return bool
      * @throws DatabaseException
+     * @throws \JsonException
      *
      */
     public function save(): bool
@@ -189,7 +190,7 @@ trait ActiveRecord
 
             foreach ($this->properties as $key => $value) {
                 if ($key !== '_id') {
-                    $set[$key] = $value;
+                    $this->dirtyFields[] = $key;
                 }
             }
         }
@@ -217,6 +218,12 @@ trait ActiveRecord
                 $call = [];
 
                 if (count($set) > 0) {
+                    $set = json_decode(
+                        json_encode($set, JSON_THROW_ON_ERROR),
+                        true,
+                        512,
+                        JSON_THROW_ON_ERROR
+                    );
                     $call = ['$set' => $set];
                 }
 

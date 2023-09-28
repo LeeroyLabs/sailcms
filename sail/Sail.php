@@ -768,6 +768,7 @@ class Sail
     {
         self::setWorkingDirectory($rootDir . '/mock');
         self::setAppState(self::STATE_CLI, 'dev', $rootDir . '/mock');
+        self::$fsDirectory = self::$workingDirectory . '/storage/fs';
 
         // Load security into place so it's available everywhere
         Security::init();

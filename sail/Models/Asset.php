@@ -15,6 +15,7 @@ use SailCMS\Database\Model;
 use SailCMS\Database\Traits\QueryObject;
 use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\AssetException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
@@ -117,8 +118,8 @@ class Asset extends Model
      *
      * Get assets by a list of ids
      *
-     * @param Collection|array $ids
-     * @param bool $api
+     * @param  Collection|array  $ids
+     * @param  bool              $api
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
@@ -138,8 +139,8 @@ class Asset extends Model
         $idsForCache = implode('_', $ids);
 
         return $model->find(['_id' => ['$in' => $objectIds->toArray()]])
-            ->populate('uploader_id', 'uploader', User::class)
-            ->exec('by_ids_' . $idsForCache);
+                     ->populate('uploader_id', 'uploader', User::class)
+                     ->exec('by_ids_' . $idsForCache);
     }
 
     /**
@@ -202,6 +203,7 @@ class Asset extends Model
      * @throws FileException
      * @throws FilesystemException
      * @throws ImagickException
+     * @throws AssetException
      *
      */
     public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = '', string $siteId = 'default'): self
@@ -257,9 +259,14 @@ class Asset extends Model
         };
 
         $isImage = match ($ext) {
-            'jpeg', 'jpg', 'png', 'webp', 'gif' => true,
+            'heic', 'HEIC', 'jpeg', 'jpg', 'png', 'webp', 'gif' => true,
             default => false
         };
+
+        // Try to convert HEIC to webp directly
+        if (strtolower($ext) === 'heic') {
+            $data = Transformer::convertHEICFromBuffer($data, $quality, Transformer::OUTPUT_WEBP);
+        }
 
         // Before Process Middleware
         $mwData = new Middleware\Data(Middleware\Asset::BeforeProcess, ['data' => $data, 'filename' => $filename]);
@@ -279,6 +286,13 @@ class Asset extends Model
         } else {
             // Not applicable
             $size = new Size(0, 0);
+
+            if (strtolower($ext) === 'heic') {
+                // run these on the new webp from heic (skip convert op)
+                $filename = str_replace($ext, 'webp', $filename);
+                $the_name = str_replace($ext, 'webp', $the_name);
+                $size = Transformer::getImageSizeFromSource($data);
+            }
         }
 
         // After Process Middleware
@@ -673,7 +687,7 @@ class Asset extends Model
     public function moveAllFiles(string $folder, string $moveTo, string $siteId = 'default'): void
     {
         $siteId = self::getSiteId($siteId);
-        
+
         $this->hasPermissions();
         $this->updateMany(['folder' => $folder, 'site_id' => $siteId], ['$set' => ['folder' => $moveTo]]);
     }
