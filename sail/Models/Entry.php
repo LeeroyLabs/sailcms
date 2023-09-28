@@ -225,13 +225,16 @@ class Entry extends Model implements Validator, Castable
      *
      * Cast to for EntryAlternate elements
      *
-     * @param  mixed  $value
-     * @return EntryAlternate
-     *
+     * @param mixed $value
+     * @return EntryAlternate|null
      */
-    public function castTo(mixed $value): EntryAlternate
+    public function castTo(mixed $value): EntryAlternate|array
     {
-        return (new EntryAlternate())->castTo($value);
+        if ($value) {
+            return (new EntryAlternate())->castTo($value);
+        }
+
+        return $value;
     }
 
     /**

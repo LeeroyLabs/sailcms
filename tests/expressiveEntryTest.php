@@ -44,15 +44,15 @@ test('Test to update an entry', function () {
         ->and($qs->value()->title)->toBe('Home - english');
 });
 
-//test('Test withId with parent method', function () {
-//    $entryParent = Entry::from()->byId($this->entryDraftId)->parent();
-//
-//    expect($entryParent)->toBeInstanceOf(\SailCMS\Models\Entry::class);
-//})->group('expressive-entry');
+test('Test withId with parent method', function () {
+    $entryParent = Entry::from()->get($_ENV['entryId'])->parent();
+
+    expect($entryParent)->toBeInstanceOf(\SailCMS\Models\Entry::class);
+})->group('expressive-entry');
 
 //
 //test('Test withId with alternate method', function () {
-//    $entryAlternate = Entry::from()->byId($this->entryDraftId)->alternate();
+//    $entryAlternate = Entry::from()->byId($_ENV['entryId'])->alternate();
 //})->group('expressive-entry');
 
 test('Test delete with byId', function() {

@@ -13,6 +13,8 @@ use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntryType;
 use SodiumException;
 
+# TODO
+
 class Entry
 {
     private EntryModel $model;
@@ -190,5 +192,20 @@ class Entry
     public function value(): EntryModel
     {
         return $this->entry;
+    }
+
+    /**
+     *
+     * Return entry parent object
+     *
+     * @return EntryModel|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     */
+    public function parent(): ?EntryModel
+    {
+        return $this->entry->getParent();
     }
 }
