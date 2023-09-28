@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
@@ -84,19 +85,18 @@ class Category extends Model
      *
      * Get many categories with a given ids list
      *
-     * @param  array  $ids
+     * @param array $ids
      * @return ?array
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public static function getByIds(array $ids): ?array
     {
         $modelInstance = new static();
-        foreach ($ids as &$id) {
-            $id = $modelInstance->ensureObjectId($id);
-        }
+        $objectIds = $modelInstance->ensureObjectIds($ids);
 
-        return self::query()->find(['_id' => ['$in' => $ids]])->exec();
+        return self::query()->find(['_id' => ['$in' => $objectIds->toArray()]])->exec();
     }
 
     /**
