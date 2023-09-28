@@ -33,6 +33,7 @@ use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Queue;
+use SailCMS\GraphQL\Controllers\Redirection;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -365,6 +366,11 @@ final class GraphQL
     private static function initSystem(): void
     {
         // General
+        self::addQueryResolver('getSeoDefaultConfig', Basics::class, 'getSeoDefaultConfig');
+        self::addQueryResolver('getSeoSettings', Basics::class, 'getSeoSettings');
+        self::addMutationResolver('setSeoDefaultConfig', Basics::class, 'setSeoDefaultConfig');
+        self::addMutationResolver('setSeoSettings', Basics::class, 'setSeoSettings');
+        self::addMutationResolver('generateRobot', Basics::class, 'generateRobot');
         self::addQueryResolver('version', Basics::class, 'version');
 
         // User
@@ -537,6 +543,13 @@ final class GraphQL
         self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
         self::addMutationResolver('startTasks', Queue::class, 'startTasks');
         self::addResolver('Task', Queue::class, 'resolver');
+
+        // Redirection
+        self::addQueryResolver('getRedirection', Redirection::class, 'getRedirection');
+        self::addQueryResolver('getRedirections', Redirection::class, 'getRedirections');
+        self::addMutationResolver('createRedirection', Redirection::class, 'createRedirection');
+        self::addMutationResolver('updateRedirection', Redirection::class, 'updateRedirection');
+        self::addMutationResolver('deleteRedirection', Redirection::class, 'deleteRedirection');
 
         // Misc calls
         self::addQueryResolver('availableTemplates', Misc::class, 'availableTemplates');

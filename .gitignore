@@ -9,3 +9,5 @@ cms_html
 composer.lock
 tests/email2Test.php
 format.cache
+.sql
+.zip
