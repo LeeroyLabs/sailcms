@@ -37,6 +37,19 @@ class Context
 
     /**
      *
+     * Set the token to use
+     *
+     * @param  string  $token
+     * @return void
+     *
+     */
+    public function setToken(string $token): void
+    {
+        $this->_token = $token;
+    }
+
+    /**
+     *
      * Get IP
      *
      * @return string

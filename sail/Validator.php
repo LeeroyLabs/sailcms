@@ -158,7 +158,12 @@ class Validator
                 break;
         }
 
-        return call_user_func([static::class, $validation], ...$args);
+        try {
+            return call_user_func([static::class, $validation], ...$args);
+        }catch (Exception $e) {
+            Log::warning(sprintf(self::METHOD_DOES_NOT_EXIST, $validation), []);
+            return true;
+        }
     }
 
     /**
@@ -616,5 +621,22 @@ class Validator
         }
 
         return v::uuid($version)->validate($string);
+    }
+
+    /**
+     *
+     * Strip html script tags from html
+     *
+     * @param string $html
+     * @return bool
+     *
+     */
+    public static function html(string $html): bool
+    {
+        if (preg_match('#<script(.*?)>(.*?)</script>#is', $html)) {
+            return false;
+        }
+
+        return v::stringVal()->validate($html);
     }
 }

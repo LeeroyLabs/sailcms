@@ -3,11 +3,17 @@
 namespace SailCMS\GraphQL\Controllers;
 
 use SailCMS\Collection;
-use SailCMS\Debug;
+use SailCMS\Database\Database;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
+use SailCMS\Models\Log;
+use SailCMS\Models\Monitoring;
 use SailCMS\Models\Role;
 use SailCMS\Models\User;
+use SailCMS\Sail;
+use SailCMS\Types\Listing;
 use SailCMS\UI;
 
 class Misc
@@ -65,5 +71,139 @@ class Misc
         }
 
         return '';
+    }
+
+    /**
+     *
+     * List all available templates with name and filename
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     *
+     */
+    public function availableTemplates(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $files = glob(Sail::getWorkingDirectory() . '/templates/' . Sail::siteId() . '/*.twig');
+        $list = [];
+
+        foreach ($files as $file) {
+            $fileObject = new \SplFileObject($file);
+            $line = $fileObject->current();
+            $fileObject = null; // close
+
+            $re = '/{#(.*)#}/m';
+            preg_match_all($re, $line, $matches, PREG_SET_ORDER, 0);
+            $file = str_replace('.twig', '', basename($file));
+
+            if (empty($matches[0])) {
+                $name = ucfirst($file);
+            } else {
+                $name = $matches[0][1];
+            }
+
+            $list[] = [
+                'name' => trim($name),
+                'filename' => $file
+            ];
+        }
+
+        return new Collection($list);
+    }
+
+    /**
+     *
+     * Dump database
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return bool
+     *
+     */
+    public function dumpDatabase(mixed $obj, Collection $args, Context $context): bool
+    {
+        $dbName = getenv('DATABASE_DB');
+
+        if ($args->get('databaseName')) {
+            $dbName = $args->get('databaseName');
+        }
+
+        return (new Database())->databaseDump($dbName);
+    }
+
+    /**
+     *
+     * Get sail logs
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Listing
+     * @throws DatabaseException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public function getSailLogs(mixed $obj, Collection $args, Context $context): Listing
+    {
+        return (new Log())->getList(
+            $args->get('page'),
+            $args->get('limit'),
+            $args->get('date_search', 0),
+        );
+    }
+
+    /**
+     *
+     * Get php logs
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return string
+     *
+     */
+    public function getPHPLogs(mixed $obj, Collection $args, Context $context): string
+    {
+        return (new Log())->phpLogs();
+    }
+
+    /**
+     *
+     * Get a live sample from the server
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Monitoring
+     * @throws DatabaseException
+     * @throws \JsonException
+     * @throws ACLException
+     * @throws PermissionException
+     *
+     */
+    public function monitoringSample(mixed $obj, Collection $args, Context $context): Monitoring
+    {
+        return Monitoring::getLiveSample();
+    }
+
+    /**
+     *
+     * Get a ranged sample (from date X to Y)
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws DatabaseException
+     *
+     */
+    public function getRangeSample(mixed $obj, Collection $args, Context $context): Collection
+    {
+        $start = strtotime('14 days ago');
+        $now = time();
+        return Monitoring::getSampleBySize($args->get('start', $start), $args->get('end', $now));
     }
 }

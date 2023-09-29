@@ -8,6 +8,7 @@ use League\Csv\Exception;
 use League\Csv\HTMLConverter;
 use League\Csv\Reader;
 use League\Csv\Writer;
+use SailCMS\Errors\ConvertException;
 use stdClass;
 
 class Convert
@@ -20,27 +21,31 @@ class Convert
      * @param  bool    $hasHeading
      * @param  bool    $object
      * @return array
-     * @throws Exception
+     * @throws ConvertException
      *
      */
     public static function csv2array(string $data, bool $hasHeading = true, bool $object = false): array
     {
-        $csv = Reader::createFromString($data);
+        try {
+            $csv = Reader::createFromString($data);
 
-        if ($hasHeading) {
-            $csv->setHeaderOffset(0);
-        }
-
-        $list = [];
-        foreach ($csv->getRecords() as $record) {
-            if ($object) {
-                $list[] = (object)$record;
-            } else {
-                $list[] = $record;
+            if ($hasHeading) {
+                $csv->setHeaderOffset(0);
             }
-        }
 
-        return $list;
+            $list = [];
+            foreach ($csv->getRecords() as $record) {
+                if ($object) {
+                    $list[] = (object)$record;
+                } else {
+                    $list[] = $record;
+                }
+            }
+
+            return $list;
+        } catch (\Exception $e) {
+            throw new ConvertException('Cannot convert: ' . $e->getMessage(), 0500);
+        }
     }
 
     /**
@@ -50,7 +55,7 @@ class Convert
      * @param  string  $data
      * @param  bool    $hasHeading
      * @return array
-     * @throws Exception
+     * @throws ConvertException
      *
      */
     public static function csv2object(string $data, bool $hasHeading = true): array
@@ -65,28 +70,31 @@ class Convert
      * @param  array|Collection|null  $heading
      * @param  array|Collection       $data
      * @return string
-     * @throws Exception
-     * @throws CannotInsertRecord
+     * @throws ConvertException
      *
      */
     public static function toCSV(array|Collection|null $heading, array|Collection $data = []): string
     {
-        if (is_object($data)) {
-            $data = $data->unwrap();
+        try {
+            if (is_object($data)) {
+                $data = $data->unwrap();
+            }
+
+            if ($heading && is_object($heading)) {
+                $heading = $heading->unwrap();
+            }
+
+            $writer = Writer::createFromString();
+
+            if ($heading) {
+                $writer->insertOne($heading);
+            }
+
+            $writer->insertAll($data);
+            return $writer->toString();
+        } catch (CannotInsertRecord|\Exception $e) {
+            throw new ConvertException('Cannot convert: ' . $e->getMessage(), 0500);
         }
-
-        if ($heading && is_object($heading)) {
-            $heading = $heading->unwrap();
-        }
-
-        $writer = Writer::createFromString();
-
-        if ($heading) {
-            $writer->insertOne($heading);
-        }
-
-        $writer->insertAll($data);
-        return $writer->toString();
     }
 
     /**
@@ -96,23 +104,26 @@ class Convert
      * @param  string            $csv
      * @param  array|Collection  $headings
      * @return string
-     * @throws Exception
-     * @throws DOMException
+     * @throws ConvertException
      *
      */
     public static function csv2html(string $csv, array|Collection $headings = []): string
     {
-        if (is_object($headings)) {
-            $headings = $headings->unwrap();
+        try {
+            if (is_object($headings)) {
+                $headings = $headings->unwrap();
+            }
+
+            $data = self::csv2array($csv);
+
+            $converter = (new HTMLConverter())->table('table-csv-data', 'csvdoc')
+                                              ->tr('data-record-offset')
+                                              ->td('title');
+
+            return $converter->convert($data, $headings);
+        } catch (\Exception|DOMException $e) {
+            throw new ConvertException('Cannot convert: ' . $e->getMessage(), 0500);
         }
-
-        $data = self::csv2array($csv);
-
-        $converter = (new HTMLConverter())->table('table-csv-data', 'csvdoc')
-                                          ->tr('data-record-offset')
-                                          ->td('title');
-
-        return $converter->convert($data, $headings);
     }
 
     /**
@@ -122,14 +133,17 @@ class Convert
      * @param  string  $csv
      * @param  bool    $headings
      * @return string
-     * @throws Exception
-     * @throws \JsonException
+     * @throws ConvertException
      *
      */
     public static function csv2json(string $csv, bool $headings = true): string
     {
-        $data = self::csv2array($csv);
-        return json_encode($data, JSON_THROW_ON_ERROR);
+        try {
+            $data = self::csv2array($csv);
+            return json_encode($data, JSON_THROW_ON_ERROR);
+        } catch (\Exception|\JsonException $e) {
+            throw new ConvertException('Cannot convert: ' . $e->getMessage(), 0500);
+        }
     }
 
     /**

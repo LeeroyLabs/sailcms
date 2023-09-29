@@ -5,6 +5,7 @@ namespace SailCMS\Http;
 use JsonException;
 use League\Flysystem\FilesystemException;
 use SailCMS\Collection;
+use SailCMS\Debug;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\ResponseTypeException;
 use SailCMS\Middleware;
@@ -27,6 +28,8 @@ class Response
     public string $template = '';
     public bool $compress = false;
     public bool $secure = false;
+    public string $renderer = 'twig';
+    private bool $rendererSet = false;
 
     private array $validTypes = ['text/html', 'application/json', 'text/csv', 'text/plain'];
 
@@ -72,6 +75,14 @@ class Response
             case 'json':
                 $this->type = 'application/json';
                 break;
+        }
+    }
+
+    public function useRenderer(string $renderer): void
+    {
+        if (Engine::rendererCheck($renderer)) {
+            $this->renderer = $renderer;
+            $this->rendererSet = true;
         }
     }
 
@@ -190,10 +201,23 @@ class Response
      */
     public function render(bool $executeMiddleware = true): void
     {
-        if ($this->secure) {
-            header('Content-type: text/plain; charset=utf-8');
+        if (!$this->rendererSet) {
+            // Twig by default, if nothing was requested, check config and use that.
+            $masterValue = strtolower(setting('templating.renderer', 'twig'));
+            $renderer = Engine::getRenderer($masterValue);
         } else {
-            header('Content-type: ' . $this->type . '; charset=utf-8');
+            $renderer = Engine::getRenderer($this->renderer);
+        }
+
+        // Custom renderer's content type
+        if ($renderer !== null) {
+            header($renderer->contentType());
+        } else {
+            if ($this->secure) {
+                header('Content-type: text/plain; charset=utf-8');
+            } else {
+                header('Content-type: ' . $this->type . '; charset=utf-8');
+            }
         }
 
         // Enable compression
@@ -208,9 +232,30 @@ class Response
         }
 
         switch ($this->type) {
+            default:
             case 'text/html':
                 $engine = new Engine();
-                echo $engine->render($this->template, $this->data);
+
+                if ($renderer !== null) {
+                    $twig = $renderer->useTwig();
+
+                    if ($twig) {
+                        // Leverage Twig templating to build output document
+                        echo $engine->render($this->template, $this->data, $this->renderer);
+                    } else {
+                        // Custom rendering
+                        $st = microtime(true);
+
+                        ob_start();
+                        echo $renderer->render($this->template, $this->data);
+                        $out = ob_get_clean();
+                        Debug::view($this->template, (array)$this->data, $st);
+                        echo $out;
+                    }
+                } else {
+                    // Default (twig)
+                    echo $engine->render($this->template, $this->data, $this->renderer);
+                }
                 break;
 
             case 'application/json':

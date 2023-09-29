@@ -38,16 +38,18 @@ type Query {
     homepageEntry(locale: String!, site_id: ID!): Entry
     entryTypes: [EntryType!]!
     entryType(handle: String): EntryType
-    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: SortingOrder, only_trash: Boolean, locale: String): EntryListing
-    entryByUrl(url: String!, site_id: String): Entry
-    entry(id: ID!, entry_type_handle: String): Entry
+    entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: SortingOrder, only_trash: Boolean, locale: String, options: [EntryFetchOptions!]): EntryListing
+    entryByUrl(url: String!, site_id: String, options: [EntryFetchOptions!]): Entry
+    entry(id: ID!, entry_type_handle: String, options: [EntryFetchOptions!]): Entry
     entryVersion(id: ID!): EntryVersion
     entryVersions(entry_id: ID!): [EntryVersion!]!
+    entriesForListing(locale: String!, type: String!, search: String): [Entry!]!
 
     entryField(key: String!): EntryField
     entryFieldById(id: ID!): EntryField
     entryFields: [EntryField!]!
     entryFieldValidateKey(key: String!): Boolean!
+    entryFieldsForMatrix(id: ID!): [EntryField!]!
 
     entryLayout(slug: String!): EntryLayout
     entryLayoutById(id: ID!): EntryLayout
@@ -83,6 +85,25 @@ type Query {
     taskSearch(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): TasksListing!
     taskRunningTime(pid: ID!): Int!
     cliCommand: [String!]!
+
+    # Global SEO
+    getSeoDefaultConfig: SeoDefaultConfig!
+    getSeoSettings: SeoSettings!
+
+    # Redirection
+    getRedirection(id: ID!): Redirection
+    getRedirections(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): RedirectionListing!
+
+    # Broken Link
+    getBrokenLinks(page: Int!, limit: Int!, search: String, sort: String, order: SortingOrder): BrokenLinkListing!
+
+    # Misc
+    availableTemplates: [Template!]!
+    dumpDatabase(databaseName: String, download: Boolean): Boolean!
+    getSailLogs(page: Int!, limit: Int!, date_search: Int): LogListing!
+    getPHPLogs: String!
+    monitoringSample: MonitoringSample!
+    getRangeSample(start: Int!, end: Int!): [MonitoringSample!]!
 
     #{CUSTOM_QUERIES}#
 }
@@ -133,8 +154,8 @@ type Mutation {
     updateEntryType(handle: String!, title: String, url_prefix: LocaleFieldInput, entry_layout_id: ID, use_categories: Boolean): Boolean
     deleteEntryType(id: ID!): Boolean
 
-    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: Json, parent: ParenInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
-    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: Json, parent: ParenInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
+    createEntry(entry_type_handle: String, locale: String!, is_homepage: Boolean!, title: String!, template: String!, slug: String, categories: [ID!], content: Json, parent: ParentInput, site_id: ID, alternates: [AlternateInput!]): EntryResult
+    updateEntry(entry_type_handle: String, id: ID!, locale: String, is_homepage: Boolean, title: String, template: String, slug: String, categories: [ID!], content: Json, parent: ParentInput, site_id: ID, alternates: [AlternateInput!], bypass_validation: Boolean): [EntryErrors]
     updateEntrySeo(entry_id: ID!, title: String, description: String, keywords: String, robots: Boolean, sitemap: Boolean, default_image: String, social_metas: [SocialMetaInput]): Boolean
     applyVersion(entry_version_id: ID!): Boolean
     publishEntry(id: ID!, publication_date: Int, expiration_date: Int, site_id: String): ID
@@ -162,7 +183,7 @@ type Mutation {
     # Navigation
     createNavigation(title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!, site_id: String!): String!
     updateNavigation(id: ID!, title: String!, slug: String!, structure: [NavigationItemInput!]!, locale: String!): Boolean!
-    deleteNavigation(id: ID!): Boolean!
+    deleteNavigation(ids: [ID!]!): Boolean!
 
     # Groups
     createGroup(name: String!): String!
@@ -170,18 +191,80 @@ type Mutation {
     deleteGroup(id: ID!): Boolean!
 
     # Queue
-    createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!): Boolean!
-    retryTask(id: ID!): Boolean!
+    createTask(name: String!, action: String!, priority: Int!, retriable: Boolean!, timestamp: Int!, settings: String!): Boolean!
+    updateTask(id: ID!, name: String!, action: String!, priority: Int!, retriable: Boolean!, timestamp: Int!, settings: String!): Boolean!
+    retryTask(ids: [ID!]!): Boolean!
     changeTaskSchedule(id: ID!, timestamp: Int!): Boolean!
+    startTasks(ids: [ID!]!): Boolean!
     startAllTasks: Boolean!
-    stopTask(pid: Int!): Boolean!
+    stopTask(pids: [Int!]!): Boolean!
     stopAllTasks: Boolean!
-    cancelTask(id: ID!): Boolean!
+    cancelTask(ids: [ID!]!): Boolean!
 
     # Forms
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
 
+    # Global SEO
+    generateSitemap(template: String!): Boolean!
+    generateRobot(template: String!): Boolean!
+    setSeoDefaultConfig(config: SeoDefaultConfigInput): Boolean!
+    setSeoSettings(settings: SeoSettingsInput): Boolean!
+
+    # Redirection
+    createRedirection(url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
+    updateRedirection(id: ID!, url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
+    deleteRedirection(id: ID!): Boolean!
+
     #{CUSTOM_MUTATIONS}#
+}
+
+type SeoDefaultConfig {
+    title: String!
+    description: String!
+    keywords: String!
+    robots: Boolean!
+    sitemap: Boolean!
+    default_image: String!
+    social_metas: SocialMeta
+}
+
+input SeoDefaultConfigInput {
+    title: String!
+    description: String!
+    keywords: String!
+    robots: Boolean!
+    sitemap: Boolean!
+    default_image: String!
+    social_metas: SocialMetaInput
+}
+
+type SeoSettings {
+    separator_character: String!
+    sitename: String!
+    sitename_position: SitenamePosition!
+    gtag: Boolean!
+}
+
+input SeoSettingsInput {
+    separator_character: String!
+    sitename: String!
+    sitename_position: SitenamePosition!
+}
+
+enum SitenamePosition {
+    BEFORE
+    AFTER
+}
+
+type LogListing {
+    pagination: Pagination!
+    list: [Log!]!
+}
+
+type Log {
+    _id: String
+    message: String!
+    date: Int!
 }
 
 input FormDataInput {
@@ -431,6 +514,14 @@ type EntryField {
     searchable: Boolean!
     type: String!
     config: Json!
+    width: String
+}
+
+enum EntryFetchOptions {
+    all
+    assets
+    entries
+    categories
 }
 
 type SocialMeta {
@@ -481,7 +572,7 @@ type PublicationDates {
     expired: Int
 }
 
-input ParenInput {
+input ParentInput {
     handle: String!
     parent_id: ID!
 }
@@ -508,7 +599,17 @@ type EntryLayoutTab {
 
 input EntryLayoutTabInput {
     label: String!
-    fields: [ID!]!
+    fields: [FieldObjectInput!]!
+}
+
+input FieldObject {
+    id: ID!
+    width: String!
+}
+
+input FieldObjectInput {
+    id: ID!
+    width: String!
 }
 
 type LocaleField {
@@ -746,6 +847,7 @@ type Task {
     action: String!
     priority: Int!
     logs: [String!]
+    settings: String!
     retriable: Boolean!
     retry_count: Int!
     scheduled_at: Int!
@@ -754,6 +856,84 @@ type Task {
     executed_at: Int!
     execution_result: String!
     execution_success: Boolean!
+    pid: String
+}
+
+type Template {
+    name: String!
+    filename: String!
+}
+
+type Redirection {
+    url: String!
+    redirect_url: String!
+    redirect_type: String!
+    hit_count: Int!
+    last_attempt: Int!
+}
+
+type RedirectionListing {
+    pagination: Pagination!
+    list: [Redirection!]!
+}
+
+type BrokenLink {
+    url: String!
+    hit_count: Int!
+    last_attempt: Int!
+}
+
+type BrokenLinkListing {
+    pagination: Pagination!
+    list: [BrokenLink!]!
+}
+
+enum RedirectType {
+    PERMANENT
+    TEMPORARY
+}
+
+type MonitoringSample {
+    warning: Boolean!
+    timestamp: Int!
+    php_tested: Boolean!
+    ram: RAMSample!
+    disk: DiskSample!
+    cpu: CpuSample!
+    php: PHPVersion
+    boot: BootSample!
+}
+
+type RAMSample {
+    total: Float!
+    available: Float!
+    used: Float!
+    percent: Float!
+}
+
+type DiskSample {
+    total: Float!
+    available: Float!
+    used: Float!
+    percent: Float!
+}
+
+type CpuSample {
+    cores: Int!
+    percent: Float!
+}
+
+type BootSample {
+    boot_time: Int!
+    uptime: String!
+}
+
+type PHPVersion {
+    installed: String!
+    current: String!
+    latest: Boolean!
+    secure: Boolean!
+    supported: Boolean!
 }
 
 #{CUSTOM_TYPES}#

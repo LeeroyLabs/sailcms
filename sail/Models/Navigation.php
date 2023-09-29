@@ -135,11 +135,15 @@ class Navigation extends Model
      *
      * Delete a navigation by ID
      *
+     * @param array $ids
+     * @return bool
      * @throws DatabaseException
      */
-    public function delete(string $id): bool
+    public function delete(array $ids): bool
     {
-        self::query()->deleteById($id);
+        $this->hasPermissions();
+        $ids = $this->ensureObjectIds($ids, true);
+        self::query()->deleteMany(['_id' => ['$in' => $ids]]);
         return true;
     }
 

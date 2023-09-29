@@ -1,5 +1,8 @@
 <?php
 
+use League\Flysystem\FilesystemException;
+use SailCMS\Assets\Transformer;
+use SailCMS\Errors\AssetException;
 use SailCMS\Models\Asset;
 use SailCMS\Sail;
 
@@ -19,7 +22,7 @@ test('Upload a jpg image and optimize to webp', function ()
     try {
         $result = $asset->upload($data, 'unit_test.jpg');
         expect($result)->not->toBeEmpty();
-    } catch (Exception $e) {
+    } catch (Exception|FilesystemException $e) {
         expect($result)->not->toBeEmpty();
     }
 })->group('assets');
@@ -62,3 +65,22 @@ test('Delete Asset', function ()
         expect(false)->toBeTrue();
     }
 })->group('assets');
+
+test('Convert HEIC to WEBP', function ()
+{
+    try {
+        $path = Sail::getFSDirectory() . '/uploads/test.HEIC';
+        $testPath = Sail::getFSDirectory() . '/uploads/test-result-92.webp';
+        $testPath2 = Sail::getFSDirectory() . '/uploads/test-result-50.webp';
+        $buffer = Transformer::convertHEIC($path, 92, Transformer::OUTPUT_WEBP);
+        $buffer2 = Transformer::convertHEIC($path, 50, Transformer::OUTPUT_WEBP);
+
+        if ($buffer && $buffer2) {
+            expect(true)->toBeTrue();
+        } else {
+            expect(false)->toBeTrue();
+        }
+    } catch (AssetException $e) {
+        expect(false)->toBeTrue();
+    }
+})->group('assets2');

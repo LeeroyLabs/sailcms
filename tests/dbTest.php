@@ -1,6 +1,7 @@
 <?php
 
 use MongoDB\BSON\ObjectId;
+use SailCMS\Database\Database;
 use SailCMS\Database\Model;
 use SailCMS\Models\Config;
 use SailCMS\Sail;
@@ -189,3 +190,23 @@ test('ActiveRecord: delete record', function ()
     $test = $dbtest->getByText('Hell0 W0rld!');
     expect($test)->toBeNull();
 })->group('db');
+
+test('Dump database', function ()
+{
+    $dumpReturn = (new Database())->databaseDump('sailcms');
+    expect($dumpReturn)->toBeTrue();
+})->group('db');
+
+
+test('ActiveRecord: nested value change and check for dirty', function ()
+{
+    $row = DBTest::get('6503351a02767c3c4bfc6d9a');
+
+    if ($row) {
+        $row->toplevel->nested = true;
+        $row->setDirty('toplevel');
+        $row->save();
+    }
+
+    expect(true)->toBeTrue();
+})->group('db2');

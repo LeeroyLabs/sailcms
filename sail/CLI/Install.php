@@ -90,7 +90,8 @@ class Install extends Command
             'storage/fs/vault/basic_auth' => '',
             'locales/en.yaml' => '',
             'templates/default/email/new_account.twig' => 'account.email.twig',
-            'serverless_crons/.gitkeep' => ''
+            'serverless_crons/.gitkeep' => '',
+            'web/public/images/logo_email.png' => 'sail.png'
         ];
 
         Tools::showTitle('Installing SailCMS v' . Sail::SAIL_VERSION);
@@ -169,7 +170,7 @@ class Install extends Command
         Tools::outputInfo('optimizing', 'Making sure everything is optimized in the database', 'bg-sky-400');
         Sail::ensurePerformance();
 
-        // TODO: CREATE BASIC EMAIL TEMPLATES (ex: Account, Forgot Password)
+        // TODO: CREATE BASIC EMAIL TEMPLATES (ex: Account, Forgot Password, Monitoring)
 
         Tools::outputInfo('success', 'Installation complete. You are ready to go! 🚀', 'bg-green-500');
         return Command::SUCCESS;

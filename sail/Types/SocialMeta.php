@@ -20,8 +20,8 @@ class SocialMeta implements Castable
      *
      * Class to handle Social Meta
      *
-     * @param string $handle
-     * @param object|null $content
+     * @param  string       $handle
+     * @param  object|null  $content
      *
      */
     public function __construct(string $handle = "", object $content = null)
@@ -43,11 +43,11 @@ class SocialMeta implements Castable
 
         $customMeta = [];
         foreach ($content as $key => $value) {
-            if ($key == "handle") {
+            if ($key === "handle") {
                 continue;
             }
 
-            if (in_array($key, $this->defaultProperty)) {
+            if (in_array($key, $this->defaultProperty, true)) {
                 // TODO this is deprecated in 8.2 (?) -> must change it
                 $this->{$key} = (string)$value;
             } else {
@@ -62,13 +62,13 @@ class SocialMeta implements Castable
      *
      * Magic getter
      *
-     * @param string $name
+     * @param  string  $name
      * @return mixed
      *
      */
     public function __get(string $name): mixed
     {
-        if (in_array($name, $this->defaultProperty)) {
+        if (in_array($name, $this->defaultProperty, true)) {
             return $this->{$name} ?? null;
         }
 
@@ -79,14 +79,14 @@ class SocialMeta implements Castable
      *
      * Magic setter
      *
-     * @param string $name
-     * @param mixed $value
+     * @param  string  $name
+     * @param  mixed   $value
      * @return void
      *
      */
     public function __set(string $name, mixed $value): void
     {
-        if (in_array($name, $this->defaultProperty)) {
+        if (in_array($name, $this->defaultProperty, true)) {
             $this->{$name} = $value;
             return;
         }
@@ -118,7 +118,7 @@ class SocialMeta implements Castable
      *
      * Cast to, when fetching
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return SocialMeta
      *
      */

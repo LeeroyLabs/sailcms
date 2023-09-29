@@ -33,6 +33,7 @@ use SailCMS\GraphQL\Controllers\Groups;
 use SailCMS\GraphQL\Controllers\Misc;
 use SailCMS\GraphQL\Controllers\Navigation;
 use SailCMS\GraphQL\Controllers\Queue;
+use SailCMS\GraphQL\Controllers\Redirection;
 use SailCMS\GraphQL\Controllers\Registers;
 use SailCMS\GraphQL\Controllers\Roles;
 use SailCMS\GraphQL\Controllers\Users;
@@ -365,6 +366,11 @@ final class GraphQL
     private static function initSystem(): void
     {
         // General
+        self::addQueryResolver('getSeoDefaultConfig', Basics::class, 'getSeoDefaultConfig');
+        self::addQueryResolver('getSeoSettings', Basics::class, 'getSeoSettings');
+        self::addMutationResolver('setSeoDefaultConfig', Basics::class, 'setSeoDefaultConfig');
+        self::addMutationResolver('setSeoSettings', Basics::class, 'setSeoSettings');
+        self::addMutationResolver('generateRobot', Basics::class, 'generateRobot');
         self::addQueryResolver('version', Basics::class, 'version');
 
         // User
@@ -446,6 +452,7 @@ final class GraphQL
         self::addQueryResolver('entries', Entries::class, 'entries');
         self::addQueryResolver('entry', Entries::class, 'entry');
         self::addQueryResolver('entryByUrl', Entries::class, 'entryByUrl');
+        self::addQueryResolver('entriesForListing', Entries::class, 'entriesForListing');
         self::addMutationResolver('createEntry', Entries::class, 'createEntry');
         self::addMutationResolver('updateEntrySeo', Entries::class, 'updateEntrySeo');
         self::addMutationResolver('updateEntry', Entries::class, 'updateEntry');
@@ -467,6 +474,7 @@ final class GraphQL
         self::addQueryResolver('entryFieldById', EntryFields::class, 'entryFieldById');
         self::addQueryResolver('entryFields', EntryFields::class, 'entryFields');
         self::addQueryResolver('entryFieldValidateKey', EntryFields::class, 'entryFieldValidateKey');
+        self::addQueryResolver('entryFieldsForMatrix', EntryFields::class, 'entryFieldsForMatrix');
         self::addMutationResolver('createEntryField', EntryFields::class, 'createEntryField');
         self::addMutationResolver('updateEntryField', EntryFields::class, 'updateEntryField');
         self::addMutationResolver('deleteEntryField', EntryFields::class, 'deleteEntryField');
@@ -526,14 +534,31 @@ final class GraphQL
         self::addQueryResolver('cliCommand', Queue::class, 'cliCommand');
         self::addQueryResolver('taskLogs', Queue::class, 'getTaskLogs');
         self::addMutationResolver('createTask', Queue::class, 'createTask');
+        self::addMutationResolver('updateTask', Queue::class, 'updateTask');
         self::addMutationResolver('stopTask', Queue::class, 'stopTask');
         self::addMutationResolver('stopAllTasks', Queue::class, 'stopAllTasks');
         self::addMutationResolver('changeTaskSchedule', Queue::class, 'changeTaskSchedule');
         self::addMutationResolver('cancelTask', Queue::class, 'cancelTask');
         self::addMutationResolver('retryTask', Queue::class, 'retryTask');
         self::addMutationResolver('startAllTasks', Queue::class, 'startAllTasks');
+        self::addMutationResolver('startTasks', Queue::class, 'startTasks');
+        self::addResolver('Task', Queue::class, 'resolver');
+
+        // Redirection
+        self::addQueryResolver('getRedirection', Redirection::class, 'getRedirection');
+        self::addQueryResolver('getRedirections', Redirection::class, 'getRedirections');
+        self::addMutationResolver('createRedirection', Redirection::class, 'createRedirection');
+        self::addMutationResolver('updateRedirection', Redirection::class, 'updateRedirection');
+        self::addMutationResolver('deleteRedirection', Redirection::class, 'deleteRedirection');
 
         // Misc calls
+        self::addQueryResolver('availableTemplates', Misc::class, 'availableTemplates');
+        self::addQueryResolver('dumpDatabase', Misc::class, 'dumpDatabase');
+        self::addQueryResolver('getSailLogs', Misc::class, 'getSailLogs');
+        self::addQueryResolver('getPHPLogs', Misc::class, 'getPHPLogs');
+        self::addQueryResolver('monitoringSample', Misc::class, 'monitoringSample');
+        self::addQueryResolver('getRangeSample', Misc::class, 'getRangeSample');
+
         // TODO: GET LOGS (from file or db)
 
         // Types and Resolvers

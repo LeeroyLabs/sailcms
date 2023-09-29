@@ -35,9 +35,8 @@ trait QueryObject
      *
      * @param  string  $cacheKey
      * @param  int     $cacheTTL
-     * @return $this(SailCMS\Database\Model)|array|null
+     * @return QueryObject|array|null (SailCMS\Database\Model)|array|null
      * @throws DatabaseException
-     *
      */
     protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): static|array|null
     {
@@ -135,9 +134,9 @@ trait QueryObject
             if ($this->currentOp === 'distinct') {
                 $results = $activeCollectionOrView->distinct($this->currentField, $this->currentQuery, $options);
                 return $results;
-            } else {
-                $results = call_user_func([$activeCollectionOrView, $this->currentOp], $this->currentQuery, $options);
             }
+
+            $results = $activeCollectionOrView->{$this->currentOp}($this->currentQuery, $options);
         } catch (Exception $e) {
             throw new DatabaseException('0500: ' . $e->getMessage(), 0500);
         }
@@ -232,6 +231,19 @@ trait QueryObject
     public static function allRecords(): Collection
     {
         return new Collection(self::query()->find()->exec());
+    }
+
+    /**
+     *
+     * Get a document count of current collection
+     *
+     * @param  array  $query
+     * @return int
+     *
+     */
+    public static function documentCount(array $query = []): int
+    {
+        return self::query()->count($query);
     }
 
     /**
@@ -698,11 +710,11 @@ trait QueryObject
     }
 
     /**
-     * 
+     *
      * Dump the query to play it on mongo db
-     * 
+     *
      * @return string
-     * 
+     *
      */
     public function dumpQuery(): string
     {
@@ -712,7 +724,6 @@ trait QueryObject
             // aggregate
             $dump = "db.getCollection('{$this->collection}').aggregate([";
             foreach ($this->currentPopulation as $index => $populate) {
-
                 $dump .= $this->dumpPopulate($populate);
 
                 if ($index === 0) {
@@ -1084,7 +1095,7 @@ trait QueryObject
         $instance = new $class();
         $collection = $instance->getCollection();
         $field = $parent ? $populate[0] : $populate['field'];
-        $target = $parent ? $parent.'.'.$populate[1] : $populate['targetField'];
+        $target = $parent ? $parent . '.' . $populate[1] : $populate['targetField'];
         $subpop = $parent ? ($populate[3] ?? []) : $populate['subpopulates'];
 
         $let = $parent ? "'let': {'$field': {'\$toObjectId': '\$$parent.$field'} }" : "'let': {'$field': {'\$toObjectId': '\$$field'} }";
@@ -1121,7 +1132,7 @@ trait QueryObject
         { '\$unwind': {'path': '\$$target', 'preserveNullAndEmptyArrays': true} }";
 
         foreach ($subpop as $pop) {
-            $dump .= ",".$this->dumpPopulate($pop, $target);
+            $dump .= "," . $this->dumpPopulate($pop, $target);
         }
 
         return $dump;

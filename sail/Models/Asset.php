@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use ImagickException;
+use JsonException;
 use League\Flysystem\FilesystemException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
@@ -11,7 +12,10 @@ use SailCMS\Assets\Size;
 use SailCMS\Assets\Transformer;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Database\Traits\QueryObject;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
+use SailCMS\Errors\AssetException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
@@ -112,6 +116,35 @@ class Asset extends Model
 
     /**
      *
+     * Get assets by a list of ids
+     *
+     * @param  Collection|array  $ids
+     * @param  bool              $api
+     * @return array|null
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws PermissionException
+     * @throws JsonException
+     *
+     */
+    public static function getByIds(Collection|array $ids, bool $api = true): array|null
+    {
+        $model = new self;
+
+        if ($api) {
+            $model->hasPermissions(true);
+        }
+
+        $objectIds = $model->ensureObjectIds($ids);
+        $idsForCache = implode('_', $ids);
+
+        return $model->find(['_id' => ['$in' => $objectIds->toArray()]])
+                     ->populate('uploader_id', 'uploader', User::class)
+                     ->exec('by_ids_' . $idsForCache);
+    }
+
+    /**
+     *
      * Get list of assets
      *
      * @param  int     $page
@@ -130,6 +163,7 @@ class Asset extends Model
     public function getList(int $page = 1, int $limit = 50, string $folder = 'root', string $search = '', string $sort = 'name', int $direction = Model::SORT_ASC, string $siteId = 'default'): Listing
     {
         $this->hasPermissions(true);
+        $siteId = self::getSiteId($siteId);
 
         $offset = $page * $limit - $limit;
         $query = ['site_id' => $siteId, 'folder' => $folder];
@@ -169,11 +203,13 @@ class Asset extends Model
      * @throws FileException
      * @throws FilesystemException
      * @throws ImagickException
+     * @throws AssetException
      *
      */
     public function upload(string $data, string $filename, string $folder = 'root', ObjectId|User|string $uploader = '', string $siteId = 'default'): self
     {
         $fs = Filesystem::manager();
+        $siteId = self::getSiteId($siteId);
 
         $upload_id = substr(hash('sha256', uniqid(uniqid('', true), true)), 10, 8);
 
@@ -223,9 +259,14 @@ class Asset extends Model
         };
 
         $isImage = match ($ext) {
-            'jpeg', 'jpg', 'png', 'webp', 'gif' => true,
+            'heic', 'HEIC', 'jpeg', 'jpg', 'png', 'webp', 'gif' => true,
             default => false
         };
+
+        // Try to convert HEIC to webp directly
+        if (strtolower($ext) === 'heic') {
+            $data = Transformer::convertHEICFromBuffer($data, $quality, Transformer::OUTPUT_WEBP);
+        }
 
         // Before Process Middleware
         $mwData = new Middleware\Data(Middleware\Asset::BeforeProcess, ['data' => $data, 'filename' => $filename]);
@@ -245,10 +286,17 @@ class Asset extends Model
         } else {
             // Not applicable
             $size = new Size(0, 0);
+
+            if (strtolower($ext) === 'heic') {
+                // run these on the new webp from heic (skip convert op)
+                $filename = str_replace($ext, 'webp', $filename);
+                $the_name = str_replace($ext, 'webp', $the_name);
+                $size = Transformer::getImageSizeFromSource($data);
+            }
         }
 
         // After Process Middleware
-        $mwData = new Middleware\Data(Middleware\Asset::AfterProcess, ['data' => $data, 'filename' => $path]);
+        $mwData = new Middleware\Data(Middleware\Asset::AfterProcess, ['data' => $data, 'filename' => $filename]);
         $mwResult = Middleware::execute(MiddlewareType::ASSET, $mwData);
         $data = $mwResult->data['data'];
 
@@ -258,7 +306,7 @@ class Asset extends Model
         }
 
         // Store asset
-        $fs->write($timePath . $mwResult->data['filename'], $data, ['visibility' => 'public']);
+        $fs->write($path . $timePath . $mwResult->data['filename'], $data, ['visibility' => 'public']);
 
         // Determine user that uploaded it, if possible
         $uploader_id = '';
@@ -285,7 +333,7 @@ class Asset extends Model
 
         // Create entry
         $id = $this->insert([
-            'filename' => $mwResult->data['filename'],
+            'filename' => $path . $timePath . $mwResult->data['filename'],
             'name' => $the_name,
             'title' => $titles,
             'url' => $fs->publicUrl($basePath . $timePath . $filename),
@@ -306,6 +354,7 @@ class Asset extends Model
 
             foreach ($transforms->unwrap() as $name => $transform) {
                 $transform = new Collection($transform);
+                $image->filename = $path . $timePath . $mwResult->data['filename'];
                 $image->transform($name, $transform->get('width', null), $transform->get('height', null), $transform->get('crop', ''));
             }
         }
@@ -407,7 +456,7 @@ class Asset extends Model
 
     /**
      *
-     * Transform an asset using it's id and settings
+     * Transform an asset using its id and settings
      *
      * @param  string|ObjectId  $id
      * @param  string           $name
@@ -637,7 +686,20 @@ class Asset extends Model
      */
     public function moveAllFiles(string $folder, string $moveTo, string $siteId = 'default'): void
     {
+        $siteId = self::getSiteId($siteId);
+
         $this->hasPermissions();
         $this->updateMany(['folder' => $folder, 'site_id' => $siteId], ['$set' => ['folder' => $moveTo]]);
+    }
+
+    private static function getSiteId(string $siteId): string
+    {
+        $shared = setting('assets.shared', false);
+
+        if ($shared) {
+            return '_any_';
+        }
+
+        return $siteId;
     }
 }

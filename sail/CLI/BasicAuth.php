@@ -32,7 +32,7 @@ class BasicAuth extends Command
         $user = $helper->ask($input, $output, $question);
 
         if ($user === '') {
-            Tools::outputError("Username cannot be empty.");
+            Tools::outputError('Username cannot be empty.');
             return Command::INVALID;
         }
 
@@ -43,7 +43,7 @@ class BasicAuth extends Command
         $password = $helper->ask($input, $output, $question2);
 
         if ($password === '') {
-            Tools::outputError("Password cannot be empty.");
+            Tools::outputError('Password cannot be empty.');
             return Command::INVALID;
         }
 
@@ -53,12 +53,12 @@ class BasicAuth extends Command
 
         file_put_contents($file, $format, FILE_APPEND);
 
-        Tools::outputInfo('created', "User/password pair created!", 'bg-green-500');
+        Tools::outputInfo('created', 'User/password pair created!', 'bg-green-500');
         return Command::SUCCESS;
     }
 
     protected function configure(): void
     {
-        $this->setHelp("Create a new user/password for basic authentication");
+        $this->setHelp('Create a new user/password for basic authentication');
     }
 }

@@ -187,8 +187,12 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * @return array
      *
      */
-    public function unwrap(): array
+    public function unwrap(bool $deep = false): array
     {
+        if ($deep) {
+            return $this->toArray(true);
+        }
+
         // Unwrap the static back to raw array recursively
         $arr = [];
 
@@ -220,13 +224,18 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
     /**
      *
      * Alias of unwrap
-     * Alias of unwrap
      *
+     * @param  bool  $deep
      * @return array
+     * @throws JsonException
      *
      */
-    public function toArray(): array
+    public function toArray(bool $deep = false): array
     {
+        if ($deep) {
+            return json_decode($this->toJSON(), true, 512, JSON_THROW_ON_ERROR);
+        }
+
         return $this->unwrap();
     }
 
@@ -621,9 +630,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * @return int
      *
      */
-    public function reduce(callable $callback, mixed $initial): int
+    public function reduce(callable $callback, mixed $initial = null): int
     {
-        return array_reduce($this->_internal, $callback);
+        return array_reduce($this->_internal, $callback, $initial);
     }
 
     /**

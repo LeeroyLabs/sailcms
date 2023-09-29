@@ -79,6 +79,7 @@ class Entries
         $search = $args->get('search', '');
         $onlyTrash = $args->get('only_trash', false);
         $locale = $args->get('locale');
+        $options = $args->get('options');
 
         $direction = match ($direction) {
             'desc' => Model::SORT_DESC,
@@ -93,12 +94,13 @@ class Entries
 
         // Clean data before returning it.
         $data = Collection::init();
-        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data) {
+        $result->list->each(function ($key, &$entry) use ($currentSiteHomepages, &$data, $options)
+        {
             /**
              * @var Entry $entry
              */
             $homepage = $currentSiteHomepages->{$entry->locale} ?? null;
-            $entryArray = $this->parseEntry($entry->simplify($homepage));
+            $entryArray = $this->parseEntry($entry->simplify($homepage), $options);
             $data->push($entryArray);
         });
 
@@ -126,14 +128,17 @@ class Entries
     {
         $entryTypeHandle = $args->get('entry_type_handle');
         $id = $args->get('id');
-        $siteId = $args->get("site_id", Sail::siteId());
+        $siteId = $args->get('site_id', Sail::siteId());
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
         $entry = $entryModel->one(['_id' => $id]);
 
-        $homepage = Entry::getHomepage($siteId, $entry->locale);
+        if (!$entry) {
+            return null;
+        }
 
-        return $this->parseEntry($entry->simplify($homepage));
+        $homepage = Entry::getHomepage($siteId, $entry->locale);
+        return $this->parseEntry($entry->simplify($homepage), $args->get('options'));
     }
 
     /**
@@ -163,9 +168,29 @@ class Entries
 
         if ($entry) {
             $homepage = Entry::getHomepage($siteId, $entry->locale);
-            return $this->parseEntry($entry->simplify($homepage));
+            return $this->parseEntry($entry->simplify($homepage), $args->get('options'));
         }
+
         return null;
+    }
+
+    /**
+     *
+     * Get list of entries for given locale and type
+     *
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
+     * @return Collection
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
+    public function entriesForListing(mixed $obj, Collection $args, Context $context): Collection
+    {
+        return Entry::entriesForListing($args->get('locale'), $args->get('type'), $args->get('search', ''));
     }
 
     /**
@@ -196,7 +221,7 @@ class Entries
         $template = $args->get('template');
         $slug = $args->get('slug');
         $categories = $args->get('categories');
-        $content = Entry::processContentFromGraphQL($args->get('content'));
+        $content = $args->get('content');
         $siteId = $args->get('site_id');
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
@@ -252,9 +277,7 @@ class Entries
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
         if ($content) {
-            // Process the content to be able to save it
-            $processedContent = Entry::processContentFromGraphQL($content);
-            $newContent = $entryModel->updateContentForGraphQL($id, $processedContent);
+            $newContent = $entryModel->updateContentForGraphQL($id, $content);
             $args->pushKeyValue('content', $newContent);
         }
 
@@ -383,6 +406,10 @@ class Entries
 
         $entryModel = $this->getEntryModelByHandle($entryTypeHandle);
 
+        if (!$entryModel) {
+            return false;
+        }
+
         return $entryModel->delete($id, $soft);
     }
 
@@ -485,6 +512,7 @@ class Entries
                     $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
                 }
                 $entryModel->content = new Collection((array)$obj['content']);
+                // TODO - GEt the options from the entryversion fetch
                 return $entryModel->getContent();
             }
             return $obj[$info->fieldName];
@@ -497,9 +525,11 @@ class Entries
 
         // Entry fields to resolve
         if ($info->fieldName === "content") {
-            return Entry::processContentForGraphQL($entry->getContent());
+            $options = $obj["options"] ?? [];
+            return $entry->getContent($options);
         }
 
+        // TODO add schema to entry data
         if ($info->fieldName === "schema") {
             return [];
 //            return $entry->getSchema(true, true)->unwrap();
@@ -519,6 +549,11 @@ class Entries
             }
 
             $parent = $entry->getParent();
+
+            if (!$parent) {
+                return null;
+            }
+
             $parentHomepage = Entry::getHomepage($parent->site_id, $parent->locale);
             return $parent->simplify($parentHomepage);
         }
@@ -641,7 +676,7 @@ class Entries
      * @param  array  $simplifiedEntry
      * @return array
      */
-    private function parseEntry(array $simplifiedEntry): array
+    private function parseEntry(array $simplifiedEntry, Collection $options = null): array
     {
         // Override SEO social metas
         if (isset($simplifiedEntry['seo']) && isset($simplifiedEntry['seo']['social_metas'])) {
@@ -661,6 +696,7 @@ class Entries
             }
             $simplifiedEntry['seo']['social_metas'] = $socialMetas;
         }
+        $simplifiedEntry['options'] = $options ? $options->toArray() : [];
 
         return $simplifiedEntry;
     }

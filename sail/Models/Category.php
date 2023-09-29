@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
@@ -84,19 +85,18 @@ class Category extends Model
      *
      * Get many categories with a given ids list
      *
-     * @param  array  $ids
+     * @param array $ids
      * @return ?array
      * @throws DatabaseException
+     * @throws JsonException
      *
      */
     public static function getByIds(array $ids): ?array
     {
         $modelInstance = new static();
-        foreach ($ids as &$id) {
-            $id = $modelInstance->ensureObjectId($id);
-        }
+        $objectIds = $modelInstance->ensureObjectIds($ids);
 
-        return self::query()->find(['_id' => ['$in' => $ids]])->exec();
+        return self::query()->find(['_id' => ['$in' => $objectIds->toArray()]])->exec();
     }
 
     /**
@@ -329,7 +329,7 @@ class Category extends Model
      * @throws DatabaseException
      *
      */
-    public function getList(string $parent = '', string $siteId = 'main'): Collection
+    public function getList(string $parent = '', string $siteId = 'default'): Collection
     {
         $query = ['site_id' => $siteId];
 
@@ -366,7 +366,8 @@ class Category extends Model
         foreach ($basicTree as $id => $children) {
             $childrenList = $this->parseChildrenList($listCollection, $basicTree, $id);
 
-            $item = $listCollection->find(function ($key, $cat) use ($id) {
+            $item = $listCollection->find(function ($key, $cat) use ($id)
+            {
                 return ((string)$cat->_id === $id);
             });
 
@@ -378,7 +379,8 @@ class Category extends Model
         $final = [];
 
         foreach ($structured as $num => $tree) {
-            $item = $listCollection->find(function ($key, $cat) use ($tree) {
+            $item = $listCollection->find(function ($key, $cat) use ($tree)
+            {
                 return ((string)$cat->_id === (string)$tree->_id);
             });
 
@@ -405,7 +407,8 @@ class Category extends Model
         $children = [];
 
         foreach ($tree[$id] as $_id) {
-            $item = $categories->find(function ($key, $cat) use ($_id) {
+            $item = $categories->find(function ($key, $cat) use ($_id)
+            {
                 return ((string)$cat->_id === $_id);
             });
 

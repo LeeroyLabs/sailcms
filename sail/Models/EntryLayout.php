@@ -7,6 +7,7 @@ use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
 use SailCMS\Database\Model;
+use SailCMS\Debug;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\EntryException;
@@ -174,7 +175,7 @@ class EntryLayout extends Model implements Castable
         // Cache Time To Live value from setting or default
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
         $cacheKey = self::ENTRY_LAYOUT_BY_SLUG . $slug;
-        $entryLayout = $this->findOne(['slug' => $slug])->exec($cacheKey, $cacheTtl);
+        $entryLayout = $this->findOne(['slug' => $slug])->exec();
 
         $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
         EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
@@ -201,8 +202,8 @@ class EntryLayout extends Model implements Castable
         if (isset($filters['_id'])) {
             if (!$cache) {
                 $entryLayout = $this->findById($filters['_id'])->exec();
-                $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
-                EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+                $fieldIds = self::getEntryFieldIds(new Collection([$entryLayout]));
+                self::fetchFields($fieldIds, new Collection([$entryLayout]));
                 return $entryLayout;
             }
 
@@ -218,8 +219,8 @@ class EntryLayout extends Model implements Castable
             return null;
         }
 
-        $fieldIds = EntryLayout::getEntryFieldIds(new Collection([$entryLayout]));
-        EntryLayout::fetchFields($fieldIds, new Collection([$entryLayout]));
+        $fieldIds = self::getEntryFieldIds(new Collection([$entryLayout]));
+        self::fetchFields($fieldIds, new Collection([$entryLayout]));
 
         return $entryLayout;
     }
@@ -232,7 +233,7 @@ class EntryLayout extends Model implements Castable
      * @return int
      *
      */
-    public static function countUsedEntryField(string $entryFieldId)
+    public static function countUsedEntryField(string $entryFieldId): int
     {
         return (new static())->count(['schema.fields' => ['$in' => [$entryFieldId]]]);
     }
@@ -367,7 +368,7 @@ class EntryLayout extends Model implements Castable
         }
 
         // All ids must be ObjectId
-        $ids = self::ensureObjectIds($ids, true);
+        $ids = $this->ensureObjectIds($ids, true);
 
         if ($soft) {
             return $this->softDeleteMany($ids);
@@ -391,7 +392,7 @@ class EntryLayout extends Model implements Castable
     {
         $this->hasPermissions();
 
-        $ids = self::ensureObjectIds($ids, true);
+        $ids = $this->ensureObjectIds($ids, true);
 
         try {
             $count = $this->updateMany(['_id' => ['$in' => $ids]], [
@@ -427,7 +428,7 @@ class EntryLayout extends Model implements Castable
 
             foreach ($tabFields->fields as $fieldId) {
                 try {
-                    (new EntryLayout())->ensureObjectId($fieldId);
+                    (new EntryLayout())->ensureObjectId($fieldId['id']);
                 } catch (\Throwable $exception) {
                     throw new EntryException(sprintf(self::SCHEMA_INVALID_TAB_FIELD_ID, $i + 1));
                 }
@@ -510,9 +511,9 @@ class EntryLayout extends Model implements Castable
         {
             foreach ($entryLayout->schema as $fieldTab) {
                 if (isset($fieldTab->fields)) {
-                    foreach ($fieldTab->fields as $fieldId) {
-                        if (!in_array($fieldId, $fieldIds)) {
-                            $fieldIds[] = $fieldId;
+                    foreach ($fieldTab->fields as $data) {
+                        if (!in_array($data['id'], $fieldIds)) {
+                            $fieldIds[] = $data['id'];
                         }
                     }
                 }
@@ -553,8 +554,10 @@ class EntryLayout extends Model implements Castable
                     foreach ($tab->fields as &$fieldId) {
                         // Make sure it exists, otherwise drop it
                         // (field deleted without removing it from layout first)
-                        if (!empty($fieldsById[$fieldId])) {
-                            $fieldId = $fieldsById[$fieldId];
+                        if (!empty($fieldsById[$fieldId->id])) {
+                            $width = $fieldId->width;
+                            $fieldId = $fieldsById[$fieldId->id];
+                            $fieldId->width = $width;
                         }
                     }
                 }
