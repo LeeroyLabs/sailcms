@@ -73,6 +73,23 @@ class Entry
 
     /**
      *
+     * Get entry content
+     *
+     * @return Collection
+     * @throws ACLException
+     * @throws PermissionException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws JsonException
+     *
+     */
+    public function content(): Collection
+    {
+        return $this->entry->getContent();
+    }
+
+    /**
+     *
      * Create an entry
      *
      * @param string $locale
@@ -190,17 +207,6 @@ class Entry
 
     /**
      *
-     * Return the entry object
-     *
-     * @return EntryModel
-     */
-    public function value(): EntryModel
-    {
-        return $this->entry;
-    }
-
-    /**
-     *
      * Return entry parent object
      *
      * @return EntryModel|null
@@ -212,5 +218,16 @@ class Entry
     public function parent(): ?EntryModel
     {
         return $this->entry->getParent();
+    }
+
+    /**
+     *
+     * Return the entry object
+     *
+     * @return EntryModel
+     */
+    public function value(): EntryModel
+    {
+        return $this->entry;
     }
 }
