@@ -304,7 +304,7 @@ class Entry extends Model implements Validator, Castable
             $url .= $parent->getRecursiveParentUrls($currentHomepage);
 
             // If the parent is not the homepage
-            if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} !== (string)$parent->_id) {
+            if (isset($currentHomepage) && isset($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY}) !== (string)$parent->_id) {
                 $url .= "/" . $parent->url;
             }
         } else {
@@ -484,29 +484,33 @@ class Entry extends Model implements Validator, Castable
         if (is_array($content) || $content instanceof Collection) {
             $arrayContent = $content;
             foreach ($content as $index => $element) {
-                // TODO dynamize that... ?
-                if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ENTRY->value])) {
-                    $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $element);
-                    $arrayContent[$index] = $entry ?? $element;
-                } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::ASSET->value])) {
-                    $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $element);
-                    $arrayContent[$index] = $asset ?? $element;
-                } else if (isset($toFetch[EntryFetchOption::CATEGORY->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::CATEGORY->value])) {
-                    $category = $fetched[EntryFetchOption::CATEGORY->value]->find(fn($k, $c) => (string)$c->_id === $element);
-                    $arrayContent[$index] = $category ?? $element;
+                foreach (EntryFetchOption::getAll() as $option) {
+                    if (isset($toFetch[EntryFetchOption::fromName($option)->value]) && array_key_exists($key . "_" . $index, $toFetch[EntryFetchOption::fromName($option)->value])) {
+                        $data = $fetched[EntryFetchOption::fromName($option)->value];
+                        if ($option === "ENTRY") {
+                            $data = $data->find(fn($k, $c) => (string)$c->entry_id === $element);
+                        }else{
+                            $data = $data->find(fn($k, $c) => (string)$c->_id === $element);
+                        }
+                        $arrayContent[$index] = $data ?? $element;
+                        break;
+                    }
                 }
             }
             $contentFetched = $arrayContent;
         } else {
-            if (isset($toFetch[EntryFetchOption::ENTRY->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ENTRY->value])) {
-                $entry = $fetched[EntryFetchOption::ENTRY->value]->find(fn($k, $c) => (string)$c->entry_id == $content);
-                $contentFetched = $entry ?? $content;
-            } else if (isset($toFetch[EntryFetchOption::ASSET->value]) && array_key_exists($key, $toFetch[EntryFetchOption::ASSET->value])) {
-                $asset = $fetched[EntryFetchOption::ASSET->value]->find(fn($k, $c) => (string)$c->_id === $content);
-                $contentFetched = $asset ?? $content;
-            } else if (isset($toFetch[EntryFetchOption::CATEGORY->value]) && array_key_exists($key, $toFetch[EntryFetchOption::CATEGORY->value])) {
-                $category = $fetched[EntryFetchOption::CATEGORY->value]->find(fn($k, $c) => (string)$c->_id === $content);
-                $contentFetched = $category ?? $content;
+            foreach (EntryFetchOption::getAll() as $option) {
+                $entryFetchOption = EntryFetchOption::fromName($option)->value;
+                if (isset($toFetch[$entryFetchOption]) && array_key_exists($key, $toFetch[$entryFetchOption])) {
+                    $data = $fetched[$entryFetchOption];
+                    if ($option === "ENTRY") {
+                        $data = $data->find(fn($k, $c) => (string)$c->entry_id === $content);
+                    }else{
+                        $data = $data->find(fn($k, $c) => (string)$c->_id === $content);
+                    }
+                    $contentFetched = $data ?? $content;
+                    break;
+                }
             }
         }
         return $contentFetched;
@@ -1141,9 +1145,11 @@ class Entry extends Model implements Validator, Castable
             $entry = $qs->exec($cacheKey, $cacheTtl);
         }
 
-        // Override type to get the good one
-        $entry->entryType = $this->entryType;
-        $entry->entry_type_id = $this->entry_type_id;
+        if ($entry) {
+            // Override type to get the good one
+            $entry->entryType = $this->entryType;
+            $entry->entry_type_id = $this->entry_type_id;
+        }
 
         // TODO: LOAD Objects for Ids (asset, assets, entry, entry list, etc.)
 
@@ -1432,7 +1438,7 @@ class Entry extends Model implements Validator, Castable
 
         // Must override entryUrl if it's the homepage
         $currentHomepage = self::getHomepage($siteId, $lastVersion->entry->get('locale'));
-        if ($currentHomepage && $currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY} === $entryId) {
+        if (isset($currentHomepage) && isset($currentHomepage->{self::HOMEPAGE_CONFIG_ENTRY_KEY}) === $entryId) {
             $entryLocale = $lastVersion->entry->get('locale');
             $entryUrl = "";
             if ($entryLocale !== Locale::default()) {
@@ -1530,13 +1536,13 @@ class Entry extends Model implements Validator, Castable
 
         if (!$entryLayout && !$silent) {
             throw new EntryException($errorMessage);
-        } else {
-            if (!$entryLayout) {
-                Log::error($errorMessage, ['entry' => $this]);
-            }
         }
 
-        $result = $entryLayout ? $entryLayout->schema : Collection::init();
+        if (!$entryLayout) {
+            Log::error($errorMessage, ['entry' => $this]);
+        }
+
+        $result = $entryLayout->schema ?? Collection::init();
 
         if (is_array($result)) {
             $result = new Collection($result);

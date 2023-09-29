@@ -529,10 +529,8 @@ class Entries
             return $entry->getContent($options);
         }
 
-        // TODO add schema to entry data
         if ($info->fieldName === "schema") {
-            return [];
-//            return $entry->getSchema(true, true)->unwrap();
+            return $entry->getSchema(true)->unwrap();
         }
 
         if ($info->fieldName === "seo") {
