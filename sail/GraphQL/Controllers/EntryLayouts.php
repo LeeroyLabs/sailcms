@@ -194,7 +194,20 @@ class EntryLayouts
         return (new EntryLayout())->deleteManyByIds($ids, $soft);
     }
 
-    // TODO: DOCBLOCK THIS
+    /**
+     *
+     * Restore soft deleted layout
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @return bool
+     * @throws ACLException
+     * @throws DatabaseException
+     * @throws EntryException
+     * @throws PermissionException
+     *
+     */
     public function restoreEntryLayouts(mixed $obj, Collection $args, Context $context): bool
     {
         $ids = $args->get('ids');

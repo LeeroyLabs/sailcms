@@ -48,7 +48,6 @@ class SocialMeta implements Castable
             }
 
             if (in_array($key, $this->defaultProperty, true)) {
-                // TODO this is deprecated in 8.2 (?) -> must change it
                 $this->{$key} = (string)$value;
             } else {
                 $customMeta[$key] = $value ?? '';
