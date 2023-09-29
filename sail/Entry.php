@@ -13,7 +13,12 @@ use SailCMS\Models\EntryPublication;
 use SailCMS\Models\EntryType;
 use SodiumException;
 
-# TODO
+# TODO - list
+# - alternates hreflang ? seo ?
+# - get versions
+# - content
+# -
+
 
 class Entry
 {
