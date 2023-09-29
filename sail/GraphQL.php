@@ -559,8 +559,6 @@ final class GraphQL
         self::addQueryResolver('monitoringSample', Misc::class, 'monitoringSample');
         self::addQueryResolver('getRangeSample', Misc::class, 'getRangeSample');
 
-        // TODO: GET LOGS (from file or db)
-
         // Types and Resolvers
         self::addResolver('User', Users::class, 'resolver');
     }

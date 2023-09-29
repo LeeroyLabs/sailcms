@@ -1151,8 +1151,6 @@ class Entry extends Model implements Validator, Castable
             $entry->entry_type_id = $this->entry_type_id;
         }
 
-        // TODO: LOAD Objects for Ids (asset, assets, entry, entry list, etc.)
-
         return $entry;
     }
 
