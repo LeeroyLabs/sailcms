@@ -417,40 +417,54 @@ class Entries
      *
      * Get entry version by id
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return EntryVersion
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function entryVersion(mixed $obj, Collection $args, Context $context): EntryVersion
     {
         $id = $args->get('id');
 
-        return (new EntryVersion())->getById($id);
+        $version = (new EntryVersion())->getById($id);
+
+        $version->entry = $this->parseEntry($version->entry->toArray(), $args->get('options'));
+
+        return $version;
     }
 
     /**
      *
      * Get entry versions by entry_id
      *
-     * @param  mixed       $obj
-     * @param  Collection  $args
-     * @param  Context     $context
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
      * @return array
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function entryVersions(mixed $obj, Collection $args, Context $context): array
     {
         $entryId = $args->get('entry_id');
+        $options = $args->get('options');
 
-        return (new EntryVersion())->getVersionsByEntryId($entryId);
+        $versions = (new EntryVersion())->getVersionsByEntryId($entryId);
+        $result = Collection::init();
+
+        foreach($versions as $version) {
+            $entry = $this->parseEntry($version->entry->toArray(), $options);
+            $result->push($entry);
+        }
+        return $result->toArray();
     }
 
     /**
@@ -512,8 +526,9 @@ class Entries
                     $entryModel = EntryType::getEntryModelByHandle($entryType->handle);
                 }
                 $entryModel->content = new Collection((array)$obj['content']);
-                // TODO - GEt the options from the entryversion fetch
-                return $entryModel->getContent();
+
+                $options = $obj["options"] ?? [];
+                return $entryModel->getContent($options);
             }
             return $obj[$info->fieldName];
         }
@@ -538,7 +553,9 @@ class Entries
         }
 
         if ($info->fieldName === "publication") {
-            return (new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+            $publication = (object)(new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+            $publication->options = $obj['options'];
+            return $publication;
         }
 
         if ($info->fieldName === "parent") {
@@ -633,11 +650,10 @@ class Entries
      */
     public function entryPublicationResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
-        /**
-         * @var EntryPublication $obj
-         */
         if ($info->fieldName === "version") {
-            return (new EntryVersion())->getById($obj->entry_version_id);
+            $version = (object)(new EntryVersion())->getById($obj->entry_version_id);
+            $version->entry = $this->parseEntry($version->entry->toArray(), new Collection($obj->options));
+            return $version;
         }
 
         return $obj->{$info->fieldName};
@@ -671,13 +687,16 @@ class Entries
      *
      * Parse simplified entry for graphQL
      *
-     * @param  array  $simplifiedEntry
+     * @param array $simplifiedEntry
+     * @param Collection|null $options
      * @return array
+     * @throws JsonException
+     *
      */
     private function parseEntry(array $simplifiedEntry, Collection $options = null): array
     {
         // Override SEO social metas
-        if (isset($simplifiedEntry['seo']) && isset($simplifiedEntry['seo']['social_metas'])) {
+        if (isset($simplifiedEntry['seo']['social_metas'])) {
             $socialMetas = [];
             foreach ($simplifiedEntry['seo']['social_metas'] as $socialMeta) {
                 $contentParsed = [];
