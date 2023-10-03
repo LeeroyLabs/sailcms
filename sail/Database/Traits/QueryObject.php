@@ -37,6 +37,7 @@ trait QueryObject
      * @param  int     $cacheTTL
      * @return QueryObject|array|null (SailCMS\Database\Model)|array|null
      * @throws DatabaseException
+     *
      */
     protected function exec(string $cacheKey = '', int $cacheTTL = Cache::TTL_WEEK): static|array|null
     {
