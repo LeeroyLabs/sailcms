@@ -293,6 +293,17 @@ class Transformer
         return $data;
     }
 
+    /**
+     *
+     * Convert HEIC buffer to requested format
+     *
+     * @param  string  $buffer
+     * @param  int     $quality
+     * @param  string  $convertTarget
+     * @return string
+     * @throws AssetException
+     *
+     */
     public static function convertHEICFromBuffer(string $buffer, int $quality = 92, string $convertTarget = Transformer::OUTPUT_WEBP): string
     {
         exec('convert --version', $execCheck);
