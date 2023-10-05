@@ -368,9 +368,13 @@ final class GraphQL
         // General
         self::addQueryResolver('getSeoDefaultConfig', Basics::class, 'getSeoDefaultConfig');
         self::addQueryResolver('getSeoSettings', Basics::class, 'getSeoSettings');
+        self::addQueryResolver('getRobot', Basics::class, 'getRobot');
+        self::addQueryResolver('getSitemap', Basics::class, 'getSitemap');
+        self::addQueryResolver('getGtag', Basics::class, 'getGtag');
         self::addMutationResolver('setSeoDefaultConfig', Basics::class, 'setSeoDefaultConfig');
         self::addMutationResolver('setSeoSettings', Basics::class, 'setSeoSettings');
         self::addMutationResolver('generateRobot', Basics::class, 'generateRobot');
+        self::addMutationResolver('generateSitemap', Basics::class, 'generateSitemap');
         self::addQueryResolver('version', Basics::class, 'version');
 
         // User

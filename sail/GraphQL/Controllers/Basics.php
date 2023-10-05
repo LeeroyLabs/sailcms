@@ -21,6 +21,9 @@ class Basics
     }
 
     /**
+     *
+     * Get the default seo config
+     *
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
@@ -32,6 +35,9 @@ class Basics
     }
 
     /**
+     *
+     * Get all seo settings
+     *
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
@@ -43,10 +49,44 @@ class Basics
     }
 
     /**
+     *
+     * Get robots.txt
+     *
+     */
+    public function getRobot(mixed $obj, Collection $args, Context $context): ?string
+    {
+        return GlobalSeo::getRobot();
+    }
+
+    /**
+     *
+     * Get all sitemap
+     *
+     */
+    public function getSitemap(mixed $obj, Collection $args, Context $context): ?array
+    {
+        return GlobalSeo::getSitemap();
+    }
+
+    /**
+     *
+     * Get all sitemap
+     *
+     */
+    public function getGtag(mixed $obj, Collection $args, Context $context): ?string
+    {
+        return GlobalSeo::gtag();
+    }
+
+    /**
+     *
+     * Set the default seo config
+     *
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
      * @throws JsonException
+     *
      */
     public function setSeoDefaultConfig(mixed $obj, Collection $args, Context $context): ?bool
     {
@@ -63,26 +103,30 @@ class Basics
     }
 
     /**
+     *
+     * Set the seo settings
+     *
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
      * @throws JsonException
+     *
      */
     public function setSeoSettings(mixed $obj, Collection $args, Context $context): ?bool
     {
         (new GlobalSeo())->setSeoSettings((new SeoSettings([
             'separator_character' => $args->get('settings')['separator_character'],
             'sitename' => $args->get('settings')['sitename'],
-            'sitename_position' => $args->get('settings')['sitename_position']
+            'sitename_position' => $args->get('settings')['sitename_position'],
+            'gtag' => $args->get('settings')['gtag']
         ])));
         return true;
     }
 
     /**
-     * @throws DatabaseException
-     * @throws FilesystemException
-     * @throws SodiumException
-     * @throws JsonException
+     *
+     * Generate robot.txt
+     *
      */
     public function generateRobot(mixed $obj, Collection $args, Context $context): ?bool
     {
@@ -91,14 +135,13 @@ class Basics
     }
 
     /**
-     * @throws DatabaseException
-     * @throws FilesystemException
-     * @throws SodiumException
-     * @throws JsonException
+     *
+     * Generate sitemap
+     *
      */
     public function generateSitemap(mixed $obj, Collection $args, Context $context): ?bool
     {
-        (new GlobalSeo())->GenerateSitemap($args->get('template'));
+        (new GlobalSeo())->generateSitemap($args->get('template'), $args->get('filename'));
         return true;
     }
 }

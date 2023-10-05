@@ -89,6 +89,9 @@ type Query {
     # Global SEO
     getSeoDefaultConfig: SeoDefaultConfig!
     getSeoSettings: SeoSettings!
+    getRobot: String!
+    getSitemap: [Sitemap]!
+    getGtag: String!
 
     # Redirection
     getRedirection(id: ID!): Redirection
@@ -205,7 +208,7 @@ type Mutation {
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
 
     # Global SEO
-    generateSitemap(template: String!): Boolean!
+    generateSitemap(template: String!, filename: String!): Boolean!
     generateRobot(template: String!): Boolean!
     setSeoDefaultConfig(config: SeoDefaultConfigInput): Boolean!
     setSeoSettings(settings: SeoSettingsInput): Boolean!
@@ -216,6 +219,11 @@ type Mutation {
     deleteRedirection(id: ID!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
+}
+
+type Sitemap {
+    filename: String!
+    content: String!
 }
 
 type SeoDefaultConfig {
@@ -242,13 +250,14 @@ type SeoSettings {
     separator_character: String!
     sitename: String!
     sitename_position: SitenamePosition!
-    gtag: Boolean!
+    gtag: String!
 }
 
 input SeoSettingsInput {
     separator_character: String!
     sitename: String!
     sitename_position: SitenamePosition!
+    gtag: String!
 }
 
 enum SitenamePosition {

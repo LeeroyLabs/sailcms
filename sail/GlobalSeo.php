@@ -102,9 +102,21 @@ final class GlobalSeo
     {
         try {
             $content = (new Engine())->render($template, new Collection([$parameters]));
-            file_put_contents('robots.txt', $content);
+            file_put_contents('../robots.txt', $content);
         } catch (LoaderError|RuntimeError|SyntaxError $e) {
         }
+    }
+
+    /**
+     *
+     * Return robots.txt
+     *
+     * @return string
+     *
+     */
+    public static function getRobot():string
+    {
+        return file_get_contents('../robots.txt');
     }
 
     /**
@@ -112,29 +124,52 @@ final class GlobalSeo
      * Generate sitemaps from twig template
      *
      * @param string $template
+     * @param string $filename
      * @param array $parameters
      * @return void
      *
      */
-    public function generateSitemap(string $template, array $parameters = []):void
+    public function generateSitemap(string $template, string $filename, array $parameters = []):void
     {
         try {
             $content = (new Engine())->render($template, new Collection([$parameters]));
-            file_put_contents('sitemap.xml', $content);
+            file_put_contents('../'. $filename .'.xml', $content);
         } catch (LoaderError|RuntimeError|SyntaxError $e) {
         }
     }
 
     /**
      *
+     * Return sitemap.xml
+     *
+     * @return array
+     *
+     */
+    public static function getSitemap():array
+    {
+        $sitemaps_filename = glob('../sitemap*.xml');
+        $sitemaps = [];
+
+        foreach ($sitemaps_filename as $key => $filename) {
+            $sitemaps[$key]['filename'] = $filename;
+            $sitemaps[$key]['content'] = file_get_contents($filename);
+        }
+
+        return $sitemaps;
+    }
+
+    /**
+     *
      * Return Google Tag Manager script
      *
-     * @param string $tag_id
      * @return string
      *
      */
-    public function gtag(string $tag_id): string
+    public static function gtag(): string
     {
+        $tag_id = self::getSeoSettings()->config->gtag;
+        ray($tag_id);
+
         return "<!-- Google tag (gtag.js) -->
             <script async src=\"https://www.googletagmanager.com/gtag/js?id=$tag_id\"></script>
             <script>
