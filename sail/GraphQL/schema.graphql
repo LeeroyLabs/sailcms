@@ -451,7 +451,7 @@ type Entry {
     dates: Dates!
     categories: [Category!]!
     content: Json
-    schema: Json
+    schema: [EntryLayoutTab!]
     seo: EntrySeo
 }
 
@@ -467,13 +467,13 @@ type EntryType {
 type EntryLayout {
     _id: ID!
     slug: String
-    titles: [LocaleField!]!
+    title: String!
     authors: Authors!
     dates: Dates!
     is_trashed: Boolean!
     used_by: Int
     record_count: Int
-    schema: Json
+    schema: [EntryLayoutTab!]!
 }
 
 type EntrySeo {

@@ -24,16 +24,16 @@ class Navigation extends AbstractExtension
 
     /**
      *
-     * Get a navigation by name
+     * Get a navigation by slug
      *
-     * @param  string  $name
+     * @param  string  $slug
      * @return array
      * @throws DatabaseException
      *
      */
-    public function navigation(string $name): array
+    public function navigation(string $slug): array
     {
-        $nav = NavModel::getByName($name);
+        $nav = NavModel::getBySlug($slug);
 
         if ($nav) {
             return $nav->structure->get();
