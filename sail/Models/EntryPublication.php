@@ -3,6 +3,7 @@
 namespace SailCMS\Models;
 
 use MongoDB\BSON\ObjectId;
+use phpDocumentor\Reflection\Types\False_;
 use SailCMS\Cache;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
@@ -41,6 +42,32 @@ class EntryPublication extends Model
     public const EXPIRATION_DATE_ERROR = ['5301: The expiration date must be higher than the publication date', 5301];
     public const FIND_BY_URL_CACHE = 'find_by_url_entry_';   // Add url at the end
     public const FIND_BY_ID_CACHE = 'find_by_id_'; // Add ids at the end
+
+    /**
+     *
+     * Return an empty EntryPublication with default values
+     *
+     * @param bool $asObject
+     * @return array|object
+     *
+     */
+    public static function empty(bool $asObject = false):array|object {
+        $result = [
+            '_id' => "",
+            'site_id' => "",
+            'entry_id' => "",
+            'entry_url' => "",
+            'entry_version_id' => "",
+            'user_email' => "",
+            'user_full_name' => "",
+            'dates' => (object)['expired' => 0, "published" => 0]
+        ];
+
+        if ($asObject) {
+            return (object) $result;
+        }
+        return $result;
+    }
 
     /**
      *

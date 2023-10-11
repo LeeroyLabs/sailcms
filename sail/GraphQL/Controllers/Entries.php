@@ -554,7 +554,12 @@ class Entries
 
         if ($info->fieldName === "publication") {
             $publication = (object)(new EntryPublication())->getPublicationByEntryId($entry->_id, false);
+            // When there is no publication
             $publication->options = $obj['options'];
+
+            if ($publication instanceof \stdClass) {
+                $publication = EntryPublication::empty(true);
+            }
             return $publication;
         }
 
@@ -638,21 +643,25 @@ class Entries
      *
      * Resolver the version for Entry Publication
      *
-     * @param  mixed        $obj
-     * @param  Collection   $args
-     * @param  Context      $context
-     * @param  ResolveInfo  $info
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
      * @return mixed
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function entryPublicationResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
         if ($info->fieldName === "version") {
-            $version = (object)(new EntryVersion())->getById($obj->entry_version_id);
-            $version->entry = $this->parseEntry($version->entry->toArray(), new Collection($obj->options));
+            $version = EntryVersion::empty();
+            if ($obj->entry_version_id) {
+                $version = (object)(new EntryVersion())->getById($obj->entry_version_id);
+                $version->entry = $this->parseEntry($version->entry->toArray(), new Collection($obj->options));
+            }
             return $version;
         }
 

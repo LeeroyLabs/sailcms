@@ -184,6 +184,32 @@ class Entry extends Model implements Validator, Castable
 
     /**
      *
+     * Return an empty Entry with default values
+     *
+     * @param bool $asObject
+     * @return array|object
+     *
+     */
+    public static function empty(bool $asObject = false):array|object
+    {
+        $result = [
+            "_id" => "",
+            "entry_type" => [
+                "_id" => "",
+                "title" => ""
+            ],
+            "title" => ""
+        ];
+
+        if ($asObject) {
+            return (object)$result;
+        }
+
+        return $result;
+    }
+
+    /**
+     *
      * Validate fields
      *
      * @param  string  $key
