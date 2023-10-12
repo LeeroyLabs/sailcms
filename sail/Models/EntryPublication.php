@@ -45,32 +45,6 @@ class EntryPublication extends Model
 
     /**
      *
-     * Return an empty EntryPublication with default values
-     *
-     * @param bool $asObject
-     * @return array|object
-     *
-     */
-    public static function empty(bool $asObject = false):array|object {
-        $result = [
-            '_id' => "",
-            'site_id' => "",
-            'entry_id' => "",
-            'entry_url' => "",
-            'entry_version_id' => "",
-            'user_email' => "",
-            'user_full_name' => "",
-            'dates' => (object)['expired' => 0, "published" => 0]
-        ];
-
-        if ($asObject) {
-            return (object) $result;
-        }
-        return $result;
-    }
-
-    /**
-     *
      * Get publication by entry id
      *
      * @param  string|ObjectId  $entryId

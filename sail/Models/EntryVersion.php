@@ -43,33 +43,6 @@ class EntryVersion extends Model
 
     /**
      *
-     * Return an empty EntryVersion with default values
-     *
-     * @param bool $asObject
-     * @return array|object
-     *
-     */
-    public static function empty(bool $asObject = false):array|object
-    {
-        $result = [
-            '_id' => "",
-            'created_at' => 0,
-            'user_id' => "",
-            'user_full_name' => "",
-            'user_email' => "",
-            'entry_id' => "",
-            'entry' => Entry::empty()
-        ];
-
-        if ($asObject) {
-            return (object) $result;
-        }
-
-        return $result;
-    }
-
-    /**
-     *
      * Get an entry version by id
      *
      * @param  string|ObjectId  $entryVersionId

@@ -512,8 +512,8 @@ class Entries
     public function entryResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
         // For EntryVersion
-        if (!isset($obj['current'])) {
-            if ($info->fieldName === "content") {
+        if ((is_array($obj) && !isset($obj['current'])) || (is_object($obj) && !isset($obj->current))) {
+              if ($info->fieldName === "content") {
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
                 $entryType = $obj['entry_type'] ?? null;
 
@@ -530,7 +530,14 @@ class Entries
                 $options = $obj["options"] ?? [];
                 return $entryModel->getContent($options);
             }
-            return $obj[$info->fieldName];
+            if (is_object($obj)) {
+                return $obj->{$info->fieldName} ?? "";
+            }
+            return $obj[$info->fieldName] ?? "";
+        }
+
+        if (is_string($obj)) {
+            return $obj;
         }
 
         /**
@@ -557,9 +564,9 @@ class Entries
             // When there is no publication
             $publication->options = $obj['options'];
 
-            if ($publication instanceof \stdClass) {
-                $publication = EntryPublication::empty(true);
-            }
+//            if ($publication instanceof \stdClass) {
+//                $publication = EntryPublication::empty(true);
+//            }
             return $publication;
         }
 
@@ -657,15 +664,29 @@ class Entries
     public function entryPublicationResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
     {
         if ($info->fieldName === "version") {
-            $version = EntryVersion::empty();
-            if ($obj->entry_version_id) {
+            $version = new \stdClass();
+            ray($obj->entry_version_id ?? "nono");
+            if (isset($obj->entry_version_id)) {
                 $version = (object)(new EntryVersion())->getById($obj->entry_version_id);
                 $version->entry = $this->parseEntry($version->entry->toArray(), new Collection($obj->options));
             }
             return $version;
         }
 
-        return $obj->{$info->fieldName};
+        if ($info->fieldName === "dates") {
+            return $obj->{$info->fieldName} ?? 0;
+        }
+
+        return $obj->{$info->fieldName} ?? "";
+    }
+
+    public function entryVersionResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+        if ($info->fieldName === "created_at") {
+            return $obj->{$info->fieldName} ?? 0;
+        }
+
+        return $obj->{$info->fieldName} ?? "";
     }
 
     /**

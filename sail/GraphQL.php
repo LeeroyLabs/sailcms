@@ -449,6 +449,7 @@ final class GraphQL
         self::addMutationResolver('createEntryType', EntryTypes::class, 'createEntryType');
         self::addMutationResolver('updateEntryType', EntryTypes::class, 'updateEntryType');
         self::addMutationResolver('deleteEntryType', EntryTypes::class, 'deleteEntryType');
+        self::addResolver('EntryType', EntryTypes::class, 'entryTypeResolver');
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
@@ -472,6 +473,8 @@ final class GraphQL
         self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
         self::addResolver('Authors', Entries::class, 'authorsResolver');
         self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
+        self::addResolver('EntryVersion', Entries::class, 'entryVersionResolver');
+
 
         // Entry fields
         self::addQueryResolver('entryField', EntryFields::class, 'entryField');
