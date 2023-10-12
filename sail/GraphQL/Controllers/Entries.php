@@ -564,9 +564,6 @@ class Entries
             // When there is no publication
             $publication->options = $obj['options'];
 
-//            if ($publication instanceof \stdClass) {
-//                $publication = EntryPublication::empty(true);
-//            }
             return $publication;
         }
 
