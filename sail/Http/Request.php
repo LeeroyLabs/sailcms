@@ -196,6 +196,18 @@ class Request
 
     /**
      *
+     * Read the input buffer and return the raw data from it
+     *
+     * @return string
+     *
+     */
+    public function input(): string
+    {
+        return file_get_contents('php://input');
+    }
+
+    /**
+     *
      * Get a specific header
      *
      * @param  string  $key
