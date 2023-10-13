@@ -80,6 +80,9 @@ class System
             new ACL('Task', ACLType::READ_WRITE, 'Manage system tasks', 'Gestion des tâches système'),
             new ACL('Task', ACLType::READ, 'Read access to system tasks', 'Accès lecture aux tâches système'),
 
+            // SEO
+            new ACL('SEO', ACLType::READ_WRITE, 'Manage SEO Defaults', 'Gestion des valeurs SEO par défaut'),
+
             // Admin
             new ACL('Admin', ACLType::READ_WRITE, 'General Administrative Tasks', 'Tâches administratives générales'),
         ]);
