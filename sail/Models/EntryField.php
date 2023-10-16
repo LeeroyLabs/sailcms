@@ -2,6 +2,7 @@
 
 namespace SailCMS\Models;
 
+use JsonException;
 use MongoDB\BSON\ObjectId;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
@@ -151,12 +152,13 @@ class EntryField extends Model implements Castable
      *
      * Create entry field
      *
-     * @param  Collection  $args
+     * @param Collection $args
      * @return EntryField|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws EntryException
      * @throws PermissionException
+     * @throws JsonException
      *
      */
     public function create(Collection $args): ?EntryField

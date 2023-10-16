@@ -27,15 +27,15 @@ final class GlobalSeo
      *
      * Set default seo config
      *
-     * @param SeoDefaultConfig $config
-     * @throws DatabaseException
+     * @param  SeoDefaultConfig  $config
+     * @return void
+     *
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     * @return void
-     *
+     * @throws DatabaseException
      */
-    public function setSeoDefaultConfig(SeoDefaultConfig $config):void
+    public function setSeoDefaultConfig(SeoDefaultConfig $config): void
     {
         Config::setByName('default_seo', $config);
     }
@@ -44,14 +44,14 @@ final class GlobalSeo
      *
      * Get default seo config
      *
-     * @throws DatabaseException
+     * @return Config
+     *
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     * @return Config
-     *
+     * @throws DatabaseException
      */
-    public static function getSeoDefaultConfig():Config
+    public static function getSeoDefaultConfig(): Config
     {
         return Config::getByName('default_seo');
     }
@@ -60,15 +60,15 @@ final class GlobalSeo
      *
      * Set seo settings
      *
-     * @param SeoSettings $settings
-     * @throws DatabaseException
+     * @param  SeoSettings  $settings
+     * @return void
+     *
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     * @return void
-     *
+     * @throws DatabaseException
      */
-    public function setSeoSettings(SeoSettings $settings):void
+    public function setSeoSettings(SeoSettings $settings): void
     {
         Config::setByName('seo_settings', $settings);
     }
@@ -77,14 +77,14 @@ final class GlobalSeo
      *
      * Get seo settings
      *
-     * @throws DatabaseException
+     * @return Config
+     *
      * @throws FilesystemException
      * @throws JsonException
      * @throws SodiumException
-     * @return Config
-     *
+     * @throws DatabaseException
      */
-    public static function getSeoSettings():Config
+    public static function getSeoSettings(): Config
     {
         return Config::getByName('seo_settings');
     }
@@ -93,48 +93,87 @@ final class GlobalSeo
      *
      * Generate robot.txt from twig template
      *
-     * @param string $template
-     * @param array $parameters
+     * @param  string  $template
+     * @param  array   $parameters
      * @return void
      *
      */
-    public function generateRobot(string $template, array $parameters = []):void
+    public function generateRobot(string $template, array $parameters = []): void
     {
         try {
             $content = (new Engine())->render($template, new Collection([$parameters]));
-            file_put_contents('robots.txt', $content);
+            file_put_contents(Sail::getWorkingDirectory() . '/web/robots.txt', $content);
         } catch (LoaderError|RuntimeError|SyntaxError $e) {
         }
+    }
+
+    /**
+     *
+     * Return robots.txt
+     *
+     * @return string
+     *
+     */
+    public static function getRobot(): string
+    {
+        return file_get_contents(Sail::getWorkingDirectory() . '/web/robots.txt');
     }
 
     /**
      *
      * Generate sitemaps from twig template
      *
-     * @param string $template
-     * @param array $parameters
+     * @param  string  $template
+     * @param  string  $filename
+     * @param  array   $parameters
      * @return void
      *
      */
-    public function generateSitemap(string $template, array $parameters = []):void
+    public function generateSitemap(string $template, string $filename, array $parameters = []): void
     {
         try {
             $content = (new Engine())->render($template, new Collection([$parameters]));
-            file_put_contents('sitemap.xml', $content);
+            file_put_contents(Sail::getWorkingDirectory() . '/web/' . $filename . '.xml', $content);
         } catch (LoaderError|RuntimeError|SyntaxError $e) {
         }
     }
 
     /**
      *
-     * Return Google Tag Manager script
+     * Return sitemap.xml
      *
-     * @param string $tag_id
-     * @return string
+     * @return array
      *
      */
-    public function gtag(string $tag_id): string
+    public static function getSitemap(): array
     {
+        $sitemaps_filename = glob(Sail::getWorkingDirectory() . '/web/sitemap*.xml');
+        $sitemaps = [];
+
+        foreach ($sitemaps_filename as $key => $filename) {
+            $sitemaps[$key]['filename'] = $filename;
+            $sitemaps[$key]['content'] = file_get_contents($filename);
+        }
+
+        return $sitemaps;
+    }
+
+    /**
+     *
+     * Return Google Tag Manager script
+     *
+     * @return string
+     * @throws DatabaseException
+     * @throws FilesystemException
+     * @throws JsonException
+     * @throws SodiumException
+     *
+     */
+    public static function gtag(): string
+    {
+        $tag_id = self::getSeoSettings()->config->gtag;
+        ray($tag_id);
+
         return "<!-- Google tag (gtag.js) -->
             <script async src=\"https://www.googletagmanager.com/gtag/js?id=$tag_id\"></script>
             <script>

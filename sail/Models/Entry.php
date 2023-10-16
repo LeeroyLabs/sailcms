@@ -184,6 +184,32 @@ class Entry extends Model implements Validator, Castable
 
     /**
      *
+     * Return an empty Entry with default values
+     *
+     * @param bool $asObject
+     * @return array|object
+     *
+     */
+    public static function empty(bool $asObject = false):array|object
+    {
+        $result = [
+            "_id" => "",
+            "entry_type" => [
+                "_id" => "",
+                "title" => ""
+            ],
+            "title" => ""
+        ];
+
+        if ($asObject) {
+            return (object)$result;
+        }
+
+        return $result;
+    }
+
+    /**
+     *
      * Validate fields
      *
      * @param  string  $key
@@ -379,10 +405,13 @@ class Entry extends Model implements Validator, Castable
             return $contentParsed;
         }
 
+        // To store matrix field keys
+        $matrixFieldKeys = [];
+
         // Get ids to fetch
-        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch) {
+        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch, &$matrixFieldKeys) {
             $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
-            $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed);
+            $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed, $matrixFieldKeys);
         });
 
         // Fetch data in batches
@@ -401,9 +430,9 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Parse content with fetched elements
-        $contentParsed->each(function($key, &$content) use (&$contentParsed, $toFetch, $fetched) {
-            if (is_object($content) && !$content instanceof Collection) {
-                // It's not a collection, so it's a matrix content ~~~ todo be more precise - check in schema ?
+        $contentParsed->each(function($key, &$content) use (&$contentParsed, $toFetch, $fetched, $matrixFieldKeys) {
+            // Check in the matrix field keys array if it's a matrix field
+            if (in_array($key, $matrixFieldKeys)) {
                 $matrixContent = Collection::init();
                 foreach ($content as $matrixKey => $element) {
                     $contentFetched = $this->searchInFetchArray($key . "_" . $matrixKey, $element, $toFetch, $fetched);
@@ -427,6 +456,7 @@ class Entry extends Model implements Validator, Castable
      * @param Collection $fields
      * @param array $toFetch
      * @param Collection $content
+     * @param array $matrixFieldKeys
      * @param string $keyPrefix for matrix
      * @return void
      * @throws ACLException
@@ -434,7 +464,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private function getIdToFetchFromContent(Collection $fields, array &$toFetch, Collection $content, string $keyPrefix = ""): void
+    private function getIdToFetchFromContent(Collection $fields, array &$toFetch, Collection $content, array &$matrixFieldKeys, string $keyPrefix = ""): void
     {
         foreach($fields as $entryField) {
             $elementBaseKey = $keyPrefix . $entryField->key;
@@ -457,7 +487,8 @@ class Entry extends Model implements Validator, Castable
             if ($entryField->type === "matrix") {
                 $subFields = (new EntryField)->getFieldsForMatrix($entryField->_id);
                 $matrixContent = new Collection((array)$content->get($entryField->key));
-                $this->getIdToFetchFromContent($subFields, $toFetch, $matrixContent, $elementBaseKey . "_");
+                $matrixFieldKeys[] = $entryField->key;
+                $this->getIdToFetchFromContent($subFields, $toFetch, $matrixContent, $matrixFieldKeys, $elementBaseKey . "_");
             } else if (isset($fetchKey) && isset($toFetch[$fetchKey]) && $content->get($entryField->key)) {
                 $fieldContent = $content->get($entryField->key);
                 if ($entryField->repeatable) {
@@ -1153,8 +1184,6 @@ class Entry extends Model implements Validator, Castable
             $entry->entryType = $this->entryType;
             $entry->entry_type_id = $this->entry_type_id;
         }
-
-        // TODO: LOAD Objects for Ids (asset, assets, entry, entry list, etc.)
 
         return $entry;
     }

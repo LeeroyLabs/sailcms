@@ -368,9 +368,13 @@ final class GraphQL
         // General
         self::addQueryResolver('getSeoDefaultConfig', Basics::class, 'getSeoDefaultConfig');
         self::addQueryResolver('getSeoSettings', Basics::class, 'getSeoSettings');
+        self::addQueryResolver('getRobot', Basics::class, 'getRobot');
+        self::addQueryResolver('getSitemap', Basics::class, 'getSitemap');
+        self::addQueryResolver('getGtag', Basics::class, 'getGtag');
         self::addMutationResolver('setSeoDefaultConfig', Basics::class, 'setSeoDefaultConfig');
         self::addMutationResolver('setSeoSettings', Basics::class, 'setSeoSettings');
         self::addMutationResolver('generateRobot', Basics::class, 'generateRobot');
+        self::addMutationResolver('generateSitemap', Basics::class, 'generateSitemap');
         self::addQueryResolver('version', Basics::class, 'version');
 
         // User
@@ -445,6 +449,7 @@ final class GraphQL
         self::addMutationResolver('createEntryType', EntryTypes::class, 'createEntryType');
         self::addMutationResolver('updateEntryType', EntryTypes::class, 'updateEntryType');
         self::addMutationResolver('deleteEntryType', EntryTypes::class, 'deleteEntryType');
+        self::addResolver('EntryType', EntryTypes::class, 'entryTypeResolver');
 
         // Entries
         self::addQueryResolver('homepageEntry', Entries::class, 'homepageEntry');
@@ -468,6 +473,8 @@ final class GraphQL
         self::addResolver('Alternate', Entries::class, 'entryAlternateResolver');
         self::addResolver('Authors', Entries::class, 'authorsResolver');
         self::addResolver('EntryPublication', Entries::class, 'entryPublicationResolver');
+        self::addResolver('EntryVersion', Entries::class, 'entryVersionResolver');
+
 
         // Entry fields
         self::addQueryResolver('entryField', EntryFields::class, 'entryField');
@@ -558,8 +565,6 @@ final class GraphQL
         self::addQueryResolver('getPHPLogs', Misc::class, 'getPHPLogs');
         self::addQueryResolver('monitoringSample', Misc::class, 'monitoringSample');
         self::addQueryResolver('getRangeSample', Misc::class, 'getRangeSample');
-
-        // TODO: GET LOGS (from file or db)
 
         // Types and Resolvers
         self::addResolver('User', Users::class, 'resolver');

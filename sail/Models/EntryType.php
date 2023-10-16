@@ -196,6 +196,7 @@ class EntryType extends Model implements Validator
         if (!$entryType) {
             $entryType = $instance->createWithoutPermission($defaultHandle, $defaultTitle, $defaultUrlPrefix, $defaultEntryLayoutId, $defaultUseCategories);
         }
+        // TODO fix THAT
 //        else {
 //            if (!$avoidUpdate
 //                && ($entryType->title !== $defaultTitle || $entryType->url_prefix->castFrom() !== $defaultUrlPrefix->castFrom() || $entryType->entry_layout_id !== $defaultEntryLayoutId)) {

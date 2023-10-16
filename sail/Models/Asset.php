@@ -166,7 +166,12 @@ class Asset extends Model
         $siteId = self::getSiteId($siteId);
 
         $offset = $page * $limit - $limit;
-        $query = ['site_id' => $siteId, 'folder' => $folder];
+
+        if ($siteId === '_any_') {
+            $query = ['folder' => $folder];
+        } else {
+            $query = ['site_id' => $siteId, 'folder' => $folder];
+        }
 
         // Search by name
         if (!empty($search)) {
@@ -176,6 +181,8 @@ class Asset extends Model
         // Options for pagination and sorting
         $options = QueryOptions::initWithPagination($offset, $limit);
         $options->sort = [$sort => $direction];
+
+        Debug::ray($query, $options);
 
         $results = $this
             ->find($query, $options)

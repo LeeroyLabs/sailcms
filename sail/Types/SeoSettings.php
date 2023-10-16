@@ -9,20 +9,15 @@ class SeoSettings implements Castable
 {
     public string $separator_character;
     public string $sitename;
-    public TitlePosition $sitename_position;
-    public bool $gtag;
+    public string $sitename_position;
+    public string $gtag;
 
     public function __construct(array $values)
     {
-        foreach ($values as $key => $value) {
-            if ($key === 'sitename_position') {
-                $this->sitename_position = $value->value;
-            }
-        }
-
+        $this->sitename_position = TitlePosition::fromName($values['sitename_position'])->value;
         $this->separator_character = $values['separator_character'];
-        $this->gtag = $values['gtag'];
         $this->sitename = $values['sitename'];
+        $this->gtag = $values['gtag'];
     }
 
     public function castFrom(): array

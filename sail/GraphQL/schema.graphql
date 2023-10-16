@@ -41,8 +41,8 @@ type Query {
     entries(entry_type_handle: String!, page: Int, limit: Int, search: String, sort: String, direction: SortingOrder, only_trash: Boolean, locale: String, options: [EntryFetchOptions!]): EntryListing
     entryByUrl(url: String!, site_id: String, options: [EntryFetchOptions!]): Entry
     entry(id: ID!, entry_type_handle: String, options: [EntryFetchOptions!]): Entry
-    entryVersion(id: ID!): EntryVersion
-    entryVersions(entry_id: ID!): [EntryVersion!]!
+    entryVersion(id: ID!, options: [EntryFetchOptions!]): EntryVersion
+    entryVersions(entry_id: ID!, options: [EntryFetchOptions!]): [EntryVersion!]!
     entriesForListing(locale: String!, type: String!, search: String): [Entry!]!
 
     entryField(key: String!): EntryField
@@ -89,6 +89,9 @@ type Query {
     # Global SEO
     getSeoDefaultConfig: SeoDefaultConfig!
     getSeoSettings: SeoSettings!
+    getRobot: String!
+    getSitemap: [Sitemap]!
+    getGtag: String!
 
     # Redirection
     getRedirection(id: ID!): Redirection
@@ -205,7 +208,7 @@ type Mutation {
     processForm(name: String!, csrf: String!, form_data: FormDataInput!): FormProcessingResult!
 
     # Global SEO
-    generateSitemap(template: String!): Boolean!
+    generateSitemap(template: String!, filename: String!): Boolean!
     generateRobot(template: String!): Boolean!
     setSeoDefaultConfig(config: SeoDefaultConfigInput): Boolean!
     setSeoSettings(settings: SeoSettingsInput): Boolean!
@@ -216,6 +219,11 @@ type Mutation {
     deleteRedirection(id: ID!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
+}
+
+type Sitemap {
+    filename: String!
+    content: String!
 }
 
 type SeoDefaultConfig {
@@ -242,13 +250,14 @@ type SeoSettings {
     separator_character: String!
     sitename: String!
     sitename_position: SitenamePosition!
-    gtag: Boolean!
+    gtag: String!
 }
 
 input SeoSettingsInput {
     separator_character: String!
     sitename: String!
     sitename_position: SitenamePosition!
+    gtag: String!
 }
 
 enum SitenamePosition {
@@ -442,7 +451,7 @@ type Entry {
     dates: Dates!
     categories: [Category!]!
     content: Json
-    schema: Json
+    schema: [EntryLayoutTab!]
     seo: EntrySeo
 }
 
@@ -458,13 +467,13 @@ type EntryType {
 type EntryLayout {
     _id: ID!
     slug: String
-    titles: [LocaleField!]!
+    title: String!
     authors: Authors!
     dates: Dates!
     is_trashed: Boolean!
     used_by: Int
     record_count: Int
-    schema: Json
+    schema: [EntryLayoutTab!]!
 }
 
 type EntrySeo {

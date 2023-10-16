@@ -2,6 +2,7 @@
 
 namespace SailCMS\GraphQL\Controllers;
 
+use GraphQL\Type\Definition\ResolveInfo;
 use SailCMS\Collection;
 use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
@@ -150,5 +151,33 @@ class EntryTypes
         $id = $args->get('id');
 
         return (new EntryType())->hardDelete($id);
+    }
+
+    /**
+     *
+     * Entry type resolver
+     *
+     * @param mixed $obj
+     * @param Collection $args
+     * @param Context $context
+     * @param ResolveInfo $info
+     * @return mixed
+     *
+     */
+    public function entryTypeResolver(mixed $obj, Collection $args, Context $context, ResolveInfo $info): mixed
+    {
+
+        if (is_array($obj)) {
+            $result = $obj[$info->fieldName] ?? null;
+        } else {
+            $result = $obj->{$info->fieldName} ?? null;
+        }
+
+        if (!isset($result)) {
+            // Handle null by type
+            return "";
+        }
+
+        return $result;
     }
 }
