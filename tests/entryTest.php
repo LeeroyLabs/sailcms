@@ -333,7 +333,6 @@ test('Update an entry with the default type', function () {
     $entry = $model->one([
         'title' => 'Home'
     ]);
-    $before = $entry->dates->updated;
 
     try {
         $result = $entry->updateById($entry, [
@@ -358,7 +357,7 @@ test('Get homepage entry after update', function () {
 })->group('entry');
 
 test('Find the entry by url', function () {
-    $entry = Entry::findByURL('fr/', Sail::siteId(), false);
+    $entry = Entry::findByURL('pages-de-test/test', Sail::siteId(), false);
 
     expect($entry->title)->toBe('Test')
         ->and($entry->slug)->toBe('test')

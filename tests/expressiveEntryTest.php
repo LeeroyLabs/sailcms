@@ -11,6 +11,7 @@ beforeAll(function () {
     EntryType::getDefaultType();
 
     $_ENV['entryId'] = "";
+    $_ENV['childId'] = "";
 
     // TODO create entry type
 
@@ -45,7 +46,15 @@ test('Test to update an entry', function () {
 });
 
 test('Test withId with parent method', function () {
-    $entryParent = Entry::from()->get($_ENV['entryId'])->parent();
+    $childQS = Entry::from()->create('en', 'Child');
+    $_ENV['childId'] = $childQS->value()->_id;
+
+    $childQS->update(['parent' => [
+        'handle' => 'page',
+        'parent_id' => $_ENV['entryId'],
+    ]]);
+
+    $entryParent = $childQS->parent();
 
     expect($entryParent)->toBeInstanceOf(\SailCMS\Models\Entry::class);
 })->group('expressive-entry');
@@ -56,6 +65,7 @@ test('Test withId with parent method', function () {
 //})->group('expressive-entry');
 
 test('Test delete with byId', function() {
+    Entry::from()->get($_ENV['childId'])->delete();
     $result = Entry::from()->get($_ENV['entryId'])->delete();
 
     expect($result)->toBeTrue();
