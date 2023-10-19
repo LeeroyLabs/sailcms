@@ -103,6 +103,6 @@ class Redirection
      */
     public function deleteRedirection(mixed $obj, Collection $args, Context $context): bool
     {
-        return (new RedirectionModel())->delete($args->get('id'));
+        return (new RedirectionModel())->delete($args->get('ids'));
     }
 }

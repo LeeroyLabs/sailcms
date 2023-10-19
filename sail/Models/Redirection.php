@@ -6,7 +6,9 @@ use MongoDB\BSON\Regex;
 use Respect\Validation\Exceptions\DateException;
 use SailCMS\Collection;
 use SailCMS\Database\Model;
+use SailCMS\Errors\ACLException;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\PermissionException;
 use SailCMS\Types\Listing;
 use SailCMS\Types\Pagination;
 use SailCMS\Types\QueryOptions;
@@ -203,14 +205,17 @@ class Redirection extends Model
      *
      * Delete a redirection
      *
-     * @param string $id
+     * @param array $ids
      * @return bool
      * @throws DatabaseException
-     *
+     * @throws ACLException
+     * @throws PermissionException
      */
-    public function delete(string $id): bool
+    public function delete(array $ids): bool
     {
-        $this->deleteById($this->ensureObjectId($id));
+        $this->hasPermissions();
+        $ids = $this->ensureObjectIds($ids, true);
+        self::query()->deleteMany(['_id' => ['$in' => $ids]]);
         return true;
     }
 }

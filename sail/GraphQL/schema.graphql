@@ -216,7 +216,7 @@ type Mutation {
     # Redirection
     createRedirection(url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
     updateRedirection(id: ID!, url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
-    deleteRedirection(id: ID!): Boolean!
+    deleteRedirection(ids: [ID!]!): Boolean!
 
     #{CUSTOM_MUTATIONS}#
 }
@@ -875,6 +875,7 @@ type Template {
 }
 
 type Redirection {
+    _id: ID!
     url: String!
     redirect_url: String!
     redirect_type: String!
