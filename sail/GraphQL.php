@@ -23,6 +23,7 @@ use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\BrokenLink;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
 use SailCMS\GraphQL\Controllers\Entries;
@@ -376,6 +377,7 @@ final class GraphQL
         self::addMutationResolver('generateRobot', Basics::class, 'generateRobot');
         self::addMutationResolver('generateSitemap', Basics::class, 'generateSitemap');
         self::addQueryResolver('version', Basics::class, 'version');
+        self::addQueryResolver('getBrokenLinks', BrokenLink::class, 'getBrokenLinks');
 
         // User
         self::addQueryResolver('user', Users::class, 'user');
