@@ -6,6 +6,7 @@ use SailCMS\Contracts\Renderer;
 use SailCMS\Debug;
 use SailCMS\Errors\EngineException;
 use SailCMS\Sail;
+use SailCMS\Templating\Extensions\Entry;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -220,6 +221,7 @@ class Engine
     private function setupExtensions(): void
     {
         $this->twig->addExtension(new Bundled());
+        $this->twig->addExtension(new Entry());
         $this->twig->addExtension(new Navigation());
 
         foreach (self::$extensions as $extension) {
