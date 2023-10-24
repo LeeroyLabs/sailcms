@@ -796,11 +796,11 @@ class Sail
         (new User())->login($userEmail, $userPwd);
 
         self::$environmentData->setFor('SITE_URL', 'http://localhost:8888');
-
+        
         if ($templatePath !== '') {
             self::setTemplateDirectory($templatePath);
         } else {
-            self::setTemplateDirectory(dirname($rootDir) . '/templates');
+            self::setTemplateDirectory(self::$workingDirectory . '/templates');
         }
 
         self::loadContainerFromComposer(dirname($rootDir));

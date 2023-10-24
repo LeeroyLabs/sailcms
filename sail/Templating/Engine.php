@@ -32,7 +32,7 @@ class Engine
         if (!isset(self::$loader)) {
             self::$loader = new FilesystemLoader([Sail::getTemplateDirectory(), dirname(__DIR__, 2) . '/cms']);
         }
-
+        
         // Use template caching or not
         if (setting('templating.cache', false)) {
             $this->twig = new Environment(self::$loader, [
@@ -101,6 +101,7 @@ class Engine
             'public' => '/public'
         ];
 
+        ob_get_clean();
         ob_start();
         $this->twig->display($file . '.twig', (array)$data);
         $html = ob_get_clean();

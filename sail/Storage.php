@@ -232,12 +232,10 @@ class Storage
     {
         try {
             if ($isDirectory) {
-                $this->fs->directoryExists($this->buildFileString($name));
-                return true;
+                return $this->fs->directoryExists($this->buildFileString($name));
             }
 
-            $this->fs->fileExists($this->buildFileString($name));
-            return true;
+            return $this->fs->fileExists($this->buildFileString($name));
         } catch (FilesystemException $e) {
             return false;
         }

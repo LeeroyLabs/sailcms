@@ -45,4 +45,10 @@ class Seo
     {
         return new System();
     }
+
+    public static function regenerateSiteMap()
+    {
+        $system = new System();
+        $system->regenerateSiteMap();
+    }
 }

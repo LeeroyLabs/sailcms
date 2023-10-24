@@ -48,7 +48,7 @@ final class Filesystem
         if ($forcedPath === '') {
             $path = $wd;
         }
-
+        
         self::$adapters['local'] = new FS(new LocalFilesystemAdapter($path . '/'), ['public_url' => $host]);
         self::$adapters['app'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/app'), ['public_url' => '/fs']);
         self::$adapters['vault'] = new FS(new LocalFilesystemAdapter($wd . '/storage/fs/vault/'));

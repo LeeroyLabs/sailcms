@@ -8,7 +8,6 @@ use SailCMS\Types\Seo\Element;
 
 class EntryType implements SeoAdapter
 {
-
     /**
      * @param  string|ObjectId  $id
      * @return mixed
@@ -58,21 +57,5 @@ class EntryType implements SeoAdapter
     public function robots(): Element
     {
         // TODO: Implement robots() method.
-    }
-
-    /**
-     * @return Element
-     */
-    public function sitemap(): Element
-    {
-        // TODO: Implement sitemap() method.
-    }
-
-    /**
-     * @return string
-     */
-    public function meta(): string
-    {
-        // TODO: Implement meta() method.
     }
 }

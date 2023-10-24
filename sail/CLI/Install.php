@@ -78,6 +78,7 @@ class Install extends Command
             'config/general.staging.php' => 'config/general.staging.php',
             'config/general.production.php' => 'config/general.production.php',
             'config/security.php' => 'security.php',
+            'config/locales.php' => 'locales.php',
             'config/boot.php' => 'boot.php',
             'config/emails.default.yaml' => 'config/emails.default.yaml',
             'modules/.gitkeep' => '',

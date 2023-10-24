@@ -2,9 +2,10 @@
 
 namespace SailCMS\Seo;
 
-use MongoDB\BSON\ObjectId;
 use SailCMS\Contracts\SeoAdapter;
 use SailCMS\Errors\DatabaseException;
+use SailCMS\Errors\SitemapException;
+use SailCMS\Models\Asset;
 use SailCMS\Models\Seo;
 use SailCMS\Types\Seo\Element;
 
@@ -47,37 +48,128 @@ class System implements SeoAdapter
     }
 
     /**
+     *
+     * Default SEO Image for the site
+     *
      * @return Element
+     * @throws DatabaseException
+     *
      */
     public function image(): Element
     {
-        // TODO: Implement image() method.
+        if (empty($this->seoData)) {
+            $this->seoData = Seo::getByType('global');
+        }
+
+        $asset = Asset::getById($this->seoData->data->image);
+        $data = (object)['image' => $asset->url ?? ''];
+
+        return new Element($data, 'image', 'image');
     }
 
     /**
+     *
+     * Default SEO robots for the site
+     *
      * @return Element
+     * @throws DatabaseException
+     *
      */
     public function robots(): Element
     {
-        // TODO: Implement robots() method.
+        if (empty($this->seoData)) {
+            $this->seoData = Seo::getByType('global');
+        }
+
+        // Generate sitemap and return it
+        return new Element($this->seoData->data, 'robots', 'robots');
     }
 
     /**
+     *
+     * Regenerate the sitemaps
+     *
+     * @throws SitemapException
+     *
+     */
+    public function regenerateSiteMap(): void
+    {
+        $sitemap = new Sitemap();
+        $sitemap->buildMaster();
+        $sitemap->buildPerType();
+    }
+
+    /**
+     *
+     * Default SEO facebook config
+     *
      * @return Element
+     * @throws DatabaseException
+     *
      */
-    public function sitemap(): Element
+    public function facebook(): Element
     {
-        // TODO: Implement sitemap() method.
+        if (empty($this->seoData)) {
+            $this->seoData = Seo::getByType('global');
+        }
+
+        $asset = Asset::getById($this->seoData->data->image);
+        $this->seoData->data->image = $asset->url;
+
+        // Generate sitemap and return it
+        return new Element($this->seoData->data, 'facebook', 'facebook');
     }
 
     /**
-     * @return string
+     *
+     * Default SEO twitter/x config
+     *
+     * @return Element
+     * @throws DatabaseException
+     *
      */
-    public function meta(): string
+    public function twitter(): Element
     {
-        // TODO: Implement meta() method.
+        if (empty($this->seoData)) {
+            $this->seoData = Seo::getByType('global');
+        }
+
+        $asset = Asset::getById($this->seoData->data->image);
+        $this->seoData->data->image = $asset->url;
+
+        // Generate sitemap and return it
+        return new Element($this->seoData->data, 'twitter', 'twitter');
     }
 
+    /**
+     *
+     * Default SEO social config
+     *
+     * @return Element
+     * @throws DatabaseException
+     *
+     */
+    public function social(): Element
+    {
+        if (empty($this->seoData)) {
+            $this->seoData = Seo::getByType('global');
+        }
+
+        $asset = Asset::getById($this->seoData->data->image);
+        $this->seoData->data->image = $asset->url;
+
+        // Generate sitemap and return it
+        return new Element($this->seoData->data, 'social', 'social');
+    }
+
+    /**
+     *
+     * Site name position
+     *
+     * @return string
+     * @throws DatabaseException
+     *
+     */
     public function siteNamePosition(): string
     {
         if (empty($this->seoData)) {
@@ -87,6 +179,14 @@ class System implements SeoAdapter
         return $this->seoData->data->title_position;
     }
 
+    /**
+     *
+     * Separator character
+     *
+     * @return string
+     * @throws DatabaseException
+     *
+     */
     public function separatorCharacter(): string
     {
         if (empty($this->seoData)) {
@@ -96,6 +196,14 @@ class System implements SeoAdapter
         return $this->seoData->data->separator;
     }
 
+    /**
+     *
+     * Site name
+     *
+     * @return string
+     * @throws DatabaseException
+     *
+     */
     public function sitename(): string
     {
         if (empty($this->seoData)) {
@@ -105,6 +213,15 @@ class System implements SeoAdapter
         return $this->seoData->data->sitename;
     }
 
+    /**
+     *
+     * Formatted site name (with separator character)
+     *
+     * @param  string  $pageTitle
+     * @return Element
+     * @throws DatabaseException
+     *
+     */
     public function fullSiteTitle(string $pageTitle = ''): Element
     {
         if (empty($this->seoData)) {
@@ -147,23 +264,29 @@ class System implements SeoAdapter
                 return $this->description()->value();
 
             case 'image':
-                break;
+                return $this->image()->value();
+
+            case 'imageTags':
+                return $this->image()->tag();
 
             case 'robots':
-                break;
+                return $this->robots()->value();
 
-            case 'sitemap':
-                break;
+            case 'robotsTag':
+                return $this->robots()->tag();
 
             case 'facebook':
-                break;
+            case 'linkedin':
+                return $this->facebook()->tag();
 
             case 'twitter':
             case 'x':
-                break;
+                return $this->twitter()->tag();
 
-            case 'linkedin':
-                break;
+            case 'social':
+                return $this->social()->tag();
         }
+
+        return '';
     }
 }

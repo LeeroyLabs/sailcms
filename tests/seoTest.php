@@ -46,39 +46,32 @@ test('Get Global Full Title With Page Name', function ()
     expect(Seo::global()->fullSiteTitle('My Product')->value())->toBeString('My Product - SailCMS');
 })->group('seo');
 
-//test('Create a redirection', function () {
-//    $redirection = Redirection::add(
-//        '/test',
-//        '/',
-//        '302'
-//    );
-//    expect($redirection)->toBeTrue();
-//})->group('seo');
-//
-//test('Update a redirection', function () {
-//    $redirectionId = (new Redirection)->getByUrl('/test');
-//
-//    $redirection = (new Redirection)->update(
-//        $redirectionId->id,
-//        '/test2',
-//        '/',
-//        '302'
-//    );
-//    expect($redirection)->toBeTrue();
-//})->group('seo');
-//
-//test('Get a list of redirections', function () {
-//    $redirections = (new Redirection)->getList(
-//        1,
-//        15
-//    );
-//    expect($redirections)->not->toBeNull();
-//})->group('seo');
-//
-//
-//test('Delete a redirection', function () {
-//    $redirectionId = (new Redirection)->getByUrl('/test2');
-//
-//    $redirection = (new Redirection)->delete($redirectionId->id);
-//    expect($redirection)->toBeTrue();
-//})->group('seo');
+test('Get Global Image', function ()
+{
+    expect(Seo::global()->image)->toContain('https://');
+})->group('seo');
+
+test('Get Global Image Tags (FB/X)', function ()
+{
+    expect(Seo::global()->imageTags)->toContain('<meta property="og:image"');
+})->group('seo');
+
+test('Get Global Robots', function ()
+{
+    expect(Seo::global()->robots)->toContain('all');
+})->group('seo');
+
+test('Get Global Robots Tag', function ()
+{
+    expect(Seo::global()->robotsTag)->toContain('<meta name="robots" content="all"/>');
+})->group('seo');
+
+test('Get Global Social Tags', function ()
+{
+    expect(Seo::global()->social)->toContain('<meta');
+})->group('seo');
+
+test('Get Global Sitemap', function ()
+{
+    expect(Seo::global()->sitemap)->not->toBeEmpty();
+})->group('seo');

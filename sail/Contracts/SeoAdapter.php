@@ -10,12 +10,15 @@ use SailCMS\Types\Seo\Element;
  * @property string $title
  * @property string $description
  * @property string $image
+ * @property string $imageTags
  * @property string $robots
+ * @property string $robotsTag
  * @property string $sitemap
  * @property string $facebook
  * @property string $twitter
  * @property string $x
  * @property string $linkedin
+ * @property string $social
  *
  */
 interface SeoAdapter
@@ -27,8 +30,4 @@ interface SeoAdapter
     public function image(): Element;
 
     public function robots(): Element;
-
-    public function sitemap(): Element;
-
-    public function meta(): string;
 }
