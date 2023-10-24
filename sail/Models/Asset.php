@@ -181,9 +181,7 @@ class Asset extends Model
         // Options for pagination and sorting
         $options = QueryOptions::initWithPagination($offset, $limit);
         $options->sort = [$sort => $direction];
-
-        Debug::ray($query, $options);
-
+        
         $results = $this
             ->find($query, $options)
             ->populate('uploader_id', 'uploader', User::class)
