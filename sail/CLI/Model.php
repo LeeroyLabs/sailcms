@@ -32,6 +32,7 @@ class Model extends Command
         $type = strtolower($input->getArgument('type'));
 
         $location = Text::from($input->getArgument('location'))->deburr()->camel()->value();
+        $ns = $input->getArgument('location');
         $name = Text::from($input->getArgument('name'))->deburr()->camel()->capitalize(true)->value();
 
         Tools::outputInfo('creating', "Creating model [b]{$name}[/b]");
@@ -48,7 +49,7 @@ class Model extends Command
 
                     // Create file
                     $code = $fs->read("install://model.php");
-                    $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $location], $code);
+                    $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $ns], $code);
                     $fs->write($path . '/Models/' . $name . '.php', $code);
 
                     // Dump autoload and regenerate
@@ -72,7 +73,7 @@ class Model extends Command
 
                     // Create file
                     $code = $fs->read("install://model.php");
-                    $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $location], $code);
+                    $code = str_replace(['[NAME]', '[LOCATION]'], [$name, $ns], $code);
                     $fs->write($path . '/Models/' . $name . '.php', $code);
 
                     // Dump autoload and regenerate
