@@ -41,7 +41,7 @@ class Response
     public function __construct(string $type = 'text/html')
     {
         if (in_array($type, $this->validTypes, true)) {
-            $this->compress = env('use_compression', false);
+            $this->compress = env('use_compression', 'false') === 'true';
 
             $this->type = $type;
             $this->data = new \stdClass;
