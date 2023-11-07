@@ -221,7 +221,7 @@ class Response
         }
 
         // Enable compression
-        if (env('use_compression', false)) {
+        if ($this->compress) {
             ob_start('ob_gzhandler');
         }
 
