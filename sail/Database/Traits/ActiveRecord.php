@@ -251,19 +251,17 @@ trait ActiveRecord
                     return false;
                 }
 
-                $saved = $this->updateOne(['_id' => $this->_id], $call);
+                $this->updateOne(['_id' => $this->_id], $call);
 
-                if ($saved > 0) {
-                    $this->dirtyFields = [];
-                    $this->currentIncrements = [];
-                    $this->currentPushes = [];
-                    $this->currentPulls = [];
-                    $this->currentPullAlls = [];
-                    $this->currentPops = [];
-                    $this->superseededProperties = [];
-                    $this->isDirty = false;
-                    return true;
-                }
+                $this->dirtyFields = [];
+                $this->currentIncrements = [];
+                $this->currentPushes = [];
+                $this->currentPulls = [];
+                $this->currentPullAlls = [];
+                $this->currentPops = [];
+                $this->superseededProperties = [];
+                $this->isDirty = false;
+                return true;
             }
         }
 
