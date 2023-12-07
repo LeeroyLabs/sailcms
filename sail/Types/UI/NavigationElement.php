@@ -30,7 +30,7 @@ class NavigationElement
         string $section = self::SECTION_PRE_SETTINGS
     ) {
         $this->name = $name;
-        $this->icon = 'mdi-' . $icon;
+        $this->icon = $icon;
         $this->label = $label;
         $this->slug = Text::from($label->get('en'))->slug()->value();
         $this->parent = $parent;

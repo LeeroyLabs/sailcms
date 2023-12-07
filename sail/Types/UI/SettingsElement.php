@@ -29,7 +29,7 @@ class SettingsElement
         string $section = self::SECTION_OTHERS
     ) {
         $this->name = $name;
-        $this->icon = 'mdi-' . $icon;
+        $this->icon = $icon;
         $this->label = $label;
         $this->slug = Text::from($label->get('en'))->slug()->value();
         $this->permission = $permission;
