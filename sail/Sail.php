@@ -208,7 +208,7 @@ class Sail
 
         // Initialize the ACLs
         ACL::init();
-
+        
         // Detect what site we are on
         $environments = [];
 

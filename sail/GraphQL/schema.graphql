@@ -218,6 +218,10 @@ type Mutation {
     updateRedirection(id: ID!, url: String!, redirect_url: String!, redirect_type: RedirectType!): Boolean!
     deleteRedirection(ids: [ID!]!): Boolean!
 
+    # Bookmarks
+    addBookmark(user_id: ID!, url: String!, name: LocaleFieldInput!): Boolean!
+    removeBookmark(user_id: ID!, url: String!): Boolean!
+
     #{CUSTOM_MUTATIONS}#
 }
 
@@ -339,6 +343,7 @@ type User {
     locale: String!
     group: String
     highest_level: Int!
+    bookmarks: [Bookmark!]!
 }
 
 type UserListing {
@@ -945,6 +950,12 @@ type PHPVersion {
     latest: Boolean!
     secure: Boolean!
     supported: Boolean!
+}
+
+type Bookmark {
+    user_id: String!
+    url: String!
+    name: LocaleField!
 }
 
 #{CUSTOM_TYPES}#

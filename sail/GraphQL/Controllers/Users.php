@@ -13,6 +13,7 @@ use SailCMS\Errors\FileException;
 use SailCMS\Errors\PermissionException;
 use SailCMS\GraphQL\Context;
 use SailCMS\Middleware;
+use SailCMS\Models\Bookmark;
 use SailCMS\Models\Role;
 use SailCMS\Models\Tfa;
 use SailCMS\Models\User;
@@ -475,6 +476,11 @@ class Users
             }
 
             return $obj->meta;
+        }
+
+        if ($info->fieldName === 'bookmarks') {
+            $bm = new Bookmark();
+            $obj->bookmarks = $bm->getList($obj->id);
         }
 
         if (($info->fieldName === 'group') && !isset($obj->group)) {

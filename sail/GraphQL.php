@@ -23,6 +23,7 @@ use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
 use SailCMS\GraphQL\Controllers\Assets;
 use SailCMS\GraphQL\Controllers\Basics;
+use SailCMS\GraphQL\Controllers\Bookmarks;
 use SailCMS\GraphQL\Controllers\BrokenLink;
 use SailCMS\GraphQL\Controllers\Categories;
 use SailCMS\GraphQL\Controllers\Emails;
@@ -567,6 +568,10 @@ final class GraphQL
         self::addQueryResolver('getPHPLogs', Misc::class, 'getPHPLogs');
         self::addQueryResolver('monitoringSample', Misc::class, 'monitoringSample');
         self::addQueryResolver('getRangeSample', Misc::class, 'getRangeSample');
+
+        // Bookmarks
+        self::addMutationResolver('addBookmark', Bookmarks::class, 'addBookmark');
+        self::addMutationResolver('removeBookmark', Bookmarks::class, 'removeBookmark');
 
         // Types and Resolvers
         self::addResolver('User', Users::class, 'resolver');
