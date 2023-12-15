@@ -588,7 +588,7 @@ class EntryLayout extends Model implements Castable
         try {
             $entryLayoutId = $this->insert([
                 'slug' => $slug,
-                '$title' => $title,
+                'title' => $title,
                 'schema' => $schema,
                 'authors' => $authors,
                 'dates' => $dates,
