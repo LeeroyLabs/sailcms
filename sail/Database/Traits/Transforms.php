@@ -12,11 +12,14 @@ use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use SailCMS\Collection;
 use SailCMS\Contracts\Castable;
+use SailCMS\Database\Model;
 use SailCMS\Security;
 use stdClass;
 
 trait Transforms
 {
+    use Casting;
+
     /**
      *
      * Handle the toString transformation
@@ -41,7 +44,7 @@ trait Transforms
                 if ($key === '_id') {
                     $doc[$key] = (string)$value;
                 } elseif (!is_scalar($value)) {
-                    $doc[$key] = $this->simplifyObject($value);
+                    $doc[$key] = $this->simplifyObject($value, $key);
                 } else {
                     $doc[$key] = $value;
                 }
@@ -64,136 +67,12 @@ trait Transforms
      * Transform mongodb objects to clean php objects
      *
      * @param  array|object  $doc
-     * @return static
+     * @return Transforms|Model
      *
      */
     private function transformDocToModel(array|object $doc): self
     {
-        $instance = new static();
-
-        foreach ($doc as $k => $v) {
-            $cast = $this->casting[$k] ?? '';
-
-            if (is_object($v)) {
-                $type = get_class($v);
-
-                switch ($type) {
-                    // Mongo Date
-                    case UTCDateTime::class:
-                        if ($cast === Carbon::class) {
-                            $instance->{$k} = new Carbon($v->toDateTime());
-                        } elseif ($cast === \DateTime::class) {
-                            $instance->{$k} = $v->toDateTime();
-                        } else {
-                            $instance->{$k} = $v;
-                        }
-                        break;
-
-                    case ObjectId::class:
-                        if ($cast === ObjectId::class) {
-                            $instance->{$k} = $v;
-                        } elseif ($cast === 'string') {
-                            $instance->{$k} = (string)$v;
-                        } else {
-                            $instance->{$k} = $v;
-                        }
-                        break;
-
-                    case BSONArray::class:
-                        // If an array and we are casting into Collection<Type>
-                        if (is_array($cast)) {
-                            if ($cast[0] === Collection::class) {
-                                $list = [];
-
-                                foreach ($v->bsonSerialize() as $_value) {
-                                    $casted = new $cast[1]();
-
-                                    if ($_value instanceof BSONDocument) {
-                                        foreach ($_value as $_k => $_v) {
-                                            if ($_v instanceof BSONArray) {
-                                                $_value->{$_k} = $_v->bsonSerialize();
-                                            } else {
-                                                $_value->{$_k} = $_v;
-                                            }
-                                        }
-                                    }
-
-                                    $list[] = $casted->castTo($_value);
-                                }
-
-                                $castInstance = new $cast[0]($list);
-
-                                if ($instance->{$k} instanceof Collection) {
-                                    if (is_array($castInstance)) {
-                                        $instance->{$k} = new Collection($castInstance);
-                                    } else {
-                                        $instance->{$k} = $castInstance;
-                                    }
-                                } else {
-                                    $instance->{$k} = $castInstance;
-                                }
-                            }
-                        } elseif ($cast === Collection::class) {
-                            $castInstance = new $cast();
-                            $instance->{$k} = $castInstance->castTo($v->bsonSerialize());
-                        } elseif ($cast !== '') {
-                            if (defined("$cast::HANDLE_ARRAY_CASTING") && $cast::HANDLE_ARRAY_CASTING) {
-                                $casted = new $cast();
-                                $instance->{$k} = $casted->castTo($v->bsonSerialize());
-                            } else {
-                                $list = [];
-
-
-                                foreach ($v->bsonSerialize() as $_value) {
-                                    $castInstance = new $cast();
-                                    $list[] = $castInstance->castTo($_value);
-                                }
-
-                                $instance->{$k} = $list;
-                            }
-                        } else {
-                            $instance->{$k} = $v->bsonSerialize();
-                        }
-                        break;
-
-                    default:
-                        if ($cast !== '') {
-                            $castInstance = new $cast();
-
-                            if (get_class($v) === BSONDocument::class) {
-                                $v = $this->bsonToPHP($v);
-                            }
-
-                            $instance->{$k} = $castInstance->castTo($v);
-                        } else {
-                            $instance->{$k} = $v;
-                        }
-                        break;
-                }
-            } elseif (is_array($v)) {
-                if ($cast !== '') {
-                    $castInstance = new $cast();
-                    $instance->{$k} = $castInstance->castTo($v);
-                } else {
-                    $instance->{$k} = $v;
-                }
-            } elseif (is_int($v) && $cast === \DateTime::class) {
-                $castInstance = new \DateTime();
-                $castInstance->setTimestamp($v);
-                $instance->{$k} = $castInstance;
-            } elseif (is_string($v) && $cast === 'encrypted') {
-                try {
-                    $instance->{$k} = Security::decrypt($v);
-                } catch (FilesystemException|\SodiumException $e) {
-                    // Unable to decrypt, return original
-                    $instance->{$k} = $v;
-                }
-            } else {
-                $instance->{$k} = $v;
-            }
-        }
-
-        return $instance;
+        return $this->runCasting($doc);
     }
 
     /**
@@ -234,7 +113,7 @@ trait Transforms
      * @throws \JsonException
      *
      */
-    private function simplifyObject(mixed $obj): mixed
+    private function simplifyObject(mixed $obj, string $key = ''): mixed
     {
         // Handle scalar
         if (is_scalar($obj)) {
@@ -243,6 +122,11 @@ trait Transforms
 
         if ($obj === null) {
             return null;
+        }
+
+        // Add Timestamp casting support
+        if (!empty($key) && !empty($this->casting[$key]) && $this->casting[$key] === 'timestamp') {
+            return $obj->getTimestamp();
         }
 
         // Process Collection first, because it will pass the is_array test
@@ -280,7 +164,6 @@ trait Transforms
         }
 
         // Change the condition to avoid php_stan error.
-        // if (isset(class_implements($obj)[Castable::class])
         if (is_a($obj, Castable::class, true)) {
             return $this->simplifyObject($obj->castFrom());
         }

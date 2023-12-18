@@ -209,4 +209,4 @@ test('ActiveRecord: nested value change and check for dirty', function ()
     }
 
     expect(true)->toBeTrue();
-})->group('db2');
+})->group('db');
