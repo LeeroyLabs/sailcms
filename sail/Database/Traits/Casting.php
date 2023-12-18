@@ -71,6 +71,12 @@ trait Casting
             return $this->castObject($value, $casting);
         }
 
+        if ($value instanceof BSONArray) {
+            return $value->bsonSerialize();
+        } elseif ($value instanceof BSONDocument) {
+            return $this->toRegularObject($value);
+        }
+
         return $value;
     }
 
