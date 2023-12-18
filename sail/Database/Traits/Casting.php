@@ -26,13 +26,7 @@ trait Casting
             if (!empty($this->casting[$key])) {
                 $instance->{$key} = $this->processCast($value, $this->casting[$key]);
             } else {
-                if ($value instanceof BSONArray) {
-                    $instance->{$key} = $value->bsonSerialize();
-                } elseif ($value instanceof BSONDocument) {
-                    $instance->{$key} = $this->toRegularObject($value);
-                } else {
-                    $instance->{$key} = $value;
-                }
+                $instance->{$key} = $this->phpValue($value);
             }
         }
 
@@ -73,7 +67,9 @@ trait Casting
 
         if ($value instanceof BSONArray) {
             return $value->bsonSerialize();
-        } elseif ($value instanceof BSONDocument) {
+        }
+
+        if ($value instanceof BSONDocument) {
             return $this->toRegularObject($value);
         }
 
@@ -146,6 +142,8 @@ trait Casting
                     break;
 
                 default:
+                    $val = $this->phpValue($val);
+
                     $caster = new $valueCasting();
                     $out[$key] = $caster->castTo($val);
                     break;
@@ -158,6 +156,19 @@ trait Casting
         }
 
         return $out;
+    }
+
+    private function phpValue(mixed $value): mixed
+    {
+        if ($value instanceof BSONArray) {
+            return $value->bsonSerialize();
+        }
+
+        if ($value instanceof BSONDocument) {
+            return $this->toRegularObject($value);
+        }
+
+        return $value;
     }
 
     private function decryptValue(string $value): string
