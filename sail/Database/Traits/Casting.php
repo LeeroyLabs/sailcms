@@ -26,7 +26,13 @@ trait Casting
             if (!empty($this->casting[$key])) {
                 $instance->{$key} = $this->processCast($value, $this->casting[$key]);
             } else {
-                $instance->{$key} = $value;
+                if ($value instanceof BSONArray) {
+                    $instance->{$key} = $value->bsonSerialize();
+                } elseif ($value instanceof BSONDocument) {
+                    $instance->{$key} = $this->toRegularObject($value);
+                } else {
+                    $instance->{$key} = $value;
+                }
             }
         }
 
