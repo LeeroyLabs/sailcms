@@ -60,7 +60,7 @@ trait Validation
                 $impl = class_implements($validator);
 
                 if (isset($impl[Validator::class])) {
-                    call_user_func([$validator, 'validate'], $key, $doc->{$key});
+                    $validator->validate($key, $doc->{$key});
                 } else {
                     throw new DatabaseException("Cannot use {$validator} to validate {$key} because it does not implement the Validator Interface", 400);
                 }

@@ -16,6 +16,9 @@ use SailCMS\Types\QueryOptions;
 
 trait QueryObject
 {
+    // Add Relationships feature
+    use Relationships;
+
     // Query operation Data
     private bool $currentShowAll = false;
     private string $currentOp = '';
@@ -91,7 +94,7 @@ trait QueryObject
 
         // Single query
         if ($this->isSingle) {
-            $result = call_user_func([$activeCollectionOrView, $this->currentOp], $this->currentQuery, $options);
+            $result = $activeCollectionOrView->{$this->currentOp}($this->currentQuery, $options);
             if ($result) {
                 $doc = $this->transformDocToModel($result);
 
@@ -110,6 +113,9 @@ trait QueryObject
                         // Do nothing about it
                     }
                 }
+
+                // Fetch all relationships
+                $doc = $this->fetchRelationships($doc);
 
                 $doc->exists = true;
                 $doc->isDirty = false;
@@ -200,6 +206,9 @@ trait QueryObject
                     $doc->{$target} = null;
                 }
             }
+
+            // Fetch all relationships
+            $doc = $this->fetchRelationships($doc);
 
             $doc->exists = true;
             $doc->isDirty = false;

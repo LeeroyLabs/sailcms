@@ -26,6 +26,7 @@ use SailCMS\Middleware\Data;
 use SailCMS\Middleware\Http;
 use SailCMS\Models\BrokenLink;
 use SailCMS\Models\Entry;
+use SailCMS\Models\Form;
 use SailCMS\Models\Redirection;
 use SailCMS\Register;
 use SailCMS\Types\MiddlewareType;
@@ -253,7 +254,7 @@ class Router
             $redirection = array_search($uri, array_column($redirection_list->list->unwrap(), 'url'), true);
             $permanent = true;
 
-            if($redirection_list->list->unwrap()[$redirection]->redirect_type === "302"){
+            if ($redirection_list->list->unwrap()[$redirection]->redirect_type === "302") {
                 $permanent = false;
             }
             (new self)->redirect($uri, $redirection_list->list->unwrap()[$redirection]->redirect_url, $permanent);
@@ -488,7 +489,7 @@ class Router
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $class = $trace[2]['class'] ?? 'Attributes::class';
 
-        $allowed = [self::class, Forms::class, 'Attributes::class'];
+        $allowed = [self::class, Form::class, 'Attributes::class'];
 
         if ($trace[2]['function'] !== '{closure}' && !in_array($class, $allowed, true) && !str_contains($class, 'Tests\routerTest')) {
             if ($trace[2]['function'] !== 'routes' || !is_subclass_of($class, AppContainer::class)) {

@@ -9,7 +9,8 @@ return [
     'timezone' => 'America/New_York',
     'useBasicAuthentication' => false,
     'database' => [
-        'activerecord_save_whole_object' => false
+        'activerecord_save_whole_object' => false,
+        'max_relationship_resolve_depth' => 3
     ],
     'monitoring' => [
         'problematic_sample_count_notify' => 5,

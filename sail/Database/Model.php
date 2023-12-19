@@ -13,6 +13,7 @@ use SailCMS\Cache;
 use SailCMS\Database\Traits\ActiveRecord;
 use SailCMS\Database\Traits\Debugging;
 use SailCMS\Database\Traits\QueryObject;
+use SailCMS\Database\Traits\Relationships;
 use SailCMS\Database\Traits\Transforms;
 use SailCMS\Database\Traits\Validation;
 use SailCMS\Database\Traits\View;
@@ -43,6 +44,9 @@ abstract class Model implements JsonSerializable
     // Add Transforms
     use Transforms;
 
+    // Add Relationships feature
+    use Relationships;
+
     // Add the ActiveRecord features
     use ActiveRecord;
 
@@ -62,6 +66,9 @@ abstract class Model implements JsonSerializable
     // Fields and Guards
     protected array $loaded = ['*'];
     protected array $guards = [];
+
+    // Relationship definitions
+    protected array $relationships = [];
 
     // Automatic Casting of properties 
     protected array $casting = [];
