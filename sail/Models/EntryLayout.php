@@ -366,12 +366,10 @@ class EntryLayout extends Model implements Castable
             throw new EntryException(self::SCHEMA_IS_USED);
         }
 
-        // All ids must be ObjectId
-        $ids = $this->ensureObjectIds($ids, true);
-
         if ($soft) {
             return $this->softDeleteMany($ids);
         }
+
         return $this->hardDeleteMany($ids);
     }
 
@@ -702,19 +700,21 @@ class EntryLayout extends Model implements Castable
      *
      * Soft delete many entry layouts by ids
      *
-     * @param  array  $ids
+     * @param  array|Collection  $ids
      * @return bool
      * @throws DatabaseException
      * @throws EntryException
-     *
      */
-    private function softDeleteMany(array $ids): bool
+    private function softDeleteMany(array|Collection $ids): bool
     {
         $author = User::$currentUser ?? User::anonymousUser();
         $now = time();
 
+        // All ids must be ObjectId
+        $idList = $this->ensureObjectIds($ids, true);
+
         try {
-            $count = $this->updateMany(['_id' => ['$in' => $ids]], [
+            $count = $this->updateMany(['_id' => ['$in' => $idList]], [
                 '$set' => [
                     'authors.deleted_by' => $author->_id,
                     'dates.deleted' => $now,
@@ -725,28 +725,29 @@ class EntryLayout extends Model implements Castable
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'soft deleting a batch of') . PHP_EOL . $exception->getMessage());
         }
 
-        return $count == count($ids);
+        return $count === count($idList);
     }
 
     /**
      *
      * Delete many entry fields by id
      *
-     * @param  array  $ids
+     * @param  array|Collection  $ids
      * @return bool
      * @throws EntryException
      *
      */
-    private function hardDeleteMany(array $ids): bool
+    private function hardDeleteMany(array|Collection $ids): bool
     {
-        $ids = $this->ensureObjectIds($ids, true);
+        $idList = $this->ensureObjectIds($ids, true);
 
         try {
-            $count = $this->deleteMany(['_id' => ['$in' => $ids]]);
+            Debug::ray(['_id' => ['$in' => $idList]]);
+            $count = $this->deleteMany(['_id' => ['$in' => $idList]]);
         } catch (DatabaseException $exception) {
             throw new EntryException(sprintf(self::DATABASE_ERROR, 'hard deleting a batch of') . PHP_EOL . $exception->getMessage());
         }
 
-        return $count === count($ids);
+        return $count === count($idList);
     }
 }
