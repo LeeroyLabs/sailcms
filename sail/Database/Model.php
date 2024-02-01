@@ -445,7 +445,7 @@ abstract class Model implements JsonSerializable
      * @throws DatabaseException
      *
      */
-    public static function all(string $cacheKey = ''): SailCollection
+    public static function every(string $cacheKey = ''): SailCollection
     {
         if ($cacheKey === '') {
             $cacheKey = 'all';
