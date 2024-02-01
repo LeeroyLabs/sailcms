@@ -23,6 +23,7 @@ use SailCMS\Errors\PermissionException;
 use SailCMS\Models\User;
 use SailCMS\Sail;
 use SailCMS\Text;
+use SailCMS\Collection as SailCollection;
 
 /**
  *
@@ -433,5 +434,35 @@ abstract class Model implements JsonSerializable
     private function assembleCacheKey(string $key): string
     {
         return Text::from(get_class($this))->snake()->concat($key, ':')->value();
+    }
+
+    /**
+     *
+     * Get all records
+     *
+     * @param  string  $cacheKey
+     * @return SailCollection
+     * @throws DatabaseException
+     *
+     */
+    public static function all(string $cacheKey = ''): SailCollection
+    {
+        if ($cacheKey === '') {
+            $cacheKey = 'all';
+        }
+
+        $query = self::query();
+        $records = $query->find()->exec($cacheKey);
+        $docs = [];
+
+        foreach ($records as $doc) {
+            $doc = $query->fetchRelationships($doc);
+            $doc->exists = true;
+            $doc->isDirty = false;
+            $doc->dirtyFields = [];
+            $docs[] = $doc;
+        }
+
+        return new SailCollection($docs);
     }
 }
