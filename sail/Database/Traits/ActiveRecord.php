@@ -354,10 +354,78 @@ trait ActiveRecord
 
             case 'like':
             case 'regex':
+            case '%':
                 return $instance->findOne([$field => new Regex($value, 'gi')])->exec();
 
             case 'notlike':
+            case '!%':
                 return $instance->findOne([$field => ['$not' => new Regex($value, 'gi')]])->exec();
+        }
+    }
+
+    /**
+     *
+     * ActiveRecord get all records by given field/value and operator
+     * Defaults to == operator
+     *
+     * @param  string  $field
+     * @param  mixed   $value
+     * @param  string  $operator
+     * @return static|null
+     * @throws DatabaseException
+     *
+     */
+    public static function getAllBy(string $field, mixed $value, string $operator = '=='): ?static
+    {
+        $instance = self::query();
+
+        switch ($operator) {
+            default:
+            case '==':
+            case 'eq':
+                return $instance->find([$field => $value])->exec();
+
+            case '!=':
+            case 'ne':
+                return $instance->find([$field => ['$ne' => $value]])->exec();
+
+            case '>':
+            case 'gt':
+                return $instance->find([$field => ['$gt' => $value]])->exec();
+
+            case '<':
+            case 'lt':
+                return $instance->find([$field => ['$lt' => $value]])->exec();
+
+            case '>=':
+            case 'gte':
+                return $instance->find([$field => ['$gte' => $value]])->exec();
+
+            case '<=':
+            case 'lte':
+                return $instance->find([$field => ['$lte' => $value]])->exec();
+
+            case 'in':
+            case 'has':
+                return $instance->find([$field => ['$in' => $value]])->exec();
+
+            case 'notin':
+            case 'nin':
+                return $instance->find([$field => ['$nin' => $value]])->exec();
+
+            case '||':
+            case 'between':
+                [$low, $high] = $value;
+                return $instance->find([$field => ['$gte' => $low, '$lte' => $high]])->exec();
+
+            case 'like':
+            case 'regex':
+            case '%':
+                return $instance->find([$field => new Regex($value, 'gi')])->exec();
+
+            case 'notlike':
+            case '!%':
+                return $instance->find([$field => ['$not' => new Regex($value, 'gi')]])->exec();
         }
     }
 
