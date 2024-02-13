@@ -371,61 +371,67 @@ trait ActiveRecord
      * @param  string  $field
      * @param  mixed   $value
      * @param  string  $operator
+     * @param  int     $offset
+     * @param  int     $limit
+     * @param  string  $sortBy
+     * @param  int     $direction
      * @return array
      * @throws DatabaseException
      *
      */
-    public static function getAllBy(string $field, mixed $value, string $operator = '=='): array
+    public static function getAllBy(string $field, mixed $value, string $operator = '==', int $offset = 0, int $limit = 1000, string $sortBy = '_id', int $direction = 1): array
     {
         $instance = self::query();
+
+        $sorting = [$sortBy => $direction];
 
         switch ($operator) {
             default:
             case '==':
             case 'eq':
-                return $instance->find([$field => $value])->exec();
+                return $instance->find([$field => $value])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case '!=':
             case 'ne':
-                return $instance->find([$field => ['$ne' => $value]])->exec();
+                return $instance->find([$field => ['$ne' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case '>':
             case 'gt':
-                return $instance->find([$field => ['$gt' => $value]])->exec();
+                return $instance->find([$field => ['$gt' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case '<':
             case 'lt':
-                return $instance->find([$field => ['$lt' => $value]])->exec();
+                return $instance->find([$field => ['$lt' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case '>=':
             case 'gte':
-                return $instance->find([$field => ['$gte' => $value]])->exec();
+                return $instance->find([$field => ['$gte' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case '<=':
             case 'lte':
-                return $instance->find([$field => ['$lte' => $value]])->exec();
+                return $instance->find([$field => ['$lte' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case 'in':
             case 'has':
-                return $instance->find([$field => ['$in' => $value]])->exec();
+                return $instance->find([$field => ['$in' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case 'notin':
             case 'nin':
-                return $instance->find([$field => ['$nin' => $value]])->exec();
+                return $instance->find([$field => ['$nin' => $value]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case '||':
             case 'between':
                 [$low, $high] = $value;
-                return $instance->find([$field => ['$gte' => $low, '$lte' => $high]])->exec();
+                return $instance->find([$field => ['$gte' => $low, '$lte' => $high]])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case 'like':
             case 'regex':
             case '%':
-                return $instance->find([$field => new Regex($value, 'gi')])->exec();
+                return $instance->find([$field => new Regex($value, 'gi')])->sort($sorting)->skip($offset)->limit($limit)->exec();
 
             case 'notlike':
             case '!%':
-                return $instance->find([$field => ['$not' => new Regex($value, 'gi')]])->exec();
+                return $instance->find([$field => ['$not' => new Regex($value, 'gi')]])->sort($sorting)->skip($offset)->limit($limit)->exec();
         }
     }
 
