@@ -371,11 +371,11 @@ trait ActiveRecord
      * @param  string  $field
      * @param  mixed   $value
      * @param  string  $operator
-     * @return static|null
+     * @return array
      * @throws DatabaseException
      *
      */
-    public static function getAllBy(string $field, mixed $value, string $operator = '=='): ?static
+    public static function getAllBy(string $field, mixed $value, string $operator = '=='): array
     {
         $instance = self::query();
 
