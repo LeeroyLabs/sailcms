@@ -109,7 +109,8 @@ return [
         'format' => 'svg',
         'main_color' => '',
         'hover_color' => '',
-        'background_color' => ''
+        'background_color' => '',
+        'text_color' => ''
     ],
     'logging' => [
         'useRay' => true,
