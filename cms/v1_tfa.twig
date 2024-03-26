@@ -221,6 +221,8 @@
 
         .text-white {--tw-text-opacity: 1;color: rgb(255 255 255/var(--tw-text-opacity))}
 
+        .text-black {--tw-text-opacity: 1;color: rgb(0 0 0/var(--tw-text-opacity))}
+
         .text-blue-600 {--tw-text-opacity: 1;color: rgb(37 99 235/var(--tw-text-opacity))}
 
         .text-gray-500 {--tw-text-opacity: 1;color: rgb(107 114 128/var(--tw-text-opacity))}
@@ -407,12 +409,12 @@
 
         <div class="mt-5 flex flex-col sm:flex-row space-x-1.5 items-center">
             <div class="mb-4 sm:mb-0">
-                <input id="code1" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                <input id="code2" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                <input id="code3" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                <input id="code4" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                <input id="code5" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                <input id="code6" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
+                <input id="code1" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center" style="background-color: {{ overrideBGColor }}; color: {{ overrideTextColor }}"/>
+                <input id="code2" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center" style="background-color: {{ overrideBGColor }}; color: {{ overrideTextColor }}"/>
+                <input id="code3" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center" style="background-color: {{ overrideBGColor }}; color: {{ overrideTextColor }}"/>
+                <input id="code4" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center" style="background-color: {{ overrideBGColor }}; color: {{ overrideTextColor }}"/>
+                <input id="code5" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center" style="background-color: {{ overrideBGColor }}; color: {{ overrideTextColor }}"/>
+                <input id="code6" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center" style="background-color: {{ overrideBGColor }}; color: {{ overrideTextColor }}"/>
             </div>
             <div id="secure_error" class="ml-4 text-red-500 font-medium hidden">{{ __('system_2fa.invalid_code') }}</div>
         </div>
