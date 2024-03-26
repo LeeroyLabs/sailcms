@@ -208,7 +208,7 @@ class Sail
 
         // Initialize the ACLs
         ACL::init();
-        
+
         // Detect what site we are on
         $environments = [];
 
@@ -911,7 +911,7 @@ class Sail
      */
     private static function setup2FA(): void
     {
-        if (stripos($_SERVER['REQUEST_URI'], '/v1/tfa') === 0) {
+        if (str_contains($_SERVER['REQUEST_URI'], '/v1/tfa')) {
             if ($_SERVER['REQUEST_URI'] === '/v1/tfa' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $req = new Request();
 
@@ -927,11 +927,16 @@ class Sail
                 exit();
             }
 
-            $whitelist = explode(',', setting('tfa.whitelist', Collection::init())->unwrap());
+            $whitelist = explode(',', setting('tfa.whitelist', Collection::init()));
             $url = parse_url($_SERVER['HTTP_REFERER']);
 
             if (in_array($url['host'], $whitelist, true)) {
                 $parts = explode('/', $_SERVER['REQUEST_URI']);
+
+                if (count($parts) < 5) {
+                    header('HTTP/1.0 403 Forbidden');
+                    die();
+                }
 
                 Locale::setCurrent($parts[3]);
                 $tfa = new TwoFactorAuthenticationController($parts[4]);

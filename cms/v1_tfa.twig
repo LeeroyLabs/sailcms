@@ -390,7 +390,7 @@
     </style>
 </head>
 
-<body>
+<body style="{{ overrideBGColor }}">
 <div id="secure_qr" class="p-4 flex flex-col sm:flex-row border border-gray-300 rounded-md">
     <div id="qr">
         <div class="border border-gray-300 rounded-lg p-[0.21rem]">
@@ -457,13 +457,13 @@
             {
                 let allowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-                if (e.key === 'Backspace') {
-                    deletePrevious = (document.getElementsByClassName('codefield')[i].value === '');
+                if (e.key==='Backspace') {
+                    deletePrevious = (document.getElementsByClassName('codefield')[i].value==='');
                     codeStatus[i] = false;
                     return true;
                 }
 
-                if (e.key === 'Enter' && i === 5) {
+                if (e.key==='Enter' && i===5) {
                     // Last Key, allow enter to be pressed
                     verify();
                     return;
@@ -484,7 +484,7 @@
 
             field.addEventListener('keyup', (e) =>
             {
-                if (e.key === 'Backspace') {
+                if (e.key==='Backspace') {
                     if (!codeStatus[i]) {
                         if (document.getElementById('code' + (i)) && deletePrevious) {
                             document.getElementById('code' + (i)).value = '';

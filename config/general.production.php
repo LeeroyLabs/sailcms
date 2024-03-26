@@ -108,7 +108,8 @@ return [
         'expire' => 30,
         'format' => 'svg',
         'main_color' => '',
-        'hover_color' => ''
+        'hover_color' => '',
+        'background_color' => ''
     ],
     'logging' => [
         'useRay' => true,

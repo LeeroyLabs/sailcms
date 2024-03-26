@@ -39,10 +39,10 @@ class MFA extends Model
         if (!empty($entry)) {
             $entry->secret = Security::decrypt($entry->secret);
             $entry->codes = new Collection([
-                Security::decrypt($entry->codes->at()),
-                Security::decrypt($entry->codes->at(1)),
-                Security::decrypt($entry->codes->at(2)),
-                Security::decrypt($entry->codes->at(3))
+                Security::decrypt($entry->codes[0]),
+                Security::decrypt($entry->codes[1]),
+                Security::decrypt($entry->codes[2]),
+                Security::decrypt($entry->codes[3])
             ]);
             return $entry;
         }

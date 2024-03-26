@@ -6,6 +6,7 @@ use JsonException;
 use League\Flysystem\FilesystemException;
 use RobThree\Auth\TwoFactorAuthException;
 use Sail\Encryption;
+use SailCMS\Debug;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Http\Response;
@@ -33,11 +34,11 @@ class TwoFactorAuthenticationController
 
         $tfa = new TwoFactorAuthentication();
         $model = new MFA();
-        $secret = $model->getForUser($this->uid);
+        $secret = $model->getForUser($uid);
 
         if ($secret === null) {
             $code = $tfa->signup();
-            $model->setForUser($this->uid, $code);
+            $model->setForUser($uid, $code);
         } else {
             $code = $secret->secret;
         }
@@ -46,9 +47,10 @@ class TwoFactorAuthenticationController
 
         $this->response->set('overrideColor', setting('tfa.main_color', ''));
         $this->response->set('overrideHoverColor', setting('tfa.hover_color', ''));
+        $this->response->set('overrideBGColor', setting('tf.background_color', '#ffffff'));
         $this->response->set('uid', $uid);
         $this->response->set('qr', $tfa->getQRCode($code));
-        $this->response->set('host', $url['host']);
+        $this->response->set('host', $url['path']);
     }
 
     /**
