@@ -9,7 +9,7 @@ use Sail\Encryption;
 use SailCMS\Errors\DatabaseException;
 use SailCMS\Errors\FileException;
 use SailCMS\Http\Response;
-use SailCMS\Models\Tfa;
+use SailCMS\Models\MFA;
 use SailCMS\Security;
 use SodiumException;
 use Twig\Error\LoaderError;
@@ -32,7 +32,7 @@ class TwoFactorAuthenticationController
         $this->response->template = 'v1_tfa';
 
         $tfa = new TwoFactorAuthentication();
-        $model = new Tfa();
+        $model = new MFA();
         $secret = $model->getForUser($this->uid);
 
         if ($secret === null) {
@@ -69,7 +69,7 @@ class TwoFactorAuthenticationController
 
         $tfa = new TwoFactorAuthentication();
 
-        $model = new Tfa();
+        $model = new MFA();
         $secret = $model->getForUser($this->uid);
 
         $this->response->set('uid', $this->uid);

@@ -456,7 +456,7 @@ class User extends Model
         }
 
         if ($meta === null) {
-            $meta = new UserMeta((object)['flags' => (object)['use2fa' => false]]);
+            $meta = new UserMeta((object)['flags' => (object)['useMFA' => false]]);
         }
 
         // Validate email properly
@@ -1061,7 +1061,7 @@ class User extends Model
                 $key = Security::secureTemporaryKey();
                 $this->updateOne(['_id' => $user->_id], ['$set' => ['temporary_token' => $key]]);
 
-                if ($user->meta->flags->use2fa) {
+                if ($user->meta->flags->useMFA) {
                     return new LoginResult((string)$user->_id, '2fa');
                 }
 
@@ -1072,7 +1072,7 @@ class User extends Model
             $key = Security::secureTemporaryKey();
             $this->updateOne(['email' => $email], ['$set' => ['temporary_token' => $key]]);
 
-            if ($user->meta->flags->use2fa) {
+            if ($user->meta->flags->useMFA) {
                 return new LoginResult((string)$user->_id, '2fa');
             }
 
@@ -1118,7 +1118,7 @@ class User extends Model
 
     /**
      *
-     * Log user in
+     * Log user in without the full security system
      *
      * @param  string  $email
      * @param  string  $password
@@ -1331,6 +1331,21 @@ class User extends Model
 
     /**
      *
+     * Activate MFA for the given user
+     *
+     * @param  string  $userId
+     * @return void
+     * @throws DatabaseException
+     *
+     */
+    public static function setMFA(string $userId): void
+    {
+        $instance = new static();
+        $instance->updateOne(['_id' => $instance->ensureObjectId($userId)], ['$set' => ['meta.flags.useMFA' => true]]);
+    }
+
+    /**
+     *
      * Login a user that was allowed to be by the 2FA rescue system
      *
      * @param  string  $id
@@ -1505,7 +1520,7 @@ class User extends Model
                 'avatar' => '',
                 'email' => self::ANONYMOUS_EMAIL,
                 'roles' => new Collection(['super-administrator']),
-                'meta' => new UserMeta((object)['flags' => ['use2fa' => false]]),
+                'meta' => new UserMeta((object)['flags' => ['useMFA' => false]]),
                 'status' => true,
                 'password' => Security::hashPassword(Text::init()->random(16)),
                 'locale' => Locale::default(),

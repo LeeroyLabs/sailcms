@@ -8,7 +8,7 @@ use RobThree\Auth\Providers\Time\HttpTimeProvider;
 use RobThree\Auth\TwoFactorAuth;
 use RobThree\Auth\TwoFactorAuthException;
 use SailCMS\Collection;
-use SailCMS\Models\Tfa;
+use SailCMS\Models\MFA;
 use SailCMS\Models\User;
 
 final class TwoFactorAuthentication
@@ -101,6 +101,6 @@ final class TwoFactorAuthentication
      */
     public function rescueAccount(Collection $codes): ?User
     {
-        return (new Tfa())->rescueAccount($codes);
+        return (new MFA())->rescueAccount($codes);
     }
 }

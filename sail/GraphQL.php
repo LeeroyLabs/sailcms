@@ -396,7 +396,7 @@ final class GraphQL
         // Authentication
         self::addQueryResolver('authenticate', Users::class, 'authenticate');
         self::addQueryResolver('verifyAuthenticationToken', Users::class, 'verifyAuthenticationToken');
-        self::addQueryResolver('verifyTFA', Users::class, 'verifyTFA');
+        self::addQueryResolver('verifyMFA', Users::class, 'verifyMFA');
         self::addQueryResolver('forgotPassword', Users::class, 'forgotPassword');
         self::addQueryResolver('userWithToken', Users::class, 'userWithToken');
         self::addMutationResolver('changePassword', Users::class, 'changePassword');

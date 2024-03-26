@@ -25,7 +25,7 @@ class UserMeta implements Castable, \JsonSerializable
         ]
     ];
 
-    private static array $registeredFlags = ['use2fa'];
+    private static array $registeredFlags = ['useMFA'];
 
     public function __construct(object $object = null)
     {

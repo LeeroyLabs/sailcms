@@ -17,22 +17,22 @@ use Ramsey\Uuid\Uuid;
  * @property Collection $codes
  *
  */
-class Tfa extends Model
+class MFA extends Model
 {
-    protected string $collection = 'tfa_data';
+    protected string $collection = 'mfa_data';
 
     /**
      *
      * Get the Secret for given user
      *
      * @param  string  $userId
-     * @return ?Tfa
+     * @return ?MFA
      * @throws DatabaseException
      * @throws FilesystemException
      * @throws SodiumException
      *
      */
-    public function getForUser(string $userId): ?Tfa
+    public function getForUser(string $userId): ?MFA
     {
         $entry = $this->findOne(['user_id' => $userId])->exec();
 
@@ -74,6 +74,8 @@ class Tfa extends Model
 
         $this->deleteOne(['user_id' => $userId]);
         $this->insert(['user_id' => $userId, 'secret' => $enc, 'codes' => $codes]);
+
+        User::setMFA($userId);
     }
 
     /**

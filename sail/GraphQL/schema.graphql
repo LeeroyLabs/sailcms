@@ -9,7 +9,7 @@ type Query {
     resendValidationEmail(email: String!): Boolean!
     authenticate(email: String!, password: String!): LoginResult!
     verifyAuthenticationToken(token: String!): User
-    verifyTFA(user_id: ID!, code: String!): User
+    verifyMFA(user_id: ID!, code: String!): User
     forgotPassword(email: String!): Boolean!
     userWithToken: User
 

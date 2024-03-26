@@ -15,7 +15,7 @@ use SailCMS\GraphQL\Context;
 use SailCMS\Middleware;
 use SailCMS\Models\Bookmark;
 use SailCMS\Models\Role;
-use SailCMS\Models\Tfa;
+use SailCMS\Models\MFA;
 use SailCMS\Models\User;
 use SailCMS\Security\TwoFactorAuthentication;
 use SailCMS\Types\Listing;
@@ -204,9 +204,9 @@ class Users
      * @throws SodiumException
      *
      */
-    public function verifyTFA(mixed $obj, Collection $args, Context $context): ?User
+    public function verifyMFA(mixed $obj, Collection $args, Context $context): ?User
     {
-        $model = new Tfa();
+        $model = new MFA();
         $tfa = new TwoFactorAuthentication();
         $setup = $model->getForUser($args->get('user_id'));
 
