@@ -399,173 +399,171 @@
     </div>
     {% if overrideTextColor !== '' %}
     <div id="main-ui" class="flex-grow mt-4 sm:mt-0 sm:ml-4" style="color: {{ overrideTextColor }}">
-        {% else %}
-        <div id="main-ui" class="flex-grow mt-4 sm:mt-0 sm:ml-4">
-            {% endif %}
+        {% endif %}
 
-            <h1 class="mb-4 font-bold text-lg mt-1.5">{{ __('system_2fa.how_to') }}</h1>
-            <ol>
-                <li>1. {{ __('system_2fa.step_1') }}</li>
-                <li>2. {{ __('system_2fa.step_2') }}</li>
-                <li>3. {{ __('system_2fa.step_3') }}</li>
-            </ol>
+        <h1 class="mb-4 font-bold text-lg mt-1.5">{{ __('system_2fa.how_to') }}</h1>
+        <ol>
+            <li>1. {{ __('system_2fa.step_1') }}</li>
+            <li>2. {{ __('system_2fa.step_2') }}</li>
+            <li>3. {{ __('system_2fa.step_3') }}</li>
+        </ol>
 
-            <div class="mt-5 flex flex-col sm:flex-row space-x-1.5 items-center">
-                <div class="mb-4 sm:mb-0">
-                    <input id="code1" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                    <input id="code2" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                    <input id="code3" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                    <input id="code4" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                    <input id="code5" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                    <input id="code6" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
-                </div>
-                <div id="secure_error" class="ml-4 text-red-500 font-medium hidden">{{ __('system_2fa.invalid_code') }}</div>
+        <div class="mt-5 flex flex-col sm:flex-row space-x-1.5 items-center">
+            <div class="mb-4 sm:mb-0">
+                <input id="code1" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
+                <input id="code2" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
+                <input id="code3" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
+                <input id="code4" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
+                <input id="code5" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
+                <input id="code6" type="text" maxlength="1" class="codefield rounded-md border border-gray-400 p-2 w-[40px] font-bold text-xl text-center"/>
             </div>
-            <div class="mt-4 flex flex-col sm:flex-row">
-                <Button onclick="verify()" class="rounded-md bg-blue-500 hover:bg-blue-800 text-white px-3 py-1.5">{{ __('system_2fa.verify') }}</Button>
-                <Button class="mt-4 sm:mt-0 sm:ml-4 hover:text-red-500" onclick="clearFields()">{{ __('system_2fa.clear') }}</Button>
-            </div>
+            <div id="secure_error" class="ml-4 text-red-500 font-medium hidden">{{ __('system_2fa.invalid_code') }}</div>
         </div>
-        <div id="success-ui" class="mx-auto hidden flex flex-row">
-            <div class="animation-ctn">
-                <div class="icon icon--order-success svg w-[154px] mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="154px" height="154px">
-                        <g fill="none" stroke="#22AE73" stroke-width="2">
-                            <circle cx="77" cy="77" r="72" style="stroke-dasharray:480px, 480px; stroke-dashoffset: 960px;"></circle>
-                            <circle id="colored" fill="#22AE73" cx="77" cy="77" r="72" style="stroke-dasharray:480px, 480px; stroke-dashoffset: 960px;"></circle>
-                            <polyline class="st0" stroke="#fff" stroke-width="10" points="43.5,77.8 63.7,97.9 112.2,49.4 " style="stroke-dasharray:100px, 100px; stroke-dashoffset: 200px;"/>
-                        </g>
-                    </svg>
-                </div>
-
-                <h2 class="mt-4">{{ __('system_2fa.activated_success') }}</h2>
+        <div class="mt-4 flex flex-col sm:flex-row">
+            <Button onclick="verify()" class="rounded-md bg-blue-500 hover:bg-blue-800 text-white px-3 py-1.5">{{ __('system_2fa.verify') }}</Button>
+            <Button class="mt-4 sm:mt-0 sm:ml-4 hover:text-red-500" onclick="clearFields()">{{ __('system_2fa.clear') }}</Button>
+        </div>
+    </div>
+    <div id="success-ui" class="mx-auto hidden flex flex-row">
+        <div class="animation-ctn">
+            <div class="icon icon--order-success svg w-[154px] mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="154px" height="154px">
+                    <g fill="none" stroke="#22AE73" stroke-width="2">
+                        <circle cx="77" cy="77" r="72" style="stroke-dasharray:480px, 480px; stroke-dashoffset: 960px;"></circle>
+                        <circle id="colored" fill="#22AE73" cx="77" cy="77" r="72" style="stroke-dasharray:480px, 480px; stroke-dashoffset: 960px;"></circle>
+                        <polyline class="st0" stroke="#fff" stroke-width="10" points="43.5,77.8 63.7,97.9 112.2,49.4 " style="stroke-dasharray:100px, 100px; stroke-dashoffset: 200px;"/>
+                    </g>
+                </svg>
             </div>
 
-            <div>
-                <div class="text-center mx-auto w-10/12 my-6">
-                    {{ __('system_2fa.rescue_codes') }}
-                </div>
-                <div id="codes" class="text-center mx-auto w-8/12 py-4 bg-green-600/50">
-                </div>
+            <h2 class="mt-4">{{ __('system_2fa.activated_success') }}</h2>
+        </div>
+
+        <div>
+            <div class="text-center mx-auto w-10/12 my-6">
+                {{ __('system_2fa.rescue_codes') }}
+            </div>
+            <div id="codes" class="text-center mx-auto w-8/12 py-4 bg-green-600/50">
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        let codeStatus = [false, false, false, false, false, false];
-        let deletePrevious = false;
+<script>
+    let codeStatus = [false, false, false, false, false, false];
+    let deletePrevious = false;
 
-        document.addEventListener('DOMContentLoaded', () =>
-        {
-            for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
-                document.getElementsByClassName('codefield')[i].addEventListener('keydown', (e) =>
-                {
-                    let allowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    document.addEventListener('DOMContentLoaded', () =>
+    {
+        for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
+            document.getElementsByClassName('codefield')[i].addEventListener('keydown', (e) =>
+            {
+                let allowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-                    if (e.key==='Backspace') {
-                        deletePrevious = (document.getElementsByClassName('codefield')[i].value==='');
-                        codeStatus[i] = false;
-                        return true;
-                    }
-
-                    if (e.key==='Enter' && i===5) {
-                        // Last Key, allow enter to be pressed
-                        verify();
-                        return;
-                    }
-
-                    if (!allowed.includes(e.key)) {
-                        e.preventDefault();
-                        return;
-                    }
-
-                    codeStatus[i] = true;
+                if (e.key==='Backspace') {
+                    deletePrevious = (document.getElementsByClassName('codefield')[i].value==='');
+                    codeStatus[i] = false;
                     return true;
-                });
-            }
-
-            for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
-                let field = document.getElementsByClassName('codefield')[i];
-
-                field.addEventListener('keyup', (e) =>
-                {
-                    if (e.key==='Backspace') {
-                        if (!codeStatus[i]) {
-                            if (document.getElementById('code' + (i)) && deletePrevious) {
-                                document.getElementById('code' + (i)).value = '';
-                                document.getElementById('code' + (i)).focus();
-                                deletePrevious = false;
-                            }
-                        }
-                    } else {
-                        if (codeStatus[i]) {
-                            if (document.getElementById('code' + (i + 2))) {
-                                document.getElementById('code' + (i + 2)).focus();
-                            }
-                        }
-                    }
-                });
-            }
-        });
-
-        async function verify()
-        {
-            // Assemble code
-            let code = '';
-
-            for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
-                code += document.getElementsByClassName('codefield')[i].value;
-            }
-
-            let json = await sendRequest(code);
-
-            if (!json.valid) {
-                document.getElementById('secure_error').classList.remove('hidden');
-            } else {
-                // set rescue codes
-                let html = '';
-
-                for (let i = 0; i < json.codes.length; i++) {
-                    html += json.codes[i];
-
-                    if (i + 1 < json.codes.length) {
-                        html += '<br/>';
-                    }
                 }
 
-                document.getElementById('codes').innerHTML = html;
-                document.getElementById('main-ui').classList.add('hidden');
-                document.getElementById('qr').classList.add('hidden');
-                document.getElementById('success-ui').classList.remove('hidden');
+                if (e.key==='Enter' && i===5) {
+                    // Last Key, allow enter to be pressed
+                    verify();
+                    return;
+                }
+
+                if (!allowed.includes(e.key)) {
+                    e.preventDefault();
+                    return;
+                }
+
+                codeStatus[i] = true;
+                return true;
+            });
+        }
+
+        for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
+            let field = document.getElementsByClassName('codefield')[i];
+
+            field.addEventListener('keyup', (e) =>
+            {
+                if (e.key==='Backspace') {
+                    if (!codeStatus[i]) {
+                        if (document.getElementById('code' + (i)) && deletePrevious) {
+                            document.getElementById('code' + (i)).value = '';
+                            document.getElementById('code' + (i)).focus();
+                            deletePrevious = false;
+                        }
+                    }
+                } else {
+                    if (codeStatus[i]) {
+                        if (document.getElementById('code' + (i + 2))) {
+                            document.getElementById('code' + (i + 2)).focus();
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    async function verify()
+    {
+        // Assemble code
+        let code = '';
+
+        for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
+            code += document.getElementsByClassName('codefield')[i].value;
+        }
+
+        let json = await sendRequest(code);
+
+        if (!json.valid) {
+            document.getElementById('secure_error').classList.remove('hidden');
+        } else {
+            // set rescue codes
+            let html = '';
+
+            for (let i = 0; i < json.codes.length; i++) {
+                html += json.codes[i];
+
+                if (i + 1 < json.codes.length) {
+                    html += '<br/>';
+                }
             }
+
+            document.getElementById('codes').innerHTML = html;
+            document.getElementById('main-ui').classList.add('hidden');
+            document.getElementById('qr').classList.add('hidden');
+            document.getElementById('success-ui').classList.remove('hidden');
         }
+    }
 
-        async function sendRequest(code)
-        {
-            let options = {
-                method: 'POST',
-                mode: 'cors',
-                cache: 'no-cache',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                    'Referer': '{{ host }}'
-                },
-                body: 'code=' + code + '&uid={{ uid }}'
-            };
+    async function sendRequest(code)
+    {
+        let options = {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'Referer': '{{ host }}'
+            },
+            body: 'code=' + code + '&uid={{ uid }}'
+        };
 
-            let response = await fetch('/v1/tfa', options);
-            let json = await response.json();
+        let response = await fetch('/v1/tfa', options);
+        let json = await response.json();
 
-            return json;
+        return json;
+    }
+
+    function clearFields()
+    {
+        for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
+            document.getElementsByClassName('codefield')[i].value = '';
         }
-
-        function clearFields()
-        {
-            for (let i = 0; i < document.getElementsByClassName('codefield').length; i++) {
-                document.getElementsByClassName('codefield')[i].value = '';
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
