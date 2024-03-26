@@ -397,10 +397,7 @@
             <img class="block mx-auto" src="{{ qr }}">
         </div>
     </div>
-    {% if overrideTextColor !== '' %}
     <div id="main-ui" class="flex-grow mt-4 sm:mt-0 sm:ml-4" style="color: {{ overrideTextColor }}">
-        {% endif %}
-
         <h1 class="mb-4 font-bold text-lg mt-1.5">{{ __('system_2fa.how_to') }}</h1>
         <ol>
             <li>1. {{ __('system_2fa.step_1') }}</li>
