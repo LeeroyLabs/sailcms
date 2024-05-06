@@ -303,7 +303,9 @@ class Response
                 break;
         }
 
-        if (env('use_compression', false)) {
+        $useCompression = env('use_compression', 'false');
+
+        if ($useCompression !== 'false') {
             ob_end_flush();
         }
     }
