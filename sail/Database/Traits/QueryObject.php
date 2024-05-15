@@ -233,6 +233,7 @@ trait QueryObject
      *
      * Get all records without any limits
      * Note: Be careful with the use of this method
+     * Note: This is limited to 10M records
      *
      * @return Collection
      * @throws DatabaseException
@@ -240,7 +241,7 @@ trait QueryObject
      */
     public static function allRecords(): Collection
     {
-        return new Collection(self::query()->find()->exec());
+        return new Collection(self::query()->find()->limit(10_000_000)->exec());
     }
 
     /**
