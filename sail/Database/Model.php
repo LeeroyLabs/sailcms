@@ -271,17 +271,20 @@ abstract class Model implements JsonSerializable
      * @return mixed|string|null
      *
      */
-    public function __get(string $name)
+    public function &__get(string $name): mixed
     {
         if ($name === 'id') {
             if (!empty($this->properties['_id'])) {
-                return (string)$this->properties['_id'];
+                $id = (string)$this->properties['_id'];
+                return $id;
             }
 
-            return '';
+            $str = '';
+            return $str;
         }
 
-        return $this->properties[$name] ?? null;
+        $ref = $this->properties[$name] ?? null;
+        return $ref;
     }
 
     /**
