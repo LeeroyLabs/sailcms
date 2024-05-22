@@ -15,6 +15,7 @@ abstract class AppController
     protected Request $request;
     protected Response $response;
     protected Locale $locale;
+    private array $arguments = [];
 
     public function __construct()
     {
@@ -22,6 +23,37 @@ abstract class AppController
         $this->request = new Request();
         $this->response = new Response('text/html');
         $this->locale = new Locale();
+    }
+
+    /**
+     *
+     * Set the available arguments for a given GraphQL call
+     *
+     * @param  array  $arguments
+     * @return void
+     *
+     */
+    public function setArguments(array $arguments): void
+    {
+        $this->arguments = $arguments;
+    }
+
+    /**
+     *
+     * Get an argument that was passed to a GraphQL call
+     *
+     * @param  string      $field
+     * @param  mixed|null  $default
+     * @return mixed
+     *
+     */
+    protected function arg(string $field, mixed $default = null): mixed
+    {
+        if (isset($this->arguments[$field])) {
+            return $this->arguments[$field];
+        }
+
+        return $default;
     }
 
     /**

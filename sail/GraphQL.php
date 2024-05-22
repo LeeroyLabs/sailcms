@@ -18,6 +18,7 @@ use GraphQL\Validator\Rules\DisableIntrospection;
 use GraphQL\Validator\Rules\QueryDepth;
 use JsonException;
 use SailCMS\Contracts\AppContainer;
+use SailCMS\Contracts\AppController;
 use SailCMS\Contracts\Castable;
 use SailCMS\Errors\GraphqlException;
 use SailCMS\GraphQL\Context;
@@ -623,6 +624,13 @@ final class GraphQL
         if (isset($property)) {
             foreach (self::$resolvers as $name => $resolver) {
                 if ($type === $name) {
+                    $instance = new $resolver->class();
+
+                    if ($instance instanceof AppController) {
+                        $instance->setArguments($args);
+                        return $instance->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                    }
+
                     return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                 }
             }
@@ -633,6 +641,13 @@ final class GraphQL
         if ($type === 'Query') {
             foreach (self::$queries as $name => $query) {
                 if ($fieldName === $name) {
+                    $resolved = DI::resolve($query->class);
+
+                    if ($resolved instanceof AppController) {
+                        $resolved->setArguments($args);
+                        return $resolved->{$query->method}($objectValue, new Collection($args), $contextValue, $info);
+                    }
+
                     return DI::resolve($query->class)->{$query->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
@@ -643,7 +658,14 @@ final class GraphQL
         if ($type === 'Mutation') {
             foreach (self::$mutations as $name => $mutation) {
                 if ($fieldName === $name) {
-                    return DI::resolve($mutation->class)->{$mutation->method}($objectValue, new Collection($args), $contextValue);
+                    $resolved = DI::resolve($mutation->class);
+
+                    if ($resolved instanceof AppController) {
+                        $resolved->setArguments($args);
+                        return $resolved->{$mutation->method}($objectValue, new Collection($args), $contextValue, $info);
+                    }
+
+                    return $resolved->{$mutation->method}($objectValue, new Collection($args), $contextValue);
                 }
             }
 
@@ -653,7 +675,14 @@ final class GraphQL
         // One last try on the resolvers
         foreach (self::$resolvers as $name => $resolver) {
             if ($type === $name) {
-                return DI::resolve($resolver->class)->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                $resolved = DI::resolve($resolver->class);
+
+                if ($resolved instanceof AppController) {
+                    $resolved->setArguments($args);
+                    return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                }
+
+                return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
             }
         }
 
