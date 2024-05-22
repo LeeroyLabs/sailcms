@@ -2,6 +2,7 @@
 
 namespace SailCMS\Contracts;
 
+use SailCMS\GraphQL\Context;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
 use SailCMS\Locale;
@@ -16,6 +17,7 @@ abstract class AppController
     protected Response $response;
     protected Locale $locale;
     private array $arguments = [];
+    private ?Context $graphqlContext = null;
 
     public function __construct()
     {
@@ -40,6 +42,19 @@ abstract class AppController
 
     /**
      *
+     * Set the current GraphQL Context
+     *
+     * @param  Context  $context
+     * @return void
+     *
+     */
+    public function setContext(Context $context): void
+    {
+        $this->graphqlContext = $context;
+    }
+
+    /**
+     *
      * Get an argument that was passed to a GraphQL call
      *
      * @param  string      $field
@@ -54,6 +69,18 @@ abstract class AppController
         }
 
         return $default;
+    }
+
+    /**
+     *
+     * Return the current GraphQL Context
+     *
+     * @return Context
+     *
+     */
+    protected function context(): Context
+    {
+        return $this->graphqlContext;
     }
 
     /**

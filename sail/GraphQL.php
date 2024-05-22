@@ -624,14 +624,15 @@ final class GraphQL
         if (isset($property)) {
             foreach (self::$resolvers as $name => $resolver) {
                 if ($type === $name) {
-                    $instance = new $resolver->class();
+                    $resolved = new $resolver->class();
 
-                    if ($instance instanceof AppController) {
-                        $instance->setArguments($args);
-                        return $instance->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                    if ($resolved instanceof AppController) {
+                        $resolved->setArguments($args);
+                        $resolved->setContext($contextValue);
+                        return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                     }
 
-                    return (new $resolver->class())->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
+                    return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                 }
             }
 
@@ -645,6 +646,7 @@ final class GraphQL
 
                     if ($resolved instanceof AppController) {
                         $resolved->setArguments($args);
+                        $resolved->setContext($contextValue);
                         return $resolved->{$query->method}($objectValue, new Collection($args), $contextValue, $info);
                     }
 
@@ -662,6 +664,7 @@ final class GraphQL
 
                     if ($resolved instanceof AppController) {
                         $resolved->setArguments($args);
+                        $resolved->setContext($contextValue);
                         return $resolved->{$mutation->method}($objectValue, new Collection($args), $contextValue, $info);
                     }
 
@@ -679,6 +682,7 @@ final class GraphQL
 
                 if ($resolved instanceof AppController) {
                     $resolved->setArguments($args);
+                    $resolved->setContext($contextValue);
                     return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                 }
 
