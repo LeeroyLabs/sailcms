@@ -2,6 +2,7 @@
 
 namespace SailCMS\Contracts;
 
+use SailCMS\Collection;
 use SailCMS\GraphQL\Context;
 use SailCMS\Http\Request;
 use SailCMS\Http\Response;
@@ -16,7 +17,7 @@ abstract class AppController
     protected Request $request;
     protected Response $response;
     protected Locale $locale;
-    private array $arguments = [];
+    private Collection $arguments;
     private ?Context $graphqlContext = null;
 
     public function __construct()
@@ -31,12 +32,16 @@ abstract class AppController
      *
      * Set the available arguments for a given GraphQL call
      *
-     * @param  array  $arguments
+     * @param  array|Collection  $arguments
      * @return void
      *
      */
-    public function setArguments(array $arguments): void
+    public function setArguments(array|Collection $arguments): void
     {
+        if (is_array($arguments)) {
+            $arguments = new Collection($arguments);
+        }
+
         $this->arguments = $arguments;
     }
 
@@ -64,11 +69,7 @@ abstract class AppController
      */
     protected function arg(string $field, mixed $default = null): mixed
     {
-        if (isset($this->arguments[$field])) {
-            return $this->arguments[$field];
-        }
-
-        return $default;
+        return $this->arguments->get($field, $default);
     }
 
     /**

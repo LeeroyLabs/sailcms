@@ -627,7 +627,7 @@ final class GraphQL
                     $resolved = new $resolver->class();
 
                     if ($resolved instanceof AppController) {
-                        $resolved->setArguments($args);
+                        $resolved->setArguments(new Collection($args));
                         $resolved->setContext($contextValue);
                         return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                     }
@@ -645,7 +645,7 @@ final class GraphQL
                     $resolved = DI::resolve($query->class);
 
                     if ($resolved instanceof AppController) {
-                        $resolved->setArguments($args);
+                        $resolved->setArguments(new Collection($args));
                         $resolved->setContext($contextValue);
                         return $resolved->{$query->method}($objectValue, new Collection($args), $contextValue, $info);
                     }
@@ -663,7 +663,7 @@ final class GraphQL
                     $resolved = DI::resolve($mutation->class);
 
                     if ($resolved instanceof AppController) {
-                        $resolved->setArguments($args);
+                        $resolved->setArguments(new Collection($args));
                         $resolved->setContext($contextValue);
                         return $resolved->{$mutation->method}($objectValue, new Collection($args), $contextValue, $info);
                     }
@@ -681,7 +681,7 @@ final class GraphQL
                 $resolved = DI::resolve($resolver->class);
 
                 if ($resolved instanceof AppController) {
-                    $resolved->setArguments($args);
+                    $resolved->setArguments(new Collection($args));
                     $resolved->setContext($contextValue);
                     return $resolved->{$resolver->method}($objectValue, new Collection($args), $contextValue, $info);
                 }
