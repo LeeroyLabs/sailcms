@@ -98,6 +98,7 @@ class Sail
      */
     public static function init(string $execPath): void
     {
+        self::$environmentData = Collection::init();
         self::$workingDirectory = dirname($execPath);
         self::setupEnv();
 
