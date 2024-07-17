@@ -81,7 +81,11 @@ abstract class AppController
      */
     protected function context(): Context
     {
-        return $this->graphqlContext;
+        if ($this->graphqlContext) {
+            return $this->graphqlContext;
+        }
+
+        return new Context();
     }
 
     /**
