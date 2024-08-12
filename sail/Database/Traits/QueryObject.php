@@ -1038,7 +1038,9 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $v->{$target}->{$pop[1]} = self::parsePopulate($v->{$target}, $thepop);
+                        if ($v->{$target}) {
+                            $v->{$target}->{$pop[1]} = self::parsePopulate($v->{$target}, $thepop);
+                        }
                     }
                 }
 
@@ -1064,7 +1066,9 @@ trait QueryObject
                         'subpopulates' => $pop[3] ?? []
                     ];
 
-                    $doc->{$field}->{$target}->{$pop[1]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
+                    if ($doc->{$field}->{$target}) {
+                        $doc->{$field}->{$target}->{$pop[1]} = self::parsePopulate($doc->{$field}->{$target}, $thepop);
+                    }
                 }
             }
         } elseif (is_object($doc->{$field}) && get_class($doc->{$field}) === Collection::class) {
@@ -1090,8 +1094,10 @@ trait QueryObject
                             'subpopulates' => $pop[3] ?? []
                         ];
 
-                        $subDoc = self::parsePopulate($doc->{$target}, $thepop);
-                        $doc->{$target}->{$pop[1]} = $subDoc->{$thepop['targetField']};
+                        if ($doc->{$target}) {
+                            $subDoc = self::parsePopulate($doc->{$target}, $thepop);
+                            $doc->{$target}->{$pop[1]} = $subDoc->{$thepop['targetField']};
+                        }
                     }
                 }
             } else {
