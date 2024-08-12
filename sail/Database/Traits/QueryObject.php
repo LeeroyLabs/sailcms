@@ -971,13 +971,17 @@ trait QueryObject
      *
      * Handle populate feature (with subpopulation)
      *
-     * @param  Model  $doc
-     * @param         $populate
-     * @return Model
+     * @param  Model|null  $doc
+     * @param  array       $populate
+     * @return Model|null
      *
      */
-    private static function parsePopulate(Model $doc, $populate)
+    private static function parsePopulate(?Model $doc, array $populate): ?Model
     {
+        if (!$doc) {
+            return $doc;
+        }
+
         $instance = new $populate['class']();
         $field = $populate['field'];
         $target = $populate['targetField'];
