@@ -54,6 +54,88 @@ class Response
 
     /**
      *
+     * Set the 401 unauthorized header
+     *
+     * @return void
+     *
+     */
+    public function unauthorized(): void
+    {
+        header('HTTP/1.0 401 Unauthorized');
+    }
+
+    /**
+     *
+     * Set the 403 forbidden header
+     *
+     * @return void
+     *
+     */
+    public function forbidden(): void
+    {
+        header('HTTP/1.0 401 Unauthorized');
+    }
+
+    /**
+     *
+     * Set the 201 created header
+     *
+     * @return void
+     *
+     */
+    public function created(): void
+    {
+        header('HTTP/1.0 201 Created');
+    }
+
+    /**
+     *
+     * Set the 202 accepted header
+     *
+     * @return void
+     *
+     */
+    public function accepted(): void
+    {
+        header('HTTP/1.0 202 Accepted');
+    }
+
+    /**
+     *
+     * Set a custom http code
+     *
+     * @param  int  $code
+     * @return void
+     *
+     */
+    public function header(int $code): void
+    {
+        http_response_code($code);
+    }
+
+    /**
+     *
+     * Set a 301/302 redirection
+     *
+     * @param  string  $location
+     * @param  bool    $permanent
+     * @return void
+     *
+     */
+    public function moved(string $location, bool $permanent = true): void
+    {
+        if ($permanent) {
+            header('HTTP/1.0 301 Moved Permanently');
+            header("Location: {$location}");
+            return;
+        }
+
+        header('HTTP/1.0 302 Found');
+        header("Location: {$location}");
+    }
+
+    /**
+     *
      * Set the type for the response (only used when using the AppController response property)
      *
      * @param  string  $type
