@@ -268,7 +268,7 @@ final class Register
         $container = self::$containers->find(fn($k, $n) => $n->name === $name);
 
         if (!empty($container)) {
-            return $container->class();
+            return new $container->class();
         }
 
         throw new RegisterException("Container {$name} does not exist in the register. Please make sure you have the right name.", 0404);
