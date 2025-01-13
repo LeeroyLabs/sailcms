@@ -145,7 +145,6 @@ class Response
     public function setType(string $type): void
     {
         switch (strtolower($type)) {
-            default:
             case 'html':
                 $this->type = 'text/html';
                 break;
@@ -156,6 +155,10 @@ class Response
 
             case 'json':
                 $this->type = 'application/json';
+                break;
+
+            default:
+                $this->type = $type;
                 break;
         }
     }
