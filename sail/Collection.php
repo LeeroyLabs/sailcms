@@ -333,6 +333,19 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
 
     /**
      *
+     * Remove index from collection
+     *
+     * @param  string  $index
+     * @return void
+     *
+     */
+    public function remove(string $index): void
+    {
+        unset($this->_internal[$index]);
+    }
+
+    /**
+     *
      * Get a new static with the content of this static but reversed
      *
      * @return static
