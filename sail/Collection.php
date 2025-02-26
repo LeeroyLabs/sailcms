@@ -342,6 +342,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
     public function remove(string $index): void
     {
         unset($this->_internal[$index]);
+        $this->_internal = array_values($this->_internal);
     }
 
     /**
