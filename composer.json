@@ -40,7 +40,7 @@
         "myclabs/php-enum": "^1.8.4",
         "filp/whoops": "2.18.*",
         "nesbot/carbon": "^2.66.0",
-        "mongodb/mongodb": "^1.21.1",
+        "mongodb/mongodb": "^2.0.0",
         "twig/twig": "^v3.7.1",
         "guzzlehttp/guzzle": "^7.5",
         "webonyx/graphql-php": "^15.2.4",
