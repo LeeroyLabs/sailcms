@@ -125,7 +125,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public function __construct(string $collection = '', EntryType $entryType = null)
+    public function __construct(string $collection = '', ?EntryType $entryType = null)
     {
         if (!$entryType) {
             // Get or create the default entry type
@@ -186,11 +186,11 @@ class Entry extends Model implements Validator, Castable
      *
      * Return an empty Entry with default values
      *
-     * @param bool $asObject
+     * @param  bool  $asObject
      * @return array|object
      *
      */
-    public static function empty(bool $asObject = false):array|object
+    public static function empty(bool $asObject = false): array|object
     {
         $result = [
             "_id" => "",
@@ -255,7 +255,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Cast to for EntryAlternate elements
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return EntryAlternate|null
      */
     public function castTo(mixed $value): EntryAlternate|array
@@ -370,7 +370,7 @@ class Entry extends Model implements Validator, Castable
      *
      * Parse content according to EntryField type
      *
-     * @param array $options
+     * @param  array  $options
      * @return Collection
      * @throws ACLException
      * @throws DatabaseException
@@ -395,7 +395,7 @@ class Entry extends Model implements Validator, Castable
             ];
         } else {
             $toFetch = [];
-            foreach($options as $option) {
+            foreach ($options as $option) {
                 $toFetch[$option] = [];
             }
         }
@@ -409,8 +409,9 @@ class Entry extends Model implements Validator, Castable
         $matrixFieldKeys = [];
 
         // Get ids to fetch
-        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch, &$matrixFieldKeys) {
-            $fields =  $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
+        $schema->each(function ($index, $fieldTab) use ($contentParsed, &$toFetch, &$matrixFieldKeys)
+        {
+            $fields = $fieldTab->fields ? new Collection((array)$fieldTab->fields) : Collection::init();
             $this->getIdToFetchFromContent($fields, $toFetch, $contentParsed, $matrixFieldKeys);
         });
 
@@ -430,7 +431,8 @@ class Entry extends Model implements Validator, Castable
         }
 
         // Parse content with fetched elements
-        $contentParsed->each(function($key, &$content) use (&$contentParsed, $toFetch, $fetched, $matrixFieldKeys) {
+        $contentParsed->each(function ($key, &$content) use (&$contentParsed, $toFetch, $fetched, $matrixFieldKeys)
+        {
             // Check in the matrix field keys array if it's a matrix field
             if (in_array($key, $matrixFieldKeys)) {
                 $matrixContent = Collection::init();
@@ -453,11 +455,11 @@ class Entry extends Model implements Validator, Castable
      *
      * Recursively get id to fetch from content and a list of fields
      *
-     * @param Collection $fields
-     * @param array $toFetch
-     * @param Collection $content
-     * @param array $matrixFieldKeys
-     * @param string $keyPrefix for matrix
+     * @param  Collection  $fields
+     * @param  array       $toFetch
+     * @param  Collection  $content
+     * @param  array       $matrixFieldKeys
+     * @param  string      $keyPrefix  for matrix
      * @return void
      * @throws ACLException
      * @throws DatabaseException
@@ -466,7 +468,7 @@ class Entry extends Model implements Validator, Castable
      */
     private function getIdToFetchFromContent(Collection $fields, array &$toFetch, Collection $content, array &$matrixFieldKeys, string $keyPrefix = ""): void
     {
-        foreach($fields as $entryField) {
+        foreach ($fields as $entryField) {
             $elementBaseKey = $keyPrefix . $entryField->key;
             /**
              * @var EntryField $entryField
@@ -489,14 +491,16 @@ class Entry extends Model implements Validator, Castable
                 $matrixContent = new Collection((array)$content->get($entryField->key));
                 $matrixFieldKeys[] = $entryField->key;
                 $this->getIdToFetchFromContent($subFields, $toFetch, $matrixContent, $matrixFieldKeys, $elementBaseKey . "_");
-            } else if (isset($fetchKey) && isset($toFetch[$fetchKey]) && $content->get($entryField->key)) {
-                $fieldContent = $content->get($entryField->key);
-                if ($entryField->repeatable) {
-                    foreach($fieldContent as $index => $element) {
-                        $toFetch[$fetchKey][$elementBaseKey . "_" . $index] = $element;
+            } else {
+                if (isset($fetchKey) && isset($toFetch[$fetchKey]) && $content->get($entryField->key)) {
+                    $fieldContent = $content->get($entryField->key);
+                    if ($entryField->repeatable) {
+                        foreach ($fieldContent as $index => $element) {
+                            $toFetch[$fetchKey][$elementBaseKey . "_" . $index] = $element;
+                        }
+                    } else {
+                        $toFetch[$fetchKey][$elementBaseKey] = $fieldContent;
                     }
-                } else {
-                    $toFetch[$fetchKey][$elementBaseKey] = $fieldContent;
                 }
             }
         }
@@ -506,10 +510,10 @@ class Entry extends Model implements Validator, Castable
      *
      * Search for Asset or Entry in fetched elements
      *
-     * @param string $key
-     * @param mixed $content
-     * @param array $toFetch
-     * @param array $fetched
+     * @param  string  $key
+     * @param  mixed   $content
+     * @param  array   $toFetch
+     * @param  array   $fetched
      * @return mixed
      */
     private function searchInFetchArray(string $key, mixed $content, array $toFetch, array $fetched): mixed
@@ -523,7 +527,7 @@ class Entry extends Model implements Validator, Castable
                         $data = $fetched[EntryFetchOption::fromName($option)->value];
                         if ($option === "ENTRY") {
                             $data = $data->find(fn($k, $c) => (string)$c->entry_id === $element);
-                        }else{
+                        } else {
                             $data = $data->find(fn($k, $c) => (string)$c->_id === $element);
                         }
                         $arrayContent[$index] = $data ?? $element;
@@ -539,7 +543,7 @@ class Entry extends Model implements Validator, Castable
                     $data = $fetched[$entryFetchOption];
                     if ($option === "ENTRY") {
                         $data = $data->find(fn($k, $c) => (string)$c->entry_id === $content);
-                    }else{
+                    } else {
                         $data = $data->find(fn($k, $c) => (string)$c->_id === $content);
                     }
                     $contentFetched = $data ?? $content;
@@ -748,7 +752,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $onlyTrash = false, string $locale = null): Listing
+    public static function getList(string $entryTypeHandle, string $search = '', int $page = 1, int $limit = 50, string $sort = 'title', int $direction = Model::SORT_ASC, bool $onlyTrash = false, ?string $locale = null): Listing
     {
         $entryModel = EntryType::getEntryModelByHandle($entryTypeHandle);
 
@@ -962,7 +966,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public static function findByCategoryId(string $categoryId, string $siteId = null): Collection
+    public static function findByCategoryId(string $categoryId, ?string $siteId = null): Collection
     {
         $availableTypes = EntryType::getAll();
         $allEntries = Collection::init();
@@ -1000,7 +1004,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    public static function getValidatedSlug(LocaleField $urlPrefix, string $slug, string $siteId, string $locale, ?string $currentId = null, Collection $availableTypes = null): string
+    public static function getValidatedSlug(LocaleField $urlPrefix, string $slug, string $siteId, string $locale, ?string $currentId = null, ?Collection $availableTypes = null): string
     {
         // Just to be sure that the slug is ok
         $slug = Text::from($slug)->slug($locale)->value();
@@ -1443,7 +1447,7 @@ class Entry extends Model implements Validator, Castable
      * @throws SodiumException
      *
      */
-    public function publish(string $entryId, int $publicationDate, int $expirationDate, string $siteId = null): string
+    public function publish(string $entryId, int $publicationDate, int $expirationDate, ?string $siteId = null): string
     {
         $author = User::$currentUser ?? User::anonymousUser();
 
@@ -1939,7 +1943,7 @@ class Entry extends Model implements Validator, Castable
      * @throws SodiumException
      *
      */
-    private function emptyHomepage(string $siteId, string $locale, object|array $currentConfig = null): void
+    private function emptyHomepage(string $siteId, string $locale, null|object|array $currentConfig = null): void
     {
         if (!$currentConfig) {
             $currentConfig = self::getHomepage($siteId);
@@ -2281,7 +2285,7 @@ class Entry extends Model implements Validator, Castable
      * @throws PermissionException
      *
      */
-    private static function findByPublishedUrl(string $url, string $siteId = null): ?Entry
+    private static function findByPublishedUrl(string $url, ?string $siteId = null): ?Entry
     {
         $content = null;
 
