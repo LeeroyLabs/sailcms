@@ -44,10 +44,10 @@
         "ext-dom": "*",
         "vlucas/phpdotenv": "^v5.5.0",
         "myclabs/php-enum": "^1.8.4",
-        "filp/whoops": "2.15.1",
+        "filp/whoops": "2.18.*",
         "nesbot/carbon": "^2.66.0",
         "mongodb/mongodb": "^1.15.0",
-        "twig/twig": "^3.5.1",
+        "twig/twig": "^v3.7.1",
         "guzzlehttp/guzzle": "^7.5",
         "webonyx/graphql-php": "^15.2.4",
         "league/flysystem": "^3.12.3",
@@ -80,7 +80,7 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^1.10",
-        "pestphp/pest": "^v2.2.2",
+        "pestphp/pest": "^v3.8.1",
         "marcocesarato/php-conventional-changelog": "^1.17",
         "friendsofphp/php-cs-fixer": "^3.22"
     },
