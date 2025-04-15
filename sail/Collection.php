@@ -503,7 +503,7 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
      * @return Collection
      *
      */
-    public function splice(int $offset, int $length = null): Collection
+    public function splice(int $offset, ?int $length = null): Collection
     {
         $copy = $this->_internal;
         $new = array_splice($copy, $offset, $length);

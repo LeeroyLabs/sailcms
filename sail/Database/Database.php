@@ -47,7 +47,7 @@ class Database
 
             Debug::eventEnd('Connect to MongoDB');
         } catch (\Exception $e) {
-            throw new DatabaseException($e->getMessage(), 500);
+            throw new DatabaseException($e->getMessage(), 500, null);
         }
     }
 
