@@ -869,7 +869,7 @@ trait Transforms
      * @return Text|Utilities
      *
      */
-    public function substr(int $offset, int $length = null): self
+    public function substr(int $offset, ?int $length = null): self
     {
         $this->internalString = mb_substr($this->internalString, $offset, $length);
         return $this;
