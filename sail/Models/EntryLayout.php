@@ -88,7 +88,7 @@ class EntryLayout extends Model implements Castable
      * @return string
      *
      */
-    private static function generateSlug(string $slug, string $entryLayoutId = null): string
+    private static function generateSlug(string $slug, ?string $entryLayoutId = null): string
     {
         $filters = ['slug' => $slug];
         if ($entryLayoutId) {
@@ -574,7 +574,7 @@ class EntryLayout extends Model implements Castable
      * @throws EntryException
      *
      */
-    private function createWithoutPermission(string $title, Collection $schema, string $slug = null): EntryLayout
+    private function createWithoutPermission(string $title, Collection $schema, ?string $slug = null): EntryLayout
     {
         $dates = Dates::init();
         $author = User::$currentUser ?? User::anonymousUser();

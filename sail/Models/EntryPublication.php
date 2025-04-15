@@ -41,7 +41,7 @@ class EntryPublication extends Model
     public const DATABASE_ERROR = ['5300: Exception when "%s" an entry publication.', 5300];
     public const EXPIRATION_DATE_ERROR = ['5301: The expiration date must be higher than the publication date', 5301];
     public const FIND_BY_URL_CACHE = 'find_by_url_entry_';   // Add url at the end
-    public const FIND_BY_ID_CACHE = 'find_by_id_'; // Add ids at the end
+    public const FIND_BY_ID_CACHE = 'find_by_id_';           // Add ids at the end
 
     /**
      *
@@ -116,7 +116,7 @@ class EntryPublication extends Model
      * @throws DatabaseException
      *
      */
-    public function getPublicationByUrl(string $url, string $siteId = null): ?EntryPublication
+    public function getPublicationByUrl(string $url, ?string $siteId = null): ?EntryPublication
     {
         if (!$siteId) {
             $siteId = Sail::siteId();
@@ -126,8 +126,8 @@ class EntryPublication extends Model
         $cacheTtl = setting('entry.cacheTtl', Cache::TTL_WEEK);
 
         return $this->findOne(['entry_url' => $url, 'site_id' => $siteId])
-            ->populate('entry_version_id', 'version', EntryVersion::class)
-            ->exec($cacheKey, $cacheTtl);
+                    ->populate('entry_version_id', 'version', EntryVersion::class)
+                    ->exec($cacheKey, $cacheTtl);
     }
 
     /**
