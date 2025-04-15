@@ -36,11 +36,11 @@ class Navigation extends Model
      *
      * Create a navigation
      *
-     * @param string $title
-     * @param string $slug
-     * @param array|Collection|NavigationStructure $structure
-     * @param string $locale
-     * @param string $siteId
+     * @param  string                                $title
+     * @param  string                                $slug
+     * @param  array|Collection|NavigationStructure  $structure
+     * @param  string                                $locale
+     * @param  string                                $siteId
      * @return string
      * @throws ACLException
      * @throws DatabaseException
@@ -56,7 +56,7 @@ class Navigation extends Model
             $structure = new NavigationStructure($structure);
         }
 
-        $siteId = $siteId ?: Sail::siteId();
+        $siteId = $siteId ? : Sail::siteId();
         if (!$slug) {
             $slug = $title;
         }
@@ -83,11 +83,11 @@ class Navigation extends Model
      *
      * Update existing navigation with given information and structure
      *
-     * @param string $id
-     * @param string $title
-     * @param string $slug
-     * @param array|Collection|NavigationStructure $structure
-     * @param string $locale
+     * @param  string                                $id
+     * @param  string                                $title
+     * @param  string                                $slug
+     * @param  array|Collection|NavigationStructure  $structure
+     * @param  string                                $locale
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -135,7 +135,7 @@ class Navigation extends Model
      *
      * Delete a navigation by ID
      *
-     * @param array $ids
+     * @param  array  $ids
      * @return bool
      * @throws DatabaseException
      */
@@ -151,7 +151,7 @@ class Navigation extends Model
      *
      * Delete a navigation by name
      *
-     * @param string $slug
+     * @param  string  $slug
      * @return bool
      * @throws ACLException
      * @throws DatabaseException
@@ -168,16 +168,16 @@ class Navigation extends Model
      *
      * Get a list of navigation
      *
-     * @param string $sort
-     * @param int $direction
-     * @param string|null $locale
-     * @param string|null $siteId
+     * @param  string       $sort
+     * @param  int          $direction
+     * @param  string|null  $locale
+     * @param  string|null  $siteId
      * @return array|null
      * @throws ACLException
      * @throws DatabaseException
      * @throws PermissionException
      */
-    public static function getList(string $sort = 'title', int $direction = Model::SORT_ASC, string $locale = null, string $siteId = null): ?array
+    public static function getList(string $sort = 'title', int $direction = Model::SORT_ASC, ?string $locale = null, ?string $siteId = null): ?array
     {
         self::query()->hasPermissions(true);
 
