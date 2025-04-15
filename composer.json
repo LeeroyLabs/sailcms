@@ -26,12 +26,6 @@
             "email": "thibautl@leeroy.ca"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:marcLeeroy/clockwork.git"
-        }
-    ],
     "require": {
         "php": ">=8.4",
         "ext-sodium": "*",
@@ -69,7 +63,7 @@
         "symfony/twig-bridge": "^v6.2.8",
         "symfony/security-csrf": "^v6.2.7",
         "intervention/image": "^2.7",
-        "leeroy/clockwork": "^5.1",
+        "itsgoingd/clockwork": "^v5.1.8",
         "predis/predis": "^2.1",
         "leeroy/php-inflector": "^1.0.1",
         "league/csv": "^9.0",

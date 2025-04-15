@@ -42,7 +42,7 @@ class Database
                     self::$clients[$dbIndex] = new Client(env($dsn, ''));
                 }
             } else {
-                throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500);
+                throw new DatabaseException("Database DSN is not set for index {$dbIndex}.", 0500, null);
             }
 
             Debug::eventEnd('Connect to MongoDB');
