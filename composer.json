@@ -27,7 +27,7 @@
         }
     ],
     "require": {
-        "php": ">=8.4",
+        "php": ">=8.2",
         "ext-sodium": "*",
         "ext-imagick": "*",
         "ext-exif": "*",
