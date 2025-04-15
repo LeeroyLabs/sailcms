@@ -884,7 +884,7 @@ trait Transforms
      * @return Utilities|Text
      *
      */
-    public function substring(int $offset, int $length = null): self
+    public function substring(int $offset, ?int $length = null): self
     {
         return $this->substr($offset, $length);
     }
