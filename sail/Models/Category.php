@@ -85,7 +85,7 @@ class Category extends Model
      *
      * Get many categories with a given ids list
      *
-     * @param array $ids
+     * @param  array  $ids
      * @return ?array
      * @throws DatabaseException
      * @throws JsonException
@@ -112,7 +112,7 @@ class Category extends Model
      * @throws PermissionException
      *
      */
-    public static function getEntriesById(ObjectId|string $id, string $siteId = null): Collection
+    public static function getEntriesById(ObjectId|string $id, ?string $siteId = null): Collection
     {
         return Entry::findByCategoryId((string)$id, $siteId);
     }
@@ -130,7 +130,7 @@ class Category extends Model
      * @throws PermissionException
      *
      */
-    public static function getEntriesBySlug(string $slug, string $siteId = null): Collection
+    public static function getEntriesBySlug(string $slug, ?string $siteId = null): Collection
     {
         $siteId = $siteId ?? Sail::siteId();
 

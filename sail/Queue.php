@@ -38,11 +38,11 @@ final class Queue
      *
      * Note: All = 50 000 items max
      *
-     * @param Collection|null $tasks
+     * @param  Collection|null  $tasks
      * @return void
      * @throws DatabaseException
      */
-    public function process(Collection $tasks = null): void
+    public function process(?Collection $tasks = null): void
     {
         $maxProcess = env('queue_max_process_per_run', 'all');
 
@@ -72,24 +72,24 @@ final class Queue
 
             if (!$locked) {
                 $model->setLockStatus($value->_id, true);
-                    try {
-                        $action = explode(' ', $value->action);
+                try {
+                    $action = explode(' ', $value->action);
 
-                        $result = new Process($action);
-                        $result->start();
+                    $result = new Process($action);
+                    $result->start();
 
-                        $pid = $result->getPid();
-                        (new QueueModel)->updatePid($value->_id, $pid);
+                    $pid = $result->getPid();
+                    (new QueueModel)->updatePid($value->_id, $pid);
 
-                        $result->wait();
+                    $result->wait();
 
-                        if (!$result->isSuccessful()) {
-                            throw new ProcessFailedException($result);
-                        }
-                        $model->closeTask($value->_id, $result->getOutput());
-                    } catch (Exception $e) {
-                        $model->closeTask($value->_id, "Execution failed: {$e->getMessage()}.", false, $retry_count);
+                    if (!$result->isSuccessful()) {
+                        throw new ProcessFailedException($result);
                     }
+                    $model->closeTask($value->_id, $result->getOutput());
+                } catch (Exception $e) {
+                    $model->closeTask($value->_id, "Execution failed: {$e->getMessage()}.", false, $retry_count);
+                }
             }
         });
     }

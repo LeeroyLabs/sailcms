@@ -279,7 +279,7 @@ class EntryType extends Model implements Validator
      * @throws PermissionException
      *
      */
-    public function getEntryModel(EntryType $entryType = null): Entry
+    public function getEntryModel(?EntryType $entryType = null): Entry
     {
         // Pass the entry type to avoid a query
         if (isset($this->_id) && !$entryType) {

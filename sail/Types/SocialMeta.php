@@ -24,7 +24,7 @@ class SocialMeta implements Castable
      * @param  object|null  $content
      *
      */
-    public function __construct(string $handle = "", object $content = null)
+    public function __construct(string $handle = "", ?object $content = null)
     {
         $this->handle = $handle;
 

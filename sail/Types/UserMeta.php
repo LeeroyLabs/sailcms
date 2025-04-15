@@ -27,7 +27,7 @@ class UserMeta implements Castable, \JsonSerializable
 
     private static array $registeredFlags = ['useMFA'];
 
-    public function __construct(object $object = null)
+    public function __construct(?object $object = null)
     {
         if (!$object) {
             return;
@@ -147,7 +147,7 @@ class UserMeta implements Castable, \JsonSerializable
      * @return void
      *
      */
-    public static function register(string $key, int $type = UserMeta::TYPE_STRING, callable $callback = null): void
+    public static function register(string $key, int $type = UserMeta::TYPE_STRING, ?callable $callback = null): void
     {
         self::$registered[$key] = ['type' => $type, 'callback' => $callback];
     }

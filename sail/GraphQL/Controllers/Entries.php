@@ -417,9 +417,9 @@ class Entries
      *
      * Get entry version by id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return EntryVersion
      * @throws ACLException
      * @throws DatabaseException
@@ -442,9 +442,9 @@ class Entries
      *
      * Get entry versions by entry_id
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
+     * @param  mixed       $obj
+     * @param  Collection  $args
+     * @param  Context     $context
      * @return array
      * @throws ACLException
      * @throws DatabaseException
@@ -460,7 +460,7 @@ class Entries
         $versions = (new EntryVersion())->getVersionsByEntryId($entryId);
         $result = Collection::init();
 
-        foreach($versions as $version) {
+        foreach ($versions as $version) {
             $entry = $this->parseEntry($version->entry->toArray(), $options);
             $result->push($entry);
         }
@@ -513,7 +513,7 @@ class Entries
     {
         // For EntryVersion
         if ((is_array($obj) && !isset($obj['current'])) || (is_object($obj) && !isset($obj->current))) {
-              if ($info->fieldName === "content") {
+            if ($info->fieldName === "content") {
                 // Get entry type then fake an entry object to use getContent to parse the content with the layout schema
                 $entryType = $obj['entry_type'] ?? null;
 
@@ -647,10 +647,10 @@ class Entries
      *
      * Resolver the version for Entry Publication
      *
-     * @param mixed $obj
-     * @param Collection $args
-     * @param Context $context
-     * @param ResolveInfo $info
+     * @param  mixed        $obj
+     * @param  Collection   $args
+     * @param  Context      $context
+     * @param  ResolveInfo  $info
      * @return mixed
      * @throws ACLException
      * @throws DatabaseException
@@ -714,13 +714,13 @@ class Entries
      *
      * Parse simplified entry for graphQL
      *
-     * @param array $simplifiedEntry
-     * @param Collection|null $options
+     * @param  array            $simplifiedEntry
+     * @param  Collection|null  $options
      * @return array
      * @throws JsonException
      *
      */
-    private function parseEntry(array $simplifiedEntry, Collection $options = null): array
+    private function parseEntry(array $simplifiedEntry, ?Collection $options = null): array
     {
         // Override SEO social metas
         if (isset($simplifiedEntry['seo']['social_metas'])) {

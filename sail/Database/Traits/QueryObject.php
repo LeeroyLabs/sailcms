@@ -396,7 +396,7 @@ trait QueryObject
      * @return static
      *
      */
-    protected function findById(string|ObjectId $id, QueryOptions|null $options = null): static
+    protected function findById(string|ObjectId $id, ?QueryOptions $options = null): static
     {
         $_id = $this->ensureObjectId($id);
 
@@ -421,7 +421,7 @@ trait QueryObject
      * @return static
      *
      */
-    protected function find(array $query = [], QueryOptions|null $options = null): static
+    protected function find(array $query = [], ?QueryOptions $options = null): static
     {
         if (!$options) {
             $options = QueryOptions::init();
@@ -447,7 +447,7 @@ trait QueryObject
      * @return static
      *
      */
-    protected function findOne(array $query, QueryOptions|null $options = null): static
+    protected function findOne(array $query, ?QueryOptions $options = null): static
     {
         if (!$options) {
             $options = QueryOptions::init();
@@ -472,7 +472,7 @@ trait QueryObject
      * @return static
      *
      */
-    protected function distinct(string $field, array $query, QueryOptions|null $options = null): static
+    protected function distinct(string $field, array $query, ?QueryOptions $options = null): static
     {
         if (!$options) {
             $options = QueryOptions::init();
@@ -1108,7 +1108,7 @@ trait QueryObject
         return $doc;
     }
 
-    private function dumpPopulate(array $populate, string $parent = null): string
+    private function dumpPopulate(array $populate, ?string $parent = null): string
     {
         $dump = '';
 
