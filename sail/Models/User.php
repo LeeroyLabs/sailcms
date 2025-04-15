@@ -645,7 +645,7 @@ class User extends Model
         int $page = 0,
         int $limit = 25,
         string $search = '',
-        UserSorting $sorting = null,
+        ?UserSorting $sorting = null,
         UserTypeSearch|null $typeSearch = null,
         MetaSearch|null $metaSearch = null,
         bool|null $status = null,
