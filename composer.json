@@ -53,7 +53,7 @@
         "ramsey/uuid": "^4.7",
         "monolog/monolog": "^3.3",
         "josantonius/session": "^2.0",
-        "lcobucci/jwt": "^4.3",
+        "lcobucci/jwt": "^5.5.0",
         "symfony/string": "^v6.2.8",
         "symfony/translation-contracts": "^v3.2.1",
         "symfony/yaml": "^v6.2.7",
