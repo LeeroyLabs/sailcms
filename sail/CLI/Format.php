@@ -11,9 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Format extends Command
 {
-    protected static $defaultDescription = 'Format your code with your requested settings';
-    protected static $defaultName = 'format';
-
     /**
      * Execute command
      *
@@ -48,6 +45,8 @@ class Format extends Command
 
     protected function configure(): void
     {
+        $this->setName('format');
+        $this->setDescription('Format your code with your requested settings');
         $this->setHelp('Format your code with your requested settings');
     }
 }

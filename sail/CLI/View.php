@@ -10,9 +10,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class View extends Command
 {
-    protected static $defaultDescription = 'Create views for entries';
-    protected static $defaultName = 'generate:views';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         Tools::testFlight();
@@ -40,6 +37,8 @@ class View extends Command
      */
     protected function configure(): void
     {
+        $this->setName('generate:views');
+        $this->setDescription('Create views for entries');
         $this->setHelp("Create views for all entry types.");
     }
 }

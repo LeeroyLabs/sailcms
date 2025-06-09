@@ -11,10 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class InstallOfficial extends Command
 {
-    protected static $defaultDescription = 'Install an official first-party package';
-    protected static $defaultName = 'install:official';
-
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // Make sure all that is required is set and available
@@ -89,6 +85,8 @@ class InstallOfficial extends Command
 
     protected function configure(): void
     {
+        $this->setName('install:official');
+        $this->setDescription('Install an official first-party package');
         $this->setHelp('This installs official packages to your project.');
         $this->addArgument('name', InputArgument::REQUIRED, 'Package name');
     }

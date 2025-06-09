@@ -10,9 +10,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Version extends Command
 {
-    protected static $defaultDescription = 'Output the current version of the CLI, SailCMS and PHP';
-    protected static $defaultName = 'version';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $os = (PHP_OS === 'Darwin') ? 'MacOS' : PHP_OS;
@@ -29,6 +26,8 @@ class Version extends Command
 
     protected function configure(): void
     {
+        $this->setName('version');
+        $this->setDescription('Output the current version of the CLI, SailCMS and PHP');
         $this->setHelp("Get the current version of the CLI, SailCMS and the version PHP it's running on.");
     }
 }

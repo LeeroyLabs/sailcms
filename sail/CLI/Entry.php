@@ -15,15 +15,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Entry extends Command
 {
-    protected static $defaultDescription = 'Indexation of entries';
-    protected static $defaultName = 'run:indexing';
-
     /**
      *
      * Execute indexation of entry for search
      *
-     * @param InputInterface $input
-     * @param OutputInterface $output
+     * @param  InputInterface   $input
+     * @param  OutputInterface  $output
      * @return int
      * @throws FilesystemException
      * @throws ACLException
@@ -54,6 +51,8 @@ class Entry extends Command
      */
     protected function configure(): void
     {
+        $this->setName('run:indexing');
+        $this->setDescription('Indexation of entries');
         $this->setHelp("Index entry data.");
         $this->addArgument('entry_type_handle', InputArgument::REQUIRED, 'Index only the entry type (default = page)');
     }

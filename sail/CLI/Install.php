@@ -22,9 +22,6 @@ use Symfony\Component\Console\Question\Question;
 
 class Install extends Command
 {
-    protected static $defaultDescription = 'Install SailCMS';
-    protected static $defaultName = 'run:install';
-
     /**
      * @param  InputInterface   $input
      * @param  OutputInterface  $output
@@ -178,6 +175,8 @@ class Install extends Command
 
     protected function configure(): void
     {
+        $this->setName('run:install');
+        $this->setDescription('Install SailCMS');
         $this->setHelp("Install everything needed to get started with SailCMS");
     }
 }

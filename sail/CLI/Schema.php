@@ -17,9 +17,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Schema extends Command
 {
-    protected static $defaultDescription = 'Build an optimized AST version of the GraphQL Schema for production';
-    protected static $defaultName = 'build:schema';
-
     /**
      *
      * @param  InputInterface   $input
@@ -113,6 +110,8 @@ class Schema extends Command
 
     protected function configure(): void
     {
+        $this->setName('build:schema');
+        $this->setDescription('Build an optimized AST version of the GraphQL Schema for production');
         $this->addOption('hidecms', null, InputOption::VALUE_OPTIONAL, 'HideCMS in AST', 'no');
         $this->setHelp("Build an optimized AST version of the GraphQL Schema for production");
     }

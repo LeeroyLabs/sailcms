@@ -11,9 +11,6 @@ use Symfony\Component\Console\Question\Question;
 
 class ResetAdminPass extends Command
 {
-    protected static $defaultDescription = 'Reset an administrator password (disabled in production)';
-    protected static $defaultName = 'reset:password';
-
     /**
      *
      * @throws DatabaseException
@@ -66,6 +63,8 @@ class ResetAdminPass extends Command
 
     protected function configure(): void
     {
+        $this->setName('reset:password');
+        $this->setDescription('Reset an administrator password (disabled in production)');
         $this->setHelp("Reset an administrator password (disabled in production)");
     }
 }

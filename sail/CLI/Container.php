@@ -13,9 +13,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Container extends Command
 {
-    protected static $defaultDescription = 'Creates a new container scaffolding';
-    protected static $defaultName = 'create:container';
-
     /**
      *
      * @throws FilesystemException
@@ -79,6 +76,8 @@ class Container extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:container');
+        $this->setDescription('Creates a new container scaffolding');
         $this->setHelp('This command generates the code for a new container scaffold and installs it for you.');
         $this->addArgument('name', InputArgument::REQUIRED, 'The name of your container');
     }

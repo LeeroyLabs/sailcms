@@ -12,9 +12,6 @@ use Symfony\Component\Console\Question\Question;
 
 class BasicAuth extends Command
 {
-    protected static $defaultDescription = 'Create a new user/password for basic authentication';
-    protected static $defaultName = 'create:auth';
-
     /**
      *
      * Execute command
@@ -59,6 +56,8 @@ class BasicAuth extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:auth');
+        $this->setDescription('Create a new user/password for basic authentication');
         $this->setHelp('Create a new user/password for basic authentication');
     }
 }

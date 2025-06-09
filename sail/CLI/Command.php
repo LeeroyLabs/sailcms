@@ -12,9 +12,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Command extends CMD
 {
-    protected static $defaultDescription = 'Create a new CLI command';
-    protected static $defaultName = 'create:command';
-
     /**
      *
      * @throws FilesystemException
@@ -86,6 +83,8 @@ class Command extends CMD
 
     protected function configure(): void
     {
+        $this->setName('create:command');
+        $this->setDescription('Create a new CLI command');
         $this->setHelp("Create a new custom CLI command.");
         $this->addArgument('type', InputArgument::REQUIRED, 'Set location type to container or module');
         $this->addArgument('location', InputArgument::REQUIRED, 'The container or module to install it in');

@@ -11,9 +11,6 @@ use Symfony\Component\Console\Question\Question;
 
 class Password extends Command
 {
-    protected static $defaultDescription = 'Encrypt a password using sail security tools';
-    protected static $defaultName = 'create:password';
-
     /**
      *
      * Execute command
@@ -43,6 +40,8 @@ class Password extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:password');
+        $this->setDescription('Encrypt a password using sail security tools');
         $this->setHelp("Encrypt a password using sail security tools");
     }
 }

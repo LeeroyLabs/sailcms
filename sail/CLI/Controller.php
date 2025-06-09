@@ -12,9 +12,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Controller extends Command
 {
-    protected static $defaultDescription = 'Creates a new controller in the requested container directory';
-    protected static $defaultName = 'create:controller';
-
     /**
      *
      * @throws FilesystemException
@@ -61,6 +58,8 @@ class Controller extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:controller');
+        $this->setDescription('Creates a new controller in the requested container directory');
         $this->setHelp("Creates a new controller in the requested container directory.");
         $this->addArgument('container', InputArgument::REQUIRED, 'The name of your container');
         $this->addArgument('name', InputArgument::REQUIRED, 'The name of your controller');

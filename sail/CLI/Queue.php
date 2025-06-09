@@ -9,9 +9,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Queue extends Command
 {
-    protected static $defaultDescription = 'Execute the Queue Processor';
-    protected static $defaultName = 'run:queue';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $queue = QueueMan::manager();
@@ -26,6 +23,8 @@ class Queue extends Command
 
     protected function configure(): void
     {
+        $this->setName('run:queue');
+        $this->setDescription('Execute the Queue Processor');
         $this->setHelp("Execute the Queue Processor");
     }
 }

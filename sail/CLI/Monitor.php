@@ -15,9 +15,6 @@ use Symfony\Component\Console\Question\Question;
 
 class Monitor extends Command
 {
-    protected static $defaultDescription = 'Run the system monitor to take a sample of server health';
-    protected static $defaultName = 'run:monitoring';
-
     /**
      *
      * Execute command
@@ -41,6 +38,8 @@ class Monitor extends Command
 
     protected function configure(): void
     {
+        $this->setName('run:monitoring');
+        $this->setDescription('Run the system monitor to take a sample of server health');
         $this->addOption('php', null, InputOption::VALUE_OPTIONAL, 'Report on PHP version', 'no');
         $this->setHelp('Run the system monitor to take a sample of server health');
     }

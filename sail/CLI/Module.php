@@ -13,9 +13,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Module extends Command
 {
-    protected static $defaultDescription = 'Creates a new module';
-    protected static $defaultName = 'create:module';
-
     /**
      *
      * @throws FilesystemException

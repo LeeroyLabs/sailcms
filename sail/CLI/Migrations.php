@@ -10,9 +10,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Migrations extends Command
 {
-    protected static $defaultDescription = 'Create a new migration file';
-    protected static $defaultName = 'create:migration';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         Tools::testFlight();
@@ -42,6 +39,8 @@ class Migrations extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:migration');
+        $this->setDescription('Create a new migration file');
         $this->setHelp("Create a new migration file");
     }
 }

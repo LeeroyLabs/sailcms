@@ -13,9 +13,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Model extends Command
 {
-    protected static $defaultDescription = 'Create a new database model';
-    protected static $defaultName = 'create:model';
-
     /**
      *
      * @param  InputInterface   $input
@@ -94,6 +91,8 @@ class Model extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:model');
+        $this->setDescription('Create a new database model');
         $this->setHelp("Create a new database model.");
         $this->addArgument('type', InputArgument::REQUIRED, 'Set location type to container or module');
         $this->addArgument('location', InputArgument::REQUIRED, 'The container or module to install it in');

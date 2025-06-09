@@ -10,9 +10,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Cache extends Command
 {
-    protected static $defaultDescription = 'Clear SailCMS caches (twig, graphql, custom)';
-    protected static $defaultName = 'clear-cache';
-
     /**
      *
      * Execute command
@@ -50,6 +47,8 @@ class Cache extends Command
 
     protected function configure(): void
     {
+        $this->setName('clear-cache');
+        $this->setDescription('Clear SailCMS caches (twig, graphql, custom)');
         $this->setHelp("Clear the SailCMS caches (twig, graphql, custom)");
     }
 }

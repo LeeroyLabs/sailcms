@@ -15,9 +15,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Migrate extends Command
 {
-    protected static $defaultDescription = 'Run database migrations';
-    protected static $defaultName = 'db:migrate';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $opt = $input->getArgument('option');
@@ -37,6 +34,8 @@ class Migrate extends Command
 
     protected function configure(): void
     {
+        $this->setName('db:migrate');
+        $this->setDescription('Run database migrations');
         $this->setHelp("Run database migrations");
         $this->addArgument('option', InputOption::VALUE_OPTIONAL, 'Available options: rollback and seed', ['up']);
     }

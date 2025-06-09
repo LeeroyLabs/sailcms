@@ -11,9 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Test extends Command
 {
-    protected static $defaultDescription = 'Create a new test suite';
-    protected static $defaultName = 'create:test';
-
     /**
      *
      * Run the command
@@ -72,6 +69,8 @@ class Test extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:test');
+        $this->setDescription('Create a new test suite');
         $this->setHelp("Create a new test suite");
         $this->addArgument('name', InputArgument::REQUIRED, 'Name of the test');
     }
