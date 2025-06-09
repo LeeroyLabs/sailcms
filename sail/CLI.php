@@ -90,7 +90,7 @@ final class CLI
         // Load Sail Basics
         Sail::initForCli(self::$workingDirectory);
 
-        $application = new Application();
+        $application = new Application('SailCMS', '1.0.0');
 
         // Core commands
         $application->add(new Module());

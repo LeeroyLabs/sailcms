@@ -72,6 +72,8 @@ class Module extends Command
 
     protected function configure(): void
     {
+        $this->setName('create:module');
+        $this->setDescription('Creates a new module');
         $this->setHelp('This command generates the code for a new module and installs it for you.');
         $this->addArgument('name', InputArgument::REQUIRED, 'The name of your module');
     }
