@@ -9,10 +9,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 class [NAME] extends Command
 {
     // See https://symfony.com/doc/current/console.html#creating-a-command for help.
-
-    protected static $defaultDescription = 'Description of your command';
-    protected static $defaultName = 'commandName';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // Return success or Command::FAILURE
@@ -21,6 +17,8 @@ class [NAME] extends Command
 
     protected function configure(): void
     {
+        $this->setName('command:name');
+        $this->setDescription('Description of your command');
         $this->setHelp("The help description here");
     }
 }
