@@ -43,6 +43,7 @@ trait Transforms
             if (!in_array($key, $guards, true) && (in_array($key, $this->loaded, true) || in_array('*', $this->loaded, true))) {
                 if ($key === '_id') {
                     $doc[$key] = (string)$value;
+                    $doc['id'] = (string)$value;
                 } elseif (!is_scalar($value)) {
                     $doc[$key] = $this->simplifyObject($value, $key);
                 } else {
