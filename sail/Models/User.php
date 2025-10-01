@@ -437,7 +437,7 @@ class User extends Model
         }
 
         // Validate name (basic)
-        if (empty($name->first) || empty($name->last)) {
+        if (empty($name->first)) {
             throw new DatabaseException('9001: Name is not valid, please make sure you fill in both first and last name.', 0403);
         }
 
