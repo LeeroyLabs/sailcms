@@ -767,6 +767,8 @@ class Sail
      */
     public static function setupForTests(string $rootDir = '', string $templatePath = ''): void
     {
+        include_once self::$workingDirectory . '/config/boot.php';
+        
         self::setWorkingDirectory($rootDir . '/mock');
         self::setAppState(self::STATE_CLI, 'dev', $rootDir . '/mock');
         self::$fsDirectory = self::$workingDirectory . '/storage/fs';
