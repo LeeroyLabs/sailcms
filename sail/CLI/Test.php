@@ -50,6 +50,7 @@ class Test extends Command
             $fs->createDirectory($mockPath . '/uploads');
             $fs->copy('install://env', $mockPath . '/.env');
             $fs->copy('install://db-test.php', $mockPath . '/db.php');
+            $fs->write('install://config/boot.php', '<?php');
             $fs->write($mockPath . '/locales/en.yaml', '');
             $fs->createDirectory($mockPath . '/storage/cache');
             $fs->createDirectory($mockPath . '/storage/debug');
