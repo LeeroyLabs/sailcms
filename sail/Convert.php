@@ -27,7 +27,7 @@ class Convert
     public static function csv2array(string $data, bool $hasHeading = true, bool $object = false): array
     {
         try {
-            $csv = Reader::createFromString($data);
+            $csv = Reader::fromString($data);
 
             if ($hasHeading) {
                 $csv->setHeaderOffset(0);

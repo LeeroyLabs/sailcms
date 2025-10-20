@@ -66,7 +66,7 @@
         "itsgoingd/clockwork": "^v5.1.8",
         "predis/predis": "^2.1",
         "leeroy/php-inflector": "^1.0.1",
-        "league/csv": "^9.0",
+        "league/csv": "^9.27.0",
         "symfony/process": "^v7.3.0",
         "respect/validation": "^2.3.0-RC",
         "giggsey/libphonenumber-for-php-lite": "^8.13",
