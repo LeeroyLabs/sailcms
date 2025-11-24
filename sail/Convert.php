@@ -84,7 +84,7 @@ class Convert
                 $heading = $heading->unwrap();
             }
 
-            $writer = Writer::createFromString();
+            $writer = Writer::fromString();
 
             if ($heading) {
                 $writer->insertOne($heading);
