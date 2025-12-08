@@ -966,6 +966,9 @@ class Collection implements \JsonSerializable, \Iterator, Castable, \ArrayAccess
     public function valid(): bool
     {
         $key = key($this->_internal);
+        if ($key === null) {
+            return false;
+        }
         return (isset($this->_internal[$key]));
     }
 
