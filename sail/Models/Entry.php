@@ -793,7 +793,7 @@ class Entry extends Model implements Validator, Castable
         $results = $entryModel->useView($entryModel->entryType->handle . '_entry_publication')->find($filters, $options)->exec($cacheKey, $cacheTtl);
         // Data for pagination
         $count = $entryModel->count($filters);
-        $total = (integer)ceil($count / $limit);
+        $total = (int)ceil($count / $limit);
 
         $pagination = new Pagination($page, $total, $count);
         return new Listing($pagination, new Collection($results));
