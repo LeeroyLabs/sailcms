@@ -536,6 +536,10 @@ trait QueryObject
 
             // Run Validators
             $this->runValidators((object)$doc);
+
+            // Make sure we do not have an extra id in the object
+            unset($doc['id']);
+
             $id = $this->active_collection->insertOne($doc)->getInsertedId();
 
             $this->clearCacheForModel();
