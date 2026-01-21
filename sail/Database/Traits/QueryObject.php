@@ -540,6 +540,10 @@ trait QueryObject
             // Make sure we do not have an extra id in the object
             unset($doc['id']);
 
+            if (isset($doc['_id'])) {
+                $doc['_id'] = new ObjectId($doc['_id']);
+            }
+
             $id = $this->active_collection->insertOne($doc)->getInsertedId();
 
             $this->clearCacheForModel();
